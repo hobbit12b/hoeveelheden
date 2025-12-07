@@ -105,39 +105,35 @@
       height: 100%;
       background: radial-gradient(circle at 0% 0%, #ffffff, #e5f0ff);
       touch-action: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
 
-    /* Vast kader, 300 x 428 px, dit is de scanzone */
+    /* Vast kader 300 x 428 px, gecentreerd in het onderste deel */
     #scanFrame {
-      position: relative;
+      position: absolute;
+      left: 50%;
+      top: 60%;
+      transform: translate(-50%, -50%);
       width: 300px;
       height: 428px;
-      border-radius: 32px;
+      border-radius: 28px;
       border: 3px dashed #9ca3af;
-      background: #ffffffee;
+      background: #fdfdfd;
       box-shadow:
-        0 14px 30px rgba(15, 23, 42, 0.12),
-        0 0 0 1px rgba(148, 163, 184, 0.4);
+        0 12px 30px rgba(15, 23, 42, 0.18),
+        0 0 0 1px rgba(148, 163, 184, 0.5);
       overflow: hidden;
     }
 
-    /* Binnenruimte voor stippen */
     #dotsLayer {
       position: absolute;
-      left: 16px;
-      top: 16px;
-      right: 16px;
-      bottom: 16px;
+      inset: 0;
       pointer-events: none;
     }
 
     .dot {
       position: absolute;
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: 999px;
       transform: translate(-50%, -50%);
       box-shadow:
@@ -150,8 +146,8 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      font-size: 70px;
-      color: rgba(148, 163, 184, 0.9);
+      font-size: 72px;
+      color: rgba(15, 23, 42, 0.2);
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.18s ease;
       opacity: 0;
@@ -231,10 +227,6 @@
       100% { transform: translate(-50%, -50%) rotate(0deg); }
     }
 
-    .hidden {
-      display: none;
-    }
-
     @media (max-height: 640px) {
       .top-bar {
         min-height: 56px;
@@ -251,6 +243,11 @@
         width: 28px;
         height: 28px;
         font-size: 1.1rem;
+      }
+      /* op kleinere schermen blijft het kader nog steeds 300 x 428 px,
+         alleen iets hoger in beeld zodat het niet tegen de onderrand valt */
+      #scanFrame {
+        top: 58%;
       }
     }
   </style>
@@ -294,19 +291,19 @@
       "9": { "digit": 9, "features": { "sides": [0.528422226145079, 0.9262321314260327, 1], "orientation": -1, "cosAngle": 0.1400943420148673 } }
     };
 
+    // strengere en stabielere detectie
     const DOT_SHOW_DURATION = 3000;
     const SECOND_CHANCE_EXTRA = 1000;
-
-    const STABILITY_TIME = 280;      // ms stabiel
-    const MAX_JITTER = 8;           // pixels
-    const MATCH_THRESHOLD = 0.16;   // streng
+    const STABILITY_TIME = 280;
+    const MAX_JITTER = 8;
+    const MATCH_THRESHOLD = 0.16;
     const ORIENTATION_PENALTY = 0.8;
 
     const palettes = [
-      { bg: '#2563eb' },
-      { bg: '#f97316' },
-      { bg: '#16a34a' },
-      { bg: '#a855f7' }
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fff1e6)', dot: '#f97316' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e4f7ec)', dot: '#16a34a' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fdf2ff)', dot: '#a855f7' }
     ];
 
     const playfield = document.getElementById('playfield');
@@ -320,7 +317,7 @@
     let attemptCount = 0;
     let dotsTimeoutId = null;
 
-    let currentLayout = null; // posities en kleur van deze ronde
+    let currentLayout = null; // palette en posities van stippen blijven gelijk binnen een ronde
 
     let activeTouches = [];
     let stableStartTime = null;
@@ -379,6 +376,7 @@
         sumSq += diff * diff;
       }
       let dist = Math.sqrt(sumSq);
+
       if (f1.orientation !== f2.orientation) {
         dist += ORIENTATION_PENALTY;
       }
@@ -427,15 +425,13 @@
       }
 
       if (activeTouches.length === 3) {
+        const now = performance.now();
         if (!detectionLocked) {
-          const now = performance.now();
-
           if (!stableStartTime || !stableBasePoints) {
             stableStartTime = now;
             stableBasePoints = activeTouches.map(p => ({ ...p }));
           } else {
             let maxMove = 0;
-
             for (const active of activeTouches) {
               const base = stableBasePoints.find(b => b.id === active.id);
               if (!base) {
@@ -497,10 +493,8 @@
         if (attemptCount === 1) {
           setTimeout(() => {
             hideFeedback();
-            if (currentLayout) {
-              applyLayout(currentLayout);
-              scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
-            }
+            renderCurrentDots();
+            scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
           }, 700);
         } else {
           setTimeout(() => {
@@ -560,7 +554,7 @@
       feedbackEl.textContent = '';
     }
 
-    /* DOT LAY OUT LOGICA */
+    /* GROEPJES EN STRUCTUUR */
 
     function getGroupSizes(n) {
       if (n === 0) return [];
@@ -606,140 +600,133 @@
       return groups;
     }
 
-    // twee kolommen in het kader, met extra ruimte ertussen
     function getTwoGroupRects() {
-      const inner = dotsLayer.getBoundingClientRect();
-      const width = inner.width;
-      const height = inner.height;
+      // twee kolommen in het kader, met duidelijke ruimte ertussen
+      const marginSide = 0.08;
+      const gap = 0.10;
+      const width = (1 - 2 * marginSide - gap) / 2;
+      const height = 0.80;
+      const top = 0.10;
 
-      const marginSide = 0.08 * width;
-      const gap = 0.12 * width;
-      const groupWidth = (width - 2 * marginSide - gap) / 2;
-      const top = 0.1 * height;
-      const groupHeight = 0.8 * height;
-
-      const rect1 = { x: marginSide, y: top, width: groupWidth, height: groupHeight };
-      const rect2 = { x: marginSide + groupWidth + gap, y: top, width: groupWidth, height: groupHeight };
+      const rect1 = { x: marginSide, y: top, width: width, height: height };
+      const rect2 = { x: marginSide + width + gap, y: top, width: width, height: height };
       return [rect1, rect2];
     }
 
-    // vaste rasters per groepsgrootte, stippen dicht bij elkaar, maar zonder overlap
-    function layoutDotsInGroup(size, rect) {
+    // binnen een groepje horizontaal en verticaal dicht bij elkaar
+    function layoutDotsInGroup(size) {
       const dots = [];
-      const cols = 3;
-      const rows = 3;
-      const cellW = rect.width / (cols + 1);
-      const cellH = rect.height / (rows + 1);
+      const jitter = () => (Math.random() - 0.5) * 0.03; // klein beetje variatie
 
-      // voor elke grootte kiezen we vaste cellen in dit 3 bij 3 raster
-      const cellPositionsBySize = {
-        1: [[1, 1]],
-        2: [[1, 1], [2, 1]],
-        3: [[0, 0], [2, 0], [1, 1]],
-        4: [[0, 0], [2, 0], [0, 2], [2, 2]],
-        5: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]],
-        6: [[0, 0], [1, 0], [2, 0], [0, 2], [1, 2], [2, 2]],
-        7: [[0, 0], [1, 0], [2, 0], [0, 1], [2, 1], [0, 2], [2, 2]],
-        8: [[0, 0], [1, 0], [2, 0], [0, 1], [2, 1], [0, 2], [1, 2], [2, 2]],
-        9: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]]
-      };
-
-      const cells = cellPositionsBySize[size] || cellPositionsBySize[Math.min(size, 9)];
-
-      cells.forEach(([cx, cy]) => {
-        dots.push({
-          x: rect.x + (cx + 1) * cellW,
-          y: rect.y + (cy + 1) * cellH
-        });
-      });
-
+      if (size === 1) {
+        dots.push({ x: 0.5, y: 0.5 });
+      } else if (size === 2) {
+        dots.push({ x: 0.42 + jitter(), y: 0.5 + jitter() });
+        dots.push({ x: 0.58 + jitter(), y: 0.5 + jitter() });
+      } else if (size === 3) {
+        dots.push({ x: 0.40 + jitter(), y: 0.38 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.38 + jitter() });
+        dots.push({ x: 0.50 + jitter(), y: 0.62 + jitter() });
+      } else if (size === 4) {
+        dots.push({ x: 0.40 + jitter(), y: 0.38 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.38 + jitter() });
+        dots.push({ x: 0.40 + jitter(), y: 0.62 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.62 + jitter() });
+      } else if (size === 5) {
+        dots.push({ x: 0.40 + jitter(), y: 0.32 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.32 + jitter() });
+        dots.push({ x: 0.50 + jitter(), y: 0.52 + jitter() });
+        dots.push({ x: 0.40 + jitter(), y: 0.72 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.72 + jitter() });
+      } else if (size === 6) {
+        dots.push({ x: 0.40 + jitter(), y: 0.30 + jitter() });
+        dots.push({ x: 0.40 + jitter(), y: 0.50 + jitter() });
+        dots.push({ x: 0.40 + jitter(), y: 0.70 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.30 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.50 + jitter() });
+        dots.push({ x: 0.60 + jitter(), y: 0.70 + jitter() });
+      }
       return dots;
     }
 
-    function generateLayout(n) {
-      const layout = {
-        paletteIndex: Math.floor(Math.random() * palettes.length),
-        positions: []
-      };
-
+    function generateDotsLayout(n) {
+      const positions = [];
       if (n === 0) {
-        return layout;
+        return positions;
       }
 
-      const innerRect = dotsLayer.getBoundingClientRect();
-      const inner = {
-        x: 0,
-        y: 0,
-        width: innerRect.width,
-        height: innerRect.height
-      };
-
-      if (n === 1 || n === 2) {
-        // alles in het middengebied
-        const rect = {
-          x: inner.width * 0.2,
-          y: inner.height * 0.25,
-          width: inner.width * 0.6,
-          height: inner.height * 0.5
-        };
-        const groupDots = layoutDotsInGroup(n, rect);
-        layout.positions = groupDots;
-        return layout;
+      if (n === 1) {
+        positions.push({ x: 0.5, y: 0.5 });
+        return positions;
       }
 
       const groupSizes = getGroupSizes(n);
 
       if (groupSizes.length === 1) {
-        const rect = {
-          x: inner.width * 0.15,
-          y: inner.height * 0.15,
-          width: inner.width * 0.7,
-          height: inner.height * 0.7
-        };
-        const groupDots = layoutDotsInGroup(groupSizes[0], rect);
-        layout.positions = groupDots;
-      } else {
-        const [r1, r2] = getTwoGroupRects();
-        const rects = [r1, r2];
-        const positions = [];
-        groupSizes.forEach((size, idx) => {
-          const groupDots = layoutDotsInGroup(size, rects[idx]);
-          positions.push(...groupDots);
+        const rect = { x: 0.1, y: 0.10, width: 0.8, height: 0.80 };
+        const pattern = layoutDotsInGroup(groupSizes[0]);
+        pattern.forEach(p => {
+          positions.push({
+            x: rect.x + p.x * rect.width,
+            y: rect.y + p.y * rect.height
+          });
         });
-        layout.positions = positions;
+      } else {
+        const [rect1, rect2] = getTwoGroupRects();
+        const rects = [rect1, rect2];
+
+        groupSizes.forEach((size, idx) => {
+          const rect = rects[idx];
+          const pattern = layoutDotsInGroup(size);
+          pattern.forEach(p => {
+            positions.push({
+              x: rect.x + p.x * rect.width,
+              y: rect.y + p.y * rect.height
+            });
+          });
+        });
       }
 
-      return layout;
+      return positions;
     }
 
-    function applyLayout(layout) {
+    function renderCurrentDots() {
       clearDots();
       hideQuestion();
-      if (!layout) return;
+      if (!currentLayout) return;
 
-      const palette = palettes[layout.paletteIndex];
-      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.bg})`;
+      scanFrame.style.background = currentLayout.palette.bg;
 
-      layout.positions.forEach(pos => {
+      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${currentLayout.dotColor})`;
+
+      currentLayout.positions.forEach(pos => {
         const dotEl = document.createElement('div');
         dotEl.className = 'dot';
-        dotEl.style.left = pos.x + 'px';
-        dotEl.style.top = pos.y + 'px';
+        dotEl.style.left = (pos.x * 100).toFixed(2) + '%';
+        dotEl.style.top = (pos.y * 100).toFixed(2) + '%';
         dotEl.style.background = gradient;
         dotsLayer.appendChild(dotEl);
       });
+    }
+
+    function prepareRound(n) {
+      const palette = palettes[Math.floor(Math.random() * palettes.length)];
+      const positions = generateDotsLayout(n);
+      currentLayout = {
+        positions,
+        palette,
+        dotColor: palette.dot
+      };
+      currentTarget = n;
     }
 
     function startNewRound() {
       currentRoundId += 1;
       attemptCount = 0;
       const n = Math.floor(Math.random() * 10);
-      currentTarget = n;
+      prepareRound(n);
       hideFeedback();
-
-      // layout berekenen op basis van werkelijke pixels van dotsLayer
-      currentLayout = generateLayout(currentTarget);
-      applyLayout(currentLayout);
+      renderCurrentDots();
       scheduleHideDots(DOT_SHOW_DURATION);
     }
 
