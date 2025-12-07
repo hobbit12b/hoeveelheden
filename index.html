@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Marbotic Telspel</title>
+  <title>Marbotic Telspel met kader</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <style>
     * {
@@ -95,7 +95,7 @@
       overflow: hidden;
       background: #e5f0ff;
       display: flex;
-      align-items: stretch;
+      align-items: center;
       justify-content: center;
     }
 
@@ -105,23 +105,31 @@
       height: 100%;
       background: radial-gradient(circle at 0% 0%, #ffffff, #e5f0ff);
       touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* Kader van exact 6 cm breed en 8 cm hoog, met stippen en cijfer erin */
+    /* Kader: 6 bij 8 cm verhouding, met schaal om op elk scherm te passen */
     #frame {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 6cm;
+      position: relative;
+      width: 6cm;                 /* logische maat, niet fysiek betrouwbaar op telefoon */
       height: 8cm;
-      border-radius: 28px;
+      border-radius: 26px;
       border: 4px dashed #9ca3af;
-      background: radial-gradient(circle at 0% 0%, #ffffff, #f3f4ff);
-      box-shadow:
-        0 10px 28px rgba(15, 23, 42, 0.2),
-        0 0 0 3px rgba(148, 163, 184, 0.35);
+      background: #ffffff;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* schaal wordt via JS aangepast zodat het kader in het scherm past */
+      transform-origin: center center;
+    }
+
+    #frameInner {
+      position: relative;
+      width: 100%;
+      height: 100%;
     }
 
     #dotsLayer {
@@ -132,8 +140,8 @@
 
     .dot {
       position: absolute;
-      width: min(7vmin, 54px);
-      height: min(7vmin, 54px);
+      width: min(9vmin, 60px);
+      height: min(9vmin, 60px);
       border-radius: 999px;
       transform: translate(-50%, -50%);
       box-shadow:
@@ -146,7 +154,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      font-size: min(15vmin, 90px);
+      font-size: min(14vmin, 90px);
       color: rgba(15, 23, 42, 0.18);
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.18s ease;
@@ -163,13 +171,13 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%) scale(0.7);
-      width: min(36vmin, 160px);
-      height: min(36vmin, 160px);
+      width: min(36vmin, 180px);
+      height: min(36vmin, 180px);
       border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: min(14vmin, 84px);
+      font-size: min(14vmin, 90px);
       color: white;
       pointer-events: none;
       opacity: 0;
@@ -227,10 +235,6 @@
       100% { transform: translate(-50%, -50%) rotate(0deg); }
     }
 
-    .hidden {
-      display: none;
-    }
-
     @media (max-height: 640px) {
       .top-bar {
         min-height: 56px;
@@ -259,7 +263,7 @@
         <div class="top-bar-text">
           <div class="top-title">Tel met de stippen</div>
           <div class="top-hint">
-            Leg een houten cijfer in het grote veld en til het weer op
+            Leg een houten cijfer in het veld en til het weer op
           </div>
         </div>
       </div>
@@ -268,15 +272,18 @@
     <main class="playfield-wrapper">
       <div id="playfield" class="playfield">
         <div id="frame">
-          <div id="dotsLayer"></div>
-          <div id="questionMark">?</div>
-          <div id="feedback"></div>
+          <div id="frameInner">
+            <div id="dotsLayer"></div>
+            <div id="questionMark">?</div>
+            <div id="feedback"></div>
+          </div>
         </div>
       </div>
     </main>
   </div>
 
   <script>
+    /* Kalibratiegegevens */
     const calibrationData = {
       "0": { "digit": 0, "features": { "sides": [0.715461074017087, 0.9950773632389245, 1], "orientation": -1, "cosAngle": 0.352602837687961 } },
       "1": { "digit": 1, "features": { "sides": [0.65386886727582, 0.8012487397336427, 1], "orientation": -1, "cosAngle": 0.06637001141033504 } },
@@ -290,13 +297,13 @@
       "9": { "digit": 9, "features": { "sides": [0.528422226145079, 0.9262321314260327, 1], "orientation": -1, "cosAngle": 0.1400943420148673 } }
     };
 
+    /* Scannen, jouw strengere waarden */
     const DOT_SHOW_DURATION = 3000;
     const SECOND_CHANCE_EXTRA = 1000;
-
-    const STABILITY_TIME = 280;       // ms stabiel nodig
-    const MAX_JITTER = 8;             // max verschuiving in pixels
-    const MATCH_THRESHOLD = 0.16;     // strengere drempel
-    const ORIENTATION_PENALTY = 0.8;  // zwaardere straf bij andere oriëntatie
+    const STABLE_TIME_MS = 280;      // hoe lang drie punten stabiel moeten zijn
+    const MOVE_THRESHOLD_PX = 8;     // max verschuiving in pixels
+    const MATCH_THRESHOLD = 0.16;    // strenger dan 0.20
+    const ORIENTATION_PENALTY = 0.8; // zwaardere straf bij andere oriëntatie
 
     const palettes = [
       { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
@@ -322,9 +329,6 @@
     let detectionLocked = false;
     let detectedDigit = null;
     let detectionRoundId = null;
-
-    let currentPalette = palettes[0];
-    let currentDotPositions = [];
 
     function distance(p1, p2) {
       const dx = p1.x - p2.x;
@@ -445,10 +449,10 @@
               if (d > maxMove) maxMove = d;
             }
 
-            if (maxMove > MAX_JITTER) {
+            if (maxMove > MOVE_THRESHOLD_PX) {
               stableStartTime = now;
               stableBasePoints = activeTouches.map(p => ({ ...p }));
-            } else if (now - stableStartTime >= STABILITY_TIME) {
+            } else if (now - stableStartTime >= STABLE_TIME_MS) {
               const points = activeTouches.map(p => ({ x: p.x, y: p.y }));
               const features = computeFeatures(points);
               const match = features ? findBestMatch(features, calibrationData) : null;
@@ -496,7 +500,7 @@
         if (attemptCount === 1) {
           setTimeout(() => {
             hideFeedback();
-            renderCurrentDots(); // zelfde patroon opnieuw
+            renderDots(currentTarget);
             scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
           }, 700);
         } else {
@@ -557,6 +561,7 @@
       feedbackEl.textContent = '';
     }
 
+    /* Groepjeslogica, stippen dicht bij elkaar in een groepje */
     function getGroupSizes(n) {
       if (n === 0) return [];
       if (n === 1) return [1];
@@ -603,7 +608,7 @@
 
     function getTwoGroupRects() {
       const marginSide = 0.08;
-      const gap = 0.10;
+      const gap = 0.12;
       const width = (1 - 2 * marginSide - gap) / 2;
       const height = 0.76;
       const top = 0.12;
@@ -613,57 +618,38 @@
       return [rect1, rect2];
     }
 
-    // binnen een groepje horizontaal en verticaal dicht bij elkaar
     function layoutDotsInGroup(size) {
       const dots = [];
-      const jitter = () => (Math.random() - 0.5) * 0.03; // kleine variatie
+      const jitter = () => (Math.random() - 0.5) * 0.02; // klein jitter, groepjes blijven compact
 
-      const colLeft = 0.38;
-      const colRight = 0.62;
-      const centerX = 0.50;
-
-      const rowTop = 0.46;
-      const rowMid = 0.50;
-      const rowBottom = 0.54;
-
+      // basisposities dichter bij elkaar: 0.45 en 0.55 enzovoort
       if (size === 1) {
-        dots.push({ x: centerX + jitter(), y: rowMid + jitter() });
+        dots.push({ x: 0.5, y: 0.5 });
       } else if (size === 2) {
-        dots.push({ x: colLeft + jitter(), y: rowMid + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowMid + jitter() });
+        dots.push({ x: 0.45 + jitter(), y: 0.5 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.5 + jitter() });
       } else if (size === 3) {
-        dots.push({ x: colLeft + jitter(), y: rowTop + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowTop + jitter() });
-        dots.push({ x: centerX + jitter(), y: rowBottom + jitter() });
+        dots.push({ x: 0.45 + jitter(), y: 0.46 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.46 + jitter() });
+        dots.push({ x: 0.5 + jitter(), y: 0.56 + jitter() });
       } else if (size === 4) {
-        dots.push({ x: colLeft + jitter(), y: rowTop + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowTop + jitter() });
-        dots.push({ x: colLeft + jitter(), y: rowBottom + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowBottom + jitter() });
+        dots.push({ x: 0.45 + jitter(), y: 0.46 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.46 + jitter() });
+        dots.push({ x: 0.45 + jitter(), y: 0.56 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.56 + jitter() });
       } else if (size === 5) {
-        dots.push({ x: colLeft + jitter(), y: rowTop + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowTop + jitter() });
-        dots.push({ x: centerX + jitter(), y: rowMid + jitter() });
-        dots.push({ x: colLeft + jitter(), y: rowBottom + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowBottom + jitter() });
+        dots.push({ x: 0.45 + jitter(), y: 0.44 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.44 + jitter() });
+        dots.push({ x: 0.5 + jitter(),  y: 0.50 + jitter() });
+        dots.push({ x: 0.45 + jitter(), y: 0.56 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.56 + jitter() });
       } else if (size === 6) {
-        const rowTopTight = 0.46;
-        const rowMidTight = 0.50;
-        const rowBottomTight = 0.54;
-        dots.push({ x: colLeft + jitter(), y: rowTopTight + jitter() });
-        dots.push({ x: colLeft + jitter(), y: rowMidTight + jitter() });
-        dots.push({ x: colLeft + jitter(), y: rowBottomTight + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowTopTight + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowMidTight + jitter() });
-        dots.push({ x: colRight + jitter(), y: rowBottomTight + jitter() });
-      } else {
-        // fallback voor onverwachte waarden, compacte wolk
-        for (let i = 0; i < size; i++) {
-          dots.push({
-            x: centerX + (Math.random() - 0.5) * 0.18,
-            y: rowMid + (Math.random() - 0.5) * 0.18
-          });
-        }
+        dots.push({ x: 0.44 + jitter(), y: 0.44 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.50 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.56 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.44 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.50 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.56 + jitter() });
       }
 
       return dots;
@@ -710,15 +696,17 @@
       return positions;
     }
 
-    function renderCurrentDots() {
+    function renderDots(n) {
       clearDots();
       hideQuestion();
 
-      frame.style.background = currentPalette.bg;
+      const palette = palettes[Math.floor(Math.random() * palettes.length)];
+      playfield.style.background = palette.bg;
 
-      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${currentPalette.dot})`;
+      const positions = generateDotsLayout(n);
+      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.dot})`;
 
-      currentDotPositions.forEach(pos => {
+      positions.forEach(pos => {
         const dotEl = document.createElement('div');
         dotEl.className = 'dot';
         dotEl.style.left = (pos.x * 100).toFixed(2) + '%';
@@ -728,20 +716,27 @@
       });
     }
 
-    function prepareLayoutForCurrentTarget() {
-      currentPalette = palettes[Math.floor(Math.random() * palettes.length)];
-      currentDotPositions = generateDotsLayout(currentTarget);
-    }
-
     function startNewRound() {
       currentRoundId += 1;
       attemptCount = 0;
-      hideFeedback();
       const n = Math.floor(Math.random() * 10);
       currentTarget = n;
-      prepareLayoutForCurrentTarget();
-      renderCurrentDots();
+      hideFeedback();
+      renderDots(currentTarget);
       scheduleHideDots(DOT_SHOW_DURATION);
+    }
+
+    /* Kader automatisch schalen zodat het binnen het scherm past
+       De verhouding blijft 6 bij 8, fysieke centimeters verschillen per toestel */
+    function resizeFrame() {
+      const wrapperRect = playfield.getBoundingClientRect();
+      const frameRect = frame.getBoundingClientRect();
+
+      const scaleX = wrapperRect.width * 0.9 / frameRect.width;
+      const scaleY = wrapperRect.height * 0.9 / frameRect.height;
+      const scale = Math.min(scaleX, scaleY);
+
+      frame.style.transform = `scale(${scale})`;
     }
 
     function init() {
@@ -749,6 +744,11 @@
         playfield.addEventListener(type, handleTouchEvent, { passive: false });
       });
 
+      window.addEventListener('resize', () => {
+        resizeFrame();
+      });
+
+      resizeFrame();
       startNewRound();
     }
 
