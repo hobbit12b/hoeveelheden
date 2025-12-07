@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Marbotic Telspel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #e9eff7;
+      touch-action: none;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 900px;
+      height: 100vh;
+      padding: 0.8rem 0.7rem 1rem 0.7rem;
+    }
+
+    .top-bar {
+      flex: 0 0 auto;
+      min-height: 64px;
+      max-height: 90px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f4f5fb, #e7edf8);
+      padding: 0.5rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .top-icon-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #c7d2fe);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .top-bar-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.1rem;
+    }
+
+    .top-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .top-hint {
+      font-size: 0.7rem;
+      color: #6b7280;
+      line-height: 1.2;
+    }
+
+    .playfield-wrapper {
+      flex: 1 1 auto;
+      margin-top: 0.7rem;
+      border-radius: 22px;
+      box-shadow:
+        0 14px 40px rgba(15, 23, 42, 0.22),
+        0 2px 6px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      background: #e5f0ff;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .playfield {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 0% 0%, #ffffff, #e5f0ff);
+      touch-action: none;
+    }
+
+    #dotsLayer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .dot {
+      position: absolute;
+      width: min(9vmin, 70px);
+      height: min(9vmin, 70px);
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      box-shadow:
+        0 4px 10px rgba(15, 23, 42, 0.25),
+        inset 0 2px 3px rgba(255, 255, 255, 0.7);
+    }
+
+    #questionMark {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: min(15vmin, 110px);
+      color: rgba(15, 23, 42, 0.18);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      opacity: 0;
+    }
+
+    #questionMark.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #feedback {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      width: min(36vmin, 180px);
+      height: min(36vmin, 180px);
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: min(14vmin, 90px);
+      color: white;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    #feedback.visible {
+      opacity: 1;
+    }
+
+    .feedback-success {
+      background: radial-gradient(circle at 30% 20%, #bbf7d0, #16a34a);
+      box-shadow:
+        0 10px 28px rgba(22, 163, 74, 0.55),
+        0 0 0 6px rgba(34, 197, 94, 0.35);
+      animation: pop-in 0.4s ease-out, wobble 0.6s ease-out;
+    }
+
+    .feedback-error {
+      background: radial-gradient(circle at 30% 20%, #fecaca, #ef4444);
+      box-shadow:
+        0 10px 28px rgba(239, 68, 68, 0.6),
+        0 0 0 6px rgba(248, 113, 113, 0.35);
+      animation: shake 0.45s ease-out;
+    }
+
+    @keyframes pop-in {
+      0% {
+        transform: translate(-50%, -50%) scale(0.2);
+        opacity: 0;
+      }
+      60% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes wobble {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      25% { transform: translate(calc(-50% - 4px), -50%) scale(1.03); }
+      50% { transform: translate(calc(-50% + 4px), -50%) scale(1.03); }
+      75% { transform: translate(calc(-50% - 2px), -50%) scale(1.02); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      15% { transform: translate(calc(-50% - 6px), -50%) rotate(-8deg); }
+      30% { transform: translate(calc(-50% + 6px), -50%) rotate(8deg); }
+      45% { transform: translate(calc(-50% - 4px), -50%) rotate(-6deg); }
+      60% { transform: translate(calc(-50% + 4px), -50%) rotate(6deg); }
+      75% { transform: translate(calc(-50% - 2px), -50%) rotate(-3deg); }
+      100% { transform: translate(-50%, -50%) rotate(0deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* frame voor getalweergave */
+
+    #digitFrameWrapper {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(60vmin, 320px);
+      pointer-events: none;
+    }
+
+    #digitFrame {
+      width: 100%;
+      display: block;
+    }
+
+    #digitDisplay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: min(18vmin, 120px);
+      font-weight: 700;
+      color: #374151;
+      text-align: center;
+      line-height: 1;
+    }
+
+    @media (max-height: 640px) {
+      .top-bar {
+        min-height: 56px;
+        padding-inline: 0.6rem;
+        border-radius: 12px;
+      }
+      .top-title {
+        font-size: 0.75rem;
+      }
+      .top-hint {
+        font-size: 0.65rem;
+      }
+      .top-icon-bubble {
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
+      }
+      #digitFrameWrapper {
+        bottom: 3%;
+        width: min(52vmin, 260px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="top-icon-bubble" aria-hidden="true">🤔</div>
+        <div class="top-bar-text">
+          <div class="top-title">Tel met de stippen</div>
+          <div class="top-hint">
+            Leg een houten cijfer in het grote veld en til het weer op
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="playfield-wrapper">
+      <div id="playfield" class="playfield">
+        <div id="dotsLayer"></div>
+        <div id="questionMark">?</div>
+        <div id="feedback"></div>
+
+        <div id="digitFrameWrapper">
+          <img id="digitFrame" src="Kader.png" alt="">
+          <div id="digitDisplay"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const calibrationData = {
+      "0": { "digit": 0, "features": { "sides": [0.715461074017087, 0.9950773632389245, 1], "orientation": -1, "cosAngle": 0.352602837687961 } },
+      "1": { "digit": 1, "features": { "sides": [0.65386886727582, 0.8012487397336427, 1], "orientation": -1, "cosAngle": 0.06637001141033504 } },
+      "2": { "digit": 2, "features": { "sides": [0.5463885846491892, 0.8329809375972498, 1], "orientation": 1, "cosAngle": -0.008351735612709488 } },
+      "3": { "digit": 3, "features": { "sides": [0.6231614431278614, 0.8854770021392468, 1], "orientation": 1, "cosAngle": 0.15621713316790145 } },
+      "4": { "digit": 4, "features": { "sides": [0.6446253977720565, 0.8068207279245633, 1], "orientation": 1, "cosAngle": 0.06393189491376487 } },
+      "5": { "digit": 5, "features": { "sides": [0.578098663744437, 0.9900802023465352, 1], "orientation": -1, "cosAngle": 0.2747000589134239 } },
+      "6": { "digit": 6, "features": { "sides": [0.5266241982585108, 0.9146047923630635, 1], "orientation": 1, "cosAngle": 0.11817114057342183 } },
+      "7": { "digit": 7, "features": { "sides": [0.545770602434489, 0.8219769084984397, 1], "orientation": -1, "cosAngle": -0.029522705976313294 } },
+      "8": { "digit": 8, "features": { "sides": [0.6285031072231748, 0.9208765708239443, 1], "orientation": 1, "cosAngle": 0.20995233397308624 } },
+      "9": { "digit": 9, "features": { "sides": [0.528422226145079, 0.9262321314260327, 1], "orientation": -1, "cosAngle": 0.1400943420148673 } }
+    };
+
+    const DOT_SHOW_DURATION = 3000;
+    const SECOND_CHANCE_EXTRA = 1000;
+
+    const STABILITY_TIME = 280;          // ms dat de drie punten stabiel moeten blijven
+    const MAX_JITTER = 8;                // maximale verschuiving in pixels
+    const MATCH_THRESHOLD = 0.16;        // strengere drempel
+    const ORIENTATION_PENALTY = 0.8;     // straf bij andere oriëntatie
+    const SECOND_BEST_MARGIN = 0.015;    // verschil tussen beste en tweede match
+
+    const palettes = [
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fff1e6)', dot: '#f97316' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e4f7ec)', dot: '#16a34a' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fdf2ff)', dot: '#a855f7' }
+    ];
+
+    const playfield = document.getElementById('playfield');
+    const dotsLayer = document.getElementById('dotsLayer');
+    const questionMarkEl = document.getElementById('questionMark');
+    const feedbackEl = document.getElementById('feedback');
+    const digitDisplayEl = document.getElementById('digitDisplay');
+
+    let currentTarget = null;
+    let currentRoundId = 0;
+    let attemptCount = 0;
+    let dotsTimeoutId = null;
+
+    let currentDotsLayout = null;
+    let currentPaletteIndex = null;
+
+    let activeTouches = [];
+    let stableStartTime = null;
+    let stableBasePoints = null;
+    let detectionLocked = false;
+    let detectedDigit = null;
+    let detectionRoundId = null;
+
+    function distance(p1, p2) {
+      const dx = p1.x - p2.x;
+      const dy = p1.y - p2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return null;
+      const [p0, p1, p2] = points;
+
+      const d01 = distance(p0, p1);
+      const d12 = distance(p1, p2);
+      const d20 = distance(p2, p0);
+      const sides = [d01, d12, d20];
+      const maxSide = Math.max.apply(null, sides);
+
+      if (maxSide === 0) return null;
+
+      const normSides = sides.map(s => s / maxSide).sort((a, b) => a - b);
+
+      const idxMax = sides.indexOf(maxSide);
+      const otherIdx = [0, 1, 2].filter(i => i !== idxMax);
+      const a = sides[otherIdx[0]];
+      const b = sides[otherIdx[1]];
+      const c = maxSide;
+
+      let cosAngle = (a * a + b * b - c * c) / (2 * a * b);
+      if (!isFinite(cosAngle)) cosAngle = 1;
+      cosAngle = Math.max(-1, Math.min(1, cosAngle));
+
+      const cross = (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);
+      const orientation = cross >= 0 ? 1 : -1;
+
+      return {
+        sides: normSides,
+        orientation,
+        cosAngle
+      };
+    }
+
+    function compareFeatures(f1, f2) {
+      if (!f1 || !f2) return Number.POSITIVE_INFINITY;
+      const v1 = [f1.sides[0], f1.sides[1], f1.sides[2], f1.cosAngle];
+      const v2 = [f2.sides[0], f2.sides[1], f2.sides[2], f2.cosAngle];
+
+      let sumSq = 0;
+      for (let i = 0; i < 4; i++) {
+        const diff = v1[i] - v2[i];
+        sumSq += diff * diff;
+      }
+      let dist = Math.sqrt(sumSq);
+
+      if (f1.orientation !== f2.orientation) {
+        dist += ORIENTATION_PENALTY;
+      }
+      return dist;
+    }
+
+    function findBestMatch(currentFeatures, calibration) {
+      let bestDigit = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      let secondBestDistance = Number.POSITIVE_INFINITY;
+
+      for (const key in calibration) {
+        const entry = calibration[key];
+        const d = compareFeatures(currentFeatures, entry.features);
+
+        if (d < bestDistance) {
+          secondBestDistance = bestDistance;
+          bestDistance = d;
+          bestDigit = entry.digit;
+        } else if (d < secondBestDistance) {
+          secondBestDistance = d;
+        }
+      }
+
+      if (
+        bestDigit === null ||
+        bestDistance > MATCH_THRESHOLD ||
+        (secondBestDistance - bestDistance) < SECOND_BEST_MARGIN
+      ) {
+        return null;
+      }
+
+      return { digit: bestDigit, distance: bestDistance };
+    }
+
+    function handleTouchEvent(e) {
+      if (!playfield) return;
+      e.preventDefault();
+
+      const rect = playfield.getBoundingClientRect();
+      activeTouches = [];
+
+      for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        const x = t.clientX - rect.left;
+        const y = t.clientY - rect.top;
+
+        if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
+          activeTouches.push({
+            id: t.identifier,
+            x,
+            y
+          });
+        }
+      }
+
+      if (activeTouches.length === 3) {
+        if (!detectionLocked) {
+          const now = performance.now();
+
+          if (!stableStartTime || !stableBasePoints) {
+            stableStartTime = now;
+            stableBasePoints = activeTouches.map(p => ({ ...p }));
+          } else {
+            let maxMove = 0;
+
+            for (const active of activeTouches) {
+              const base = stableBasePoints.find(b => b.id === active.id);
+              if (!base) {
+                maxMove = Number.POSITIVE_INFINITY;
+                break;
+              }
+              const d = distance(active, base);
+              if (d > maxMove) maxMove = d;
+            }
+
+            if (maxMove > MAX_JITTER) {
+              stableStartTime = now;
+              stableBasePoints = activeTouches.map(p => ({ ...p }));
+            } else if (now - stableStartTime >= STABILITY_TIME) {
+              const points = activeTouches.map(p => ({ x: p.x, y: p.y }));
+              const features = computeFeatures(points);
+              const match = features ? findBestMatch(features, calibrationData) : null;
+
+              detectionLocked = true;
+              detectionRoundId = currentRoundId;
+              detectedDigit = match ? match.digit : null;
+
+              if (match && typeof match.digit === 'number') {
+                digitDisplayEl.textContent = String(match.digit);
+              } else {
+                digitDisplayEl.textContent = '';
+              }
+            }
+          }
+        }
+      } else {
+        stableStartTime = null;
+        stableBasePoints = null;
+
+        if (activeTouches.length === 0 && detectionLocked) {
+          if (detectionRoundId === currentRoundId) {
+            handleRecognizedDigit(detectedDigit);
+          }
+          detectionLocked = false;
+          detectedDigit = null;
+          detectionRoundId = null;
+          digitDisplayEl.textContent = '';
+        }
+      }
+    }
+
+    function handleRecognizedDigit(digit) {
+      const value = typeof digit === 'number' ? digit : null;
+      const isCorrect = value !== null && value === currentTarget;
+      processAnswer(isCorrect);
+    }
+
+    function processAnswer(isCorrect) {
+      attemptCount += 1;
+      clearTimeout(dotsTimeoutId);
+
+      if (isCorrect) {
+        showFeedback(true);
+        setTimeout(() => {
+          clearDots();
+          hideQuestion();
+          startNewRound();
+        }, 800);
+      } else {
+        showFeedback(false);
+        if (attemptCount === 1) {
+          setTimeout(() => {
+            hideFeedback();
+            renderDots(currentTarget, true);
+            scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
+          }, 700);
+        } else {
+          setTimeout(() => {
+            hideFeedback();
+            clearDots();
+            hideQuestion();
+            startNewRound();
+          }, 700);
+        }
+      }
+    }
+
+    function scheduleHideDots(duration) {
+      clearTimeout(dotsTimeoutId);
+      dotsTimeoutId = setTimeout(() => {
+        hideDotsShowQuestion();
+      }, duration);
+    }
+
+    function hideDotsShowQuestion() {
+      clearDots();
+      showQuestion();
+    }
+
+    function clearDots() {
+      if (dotsLayer) {
+        dotsLayer.innerHTML = '';
+      }
+    }
+
+    function showQuestion() {
+      if (questionMarkEl) {
+        questionMarkEl.classList.add('visible');
+      }
+    }
+
+    function hideQuestion() {
+      if (questionMarkEl) {
+        questionMarkEl.classList.remove('visible');
+      }
+    }
+
+    function showFeedback(success) {
+      if (!feedbackEl) return;
+      feedbackEl.className = '';
+      feedbackEl.id = 'feedback';
+
+      feedbackEl.textContent = success ? '😊' : '😟';
+      feedbackEl.classList.add('visible');
+      feedbackEl.classList.add(success ? 'feedback-success' : 'feedback-error');
+    }
+
+    function hideFeedback() {
+      if (!feedbackEl) return;
+      feedbackEl.className = '';
+      feedbackEl.id = 'feedback';
+      feedbackEl.textContent = '';
+    }
+
+    function getGroupSizes(n) {
+      if (n === 0) return [];
+      if (n === 1) return [1];
+
+      let groups;
+      switch (n) {
+        case 2:
+          groups = [1, 1];
+          break;
+        case 3:
+          groups = Math.random() < 0.5 ? [1, 2] : [2, 1];
+          break;
+        case 4:
+          groups = [2, 2];
+          break;
+        case 5:
+          groups = Math.random() < 0.5 ? [2, 3] : [3, 2];
+          break;
+        case 6:
+          groups = [3, 3];
+          break;
+        case 7:
+          groups = Math.random() < 0.5 ? [3, 4] : [4, 3];
+          break;
+        case 8:
+          if (Math.random() < 0.5) {
+            groups = [4, 4];
+          } else {
+            groups = Math.random() < 0.5 ? [5, 3] : [3, 5];
+          }
+          break;
+        case 9:
+          if (Math.random() < 0.5) {
+            groups = Math.random() < 0.5 ? [5, 4] : [4, 5];
+          } else {
+            groups = Math.random() < 0.5 ? [6, 3] : [3, 6];
+          }
+          break;
+        default:
+          groups = [Math.floor(n / 2), n - Math.floor(n / 2)];
+      }
+      return groups;
+    }
+
+    function getTwoGroupRects() {
+      const marginSide = 0.10;
+      const gap = 0.16;
+      const width = (1 - 2 * marginSide - gap) / 2;
+      const height = 0.72;
+      const top = 0.10;
+
+      const rect1 = { x: marginSide, y: top, width: width, height: height };
+      const rect2 = { x: marginSide + width + gap, y: top, width: width, height: height };
+      return [rect1, rect2];
+    }
+
+    function layoutDotsInGroup(size) {
+      const dots = [];
+      const jitter = () => (Math.random() - 0.5) * 0.03;
+
+      const xLeft = 0.46;
+      const xRight = 0.54;
+      const xMid = 0.5;
+
+      const yTop = 0.44;
+      const yMid = 0.5;
+      const yBottom = 0.56;
+
+      if (size === 1) {
+        dots.push({ x: xMid + jitter(), y: yMid + jitter() });
+      } else if (size === 2) {
+        if (Math.random() < 0.5) {
+          dots.push({ x: xLeft + jitter(), y: yMid + jitter() });
+          dots.push({ x: xRight + jitter(), y: yMid + jitter() });
+        } else {
+          dots.push({ x: xMid + jitter(), y: yTop + jitter() });
+          dots.push({ x: xMid + jitter(), y: yBottom + jitter() });
+        }
+      } else if (size === 3) {
+        dots.push({ x: xLeft + jitter(), y: yTop + jitter() });
+        dots.push({ x: xRight + jitter(), y: yTop + jitter() });
+        dots.push({ x: xMid + jitter(), y: yBottom + jitter() });
+      } else if (size === 4) {
+        dots.push({ x: xLeft + jitter(), y: yTop + jitter() });
+        dots.push({ x: xRight + jitter(), y: yTop + jitter() });
+        dots.push({ x: xLeft + jitter(), y: yBottom + jitter() });
+        dots.push({ x: xRight + jitter(), y: yBottom + jitter() });
+      } else if (size === 5) {
+        dots.push({ x: xLeft + jitter(), y: yTop + jitter() });
+        dots.push({ x: xRight + jitter(), y: yTop + jitter() });
+        dots.push({ x: xMid + jitter(), y: yMid + jitter() });
+        dots.push({ x: xLeft + jitter(), y: yBottom + jitter() });
+        dots.push({ x: xRight + jitter(), y: yBottom + jitter() });
+      } else if (size === 6) {
+        const yTop2 = 0.44;
+        const yMid2 = 0.5;
+        const yBottom2 = 0.56;
+        dots.push({ x: xLeft + jitter(), y: yTop2 + jitter() });
+        dots.push({ x: xLeft + jitter(), y: yMid2 + jitter() });
+        dots.push({ x: xLeft + jitter(), y: yBottom2 + jitter() });
+        dots.push({ x: xRight + jitter(), y: yTop2 + jitter() });
+        dots.push({ x: xRight + jitter(), y: yMid2 + jitter() });
+        dots.push({ x: xRight + jitter(), y: yBottom2 + jitter() });
+      }
+
+      return dots;
+    }
+
+    function generateDotsLayout(n) {
+      const positions = [];
+      if (n === 0) {
+        return positions;
+      }
+
+      if (n === 1) {
+        positions.push({ x: 0.5, y: 0.42 });
+        return positions;
+      }
+
+      const groupSizes = getGroupSizes(n);
+
+      if (groupSizes.length === 1) {
+        const rect = { x: 0.18, y: 0.12, width: 0.64, height: 0.64 };
+        const pattern = layoutDotsInGroup(groupSizes[0]);
+        pattern.forEach(p => {
+          positions.push({
+            x: rect.x + p.x * rect.width,
+            y: rect.y + p.y * rect.height
+          });
+        });
+      } else {
+        const [rect1, rect2] = getTwoGroupRects();
+        const rects = [rect1, rect2];
+
+        groupSizes.forEach((size, idx) => {
+          const rect = rects[idx];
+          const pattern = layoutDotsInGroup(size);
+          pattern.forEach(p => {
+            positions.push({
+              x: rect.x + p.x * rect.width,
+              y: rect.y + p.y * rect.height
+            });
+          });
+        });
+      }
+
+      return positions;
+    }
+
+    function renderDots(n, reuseLayout) {
+      clearDots();
+      hideQuestion();
+
+      let paletteIndex;
+      let positions;
+
+      if (reuseLayout && currentDotsLayout && typeof currentPaletteIndex === 'number') {
+        positions = currentDotsLayout;
+        paletteIndex = currentPaletteIndex;
+      } else {
+        paletteIndex = Math.floor(Math.random() * palettes.length);
+        positions = generateDotsLayout(n);
+        currentDotsLayout = positions;
+        currentPaletteIndex = paletteIndex;
+      }
+
+      const palette = palettes[paletteIndex];
+      playfield.style.background = palette.bg;
+
+      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.dot})`;
+
+      positions.forEach(pos => {
+        const dotEl = document.createElement('div');
+        dotEl.className = 'dot';
+        dotEl.style.left = (pos.x * 100).toFixed(2) + '%';
+        dotEl.style.top = (pos.y * 100).toFixed(2) + '%';
+        dotEl.style.background = gradient;
+        dotsLayer.appendChild(dotEl);
+      });
+    }
+
+    function startNewRound() {
+      currentRoundId += 1;
+      attemptCount = 0;
+      const n = Math.floor(Math.random() * 10);
+      currentTarget = n;
+      currentDotsLayout = null;
+      currentPaletteIndex = null;
+      digitDisplayEl.textContent = '';
+      hideFeedback();
+      renderDots(currentTarget, false);
+      scheduleHideDots(DOT_SHOW_DURATION);
+    }
+
+    function init() {
+      ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => {
+        playfield.addEventListener(type, handleTouchEvent, { passive: false });
+      });
+
+      startNewRound();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+            </html>
