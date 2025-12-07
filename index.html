@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Marbotic Telspel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
   <style>
     * {
       box-sizing: border-box;
@@ -96,7 +95,7 @@
       overflow: hidden;
       background: #e5f0ff;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
     }
 
@@ -105,40 +104,41 @@
       width: 100%;
       height: 100%;
       background: radial-gradient(circle at 0% 0%, #ffffff, #e5f0ff);
+      touch-action: none;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
     }
 
-    /* Vast kader: 300 x 428 px */
+    /* Vast kader, 300 x 428 px, dit is de scanzone */
     #scanFrame {
       position: relative;
       width: 300px;
       height: 428px;
-      border-radius: 24px;
+      border-radius: 32px;
       border: 3px dashed #9ca3af;
-      background: rgba(255,255,255,0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: none;
+      background: #ffffffee;
       box-shadow:
-        0 6px 18px rgba(15,23,42,0.18),
-        0 0 0 1px rgba(148,163,184,0.5);
+        0 14px 30px rgba(15, 23, 42, 0.12),
+        0 0 0 1px rgba(148, 163, 184, 0.4);
+      overflow: hidden;
     }
 
+    /* Binnenruimte voor stippen */
     #dotsLayer {
       position: absolute;
-      inset: 0;
+      left: 16px;
+      top: 16px;
+      right: 16px;
+      bottom: 16px;
       pointer-events: none;
     }
 
-    /* vaste stipgrootte zodat ze niet overlappen */
     .dot {
       position: absolute;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
       transform: translate(-50%, -50%);
       box-shadow:
         0 4px 10px rgba(15, 23, 42, 0.25),
@@ -151,7 +151,7 @@
       top: 50%;
       transform: translate(-50%, -50%);
       font-size: 70px;
-      color: rgba(15, 23, 42, 0.22);
+      color: rgba(148, 163, 184, 0.9);
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.18s ease;
       opacity: 0;
@@ -167,8 +167,8 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%) scale(0.7);
-      width: 150px;
-      height: 150px;
+      width: 160px;
+      height: 160px;
       border-radius: 999px;
       display: flex;
       align-items: center;
@@ -262,13 +262,15 @@
         <div class="top-icon-bubble" aria-hidden="true">🤔</div>
         <div class="top-bar-text">
           <div class="top-title">Tel met de stippen</div>
-          <div class="top-hint">Leg een houten cijfer in het kader en til het weer op</div>
+          <div class="top-hint">
+            Leg een houten cijfer in het kader en til het weer op
+          </div>
         </div>
       </div>
     </header>
 
     <main class="playfield-wrapper">
-      <div class="playfield">
+      <div id="playfield" class="playfield">
         <div id="scanFrame">
           <div id="dotsLayer"></div>
           <div id="questionMark">?</div>
@@ -279,7 +281,6 @@
   </div>
 
   <script>
-    /* kalibratiegegevens */
     const calibrationData = {
       "0": { "digit": 0, "features": { "sides": [0.715461074017087, 0.9950773632389245, 1], "orientation": -1, "cosAngle": 0.352602837687961 } },
       "1": { "digit": 1, "features": { "sides": [0.65386886727582, 0.8012487397336427, 1], "orientation": -1, "cosAngle": 0.06637001141033504 } },
@@ -293,26 +294,22 @@
       "9": { "digit": 9, "features": { "sides": [0.528422226145079, 0.9262321314260327, 1], "orientation": -1, "cosAngle": 0.1400943420148673 } }
     };
 
-    /* instellingen voor herkenning en tijd */
     const DOT_SHOW_DURATION = 3000;
     const SECOND_CHANCE_EXTRA = 1000;
 
-    const STABILITY_TIME = 280;      // ms stabiel blijven
-    const MAX_JITTER = 8;            // maximaal toegestane verschuiving in pixels
-    const MATCH_THRESHOLD = 0.16;    // strenge drempel voor match
-    const ORIENTATION_PENALTY = 0.8; // zware straf bij andere oriëntatie
-
-    const DOT_SIZE = 36;
-    const GROUP_MARGIN = 16;
-    const GROUP_GAP = 24;
+    const STABILITY_TIME = 280;      // ms stabiel
+    const MAX_JITTER = 8;           // pixels
+    const MATCH_THRESHOLD = 0.16;   // streng
+    const ORIENTATION_PENALTY = 0.8;
 
     const palettes = [
-      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
-      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fff1e6)', dot: '#f97316' },
-      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e4f7ec)', dot: '#16a34a' },
-      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fdf2ff)', dot: '#a855f7' }
+      { bg: '#2563eb' },
+      { bg: '#f97316' },
+      { bg: '#16a34a' },
+      { bg: '#a855f7' }
     ];
 
+    const playfield = document.getElementById('playfield');
     const scanFrame = document.getElementById('scanFrame');
     const dotsLayer = document.getElementById('dotsLayer');
     const questionMarkEl = document.getElementById('questionMark');
@@ -323,17 +320,14 @@
     let attemptCount = 0;
     let dotsTimeoutId = null;
 
+    let currentLayout = null; // posities en kleur van deze ronde
+
     let activeTouches = [];
     let stableStartTime = null;
     let stableBasePoints = null;
     let detectionLocked = false;
     let detectedDigit = null;
     let detectionRoundId = null;
-
-    let currentDotsLayout = null;  // array met posities in px
-    let currentPalette = null;
-
-    /* hulpfuncties */
 
     function distance(p1, p2) {
       const dx = p1.x - p2.x;
@@ -343,28 +337,17 @@
 
     function computeFeatures(points) {
       if (!points || points.length !== 3) return null;
-
-      // punten in vaste volgorde plaatsen voor stabiele oriëntatie
-      const cx = (points[0].x + points[1].x + points[2].x) / 3;
-      const cy = (points[0].y + points[1].y + points[2].y) / 3;
-      const sorted = points
-        .map(p => ({ p, angle: Math.atan2(p.y - cy, p.x - cx) }))
-        .sort((a, b) => a.angle - b.angle)
-        .map(item => item.p);
-
-      const [p0, p1, p2] = sorted;
+      const [p0, p1, p2] = points;
 
       const d01 = distance(p0, p1);
       const d12 = distance(p1, p2);
       const d20 = distance(p2, p0);
       const sides = [d01, d12, d20];
       const maxSide = Math.max.apply(null, sides);
-
       if (maxSide === 0) return null;
 
       const normSides = sides.map(s => s / maxSide).sort((a, b) => a - b);
 
-      // grootste hoek bepalen
       const idxMax = sides.indexOf(maxSide);
       const otherIdx = [0, 1, 2].filter(i => i !== idxMax);
       const a = sides[otherIdx[0]];
@@ -396,7 +379,6 @@
         sumSq += diff * diff;
       }
       let dist = Math.sqrt(sumSq);
-
       if (f1.orientation !== f2.orientation) {
         dist += ORIENTATION_PENALTY;
       }
@@ -406,17 +388,13 @@
     function findBestMatch(currentFeatures, calibration) {
       let bestDigit = null;
       let bestDistance = Number.POSITIVE_INFINITY;
-      let secondBest = Number.POSITIVE_INFINITY;
 
       for (const key in calibration) {
         const entry = calibration[key];
         const d = compareFeatures(currentFeatures, entry.features);
         if (d < bestDistance) {
-          secondBest = bestDistance;
           bestDistance = d;
           bestDigit = entry.digit;
-        } else if (d < secondBest) {
-          secondBest = d;
         }
       }
 
@@ -424,15 +402,8 @@
         return null;
       }
 
-      // extra veiligheidsmarge ten opzichte van de tweede kandidaat
-      if (secondBest - bestDistance < 0.03) {
-        return null;
-      }
-
       return { digit: bestDigit, distance: bestDistance };
     }
-
-    /* touchafhandeling op het kader */
 
     function handleTouchEvent(e) {
       if (!scanFrame) return;
@@ -456,9 +427,9 @@
       }
 
       if (activeTouches.length === 3) {
-        const now = performance.now();
-
         if (!detectionLocked) {
+          const now = performance.now();
+
           if (!stableStartTime || !stableBasePoints) {
             stableStartTime = now;
             stableBasePoints = activeTouches.map(p => ({ ...p }));
@@ -476,7 +447,6 @@
             }
 
             if (maxMove > MAX_JITTER) {
-              // opnieuw meten, punten zijn te veel verschoven
               stableStartTime = now;
               stableBasePoints = activeTouches.map(p => ({ ...p }));
             } else if (now - stableStartTime >= STABILITY_TIME) {
@@ -491,11 +461,9 @@
           }
         }
       } else {
-        // minder dan drie touches dan herstart de stabiliteitsmeting
         stableStartTime = null;
         stableBasePoints = null;
 
-        // als alle touches weg zijn dan antwoord controleren
         if (activeTouches.length === 0 && detectionLocked) {
           if (detectionRoundId === currentRoundId) {
             handleRecognizedDigit(detectedDigit);
@@ -529,9 +497,10 @@
         if (attemptCount === 1) {
           setTimeout(() => {
             hideFeedback();
-            // dezelfde stippenstructuur nogmaals tonen
-            renderDots(currentTarget, true);
-            scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
+            if (currentLayout) {
+              applyLayout(currentLayout);
+              scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
+            }
           }, 700);
         } else {
           setTimeout(() => {
@@ -591,7 +560,7 @@
       feedbackEl.textContent = '';
     }
 
-    /* groepslogica voor aantallen */
+    /* DOT LAY OUT LOGICA */
 
     function getGroupSizes(n) {
       if (n === 0) return [];
@@ -637,110 +606,121 @@
       return groups;
     }
 
-    function getTwoGroupRects(frameWidth, frameHeight) {
-      const marginSide = GROUP_MARGIN;
-      const gap = GROUP_GAP;
-      const availableWidth = frameWidth - 2 * marginSide - gap;
-      const width = availableWidth / 2;
-      const height = frameHeight - 2 * marginSide;
-      const top = GROUP_MARGIN;
+    // twee kolommen in het kader, met extra ruimte ertussen
+    function getTwoGroupRects() {
+      const inner = dotsLayer.getBoundingClientRect();
+      const width = inner.width;
+      const height = inner.height;
 
-      const rect1 = { x: marginSide, y: top, width: width, height: height };
-      const rect2 = { x: marginSide + width + gap, y: top, width: width, height: height };
+      const marginSide = 0.08 * width;
+      const gap = 0.12 * width;
+      const groupWidth = (width - 2 * marginSide - gap) / 2;
+      const top = 0.1 * height;
+      const groupHeight = 0.8 * height;
+
+      const rect1 = { x: marginSide, y: top, width: groupWidth, height: groupHeight };
+      const rect2 = { x: marginSide + groupWidth + gap, y: top, width: groupWidth, height: groupHeight };
       return [rect1, rect2];
     }
 
-    // patronen voor groepjes: dicht bij elkaar, dobbelsteenachtig waar mogelijk
-    const groupPatterns = {
-      1: { cols: 1, rows: 1, cells: [[0, 0]] },
-      2: { cols: 2, rows: 1, cells: [[0, 0], [1, 0]] },
-      3: { cols: 2, rows: 2, cells: [[0, 0], [1, 0], [0, 1]] },
-      4: { cols: 2, rows: 2, cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
-      5: { cols: 3, rows: 3, cells: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]] },
-      6: { cols: 2, rows: 3, cells: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]] }
-    };
-
+    // vaste rasters per groepsgrootte, stippen dicht bij elkaar, maar zonder overlap
     function layoutDotsInGroup(size, rect) {
-      const pattern = groupPatterns[size];
-      if (!pattern) return [];
+      const dots = [];
+      const cols = 3;
+      const rows = 3;
+      const cellW = rect.width / (cols + 1);
+      const cellH = rect.height / (rows + 1);
 
-      const { cols, rows, cells } = pattern;
-      const spacingX = rect.width / (cols + 1);
-      const spacingY = rect.height / (rows + 1);
-      const baseSpacing = Math.min(spacingX, spacingY);
+      // voor elke grootte kiezen we vaste cellen in dit 3 bij 3 raster
+      const cellPositionsBySize = {
+        1: [[1, 1]],
+        2: [[1, 1], [2, 1]],
+        3: [[0, 0], [2, 0], [1, 1]],
+        4: [[0, 0], [2, 0], [0, 2], [2, 2]],
+        5: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]],
+        6: [[0, 0], [1, 0], [2, 0], [0, 2], [1, 2], [2, 2]],
+        7: [[0, 0], [1, 0], [2, 0], [0, 1], [2, 1], [0, 2], [2, 2]],
+        8: [[0, 0], [1, 0], [2, 0], [0, 1], [2, 1], [0, 2], [1, 2], [2, 2]],
+        9: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]]
+      };
 
-      // klein beetje jitter om het minder strak te maken
-      const jitterMax = baseSpacing * 0.06;
+      const cells = cellPositionsBySize[size] || cellPositionsBySize[Math.min(size, 9)];
 
-      const positions = cells.map(([c, r]) => {
-        const cx = rect.x + (c + 1) * spacingX + (Math.random() - 0.5) * jitterMax;
-        const cy = rect.y + (r + 1) * spacingY + (Math.random() - 0.5) * jitterMax;
-        return { x: cx, y: cy };
+      cells.forEach(([cx, cy]) => {
+        dots.push({
+          x: rect.x + (cx + 1) * cellW,
+          y: rect.y + (cy + 1) * cellH
+        });
       });
 
-      return positions;
+      return dots;
     }
 
-    function generateDotsLayout(n, frameWidth, frameHeight) {
-      const positions = [];
-      if (n === 0) return positions;
+    function generateLayout(n) {
+      const layout = {
+        paletteIndex: Math.floor(Math.random() * palettes.length),
+        positions: []
+      };
 
-      if (n === 1) {
-        positions.push({
-          x: frameWidth / 2,
-          y: frameHeight / 2
-        });
-        return positions;
+      if (n === 0) {
+        return layout;
+      }
+
+      const innerRect = dotsLayer.getBoundingClientRect();
+      const inner = {
+        x: 0,
+        y: 0,
+        width: innerRect.width,
+        height: innerRect.height
+      };
+
+      if (n === 1 || n === 2) {
+        // alles in het middengebied
+        const rect = {
+          x: inner.width * 0.2,
+          y: inner.height * 0.25,
+          width: inner.width * 0.6,
+          height: inner.height * 0.5
+        };
+        const groupDots = layoutDotsInGroup(n, rect);
+        layout.positions = groupDots;
+        return layout;
       }
 
       const groupSizes = getGroupSizes(n);
 
       if (groupSizes.length === 1) {
         const rect = {
-          x: GROUP_MARGIN,
-          y: GROUP_MARGIN,
-          width: frameWidth - 2 * GROUP_MARGIN,
-          height: frameHeight - 2 * GROUP_MARGIN
+          x: inner.width * 0.15,
+          y: inner.height * 0.15,
+          width: inner.width * 0.7,
+          height: inner.height * 0.7
         };
-        const pts = layoutDotsInGroup(groupSizes[0], rect);
-        return pts;
+        const groupDots = layoutDotsInGroup(groupSizes[0], rect);
+        layout.positions = groupDots;
       } else {
-        const [rect1, rect2] = getTwoGroupRects(frameWidth, frameHeight);
-        const rects = [rect1, rect2];
-
+        const [r1, r2] = getTwoGroupRects();
+        const rects = [r1, r2];
+        const positions = [];
         groupSizes.forEach((size, idx) => {
-          const rect = rects[idx];
-          const pts = layoutDotsInGroup(size, rect);
-          pts.forEach(p => positions.push(p));
+          const groupDots = layoutDotsInGroup(size, rects[idx]);
+          positions.push(...groupDots);
         });
+        layout.positions = positions;
       }
 
-      return positions;
+      return layout;
     }
 
-    function renderDots(n, reuseLayout = false) {
+    function applyLayout(layout) {
       clearDots();
       hideQuestion();
+      if (!layout) return;
 
-      const frameRect = scanFrame.getBoundingClientRect();
+      const palette = palettes[layout.paletteIndex];
+      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.bg})`;
 
-      let palette = currentPalette;
-      let positions = currentDotsLayout;
-
-      if (!reuseLayout || !positions || positions.length !== n) {
-        palette = palettes[Math.floor(Math.random() * palettes.length)];
-        positions = generateDotsLayout(n, frameRect.width, frameRect.height);
-        currentDotsLayout = positions;
-        currentPalette = palette;
-      }
-
-      scanFrame.style.background = `radial-gradient(circle at 0% 0%, #ffffff, ${palette.bg.split(',')[2] || '#e5f0ff'})`;
-      // achtergrond van buitenveld zacht houden
-      document.querySelector('.playfield').style.background = palette.bg;
-
-      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.dot})`;
-
-      positions.forEach(pos => {
+      layout.positions.forEach(pos => {
         const dotEl = document.createElement('div');
         dotEl.className = 'dot';
         dotEl.style.left = pos.x + 'px';
@@ -753,19 +733,19 @@
     function startNewRound() {
       currentRoundId += 1;
       attemptCount = 0;
-      currentDotsLayout = null;
-      currentPalette = null;
-
       const n = Math.floor(Math.random() * 10);
       currentTarget = n;
       hideFeedback();
-      renderDots(currentTarget, false);
+
+      // layout berekenen op basis van werkelijke pixels van dotsLayer
+      currentLayout = generateLayout(currentTarget);
+      applyLayout(currentLayout);
       scheduleHideDots(DOT_SHOW_DURATION);
     }
 
     function init() {
       ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => {
-        scanFrame.addEventListener(type, handleTouchEvent, { passive: false });
+        playfield.addEventListener(type, handleTouchEvent, { passive: false });
       });
 
       startNewRound();
