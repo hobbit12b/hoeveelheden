@@ -2,8 +2,9 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Marbotic Telspel met kader</title>
+  <title>Marbotic Telspel met Kader</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
   <style>
     * {
       box-sizing: border-box;
@@ -95,7 +96,7 @@
       overflow: hidden;
       background: #e5f0ff;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
     }
 
@@ -105,43 +106,37 @@
       height: 100%;
       background: radial-gradient(circle at 0% 0%, #ffffff, #e5f0ff);
       touch-action: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
-    /* Kader: 6 bij 8 cm verhouding, met schaal om op elk scherm te passen */
-    #frame {
-      position: relative;
-      width: 6cm;                 /* logische maat, niet fysiek betrouwbaar op telefoon */
-      height: 8cm;
-      border-radius: 26px;
+    /* Kader waar cijfer en stippen in komen, tegelijk scanzone */
+    #scanFrame {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 32px;
       border: 4px dashed #9ca3af;
-      background: #ffffff;
-      overflow: hidden;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: inset 0 0 0 2px rgba(148, 163, 184, 0.35);
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      /* schaal wordt via JS aangepast zodat het kader in het scherm past */
-      transform-origin: center center;
-    }
-
-    #frameInner {
-      position: relative;
-      width: 100%;
-      height: 100%;
+      overflow: hidden;
+      /* basisformaat, in script vervangen zodat verhouding 6 bij 8 blijft */
+      width: 60mm;
+      height: 80mm;
+      max-width: 80vw;
+      max-height: 80vh;
     }
 
     #dotsLayer {
-      position: absolute;
-      inset: 0;
+      position: relative;
+      flex: 1;
       pointer-events: none;
     }
 
     .dot {
       position: absolute;
-      width: min(9vmin, 60px);
-      height: min(9vmin, 60px);
       border-radius: 999px;
       transform: translate(-50%, -50%);
       box-shadow:
@@ -154,7 +149,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      font-size: min(14vmin, 90px);
+      font-size: min(15vmin, 110px);
       color: rgba(15, 23, 42, 0.18);
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.18s ease;
@@ -235,6 +230,10 @@
       100% { transform: translate(-50%, -50%) rotate(0deg); }
     }
 
+    .hidden {
+      display: none;
+    }
+
     @media (max-height: 640px) {
       .top-bar {
         min-height: 56px;
@@ -263,7 +262,7 @@
         <div class="top-bar-text">
           <div class="top-title">Tel met de stippen</div>
           <div class="top-hint">
-            Leg een houten cijfer in het veld en til het weer op
+            Leg een houten cijfer in het kader en til het weer op
           </div>
         </div>
       </div>
@@ -271,19 +270,17 @@
 
     <main class="playfield-wrapper">
       <div id="playfield" class="playfield">
-        <div id="frame">
-          <div id="frameInner">
-            <div id="dotsLayer"></div>
-            <div id="questionMark">?</div>
-            <div id="feedback"></div>
-          </div>
+        <div id="scanFrame">
+          <div id="dotsLayer"></div>
+          <div id="questionMark">?</div>
+          <div id="feedback"></div>
         </div>
       </div>
     </main>
   </div>
 
   <script>
-    /* Kalibratiegegevens */
+    /* Kalibratie Marbotic cijfers */
     const calibrationData = {
       "0": { "digit": 0, "features": { "sides": [0.715461074017087, 0.9950773632389245, 1], "orientation": -1, "cosAngle": 0.352602837687961 } },
       "1": { "digit": 1, "features": { "sides": [0.65386886727582, 0.8012487397336427, 1], "orientation": -1, "cosAngle": 0.06637001141033504 } },
@@ -297,13 +294,20 @@
       "9": { "digit": 9, "features": { "sides": [0.528422226145079, 0.9262321314260327, 1], "orientation": -1, "cosAngle": 0.1400943420148673 } }
     };
 
-    /* Scannen, jouw strengere waarden */
-    const DOT_SHOW_DURATION = 3000;
-    const SECOND_CHANCE_EXTRA = 1000;
-    const STABLE_TIME_MS = 280;      // hoe lang drie punten stabiel moeten zijn
-    const MOVE_THRESHOLD_PX = 8;     // max verschuiving in pixels
-    const MATCH_THRESHOLD = 0.16;    // strenger dan 0.20
-    const ORIENTATION_PENALTY = 0.8; // zwaardere straf bij andere oriëntatie
+    /* Timings en drempels voor stabiel scannen */
+    const DOT_SHOW_DURATION = 3000;         // eerste toontijd stippen
+    const SECOND_CHANCE_EXTRA = 1000;       // extra tijd bij tweede kans
+    const STABILITY_TIME = 280;             // hoe lang drie punten stabiel moeten blijven
+    const MAX_JITTER = 8;                   // maximale verschuiving in pixels
+    const MATCH_THRESHOLD = 0.16;           // strengere matchdrempel
+    const ORIENTATION_PENALTY = 0.05;       // kleine straf, zodat rotatie minder pijn doet
+
+    /* Schaal van het kader in pixels. De verhouding 6 bij 8 blijft altijd gelijk.
+       FRAME_SCALE kun je aanpassen als je met een lineaal meet op een specifiek apparaat. */
+    const FRAME_BASE_WIDTH_CM = 6;
+    const FRAME_BASE_HEIGHT_CM = 8;
+    const CSS_CM_TO_PX = 37.7952755906;   // 1 cm in CSS pixels
+    const FRAME_SCALE = 1;                // eventueel afstellen per toestel
 
     const palettes = [
       { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
@@ -313,7 +317,7 @@
     ];
 
     const playfield = document.getElementById('playfield');
-    const frame = document.getElementById('frame');
+    const scanFrame = document.getElementById('scanFrame');
     const dotsLayer = document.getElementById('dotsLayer');
     const questionMarkEl = document.getElementById('questionMark');
     const feedbackEl = document.getElementById('feedback');
@@ -409,10 +413,10 @@
     }
 
     function handleTouchEvent(e) {
-      if (!frame) return;
+      if (!scanFrame) return;
       e.preventDefault();
 
-      const rect = frame.getBoundingClientRect();
+      const rect = scanFrame.getBoundingClientRect();
       activeTouches = [];
 
       for (let i = 0; i < e.touches.length; i++) {
@@ -449,10 +453,10 @@
               if (d > maxMove) maxMove = d;
             }
 
-            if (maxMove > MOVE_THRESHOLD_PX) {
+            if (maxMove > MAX_JITTER) {
               stableStartTime = now;
               stableBasePoints = activeTouches.map(p => ({ ...p }));
-            } else if (now - stableStartTime >= STABLE_TIME_MS) {
+            } else if (now - stableStartTime >= STABILITY_TIME) {
               const points = activeTouches.map(p => ({ x: p.x, y: p.y }));
               const features = computeFeatures(points);
               const match = features ? findBestMatch(features, calibrationData) : null;
@@ -547,8 +551,6 @@
     function showFeedback(success) {
       if (!feedbackEl) return;
       feedbackEl.className = '';
-      feedbackEl.id = 'feedback';
-
       feedbackEl.textContent = success ? '😊' : '😟';
       feedbackEl.classList.add('visible');
       feedbackEl.classList.add(success ? 'feedback-success' : 'feedback-error');
@@ -557,11 +559,10 @@
     function hideFeedback() {
       if (!feedbackEl) return;
       feedbackEl.className = '';
-      feedbackEl.id = 'feedback';
       feedbackEl.textContent = '';
     }
 
-    /* Groepjeslogica, stippen dicht bij elkaar in een groepje */
+    /* Groeplogica 0 tot en met 9 */
     function getGroupSizes(n) {
       if (n === 0) return [];
       if (n === 1) return [1];
@@ -608,7 +609,7 @@
 
     function getTwoGroupRects() {
       const marginSide = 0.08;
-      const gap = 0.12;
+      const gap = 0.10;
       const width = (1 - 2 * marginSide - gap) / 2;
       const height = 0.76;
       const top = 0.12;
@@ -618,40 +619,42 @@
       return [rect1, rect2];
     }
 
+    /* Compacte patronen binnen een groep, horizontaal en verticaal dicht bij elkaar */
     function layoutDotsInGroup(size) {
       const dots = [];
-      const jitter = () => (Math.random() - 0.5) * 0.02; // klein jitter, groepjes blijven compact
 
-      // basisposities dichter bij elkaar: 0.45 en 0.55 enzovoort
-      if (size === 1) {
-        dots.push({ x: 0.5, y: 0.5 });
-      } else if (size === 2) {
-        dots.push({ x: 0.45 + jitter(), y: 0.5 + jitter() });
-        dots.push({ x: 0.55 + jitter(), y: 0.5 + jitter() });
-      } else if (size === 3) {
-        dots.push({ x: 0.45 + jitter(), y: 0.46 + jitter() });
-        dots.push({ x: 0.55 + jitter(), y: 0.46 + jitter() });
-        dots.push({ x: 0.5 + jitter(), y: 0.56 + jitter() });
-      } else if (size === 4) {
-        dots.push({ x: 0.45 + jitter(), y: 0.46 + jitter() });
-        dots.push({ x: 0.55 + jitter(), y: 0.46 + jitter() });
-        dots.push({ x: 0.45 + jitter(), y: 0.56 + jitter() });
-        dots.push({ x: 0.55 + jitter(), y: 0.56 + jitter() });
-      } else if (size === 5) {
-        dots.push({ x: 0.45 + jitter(), y: 0.44 + jitter() });
-        dots.push({ x: 0.55 + jitter(), y: 0.44 + jitter() });
-        dots.push({ x: 0.5 + jitter(),  y: 0.50 + jitter() });
-        dots.push({ x: 0.45 + jitter(), y: 0.56 + jitter() });
-        dots.push({ x: 0.55 + jitter(), y: 0.56 + jitter() });
-      } else if (size === 6) {
-        dots.push({ x: 0.44 + jitter(), y: 0.44 + jitter() });
-        dots.push({ x: 0.44 + jitter(), y: 0.50 + jitter() });
-        dots.push({ x: 0.44 + jitter(), y: 0.56 + jitter() });
-        dots.push({ x: 0.56 + jitter(), y: 0.44 + jitter() });
-        dots.push({ x: 0.56 + jitter(), y: 0.50 + jitter() });
-        dots.push({ x: 0.56 + jitter(), y: 0.56 + jitter() });
+      function add(x, y) {
+        dots.push({ x, y });
       }
 
+      if (size === 1) {
+        add(0.5, 0.5);
+      } else if (size === 2) {
+        add(0.4, 0.5);
+        add(0.6, 0.5);
+      } else if (size === 3) {
+        add(0.4, 0.45);
+        add(0.6, 0.45);
+        add(0.5, 0.63);
+      } else if (size === 4) {
+        add(0.4, 0.42);
+        add(0.6, 0.42);
+        add(0.4, 0.66);
+        add(0.6, 0.66);
+      } else if (size === 5) {
+        add(0.4, 0.35);
+        add(0.6, 0.35);
+        add(0.5, 0.52);
+        add(0.4, 0.69);
+        add(0.6, 0.69);
+      } else if (size === 6) {
+        add(0.4, 0.35);
+        add(0.4, 0.52);
+        add(0.4, 0.69);
+        add(0.6, 0.35);
+        add(0.6, 0.52);
+        add(0.6, 0.69);
+      }
       return dots;
     }
 
@@ -703,12 +706,36 @@
       const palette = palettes[Math.floor(Math.random() * palettes.length)];
       playfield.style.background = palette.bg;
 
+      const frameRect = scanFrame.getBoundingClientRect();
       const positions = generateDotsLayout(n);
       const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.dot})`;
 
-      positions.forEach(pos => {
+      const dotDiameter = frameRect.width * 0.07; // compact, geen overlap
+      const minDist = dotDiameter * 1.02;
+
+      positions.forEach((pos, index) => {
+        // check op overlap met eerder geplaatste stippen
+        let cx = pos.x * frameRect.width;
+        let cy = pos.y * frameRect.height;
+        for (let i = 0; i < index; i++) {
+          const prev = positions[i];
+          const pcx = prev.x * frameRect.width;
+          const pcy = prev.y * frameRect.height;
+          const d = Math.sqrt((cx - pcx) * (cx - pcx) + (cy - pcy) * (cy - pcy));
+          if (d < minDist) {
+            const angle = Math.random() * Math.PI * 2;
+            const shift = (minDist - d) * 1.1;
+            cx += Math.cos(angle) * shift;
+            cy += Math.sin(angle) * shift;
+            pos.x = cx / frameRect.width;
+            pos.y = cy / frameRect.height;
+          }
+        }
+
         const dotEl = document.createElement('div');
         dotEl.className = 'dot';
+        dotEl.style.width = dotDiameter + 'px';
+        dotEl.style.height = dotDiameter + 'px';
         dotEl.style.left = (pos.x * 100).toFixed(2) + '%';
         dotEl.style.top = (pos.y * 100).toFixed(2) + '%';
         dotEl.style.background = gradient;
@@ -726,29 +753,36 @@
       scheduleHideDots(DOT_SHOW_DURATION);
     }
 
-    /* Kader automatisch schalen zodat het binnen het scherm past
-       De verhouding blijft 6 bij 8, fysieke centimeters verschillen per toestel */
-    function resizeFrame() {
-      const wrapperRect = playfield.getBoundingClientRect();
-      const frameRect = frame.getBoundingClientRect();
+    function setFrameSize() {
+      const pxWidth = FRAME_BASE_WIDTH_CM * CSS_CM_TO_PX * FRAME_SCALE;
+      const pxHeight = FRAME_BASE_HEIGHT_CM * CSS_CM_TO_PX * FRAME_SCALE;
+      const maxW = window.innerWidth * 0.86;
+      const maxH = window.innerHeight * 0.76;
 
-      const scaleX = wrapperRect.width * 0.9 / frameRect.width;
-      const scaleY = wrapperRect.height * 0.9 / frameRect.height;
-      const scale = Math.min(scaleX, scaleY);
+      let w = pxWidth;
+      let h = pxHeight;
 
-      frame.style.transform = `scale(${scale})`;
+      const scale = Math.min(maxW / w, maxH / h, 1);
+      w *= scale;
+      h *= scale;
+
+      scanFrame.style.width = w + 'px';
+      scanFrame.style.height = h + 'px';
     }
 
     function init() {
+      setFrameSize();
+
       ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => {
-        playfield.addEventListener(type, handleTouchEvent, { passive: false });
+        scanFrame.addEventListener(type, handleTouchEvent, { passive: false });
       });
 
       window.addEventListener('resize', () => {
-        resizeFrame();
+        setFrameSize();
+        // na resize stippen opnieuw tekenen voor juiste posities
+        renderDots(currentTarget);
       });
 
-      resizeFrame();
       startNewRound();
     }
 
