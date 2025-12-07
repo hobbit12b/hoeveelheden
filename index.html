@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Marbotic Telspel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
   <style>
     * {
       box-sizing: border-box;
@@ -108,6 +107,23 @@
       touch-action: none;
     }
 
+    /* Kader van exact 6 cm breed en 8 cm hoog, met stippen en cijfer erin */
+    #frame {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 6cm;
+      height: 8cm;
+      border-radius: 28px;
+      border: 4px dashed #9ca3af;
+      background: radial-gradient(circle at 0% 0%, #ffffff, #f3f4ff);
+      box-shadow:
+        0 10px 28px rgba(15, 23, 42, 0.2),
+        0 0 0 3px rgba(148, 163, 184, 0.35);
+      overflow: hidden;
+    }
+
     #dotsLayer {
       position: absolute;
       inset: 0;
@@ -116,8 +132,8 @@
 
     .dot {
       position: absolute;
-      width: min(9vmin, 70px);
-      height: min(9vmin, 70px);
+      width: min(7vmin, 54px);
+      height: min(7vmin, 54px);
       border-radius: 999px;
       transform: translate(-50%, -50%);
       box-shadow:
@@ -130,7 +146,7 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      font-size: min(15vmin, 110px);
+      font-size: min(15vmin, 90px);
       color: rgba(15, 23, 42, 0.18);
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.18s ease;
@@ -147,13 +163,13 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%) scale(0.7);
-      width: min(36vmin, 180px);
-      height: min(36vmin, 180px);
+      width: min(36vmin, 160px);
+      height: min(36vmin, 160px);
       border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: min(14vmin, 90px);
+      font-size: min(14vmin, 84px);
       color: white;
       pointer-events: none;
       opacity: 0;
@@ -215,34 +231,6 @@
       display: none;
     }
 
-    /* frame voor getalweergave */
-
-    #digitFrameWrapper {
-      position: absolute;
-      bottom: 5%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(60vmin, 320px);
-      pointer-events: none;
-    }
-
-    #digitFrame {
-      width: 100%;
-      display: block;
-    }
-
-    #digitDisplay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: min(18vmin, 120px);
-      font-weight: 700;
-      color: #374151;
-      text-align: center;
-      line-height: 1;
-    }
-
     @media (max-height: 640px) {
       .top-bar {
         min-height: 56px;
@@ -260,14 +248,9 @@
         height: 28px;
         font-size: 1.1rem;
       }
-      #digitFrameWrapper {
-        bottom: 3%;
-        width: min(52vmin, 260px);
-      }
     }
   </style>
 </head>
-
 <body>
   <div class="app">
     <header class="top-bar">
@@ -284,13 +267,10 @@
 
     <main class="playfield-wrapper">
       <div id="playfield" class="playfield">
-        <div id="dotsLayer"></div>
-        <div id="questionMark">?</div>
-        <div id="feedback"></div>
-
-        <div id="digitFrameWrapper">
-          <img id="digitFrame" src="Kader.png" alt="">
-          <div id="digitDisplay"></div>
+        <div id="frame">
+          <div id="dotsLayer"></div>
+          <div id="questionMark">?</div>
+          <div id="feedback"></div>
         </div>
       </div>
     </main>
@@ -313,11 +293,10 @@
     const DOT_SHOW_DURATION = 3000;
     const SECOND_CHANCE_EXTRA = 1000;
 
-    const STABILITY_TIME = 280;          // ms dat de drie punten stabiel moeten blijven
-    const MAX_JITTER = 8;                // maximale verschuiving in pixels
-    const MATCH_THRESHOLD = 0.16;        // strengere drempel
-    const ORIENTATION_PENALTY = 0.8;     // straf bij andere oriëntatie
-    const SECOND_BEST_MARGIN = 0.015;    // verschil tussen beste en tweede match
+    const STABILITY_TIME = 280;       // ms stabiel nodig
+    const MAX_JITTER = 8;             // max verschuiving in pixels
+    const MATCH_THRESHOLD = 0.16;     // strengere drempel
+    const ORIENTATION_PENALTY = 0.8;  // zwaardere straf bij andere oriëntatie
 
     const palettes = [
       { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
@@ -327,18 +306,15 @@
     ];
 
     const playfield = document.getElementById('playfield');
+    const frame = document.getElementById('frame');
     const dotsLayer = document.getElementById('dotsLayer');
     const questionMarkEl = document.getElementById('questionMark');
     const feedbackEl = document.getElementById('feedback');
-    const digitDisplayEl = document.getElementById('digitDisplay');
 
     let currentTarget = null;
     let currentRoundId = 0;
     let attemptCount = 0;
     let dotsTimeoutId = null;
-
-    let currentDotsLayout = null;
-    let currentPaletteIndex = null;
 
     let activeTouches = [];
     let stableStartTime = null;
@@ -346,6 +322,9 @@
     let detectionLocked = false;
     let detectedDigit = null;
     let detectionRoundId = null;
+
+    let currentPalette = palettes[0];
+    let currentDotPositions = [];
 
     function distance(p1, p2) {
       const dx = p1.x - p2.x;
@@ -408,26 +387,17 @@
     function findBestMatch(currentFeatures, calibration) {
       let bestDigit = null;
       let bestDistance = Number.POSITIVE_INFINITY;
-      let secondBestDistance = Number.POSITIVE_INFINITY;
 
       for (const key in calibration) {
         const entry = calibration[key];
         const d = compareFeatures(currentFeatures, entry.features);
-
         if (d < bestDistance) {
-          secondBestDistance = bestDistance;
           bestDistance = d;
           bestDigit = entry.digit;
-        } else if (d < secondBestDistance) {
-          secondBestDistance = d;
         }
       }
 
-      if (
-        bestDigit === null ||
-        bestDistance > MATCH_THRESHOLD ||
-        (secondBestDistance - bestDistance) < SECOND_BEST_MARGIN
-      ) {
+      if (bestDigit === null || bestDistance > MATCH_THRESHOLD) {
         return null;
       }
 
@@ -435,10 +405,10 @@
     }
 
     function handleTouchEvent(e) {
-      if (!playfield) return;
+      if (!frame) return;
       e.preventDefault();
 
-      const rect = playfield.getBoundingClientRect();
+      const rect = frame.getBoundingClientRect();
       activeTouches = [];
 
       for (let i = 0; i < e.touches.length; i++) {
@@ -486,12 +456,6 @@
               detectionLocked = true;
               detectionRoundId = currentRoundId;
               detectedDigit = match ? match.digit : null;
-
-              if (match && typeof match.digit === 'number') {
-                digitDisplayEl.textContent = String(match.digit);
-              } else {
-                digitDisplayEl.textContent = '';
-              }
             }
           }
         }
@@ -506,7 +470,6 @@
           detectionLocked = false;
           detectedDigit = null;
           detectionRoundId = null;
-          digitDisplayEl.textContent = '';
         }
       }
     }
@@ -533,7 +496,7 @@
         if (attemptCount === 1) {
           setTimeout(() => {
             hideFeedback();
-            renderDots(currentTarget, true);
+            renderCurrentDots(); // zelfde patroon opnieuw
             scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
           }, 700);
         } else {
@@ -639,64 +602,68 @@
     }
 
     function getTwoGroupRects() {
-      const marginSide = 0.10;
-      const gap = 0.16;
+      const marginSide = 0.08;
+      const gap = 0.10;
       const width = (1 - 2 * marginSide - gap) / 2;
-      const height = 0.72;
-      const top = 0.10;
+      const height = 0.76;
+      const top = 0.12;
 
       const rect1 = { x: marginSide, y: top, width: width, height: height };
       const rect2 = { x: marginSide + width + gap, y: top, width: width, height: height };
       return [rect1, rect2];
     }
 
+    // binnen een groepje horizontaal en verticaal dicht bij elkaar
     function layoutDotsInGroup(size) {
       const dots = [];
-      const jitter = () => (Math.random() - 0.5) * 0.03;
+      const jitter = () => (Math.random() - 0.5) * 0.03; // kleine variatie
 
-      const xLeft = 0.46;
-      const xRight = 0.54;
-      const xMid = 0.5;
+      const colLeft = 0.38;
+      const colRight = 0.62;
+      const centerX = 0.50;
 
-      const yTop = 0.44;
-      const yMid = 0.5;
-      const yBottom = 0.56;
+      const rowTop = 0.46;
+      const rowMid = 0.50;
+      const rowBottom = 0.54;
 
       if (size === 1) {
-        dots.push({ x: xMid + jitter(), y: yMid + jitter() });
+        dots.push({ x: centerX + jitter(), y: rowMid + jitter() });
       } else if (size === 2) {
-        if (Math.random() < 0.5) {
-          dots.push({ x: xLeft + jitter(), y: yMid + jitter() });
-          dots.push({ x: xRight + jitter(), y: yMid + jitter() });
-        } else {
-          dots.push({ x: xMid + jitter(), y: yTop + jitter() });
-          dots.push({ x: xMid + jitter(), y: yBottom + jitter() });
-        }
+        dots.push({ x: colLeft + jitter(), y: rowMid + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowMid + jitter() });
       } else if (size === 3) {
-        dots.push({ x: xLeft + jitter(), y: yTop + jitter() });
-        dots.push({ x: xRight + jitter(), y: yTop + jitter() });
-        dots.push({ x: xMid + jitter(), y: yBottom + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowTop + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowTop + jitter() });
+        dots.push({ x: centerX + jitter(), y: rowBottom + jitter() });
       } else if (size === 4) {
-        dots.push({ x: xLeft + jitter(), y: yTop + jitter() });
-        dots.push({ x: xRight + jitter(), y: yTop + jitter() });
-        dots.push({ x: xLeft + jitter(), y: yBottom + jitter() });
-        dots.push({ x: xRight + jitter(), y: yBottom + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowTop + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowTop + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowBottom + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowBottom + jitter() });
       } else if (size === 5) {
-        dots.push({ x: xLeft + jitter(), y: yTop + jitter() });
-        dots.push({ x: xRight + jitter(), y: yTop + jitter() });
-        dots.push({ x: xMid + jitter(), y: yMid + jitter() });
-        dots.push({ x: xLeft + jitter(), y: yBottom + jitter() });
-        dots.push({ x: xRight + jitter(), y: yBottom + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowTop + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowTop + jitter() });
+        dots.push({ x: centerX + jitter(), y: rowMid + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowBottom + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowBottom + jitter() });
       } else if (size === 6) {
-        const yTop2 = 0.44;
-        const yMid2 = 0.5;
-        const yBottom2 = 0.56;
-        dots.push({ x: xLeft + jitter(), y: yTop2 + jitter() });
-        dots.push({ x: xLeft + jitter(), y: yMid2 + jitter() });
-        dots.push({ x: xLeft + jitter(), y: yBottom2 + jitter() });
-        dots.push({ x: xRight + jitter(), y: yTop2 + jitter() });
-        dots.push({ x: xRight + jitter(), y: yMid2 + jitter() });
-        dots.push({ x: xRight + jitter(), y: yBottom2 + jitter() });
+        const rowTopTight = 0.46;
+        const rowMidTight = 0.50;
+        const rowBottomTight = 0.54;
+        dots.push({ x: colLeft + jitter(), y: rowTopTight + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowMidTight + jitter() });
+        dots.push({ x: colLeft + jitter(), y: rowBottomTight + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowTopTight + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowMidTight + jitter() });
+        dots.push({ x: colRight + jitter(), y: rowBottomTight + jitter() });
+      } else {
+        // fallback voor onverwachte waarden, compacte wolk
+        for (let i = 0; i < size; i++) {
+          dots.push({
+            x: centerX + (Math.random() - 0.5) * 0.18,
+            y: rowMid + (Math.random() - 0.5) * 0.18
+          });
+        }
       }
 
       return dots;
@@ -709,14 +676,14 @@
       }
 
       if (n === 1) {
-        positions.push({ x: 0.5, y: 0.42 });
+        positions.push({ x: 0.5, y: 0.5 });
         return positions;
       }
 
       const groupSizes = getGroupSizes(n);
 
       if (groupSizes.length === 1) {
-        const rect = { x: 0.18, y: 0.12, width: 0.64, height: 0.64 };
+        const rect = { x: 0.1, y: 0.12, width: 0.8, height: 0.76 };
         const pattern = layoutDotsInGroup(groupSizes[0]);
         pattern.forEach(p => {
           positions.push({
@@ -743,29 +710,15 @@
       return positions;
     }
 
-    function renderDots(n, reuseLayout) {
+    function renderCurrentDots() {
       clearDots();
       hideQuestion();
 
-      let paletteIndex;
-      let positions;
+      frame.style.background = currentPalette.bg;
 
-      if (reuseLayout && currentDotsLayout && typeof currentPaletteIndex === 'number') {
-        positions = currentDotsLayout;
-        paletteIndex = currentPaletteIndex;
-      } else {
-        paletteIndex = Math.floor(Math.random() * palettes.length);
-        positions = generateDotsLayout(n);
-        currentDotsLayout = positions;
-        currentPaletteIndex = paletteIndex;
-      }
+      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${currentPalette.dot})`;
 
-      const palette = palettes[paletteIndex];
-      playfield.style.background = palette.bg;
-
-      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.dot})`;
-
-      positions.forEach(pos => {
+      currentDotPositions.forEach(pos => {
         const dotEl = document.createElement('div');
         dotEl.className = 'dot';
         dotEl.style.left = (pos.x * 100).toFixed(2) + '%';
@@ -775,16 +728,19 @@
       });
     }
 
+    function prepareLayoutForCurrentTarget() {
+      currentPalette = palettes[Math.floor(Math.random() * palettes.length)];
+      currentDotPositions = generateDotsLayout(currentTarget);
+    }
+
     function startNewRound() {
       currentRoundId += 1;
       attemptCount = 0;
+      hideFeedback();
       const n = Math.floor(Math.random() * 10);
       currentTarget = n;
-      currentDotsLayout = null;
-      currentPaletteIndex = null;
-      digitDisplayEl.textContent = '';
-      hideFeedback();
-      renderDots(currentTarget, false);
+      prepareLayoutForCurrentTarget();
+      renderCurrentDots();
       scheduleHideDots(DOT_SHOW_DURATION);
     }
 
@@ -803,4 +759,4 @@
     }
   </script>
 </body>
-            </html>
+</html>
