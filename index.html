@@ -57,4 +57,720 @@
     }
 
     .top-icon-bubble {
-      width:
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #c7d2fe);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .top-bar-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.1rem;
+    }
+
+    .top-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .top-hint {
+      font-size: 0.7rem;
+      color: #6b7280;
+      line-height: 1.2;
+    }
+
+    .playfield-wrapper {
+      flex: 1 1 auto;
+      margin-top: 0.7rem;
+      border-radius: 22px;
+      box-shadow:
+        0 14px 40px rgba(15, 23, 42, 0.22),
+        0 2px 6px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      background: #e5f0ff;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .playfield {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 0% 0%, #ffffff, #fdf4ec);
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Kader dat ongeveer 6x8 cm is, maar nooit piepklein */
+    #scanFrame {
+      position: relative;
+      /* voorkeur: 6 cm breed */
+      width: min(80vw, max(6cm, 260px));
+      /* verhouding 3:4 zodat 6x8 cm klopt */
+      aspect-ratio: 3 / 4;
+      max-height: min(80vh, 8cm);
+      border-radius: 24px;
+      border: 4px dashed #9ca3af;
+      background: #fdf9f4;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #dotsLayer {
+      position: absolute;
+      inset: 10% 10%;
+      pointer-events: none;
+    }
+
+    .dot {
+      position: absolute;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      box-shadow:
+        0 4px 10px rgba(15, 23, 42, 0.25),
+        inset 0 2px 3px rgba(255, 255, 255, 0.7);
+    }
+
+    #questionMark {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: min(16vmin, 110px);
+      color: rgba(15, 23, 42, 0.25);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      opacity: 0;
+    }
+
+    #questionMark.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #feedback {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      width: min(36vmin, 180px);
+      height: min(36vmin, 180px);
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: min(14vmin, 90px);
+      color: white;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    #feedback.visible {
+      opacity: 1;
+    }
+
+    .feedback-success {
+      background: radial-gradient(circle at 30% 20%, #bbf7d0, #16a34a);
+      box-shadow:
+        0 10px 28px rgba(22, 163, 74, 0.55),
+        0 0 0 6px rgba(34, 197, 94, 0.35);
+      animation: pop-in 0.4s ease-out, wobble 0.6s ease-out;
+    }
+
+    .feedback-error {
+      background: radial-gradient(circle at 30% 20%, #fecaca, #ef4444);
+      box-shadow:
+        0 10px 28px rgba(239, 68, 68, 0.6),
+        0 0 0 6px rgba(248, 113, 113, 0.35);
+      animation: shake 0.45s ease-out;
+    }
+
+    @keyframes pop-in {
+      0% {
+        transform: translate(-50%, -50%) scale(0.2);
+        opacity: 0;
+      }
+      60% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes wobble {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      25% { transform: translate(calc(-50% - 4px), -50%) scale(1.03); }
+      50% { transform: translate(calc(-50% + 4px), -50%) scale(1.03); }
+      75% { transform: translate(calc(-50% - 2px), -50%) scale(1.02); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      15% { transform: translate(calc(-50% - 6px), -50%) rotate(-8deg); }
+      30% { transform: translate(calc(-50% + 6px), -50%) rotate(8deg); }
+      45% { transform: translate(calc(-50% - 4px), -50%) rotate(-6deg); }
+      60% { transform: translate(calc(-50% + 4px), -50%) rotate(6deg); }
+      75% { transform: translate(calc(-50% - 2px), -50%) rotate(-3deg); }
+      100% { transform: translate(-50%, -50%) rotate(0deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-height: 640px) {
+      .top-bar {
+        min-height: 56px;
+        padding-inline: 0.6rem;
+        border-radius: 12px;
+      }
+      .top-title {
+        font-size: 0.75rem;
+      }
+      .top-hint {
+        font-size: 0.65rem;
+      }
+      .top-icon-bubble {
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="top-icon-bubble" aria-hidden="true">🤔</div>
+        <div class="top-bar-text">
+          <div class="top-title">Tel met de stippen</div>
+          <div class="top-hint">
+            Leg een houten cijfer in het kader en til het weer op
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="playfield-wrapper">
+      <div class="playfield" id="playfield">
+        <div id="scanFrame">
+          <div id="dotsLayer"></div>
+          <div id="questionMark">?</div>
+          <div id="feedback"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* Kalibratie van de Marbotic cijfers */
+    const calibrationData = {
+      "0": { "digit": 0, "features": { "sides": [0.715461074017087, 0.9950773632389245, 1], "orientation": -1, "cosAngle": 0.352602837687961 } },
+      "1": { "digit": 1, "features": { "sides": [0.65386886727582, 0.8012487397336427, 1], "orientation": -1, "cosAngle": 0.06637001141033504 } },
+      "2": { "digit": 2, "features": { "sides": [0.5463885846491892, 0.8329809375972498, 1], "orientation": 1, "cosAngle": -0.008351735612709488 } },
+      "3": { "digit": 3, "features": { "sides": [0.6231614431278614, 0.8854770021392468, 1], "orientation": 1, "cosAngle": 0.15621713316790145 } },
+      "4": { "digit": 4, "features": { "sides": [0.6446253977720565, 0.8068207279245633, 1], "orientation": 1, "cosAngle": 0.06393189491376487 } },
+      "5": { "digit": 5, "features": { "sides": [0.578098663744437, 0.9900802023465352, 1], "orientation": -1, "cosAngle": 0.2747000589134239 } },
+      "6": { "digit": 6, "features": { "sides": [0.5266241982585108, 0.9146047923630635, 1], "orientation": 1, "cosAngle": 0.11817114057342183 } },
+      "7": { "digit": 7, "features": { "sides": [0.545770602434489, 0.8219769084984397, 1], "orientation": -1, "cosAngle": -0.029522705976313294 } },
+      "8": { "digit": 8, "features": { "sides": [0.6285031072231748, 0.9208765708239443, 1], "orientation": 1, "cosAngle": 0.20995233397308624 } },
+      "9": { "digit": 9, "features": { "sides": [0.528422226145079, 0.9262321314260327, 1], "orientation": -1, "cosAngle": 0.1400943420148673 } }
+    };
+
+    /* Instellingen herkenning en spel */
+    const DOT_SHOW_DURATION = 3000;
+    const SECOND_CHANCE_EXTRA = 1000;
+
+    const STABILITY_TIME = 280;      // ms stabiel
+    const MAX_JITTER = 8;           // max verschuiving in pixels
+    const MATCH_THRESHOLD = 0.16;   // streng
+    const ORIENTATION_PENALTY = 0.8;
+
+    const palettes = [
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e3edff)', dot: '#2563eb' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fff1e6)', dot: '#f97316' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #e4f7ec)', dot: '#16a34a' },
+      { bg: 'radial-gradient(circle at 0% 0%, #ffffff, #fdf2ff)', dot: '#a855f7' }
+    ];
+
+    const playfield = document.getElementById('playfield');
+    const scanFrame = document.getElementById('scanFrame');
+    const dotsLayer = document.getElementById('dotsLayer');
+    const questionMarkEl = document.getElementById('questionMark');
+    const feedbackEl = document.getElementById('feedback');
+
+    let currentTarget = null;
+    let currentRoundId = 0;
+    let attemptCount = 0;
+    let dotsTimeoutId = null;
+
+    let activeTouches = [];
+    let stableStartTime = null;
+    let stableBasePoints = null;
+    let detectionLocked = false;
+    let detectedDigit = null;
+    let detectionRoundId = null;
+
+    /* Hulpfuncties voor meetpunten */
+
+    function distance(p1, p2) {
+      const dx = p1.x - p2.x;
+      const dy = p1.y - p2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function normalizeOrder(points) {
+      // punten in vaste volgorde, op basis van hoek rond het zwaartepunt
+      const cx = (points[0].x + points[1].x + points[2].x) / 3;
+      const cy = (points[0].y + points[1].y + points[2].y) / 3;
+      return points
+        .map(p => ({
+          ...p,
+          angle: Math.atan2(p.y - cy, p.x - cx)
+        }))
+        .sort((a, b) => a.angle - b.angle)
+        .map(({ id, x, y }) => ({ id, x, y }));
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return null;
+
+      const ordered = normalizeOrder(points);
+      const [p0, p1, p2] = ordered;
+
+      const d01 = distance(p0, p1);
+      const d12 = distance(p1, p2);
+      const d20 = distance(p2, p0);
+      const sides = [d01, d12, d20];
+      const maxSide = Math.max.apply(null, sides);
+      if (maxSide === 0) return null;
+
+      const normSides = sides.map(s => s / maxSide).sort((a, b) => a - b);
+
+      const idxMax = sides.indexOf(maxSide);
+      const otherIdx = [0, 1, 2].filter(i => i !== idxMax);
+      const a = sides[otherIdx[0]];
+      const b = sides[otherIdx[1]];
+      const c = maxSide;
+      let cosAngle = (a * a + b * b - c * c) / (2 * a * b);
+      if (!isFinite(cosAngle)) cosAngle = 1;
+      cosAngle = Math.max(-1, Math.min(1, cosAngle));
+
+      const cross =
+        (p1.x - p0.x) * (p2.y - p0.y) -
+        (p1.y - p0.y) * (p2.x - p0.x);
+      const orientation = cross >= 0 ? 1 : -1;
+
+      return {
+        sides: normSides,
+        orientation,
+        cosAngle
+      };
+    }
+
+    function compareFeatures(f1, f2) {
+      if (!f1 || !f2) return Number.POSITIVE_INFINITY;
+      const v1 = [f1.sides[0], f1.sides[1], f1.sides[2], f1.cosAngle];
+      const v2 = [f2.sides[0], f2.sides[1], f2.sides[2], f2.cosAngle];
+
+      let sumSq = 0;
+      for (let i = 0; i < 4; i++) {
+        const diff = v1[i] - v2[i];
+        sumSq += diff * diff;
+      }
+      let dist = Math.sqrt(sumSq);
+      if (f1.orientation !== f2.orientation) {
+        dist += ORIENTATION_PENALTY;
+      }
+      return dist;
+    }
+
+    function findBestMatch(currentFeatures, calibration) {
+      let bestDigit = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      for (const key in calibration) {
+        const entry = calibration[key];
+        const d = compareFeatures(currentFeatures, entry.features);
+        if (d < bestDistance) {
+          bestDistance = d;
+          bestDigit = entry.digit;
+        }
+      }
+      if (bestDigit === null || bestDistance > MATCH_THRESHOLD) {
+        return null;
+      }
+      return { digit: bestDigit, distance: bestDistance };
+    }
+
+    function handleTouchEvent(e) {
+      if (!scanFrame) return;
+      e.preventDefault();
+
+      const rect = scanFrame.getBoundingClientRect();
+      activeTouches = [];
+
+      for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        const x = t.clientX - rect.left;
+        const y = t.clientY - rect.top;
+
+        if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
+          activeTouches.push({
+            id: t.identifier,
+            x,
+            y
+          });
+        }
+      }
+
+      if (activeTouches.length === 3) {
+        if (!detectionLocked) {
+          const now = performance.now();
+
+          if (!stableStartTime || !stableBasePoints) {
+            stableStartTime = now;
+            stableBasePoints = activeTouches.map(p => ({ ...p }));
+          } else {
+            let maxMove = 0;
+            for (const active of activeTouches) {
+              const base = stableBasePoints.find(b => b.id === active.id);
+              if (!base) {
+                maxMove = Number.POSITIVE_INFINITY;
+                break;
+              }
+              const d = distance(active, base);
+              if (d > maxMove) maxMove = d;
+            }
+
+            if (maxMove > MAX_JITTER) {
+              stableStartTime = now;
+              stableBasePoints = activeTouches.map(p => ({ ...p }));
+            } else if (now - stableStartTime >= STABILITY_TIME) {
+              const points = activeTouches.map(p => ({ x: p.x, y: p.y }));
+              const features = computeFeatures(points);
+              const match = features ? findBestMatch(features, calibrationData) : null;
+
+              detectionLocked = true;
+              detectionRoundId = currentRoundId;
+              detectedDigit = match ? match.digit : null;
+            }
+          }
+        }
+      } else {
+        stableStartTime = null;
+        stableBasePoints = null;
+
+        if (activeTouches.length === 0 && detectionLocked) {
+          if (detectionRoundId === currentRoundId) {
+            handleRecognizedDigit(detectedDigit);
+          }
+          detectionLocked = false;
+          detectedDigit = null;
+          detectionRoundId = null;
+        }
+      }
+    }
+
+    function handleRecognizedDigit(digit) {
+      const value = typeof digit === 'number' ? digit : null;
+      const isCorrect = value !== null && value === currentTarget;
+      processAnswer(isCorrect);
+    }
+
+    function processAnswer(isCorrect) {
+      attemptCount += 1;
+      clearTimeout(dotsTimeoutId);
+
+      if (isCorrect) {
+        showFeedback(true);
+        setTimeout(() => {
+          clearDots();
+          hideQuestion();
+          startNewRound();
+        }, 800);
+      } else {
+        showFeedback(false);
+        if (attemptCount === 1) {
+          setTimeout(() => {
+            hideFeedback();
+            // zelfde hoeveelheid opnieuw, maar langer
+            renderDots(currentTarget);
+            scheduleHideDots(DOT_SHOW_DURATION + SECOND_CHANCE_EXTRA);
+          }, 700);
+        } else {
+          setTimeout(() => {
+            hideFeedback();
+            clearDots();
+            hideQuestion();
+            startNewRound();
+          }, 700);
+        }
+      }
+    }
+
+    function scheduleHideDots(duration) {
+      clearTimeout(dotsTimeoutId);
+      dotsTimeoutId = setTimeout(() => {
+        hideDotsShowQuestion();
+      }, duration);
+    }
+
+    function hideDotsShowQuestion() {
+      clearDots();
+      showQuestion();
+    }
+
+    function clearDots() {
+      if (dotsLayer) dotsLayer.innerHTML = '';
+    }
+
+    function showQuestion() {
+      if (questionMarkEl) questionMarkEl.classList.add('visible');
+    }
+
+    function hideQuestion() {
+      if (questionMarkEl) questionMarkEl.classList.remove('visible');
+    }
+
+    function showFeedback(success) {
+      if (!feedbackEl) return;
+      feedbackEl.className = '';
+      feedbackEl.id = 'feedback';
+      feedbackEl.textContent = success ? '😊' : '😟';
+      feedbackEl.classList.add('visible');
+      feedbackEl.classList.add(success ? 'feedback-success' : 'feedback-error');
+    }
+
+    function hideFeedback() {
+      if (!feedbackEl) return;
+      feedbackEl.className = '';
+      feedbackEl.id = 'feedback';
+      feedbackEl.textContent = '';
+    }
+
+    /* Dot lay-out: twee groepjes, dicht bij elkaar in het groepje, zonder overlap */
+
+    function getGroupSizes(n) {
+      if (n === 0) return [];
+      if (n === 1) return [1];
+
+      let groups;
+      switch (n) {
+        case 2:
+          groups = [1, 1];
+          break;
+        case 3:
+          groups = Math.random() < 0.5 ? [1, 2] : [2, 1];
+          break;
+        case 4:
+          groups = [2, 2];
+          break;
+        case 5:
+          groups = Math.random() < 0.5 ? [2, 3] : [3, 2];
+          break;
+        case 6:
+          groups = [3, 3];
+          break;
+        case 7:
+          groups = Math.random() < 0.5 ? [3, 4] : [4, 3];
+          break;
+        case 8:
+          if (Math.random() < 0.5) {
+            groups = [4, 4];
+          } else {
+            groups = Math.random() < 0.5 ? [5, 3] : [3, 5];
+          }
+          break;
+        case 9:
+          if (Math.random() < 0.5) {
+            groups = Math.random() < 0.5 ? [5, 4] : [4, 5];
+          } else {
+            groups = Math.random() < 0.5 ? [6, 3] : [3, 6];
+          }
+          break;
+        default:
+          groups = [Math.floor(n / 2), n - Math.floor(n / 2)];
+      }
+      return groups;
+    }
+
+    function getTwoGroupRects() {
+      const marginSide = 0.04;
+      const gap = 0.10;
+      const width = (1 - 2 * marginSide - gap) / 2;
+      const height = 0.82;
+      const top = 0.09;
+
+      const rect1 = { x: marginSide, y: top, width: width, height: height };
+      const rect2 = { x: marginSide + width + gap, y: top, width: width, height: height };
+      return [rect1, rect2];
+    }
+
+    // binnen groepje: compacte dobbelsteenstructuren
+    function layoutDotsInGroup(size) {
+      const dots = [];
+      const jitter = () => (Math.random() - 0.5) * 0.04;
+
+      if (size === 1) {
+        dots.push({ x: 0.5, y: 0.5 });
+      } else if (size === 2) {
+        dots.push({ x: 0.45 + jitter(), y: 0.5 + jitter() });
+        dots.push({ x: 0.55 + jitter(), y: 0.5 + jitter() });
+      } else if (size === 3) {
+        dots.push({ x: 0.44 + jitter(), y: 0.45 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.45 + jitter() });
+        dots.push({ x: 0.50 + jitter(), y: 0.60 + jitter() });
+      } else if (size === 4) {
+        dots.push({ x: 0.44 + jitter(), y: 0.44 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.44 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.64 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.64 + jitter() });
+      } else if (size === 5) {
+        dots.push({ x: 0.44 + jitter(), y: 0.40 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.40 + jitter() });
+        dots.push({ x: 0.50 + jitter(), y: 0.52 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.64 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.64 + jitter() });
+      } else if (size === 6) {
+        dots.push({ x: 0.44 + jitter(), y: 0.38 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.52 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.66 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.38 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.52 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.66 + jitter() });
+      } else if (size === 7) {
+        // 4 plus 3 compact
+        dots.push({ x: 0.44 + jitter(), y: 0.40 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.40 + jitter() });
+        dots.push({ x: 0.44 + jitter(), y: 0.60 + jitter() });
+        dots.push({ x: 0.56 + jitter(), y: 0.60 + jitter() });
+        dots.push({ x: 0.50 + jitter(), y: 0.30 + jitter() });
+        dots.push({ x: 0.38 + jitter(), y: 0.50 + jitter() });
+        dots.push({ x: 0.62 + jitter(), y: 0.50 + jitter() });
+      } else {
+        // fallback: korte rijen
+        const cols = Math.min(3, size);
+        const rows = Math.ceil(size / cols);
+        let idx = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (idx >= size) break;
+            const x = 0.35 + (c / (cols - 1 || 1)) * 0.30 + jitter();
+            const y = 0.40 + (r / (rows - 1 || 1)) * 0.30 + jitter();
+            dots.push({ x, y });
+            idx++;
+          }
+        }
+      }
+      return dots;
+    }
+
+    function generateDotsLayout(n) {
+      const positions = [];
+      if (n === 0) return positions;
+
+      if (n === 1) {
+        positions.push({ x: 0.5, y: 0.5 });
+        return positions;
+      }
+
+      const groupSizes = getGroupSizes(n);
+
+      if (groupSizes.length === 1) {
+        const rect = { x: 0.06, y: 0.10, width: 0.88, height: 0.80 };
+        const pattern = layoutDotsInGroup(groupSizes[0]);
+        pattern.forEach(p => {
+          positions.push({
+            x: rect.x + p.x * rect.width,
+            y: rect.y + p.y * rect.height
+          });
+        });
+      } else {
+        const [rect1, rect2] = getTwoGroupRects();
+        const rects = [rect1, rect2];
+        groupSizes.forEach((size, idx) => {
+          const rect = rects[idx];
+          const pattern = layoutDotsInGroup(size);
+          pattern.forEach(p => {
+            positions.push({
+              x: rect.x + p.x * rect.width,
+              y: rect.y + p.y * rect.height
+            });
+          });
+        });
+      }
+      return positions;
+    }
+
+    function renderDots(n) {
+      clearDots();
+      hideQuestion();
+
+      const palette = palettes[Math.floor(Math.random() * palettes.length)];
+      scanFrame.style.background = '#fdf9f4';
+      playfield.style.background = palette.bg;
+
+      const positions = generateDotsLayout(n);
+
+      // dotgrootte gebaseerd op kader, zodat er geen overlap is
+      const frameRect = dotsLayer.getBoundingClientRect();
+      const dotSize = Math.min(frameRect.width / 5, frameRect.height / 5);
+
+      const gradient = `radial-gradient(circle at 30% 30%, #ffffff, ${palette.dot})`;
+
+      positions.forEach(pos => {
+        const dotEl = document.createElement('div');
+        dotEl.className = 'dot';
+        dotEl.style.width = dotSize + 'px';
+        dotEl.style.height = dotSize + 'px';
+        dotEl.style.left = (pos.x * 100).toFixed(2) + '%';
+        dotEl.style.top = (pos.y * 100).toFixed(2) + '%';
+        dotEl.style.background = gradient;
+        dotsLayer.appendChild(dotEl);
+      });
+    }
+
+    function startNewRound() {
+      currentRoundId += 1;
+      attemptCount = 0;
+      const n = Math.floor(Math.random() * 10);
+      currentTarget = n;
+      hideFeedback();
+      renderDots(currentTarget);
+      scheduleHideDots(DOT_SHOW_DURATION);
+    }
+
+    function init() {
+      ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => {
+        playfield.addEventListener(type, handleTouchEvent, { passive: false });
+      });
+
+      startNewRound();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
