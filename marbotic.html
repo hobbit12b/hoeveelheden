@@ -771,6 +771,19 @@
       return maxMove;
     }
 
+    // Nieuw: kies altijd drie punten uit de aanwezige touches
+    function pickThreePoints(points) {
+      if (!points || points.length === 0) {
+        return [];
+      }
+      if (points.length <= 3) {
+        return points;
+      }
+      // Sorteer op identifier zodat het stabiel blijft
+      const sorted = points.slice().sort((a, b) => a.id - b.id);
+      return sorted.slice(0, 3);
+    }
+
     function handleStableThreePoints(points) {
       const purePoints = points.map(p => ({ x: p.x, y: p.y }));
       const features = computeFeatures(purePoints);
@@ -808,9 +821,9 @@
       }
     }
 
-    function processTouches(touches) {
+    function processTouches(allTouches) {
       const now = performance.now();
-      const count = touches.length;
+      const count = allTouches.length;
       lastTouchCount = count;
 
       if (mode === "calibrate") {
@@ -832,13 +845,17 @@
         }
       }
 
-      if (count !== 3) {
+      // Te weinig aanrakingen, reset candidate
+      if (count < 3) {
         stableCandidate = null;
         if (mode === "scan" && count === 0) {
           clearPrediction();
         }
         return;
       }
+
+      // Gebruik altijd precies drie punten voor de driehoek
+      const touches = pickThreePoints(allTouches);
 
       if (!stableCandidate || !sameIds(touches, stableCandidate.originPoints)) {
         stableCandidate = {
