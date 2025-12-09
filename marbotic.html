@@ -338,11 +338,12 @@
   (function () {
     "use strict";
 
-    // Kortere stabilisatieperiode
+    // Kortere stabilisatietijd zodat de app sneller reageert
     const STABLE_TIME_MS = 200;
     const MOVE_TOLERANCE_PX = 25;
     const MATCH_THRESHOLD = 0.35;
     const ORIENTATION_PENALTY = 0.6;
+    const ANGLE_WEIGHT = 1.0; // gewicht voor richting van de driehoek
     const LOCAL_STORAGE_KEY = "marboticCalibration";
 
     const DIGIT_ORDER = ["0","1","2","3","4","5","6","7","8","9"];
@@ -388,9 +389,9 @@
     let currentDigitIndex = 0;
     let waitingForRelease = false;
     let stableCandidate = null;
-    let stableTimeoutId = null;      // nieuw
     let lastTouchCount = 0;
     let lastPrediction = null;
+    let latestTouches = []; // laatste gemeten aanrakingen, wordt constant gepolst
 
     function distance(p, q) {
       const dx = p.x - q.x;
@@ -400,6 +401,31 @@
 
     function clonePoints(points) {
       return points.map(p => ({ x: p.x, y: p.y, id: p.id }));
+    }
+
+    function computeBaseAngle(points, centroid) {
+      if (!points || points.length !== 3) {
+        return 0;
+      }
+      let top = points[0];
+      for (let i = 1; i < points.length; i++) {
+        const p = points[i];
+        if (p.y < top.y || (p.y === top.y && p.x < top.x)) {
+          top = p;
+        }
+      }
+      const vx = top.x - centroid.x;
+      const vy = top.y - centroid.y;
+      return Math.atan2(vy, vx);
+    }
+
+    function angleDifference(a, b) {
+      let d = Math.abs(a - b);
+      const twoPi = Math.PI * 2;
+      if (d > Math.PI) {
+        d = Math.abs(d - twoPi);
+      }
+      return d;
     }
 
     function computeFeatures(points) {
@@ -446,11 +472,14 @@
         (p1.y - p0.y) * (p2.x - p0.x);
       const orientation = cross >= 0 ? 1 : -1;
 
+      const baseAngle = computeBaseAngle(points, centroid);
+
       return {
         sides: sidesSorted,
         orientation: orientation,
         cosAngle: cosAngle,
-        centroid: centroid
+        centroid: centroid,
+        baseAngle: baseAngle
       };
     }
 
@@ -464,7 +493,14 @@
       const d1 = s1[1] - s2[1];
       const d2 = s1[2] - s2[2];
       const dCos = (f1.cosAngle || 0) - (f2.cosAngle || 0);
+
       let distSq = d0 * d0 + d1 * d1 + d2 * d2 + dCos * dCos;
+
+      const a1 = typeof f1.baseAngle === "number" ? f1.baseAngle : 0;
+      const a2 = typeof f2.baseAngle === "number" ? f2.baseAngle : 0;
+      const dAngleNorm = angleDifference(a1, a2) / Math.PI;
+      distSq += (ANGLE_WEIGHT * dAngleNorm) * (ANGLE_WEIGHT * dAngleNorm);
+
       let dist = Math.sqrt(distSq);
       if ((f1.orientation || 0) !== (f2.orientation || 0)) {
         dist += ORIENTATION_PENALTY;
@@ -550,6 +586,10 @@
         text += "  " + s.map(v => v.toFixed(3)).join("  ") + "\n\n";
         text += "Oriëntatie: " + (features.orientation || 0) + "\n";
         text += "cos(hoek): " + (features.cosAngle || 0).toFixed(3) + "\n";
+        if (typeof features.baseAngle === "number") {
+          const deg = features.baseAngle * 180 / Math.PI;
+          text += "Hoek top-punt t.o.v. horizontaal: " + deg.toFixed(1) + "°\n";
+        }
       } else {
         text += "Nog geen geldige driehoek.\n";
       }
@@ -583,6 +623,22 @@
       }
     }
 
+    function ensureBaseAnglesInCalibration() {
+      DIGIT_ORDER.forEach(d => {
+        const entry = calibration[d];
+        if (!entry || !entry.features || !entry.points) {
+          return;
+        }
+        if (typeof entry.features.baseAngle !== "number") {
+          const pts = entry.points.map(p => ({ x: p.x, y: p.y }));
+          const recomputed = computeFeatures(pts);
+          if (recomputed && typeof recomputed.baseAngle === "number") {
+            entry.features.baseAngle = recomputed.baseAngle;
+          }
+        }
+      });
+    }
+
     function safeLoadCalibration() {
       try {
         const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -599,6 +655,7 @@
         if (valid) {
           calibration = parsed;
           calibrationComplete = true;
+          ensureBaseAnglesInCalibration();
           toScanBtn.disabled = false;
           statusLabel.textContent = "Kalibratie geladen uit opslag. Je kunt naar scannen gaan of opnieuw kalibreren.";
         }
@@ -675,21 +732,12 @@
       }
     }
 
-    function clearStableCandidate() {
-      stableCandidate = null;
-      if (stableTimeoutId !== null) {
-        clearTimeout(stableTimeoutId);
-        stableTimeoutId = null;
-      }
-    }
-
     function resetCalibrationState(clearStorage) {
       calibration = {};
       calibrationComplete = false;
       currentDigitIndex = 0;
       waitingForRelease = false;
-      clearStableCandidate();
-      lastTouchCount = 0;
+      stableCandidate = null;
       lastPrediction = null;
       toScanBtn.disabled = true;
       predictedDigitEl.textContent = "?";
@@ -819,26 +867,6 @@
       }
     }
 
-    function scheduleStableCheck() {
-      if (stableTimeoutId !== null) {
-        clearTimeout(stableTimeoutId);
-      }
-      stableTimeoutId = setTimeout(function () {
-        if (!stableCandidate || stableCandidate.triggered) {
-          return;
-        }
-        if (lastTouchCount !== 3) {
-          return;
-        }
-        const move = maxMovement(stableCandidate.lastPoints, stableCandidate.originPoints);
-        if (move > MOVE_TOLERANCE_PX) {
-          return;
-        }
-        stableCandidate.triggered = true;
-        handleStableThreePoints(stableCandidate.lastPoints);
-      }, STABLE_TIME_MS);
-    }
-
     function processTouches(touches) {
       const now = performance.now();
       const count = touches.length;
@@ -864,15 +892,13 @@
       }
 
       if (count !== 3) {
-        // minder dan drie of meer dan drie aanrakingen, dan geen meting
-        clearStableCandidate();
+        stableCandidate = null;
         if (mode === "scan" && count === 0) {
           clearPrediction();
         }
         return;
       }
 
-      // drie aanrakingen
       if (!stableCandidate || !sameIds(touches, stableCandidate.originPoints)) {
         stableCandidate = {
           originPoints: clonePoints(touches),
@@ -885,51 +911,50 @@
         } else {
           statusLabel.textContent = "Metingen worden gestabiliseerd voor dit cijfer.";
         }
-        scheduleStableCheck();
         return;
       }
 
-      // zelfde aanrakingen als eerder
-      stableCandidate.lastPoints = clonePoints(touches);
       const move = maxMovement(touches, stableCandidate.originPoints);
       if (move > MOVE_TOLERANCE_PX) {
-        // opnieuw beginnen als het cijfer echt verschoven is
         stableCandidate = {
           originPoints: clonePoints(touches),
           startTime: now,
           lastPoints: clonePoints(touches),
           triggered: false
         };
-        scheduleStableCheck();
         return;
       }
 
-      // extra kans om de meting af te ronden als er toch beweging is
       if (!stableCandidate.triggered && now - stableCandidate.startTime >= STABLE_TIME_MS) {
         stableCandidate.triggered = true;
         handleStableThreePoints(touches);
       }
     }
 
+    // Animatielus die ook zonder schuiven blijft meten
+    function animationLoop() {
+      if (latestTouches && latestTouches.length >= 0) {
+        processTouches(latestTouches);
+      }
+      requestAnimationFrame(animationLoop);
+    }
+
     function onTouchChange(evt) {
       if (evt.touches && evt.touches.length > 0) {
         evt.preventDefault();
       }
-      const touches = touchesToPoints(evt.touches);
-      processTouches(touches);
+      latestTouches = touchesToPoints(evt.touches);
     }
 
     function onTouchEndOrCancel(evt) {
       if (evt.touches && evt.touches.length > 0) {
         evt.preventDefault();
       }
-      const touches = touchesToPoints(evt.touches);
-      processTouches(touches);
+      latestTouches = touchesToPoints(evt.touches);
     }
 
     toCalibrateBtn.addEventListener("click", function () {
       mode = "calibrate";
-      clearStableCandidate();
       updateModeUI();
       if (!calibrationComplete) {
         setCalibrateInstruction();
@@ -944,10 +969,9 @@
         return;
       }
       mode = "scan";
-      clearStableCandidate();
       updateModeUI();
       clearPrediction();
-      statusLabel.textContent = "Scan modus. Leg een gekalibreerd cijfer met drie contactpunten op het scherm.";
+      statusLabel.textContent = "Scan modus. Leg een gekalibreerd cijfer met drie contactpunten rustig op het scherm.";
     });
 
     recalibrateBtn.addEventListener("click", function () {
@@ -991,6 +1015,9 @@
     if (calibrationComplete) {
       refreshDataTextarea();
     }
+
+    // start de continue meting
+    animationLoop();
   })();
 </script>
 </body>
