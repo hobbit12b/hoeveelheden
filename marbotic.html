@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Cijfer spel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #f7f3ff, #d3d7e3);
+    }
+
+    /* iPad kader, verhouding ongeveer 4:3 zoals iPad 9th gen */
+    .ipad {
+      width: min(90vw, 1024px);
+      aspect-ratio: 4 / 3;
+      background: #000;
+      border-radius: 26px;
+      padding: 18px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* home button */
+    .home-button {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+    }
+
+    /* scherm binnen de iPad */
+    .screen {
+      width: 100%;
+      height: 100%;
+      background: #fdf6e9;
+      border-radius: 18px;
+      padding: 18px 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* bovenbalk met knoppen */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1.6rem;
+      color: #555;
+    }
+
+    .top-left,
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #4fb3ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.4rem;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+      cursor: pointer;
+    }
+
+    .icon-emoji {
+      font-size: 1.6rem;
+      cursor: pointer;
+    }
+
+    /* kaart in het midden waar normaal een cijfer zou staan */
+    .number-card {
+      margin: auto;
+      width: min(50vw, 320px);
+      height: min(40vh, 260px);
+      border-radius: 26px;
+      background: #fff;
+      border: 3px dashed #f4a7c2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    .number-card::before {
+      /* grafisch aandachtspunt, maar geen cijfer */
+      content: "?";
+      font-size: clamp(4rem, 8vw, 6rem);
+      color: #f26ca4;
+      opacity: 0.8;
+    }
+
+    .number-label {
+      position: absolute;
+      bottom: 12px;
+      right: 18px;
+      font-size: 0.9rem;
+      color: #c3c3c3;
+      letter-spacing: 0.04em;
+    }
+
+    /* rij stippen onderin, neutrale telling, geen duidelijk accent op een specifiek cijfer */
+    .dots-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #f0c9da;
+      opacity: 0.6;
+    }
+
+    .bottom-bar {
+      position: absolute;
+      right: 18px;
+      bottom: 16px;
+      font-size: 1.5rem;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 600px) {
+      .screen {
+        padding-inline: 18px;
+      }
+
+      .number-card {
+        width: min(70vw, 300px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ipad">
+    <div class="home-button"></div>
+
+    <div class="screen">
+      <!-- bovenbalk -->
+      <div class="top-bar">
+        <div class="top-left">
+          <div class="back-btn">←</div>
+        </div>
+        <div class="top-right">
+          <span class="icon-emoji">❔</span>
+          <span class="icon-emoji">🥚</span>
+          <span class="icon-emoji">🐑</span>
+          <span class="icon-emoji">🧹</span>
+        </div>
+      </div>
+
+      <!-- kaart in het midden, zonder cijfer 8 -->
+      <div class="number-card">
+        <div class="number-label">kies het juiste cijfer</div>
+      </div>
+
+      <!-- rij stippen onderin -->
+      <div class="dots-row">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+
+      <!-- klein icoon rechtsonder -->
+      <div class="bottom-bar">🧹</div>
+    </div>
+  </div>
+</body>
+</html>
