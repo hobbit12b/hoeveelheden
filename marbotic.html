@@ -294,7 +294,7 @@
         Leg nu het cijfer 0 op het scherm
       </div>
       <div id="calibrateSubInstruction" class="sub-instruction">
-        Raak het scherm alleen met het houten cijfer, geen vingers. De app legt het cijfer automatisch vast.
+        Leg het cijfer steeds op een iets andere plek, soms een beetje gedraaid. Raak het scherm niet met je vingers.
       </div>
 
       <div id="scanDisplay" class="scan-display hidden">
@@ -339,22 +339,20 @@
   (function () {
     "use strict";
 
-    // Tijd dat drie contactpunten stabiel moeten zijn
-    const STABLE_TIME_MS = 260;
+    // Tijd iets verkort zodat een stil liggend cijfer sneller wordt gezien
+    const STABLE_TIME_MS = 200;
     const MOVE_TOLERANCE_PX = 25;
 
-    // Hoe streng de herkenning is
-    const MATCH_THRESHOLD = 0.5;      // maximale afstand naar de beste match
-    const MARGIN_THRESHOLD = 0.05;    // minimaal verschil tussen nummer een en nummer twee
+    // Strenger op vorm en extra streng bij twijfel
+    const MATCH_THRESHOLD = 0.45;
+    const ORIENTATION_PENALTY = 0.6;
 
-    // Straf als de oriëntatie (omklappen) niet overeenkomt
-    const ORIENTATION_PENALTY = 0.25;
+    // Nieuwe multi sample kalibratie
+    const SAMPLES_PER_DIGIT = 8;
 
-    const LOCAL_STORAGE_KEY = "marboticCalibration";
-    const SAMPLES_PER_DIGIT = 4;
+    const LOCAL_STORAGE_KEY = "marboticCalibrationV2";
 
     const DIGIT_ORDER = ["0","1","2","3","4","5","6","7","8","9"];
-
     const digitNames = {
       "0": "nul",
       "1": "een",
@@ -391,14 +389,11 @@
 
     const ctx = debugCanvas.getContext("2d");
 
-    // State
+    // Status
     let mode = "calibrate"; // "calibrate" of "scan"
     let calibration = {};   // per cijfer: { digit, samples: [ { points, features } ] }
     let calibrationComplete = false;
-
     let currentDigitIndex = 0;
-    let currentSampleIndex = 0;
-
     let waitingForRelease = false;
     let stableCandidate = null;
     let lastPrediction = null;
@@ -457,67 +452,61 @@
         (p1.y - p0.y) * (p2.x - p0.x);
       const orientation = cross >= 0 ? 1 : -1;
 
-      // Verticale positie van de drie punten, genormaliseerd tussen 0 (boven) en 1 (onder)
+      // Verticale structuur: yNorm van boven naar onder
       const ys = [p0.y, p1.y, p2.y];
-      const minY = Math.min(ys[0], ys[1], ys[2]);
-      const maxY = Math.max(ys[0], ys[1], ys[2]);
-      let yNorm;
-      if (maxY > minY) {
-        yNorm = ys.map(y => (y - minY) / (maxY - minY));
-        yNorm.sort((a, b) => a - b);
-      } else {
-        yNorm = [0, 0.5, 1];
-      }
+      const minY = Math.min.apply(null, ys);
+      const maxY = Math.max.apply(null, ys);
+      const spanY = maxY - minY || 1;
+      const yNormRaw = ys.map(y => (y - minY) / spanY);
+      const yNormSorted = yNormRaw.slice().sort((a, b) => a - b);
 
       return {
         sides: sidesSorted,
         orientation: orientation,
         cosAngle: cosAngle,
         centroid: centroid,
-        yNorm: yNorm
+        yNorm: yNormSorted
       };
     }
 
-    // Vergelijk twee feature sets, waarbij de verticale verdeling extra zwaar meeweegt
     function compareFeatures(f1, f2) {
       if (!f1 || !f2) {
         return Number.POSITIVE_INFINITY;
       }
+
+      const shapeWeight = 1.0;
+      const angleWeight = 1.0;
+      const yWeight = 1.2;
+
       const s1 = f1.sides || [0, 0, 0];
       const s2 = f2.sides || [0, 0, 0];
+      const y1 = f1.yNorm || [0, 0, 0];
+      const y2 = f2.yNorm || [0, 0, 0];
 
-      const ds0 = s1[0] - s2[0];
-      const ds1 = s1[1] - s2[1];
-      const ds2 = s1[2] - s2[2];
-      const dSides = Math.sqrt(ds0 * ds0 + ds1 * ds1 + ds2 * ds2);
+      let distSq = 0;
+
+      for (let i = 0; i < 3; i++) {
+        const ds = (s1[i] - s2[i]);
+        distSq += shapeWeight * ds * ds;
+      }
 
       const dCos = (f1.cosAngle || 0) - (f2.cosAngle || 0);
+      distSq += angleWeight * dCos * dCos;
 
-      const y1 = f1.yNorm || [0, 0.5, 1];
-      const y2 = f2.yNorm || [0, 0.5, 1];
-      const dy0 = y1[0] - y2[0];
-      const dy1 = y1[1] - y2[1];
-      const dy2 = y1[2] - y2[2];
-      const dY = Math.sqrt(dy0 * dy0 + dy1 * dy1 + dy2 * dy2);
+      for (let i = 0; i < 3; i++) {
+        const dy = (y1[i] - y2[i]);
+        distSq += yWeight * dy * dy;
+      }
 
-      const SIDE_WEIGHT = 0.7;
-      const ANGLE_WEIGHT = 0.5;
-      const Y_WEIGHT = 1.4;
-
-      let distSquared =
-        (dSides * SIDE_WEIGHT) * (dSides * SIDE_WEIGHT) +
-        (dCos * ANGLE_WEIGHT) * (dCos * ANGLE_WEIGHT) +
-        (dY * Y_WEIGHT) * (dY * Y_WEIGHT);
-
-      let dist = Math.sqrt(distSquared);
+      let dist = Math.sqrt(distSq);
 
       if ((f1.orientation || 0) !== (f2.orientation || 0)) {
         dist += ORIENTATION_PENALTY;
       }
+
       return dist;
     }
 
-    // Zoek per cijfer naar de beste overeenkomende sample
     function findBestMatch(features, calibrationData) {
       let bestDigit = null;
       let bestDist = Number.POSITIVE_INFINITY;
@@ -529,6 +518,9 @@
           return;
         }
         entry.samples.forEach(sample => {
+          if (!sample.features) {
+            return;
+          }
           const dist = compareFeatures(features, sample.features);
           if (dist < bestDist) {
             secondBestDist = bestDist;
@@ -540,11 +532,11 @@
         });
       });
 
-      const margin = (Number.isFinite(secondBestDist))
-        ? (secondBestDist - bestDist)
-        : 0;
+      if (!Number.isFinite(secondBestDist)) {
+        secondBestDist = bestDist;
+      }
 
-      return { digit: bestDigit, distance: bestDist, secondBest: secondBestDist, margin: margin };
+      return { digit: bestDigit, distance: bestDist, secondBestDistance: secondBestDist };
     }
 
     function drawTriangle(points) {
@@ -602,15 +594,13 @@
       let text = "";
       if (features) {
         const s = features.sides || [0, 0, 0];
+        const y = features.yNorm || [0, 0, 0];
         text += "Zijden (genormaliseerd):\n";
         text += "  " + s.map(v => v.toFixed(3)).join("  ") + "\n\n";
+        text += "yNorm (van boven naar onder):\n";
+        text += "  " + y.map(v => v.toFixed(3)).join("  ") + "\n\n";
         text += "Oriëntatie: " + (features.orientation || 0) + "\n";
-        text += "cos(hoek): " + (features.cosAngle || 0).toFixed(3) + "\n\n";
-
-        if (features.yNorm) {
-          text += "Verticale posities yNorm (0 = boven, 1 = onder):\n";
-          text += "  " + features.yNorm.map(v => v.toFixed(3)).join("  ") + "\n";
-        }
+        text += "cos(hoek): " + (features.cosAngle || 0).toFixed(3) + "\n";
       } else {
         text += "Nog geen geldige driehoek.\n";
       }
@@ -618,9 +608,8 @@
       if (matchInfo && matchInfo.digit != null) {
         text += "\nBeste match: " + matchInfo.digit +
           "  (afstand " + matchInfo.distance.toFixed(3) + ")";
-        if (Number.isFinite(matchInfo.secondBest)) {
-          text += "\nNummer twee afstand: " + matchInfo.secondBest.toFixed(3) +
-            "\nMarge: " + matchInfo.margin.toFixed(3);
+        if (Number.isFinite(matchInfo.secondBestDistance)) {
+          text += "\nTweede afstand: " + matchInfo.secondBestDistance.toFixed(3);
         }
       } else if (mode === "scan") {
         text += "\nBeste match: geen";
@@ -648,123 +637,19 @@
       }
     }
 
-    function normalizeLoadedCalibration(parsed) {
-      const result = {};
-      DIGIT_ORDER.forEach(d => {
-        const entry = parsed && parsed[d];
-        if (!entry) {
-          return;
-        }
-        if (entry.samples && Array.isArray(entry.samples) && entry.samples.length > 0) {
-          result[d] = {
-            digit: typeof entry.digit === "number" ? entry.digit : parseInt(d, 10),
-            samples: entry.samples.filter(s => s && s.features)
-          };
-        } else if (entry.features) {
-          result[d] = {
-            digit: typeof entry.digit === "number" ? entry.digit : parseInt(d, 10),
-            samples: [
-              {
-                points: entry.points || [],
-                features: entry.features
-              }
-            ]
-          };
-        }
-      });
-      return result;
-    }
-
-    function safeLoadCalibration() {
-      try {
-        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (!stored) {
-          return;
-        }
-        const parsed = JSON.parse(stored);
-        const norm = normalizeLoadedCalibration(parsed);
-
-        let completeEnough = true;
-        DIGIT_ORDER.forEach(d => {
-          if (!norm[d] || !norm[d].samples || !norm[d].samples.length) {
-            completeEnough = false;
-          }
-        });
-
-        if (completeEnough) {
-          calibration = norm;
-          calibrationComplete = true;
-          toScanBtn.disabled = false;
-          statusLabel.textContent = "Kalibratie geladen uit opslag. Je kunt naar scannen gaan of opnieuw kalibreren.";
-        }
-      } catch (e) {
-        // Opslagfouten negeren
+    function samplesForDigit(digitStr) {
+      const entry = calibration[digitStr];
+      if (!entry || !entry.samples) {
+        return 0;
       }
-    }
-
-    function safeSaveCalibration() {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(calibration));
-      } catch (e) {
-        // Geen harde fout bij opslag
-      }
-    }
-
-    function refreshDataTextarea() {
-      dataTextarea.value = JSON.stringify(calibration, null, 2);
-    }
-
-    function updateModeUI() {
-      modeLabel.textContent = mode === "calibrate" ? "Kalibreren" : "Scannen";
-
-      if (mode === "calibrate") {
-        calibrateInstruction.classList.remove("hidden");
-        calibrateSubInstruction.classList.remove("hidden");
-        scanDisplay.classList.add("hidden");
-        toCalibrateBtn.classList.add("secondary");
-        toScanBtn.classList.remove("secondary");
-      } else {
-        calibrateInstruction.classList.add("hidden");
-        calibrateSubInstruction.classList.add("hidden");
-        scanDisplay.classList.remove("hidden");
-        toCalibrateBtn.classList.remove("secondary");
-        toScanBtn.classList.add("secondary");
-      }
-    }
-
-    function setCalibrateInstruction() {
-      const digitStr = DIGIT_ORDER[currentDigitIndex];
-      const sampleNr = currentSampleIndex + 1;
-
-      calibrateInstruction.textContent =
-        "Leg nu het cijfer " + digitStr + " op het scherm (" +
-        sampleNr + " van " + SAMPLES_PER_DIGIT + ")";
-
-      calibrateSubInstruction.textContent =
-        "Leg het cijfer iedere keer net iets anders neer, bijvoorbeeld een beetje gedraaid.";
-
-      statusLabel.textContent =
-        "Kalibreren: wacht op drie stabiele aanrakingen voor cijfer " +
-        digitStr + ", voorbeeld " + sampleNr + " van " + SAMPLES_PER_DIGIT + ".";
-    }
-
-    function markSampleCaptured(digitStr, sampleIndex) {
-      const nr = sampleIndex + 1;
-      calibrateInstruction.textContent =
-        "Cijfer " + digitStr + " vastgelegd, voorbeeld " + nr +
-        " van " + SAMPLES_PER_DIGIT + ". Haal het cijfer van het scherm.";
-      calibrateSubInstruction.textContent =
-        "Wacht tot het scherm geen aanrakingen meer heeft.";
-      statusLabel.textContent =
-        "Cijfer " + digitStr + " voorbeeld " + nr + " vastgelegd. Wacht tot het scherm vrij is.";
+      return entry.samples.length;
     }
 
     function checkCalibrationComplete() {
-      return DIGIT_ORDER.every(d =>
-        calibration[d] &&
-        calibration[d].samples &&
-        calibration[d].samples.length >= SAMPLES_PER_DIGIT
-      );
+      return DIGIT_ORDER.every(d => {
+        const entry = calibration[d];
+        return entry && entry.samples && entry.samples.length >= SAMPLES_PER_DIGIT;
+      });
     }
 
     function finishCalibrationIfReady() {
@@ -774,73 +659,21 @@
         statusLabel.textContent = "Alle cijfers zijn gekalibreerd. Je kunt nu naar scannen gaan.";
         safeSaveCalibration();
         refreshDataTextarea();
-
-        calibrateInstruction.textContent = "Kalibratie compleet.";
-        calibrateSubInstruction.textContent =
-          "Je kunt nu naar scannen gaan of opnieuw kalibreren.";
       }
     }
 
-    function advanceToNextStep() {
-      if (calibrationComplete) {
-        return;
-      }
-
-      if (currentSampleIndex < SAMPLES_PER_DIGIT - 1) {
-        currentSampleIndex += 1;
-      } else {
-        currentSampleIndex = 0;
-        if (currentDigitIndex < DIGIT_ORDER.length - 1) {
-          currentDigitIndex += 1;
-        }
-      }
-      setCalibrateInstruction();
-    }
-
-    function resetCalibrationState(clearStorage) {
-      calibration = {};
-      calibrationComplete = false;
-      currentDigitIndex = 0;
-      currentSampleIndex = 0;
-      waitingForRelease = false;
-      stableCandidate = null;
-      lastPrediction = null;
-      toScanBtn.disabled = true;
-      predictedDigitEl.textContent = "?";
-      scanResultLabel.textContent = "Wachten op drie aanrakingen";
-      scanStatusLabel.textContent = "Leg een gekalibreerd cijfer op het scherm.";
-      setCalibrateInstruction();
-      updateDebugPanel(null, null, null);
-      if (clearStorage) {
-        try {
-          localStorage.removeItem(LOCAL_STORAGE_KEY);
-        } catch (e) {}
-        refreshDataTextarea();
-      }
-    }
-
-    function setPrediction(digitStr, distance, margin) {
-      if (!digitStr) {
-        predictedDigitEl.textContent = "?";
-        scanResultLabel.textContent = "Onzeker";
-        scanStatusLabel.textContent = "De vorm wijkt te veel af of lijkt op meerdere cijfers.";
-        lastPrediction = null;
-        return;
-      }
-
-      predictedDigitEl.textContent = digitStr;
-      scanResultLabel.textContent = "Herkenning: " + digitStr;
-
-      let extra = "Afstand: " + (distance != null ? distance.toFixed(3) : "?");
-      if (margin != null && Number.isFinite(margin)) {
-        extra += "  Marge: " + margin.toFixed(3);
-      }
-      scanStatusLabel.textContent = extra;
-
-      if (lastPrediction !== digitStr) {
-        lastPrediction = digitStr;
-        speakDigit(digitStr);
-      }
+    function setCalibrateInstruction() {
+      const digitStr = DIGIT_ORDER[currentDigitIndex];
+      const count = samplesForDigit(digitStr);
+      const nextSample = count + 1;
+      calibrateInstruction.textContent =
+        "Leg nu het cijfer " + digitStr + " op het scherm (voorbeeld " +
+        nextSample + " van " + SAMPLES_PER_DIGIT + ")";
+      calibrateSubInstruction.textContent =
+        "Plaats het cijfer telkens net anders: een beetje gedraaid of op een andere plek.";
+      statusLabel.textContent =
+        "Kalibreren: wacht op drie stabiele aanrakingen voor cijfer " +
+        digitStr + ", voorbeeld " + nextSample + ".";
     }
 
     function clearPrediction() {
@@ -848,6 +681,25 @@
       scanResultLabel.textContent = "Wachten op drie aanrakingen";
       scanStatusLabel.textContent = "Leg een gekalibreerd cijfer op het scherm.";
       lastPrediction = null;
+    }
+
+    function setPrediction(digitStr, distance) {
+      if (!digitStr) {
+        predictedDigitEl.textContent = "?";
+        scanResultLabel.textContent = "Onbekend";
+        scanStatusLabel.textContent = "De vorm lijkt niet genoeg op een gekalibreerd cijfer.";
+        lastPrediction = null;
+        return;
+      }
+
+      predictedDigitEl.textContent = digitStr;
+      scanResultLabel.textContent = "Herkenning: " + digitStr;
+      scanStatusLabel.textContent = "Afstand tot kalibratie: " + distance.toFixed(3);
+
+      if (lastPrediction !== digitStr) {
+        lastPrediction = digitStr;
+        speakDigit(digitStr);
+      }
     }
 
     function touchesToPoints(touchList) {
@@ -904,23 +756,38 @@
       const purePoints = points.map(p => ({ x: p.x, y: p.y }));
       const features = computeFeatures(purePoints);
 
+      if (!features) {
+        return;
+      }
+
       if (mode === "calibrate") {
-        if (calibrationComplete) {
+        const digitStr = DIGIT_ORDER[currentDigitIndex];
+        let entry = calibration[digitStr];
+        if (!entry) {
+          entry = { digit: parseInt(digitStr, 10), samples: [] };
+          calibration[digitStr] = entry;
+        }
+
+        if (entry.samples.length >= SAMPLES_PER_DIGIT) {
+          // Dit cijfer is al vol, niets meer doen
+          statusLabel.textContent = "Voor cijfer " + digitStr + " zijn al " +
+            entry.samples.length + " voorbeelden vastgelegd.";
           return;
         }
-        const digitStr = DIGIT_ORDER[currentDigitIndex];
-        if (!calibration[digitStr]) {
-          calibration[digitStr] = {
-            digit: parseInt(digitStr, 10),
-            samples: []
-          };
-        }
-        calibration[digitStr].samples.push({
+
+        entry.samples.push({
           points: purePoints,
           features: features
         });
 
-        markSampleCaptured(digitStr, currentSampleIndex);
+        const sampleIndex = entry.samples.length;
+        calibrateInstruction.textContent =
+          "Cijfer " + digitStr + " voorbeeld " + sampleIndex + " vastgelegd, til het cijfer van het scherm.";
+        calibrateSubInstruction.textContent =
+          "Wacht tot het scherm geen aanrakingen meer heeft.";
+        statusLabel.textContent =
+          "Cijfer " + digitStr + " voorbeeld " + sampleIndex + " vastgelegd. Wacht tot het scherm vrij is.";
+
         waitingForRelease = true;
         updateDebugPanel(purePoints, features, null);
         finishCalibrationIfReady();
@@ -931,26 +798,25 @@
           return;
         }
         const match = findBestMatch(features, calibration);
+
         let chosenDigit = null;
+        if (match.digit != null) {
+          const d = match.distance;
+          const second = match.secondBestDistance;
+          const ratio = second > 0 ? d / second : 0;
 
-        if (match.digit != null &&
-            match.distance <= MATCH_THRESHOLD &&
-            match.margin >= MARGIN_THRESHOLD) {
-
-          chosenDigit = match.digit;
-          statusLabel.textContent = "Cijfer " + chosenDigit + " herkend.";
-
-        } else if (match.digit != null && match.distance <= MATCH_THRESHOLD) {
-
-          statusLabel.textContent =
-            "Meting is twijfelachtig, vorm lijkt op " + match.digit +
-            " maar ook op andere cijfers.";
-
+          // Strenge regels: afstand moet laag zijn en genoeg beter dan nummer twee
+          if (d <= MATCH_THRESHOLD && ratio < 0.75) {
+            chosenDigit = match.digit;
+            statusLabel.textContent = "Cijfer " + chosenDigit + " herkend.";
+          } else {
+            statusLabel.textContent = "Onzeker resultaat, vorm ligt te dicht bij meerdere cijfers.";
+          }
         } else {
-          statusLabel.textContent = "Vorm komt niet duidelijk overeen met kalibratie.";
+          statusLabel.textContent = "Geen match gevonden.";
         }
 
-        setPrediction(chosenDigit, match.distance || 0, match.margin);
+        setPrediction(chosenDigit, match.distance || 0);
         updateDebugPanel(purePoints, features, match);
       }
     }
@@ -963,13 +829,24 @@
         if (waitingForRelease) {
           if (count === 0) {
             waitingForRelease = false;
-            if (!calibrationComplete) {
-              advanceToNextStep();
+
+            const digitStr = DIGIT_ORDER[currentDigitIndex];
+            const sampleCount = samplesForDigit(digitStr);
+
+            if (sampleCount < SAMPLES_PER_DIGIT) {
+              setCalibrateInstruction();
+            } else {
+              if (currentDigitIndex < DIGIT_ORDER.length - 1) {
+                currentDigitIndex += 1;
+                setCalibrateInstruction();
+              } else {
+                calibrateInstruction.textContent = "Kalibratie compleet.";
+                calibrateSubInstruction.textContent =
+                  "Je kunt nu naar scannen gaan of opnieuw kalibreren.";
+                statusLabel.textContent = "Kalibratie voltooid voor alle cijfers.";
+              }
             }
           }
-          return;
-        }
-        if (calibrationComplete) {
           return;
         }
       } else if (mode === "scan") {
@@ -982,6 +859,7 @@
         stableCandidate = null;
         if (mode === "scan" && count === 0) {
           clearPrediction();
+          updateDebugPanel(null, null, null);
         }
         return;
       }
@@ -1034,110 +912,33 @@
       processTouches(touches);
     }
 
-    // UI events
-    toCalibrateBtn.addEventListener("click", function () {
-      mode = "calibrate";
-      updateModeUI();
-      if (!calibrationComplete) {
-        setCalibrateInstruction();
-      } else {
-        statusLabel.textContent =
-          "Je zit in kalibreer modus. Je kunt opnieuw kalibreren of naar scannen gaan.";
-      }
-    });
-
-    toScanBtn.addEventListener("click", function () {
-      if (!calibrationComplete) {
-        statusLabel.textContent =
-          "Scannen is niet beschikbaar. Kalibreer eerst alle cijfers.";
-        return;
-      }
-      mode = "scan";
-      updateModeUI();
-      clearPrediction();
-      statusLabel.textContent =
-        "Scan modus. Leg een gekalibreerd cijfer met drie contactpunten op het scherm.";
-    });
-
-    recalibrateBtn.addEventListener("click", function () {
-      resetCalibrationState(false);
-      statusLabel.textContent =
-        "Kalibratie opnieuw gestart. Leg het cijfer 0 op het scherm.";
-      if (mode !== "calibrate") {
-        mode = "calibrate";
-        updateModeUI();
-      }
-    });
-
-    resetBtn.addEventListener("click", function () {
-      resetCalibrationState(true);
-      statusLabel.textContent =
-        "Kalibratie gewist. Start opnieuw bij cijfer 0.";
-      if (mode !== "calibrate") {
-        mode = "calibrate";
-        updateModeUI();
-      }
-    });
-
-    showDataBtn.addEventListener("click", function () {
-      const willShow = dataSection.classList.contains("hidden");
-      if (willShow) {
-        refreshDataTextarea();
-        dataSection.classList.remove("hidden");
-        showDataBtn.textContent = "Verberg kalibratiegegevens";
-      } else {
-        dataSection.classList.add("hidden");
-        showDataBtn.textContent = "Toon kalibratiegegevens";
-      }
-    });
-
-    copyDataBtn.addEventListener("click", function () {
-      refreshDataTextarea();
-      const text = dataTextarea.value;
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function () {
-          statusLabel.textContent =
-            "Kalibratiegegevens gekopieerd naar het klembord.";
-        }).catch(function () {
-          dataTextarea.focus();
-          dataTextarea.select();
-          try {
-            document.execCommand("copy");
-            statusLabel.textContent =
-              "Kalibratiegegevens geselecteerd, kopieer met het kopieer commando.";
-          } catch (e) {
-            statusLabel.textContent =
-              "Kopiëren lukt niet automatisch, selecteer en kopieer de tekst handmatig.";
-          }
-        });
-      } else {
-        dataTextarea.focus();
-        dataTextarea.select();
-        try {
-          document.execCommand("copy");
-          statusLabel.textContent =
-            "Kalibratiegegevens geselecteerd, kopieer met het kopieer commando.";
-        } catch (e) {
-          statusLabel.textContent =
-            "Kopiëren lukt niet automatisch, selecteer en kopieer de tekst handmatig.";
+    function safeLoadCalibration() {
+      try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (!stored) {
+          return;
         }
-      }
-    });
+        const parsed = JSON.parse(stored);
 
-    touchArea.addEventListener("touchstart", onTouchChange, { passive: false });
-    touchArea.addEventListener("touchmove", onTouchChange, { passive: false });
-    touchArea.addEventListener("touchend", onTouchEndOrCancel, { passive: false });
-    touchArea.addEventListener("touchcancel", onTouchEndOrCancel, { passive: false });
+        let loaded = {};
+        let hasSamples = false;
 
-    // Start
-    resetCalibrationState(false);
-    safeLoadCalibration();
-    updateModeUI();
-    if (calibrationComplete) {
-      refreshDataTextarea();
-    }
-  })();
-</script>
-</body>
-</html>
+        DIGIT_ORDER.forEach(d => {
+          const entry = parsed[d];
+          if (!entry) {
+            return;
+          }
+          if (entry.samples && Array.isArray(entry.samples)) {
+            hasSamples = true;
+            loaded[d] = {
+              digit: entry.digit != null ? entry.digit : parseInt(d, 10),
+              samples: entry.samples
+            };
+          } else if (entry.features) {
+            // Oud formaat omzetten naar nieuw
+            loaded[d] = {
+              digit: entry.digit != null ? entry.digit : parseInt(d, 10),
+              samples: [
+                {
+                  points: entry.points || [],
+                  features: entry.features
