@@ -338,7 +338,8 @@
   (function () {
     "use strict";
 
-    const STABLE_TIME_MS = 260;
+    // Kortere stabilisatieperiode
+    const STABLE_TIME_MS = 200;
     const MOVE_TOLERANCE_PX = 25;
     const MATCH_THRESHOLD = 0.35;
     const ORIENTATION_PENALTY = 0.6;
@@ -387,6 +388,7 @@
     let currentDigitIndex = 0;
     let waitingForRelease = false;
     let stableCandidate = null;
+    let stableTimeoutId = null;      // nieuw
     let lastTouchCount = 0;
     let lastPrediction = null;
 
@@ -673,12 +675,21 @@
       }
     }
 
+    function clearStableCandidate() {
+      stableCandidate = null;
+      if (stableTimeoutId !== null) {
+        clearTimeout(stableTimeoutId);
+        stableTimeoutId = null;
+      }
+    }
+
     function resetCalibrationState(clearStorage) {
       calibration = {};
       calibrationComplete = false;
       currentDigitIndex = 0;
       waitingForRelease = false;
-      stableCandidate = null;
+      clearStableCandidate();
+      lastTouchCount = 0;
       lastPrediction = null;
       toScanBtn.disabled = true;
       predictedDigitEl.textContent = "?";
@@ -771,19 +782,6 @@
       return maxMove;
     }
 
-    // Nieuw: kies altijd drie punten uit de aanwezige touches
-    function pickThreePoints(points) {
-      if (!points || points.length === 0) {
-        return [];
-      }
-      if (points.length <= 3) {
-        return points;
-      }
-      // Sorteer op identifier zodat het stabiel blijft
-      const sorted = points.slice().sort((a, b) => a.id - b.id);
-      return sorted.slice(0, 3);
-    }
-
     function handleStableThreePoints(points) {
       const purePoints = points.map(p => ({ x: p.x, y: p.y }));
       const features = computeFeatures(purePoints);
@@ -821,9 +819,29 @@
       }
     }
 
-    function processTouches(allTouches) {
+    function scheduleStableCheck() {
+      if (stableTimeoutId !== null) {
+        clearTimeout(stableTimeoutId);
+      }
+      stableTimeoutId = setTimeout(function () {
+        if (!stableCandidate || stableCandidate.triggered) {
+          return;
+        }
+        if (lastTouchCount !== 3) {
+          return;
+        }
+        const move = maxMovement(stableCandidate.lastPoints, stableCandidate.originPoints);
+        if (move > MOVE_TOLERANCE_PX) {
+          return;
+        }
+        stableCandidate.triggered = true;
+        handleStableThreePoints(stableCandidate.lastPoints);
+      }, STABLE_TIME_MS);
+    }
+
+    function processTouches(touches) {
       const now = performance.now();
-      const count = allTouches.length;
+      const count = touches.length;
       lastTouchCount = count;
 
       if (mode === "calibrate") {
@@ -845,18 +863,16 @@
         }
       }
 
-      // Te weinig aanrakingen, reset candidate
-      if (count < 3) {
-        stableCandidate = null;
+      if (count !== 3) {
+        // minder dan drie of meer dan drie aanrakingen, dan geen meting
+        clearStableCandidate();
         if (mode === "scan" && count === 0) {
           clearPrediction();
         }
         return;
       }
 
-      // Gebruik altijd precies drie punten voor de driehoek
-      const touches = pickThreePoints(allTouches);
-
+      // drie aanrakingen
       if (!stableCandidate || !sameIds(touches, stableCandidate.originPoints)) {
         stableCandidate = {
           originPoints: clonePoints(touches),
@@ -869,20 +885,26 @@
         } else {
           statusLabel.textContent = "Metingen worden gestabiliseerd voor dit cijfer.";
         }
+        scheduleStableCheck();
         return;
       }
 
+      // zelfde aanrakingen als eerder
+      stableCandidate.lastPoints = clonePoints(touches);
       const move = maxMovement(touches, stableCandidate.originPoints);
       if (move > MOVE_TOLERANCE_PX) {
+        // opnieuw beginnen als het cijfer echt verschoven is
         stableCandidate = {
           originPoints: clonePoints(touches),
           startTime: now,
           lastPoints: clonePoints(touches),
           triggered: false
         };
+        scheduleStableCheck();
         return;
       }
 
+      // extra kans om de meting af te ronden als er toch beweging is
       if (!stableCandidate.triggered && now - stableCandidate.startTime >= STABLE_TIME_MS) {
         stableCandidate.triggered = true;
         handleStableThreePoints(touches);
@@ -907,6 +929,7 @@
 
     toCalibrateBtn.addEventListener("click", function () {
       mode = "calibrate";
+      clearStableCandidate();
       updateModeUI();
       if (!calibrationComplete) {
         setCalibrateInstruction();
@@ -921,6 +944,7 @@
         return;
       }
       mode = "scan";
+      clearStableCandidate();
       updateModeUI();
       clearPrediction();
       statusLabel.textContent = "Scan modus. Leg een gekalibreerd cijfer met drie contactpunten op het scherm.";
