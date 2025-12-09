@@ -294,7 +294,7 @@
         Leg nu het cijfer 0 op het scherm
       </div>
       <div id="calibrateSubInstruction" class="sub-instruction">
-        Raak het scherm alleen met het houten cijfer, de app legt het cijfer automatisch vast.
+        Raak het scherm alleen met het houten cijfer, geen vingers. De app legt het cijfer automatisch vast.
       </div>
 
       <div id="scanDisplay" class="scan-display hidden">
@@ -312,6 +312,8 @@
         <button id="recalibrateBtn">Kalibreren opnieuw</button>
         <button id="resetBtn" class="danger">Wis kalibratie</button>
         <button id="showDataBtn" class="secondary">Toon kalibratiegegevens</button>
+        <!-- Nieuwe knop om met één klik te kopiëren -->
+        <button id="copyDataBtn" class="secondary" disabled>Kopieer kalibratiegegevens</button>
       </div>
 
       <div class="debug-panel">
@@ -340,9 +342,11 @@
 
     const STABLE_TIME_MS = 260;
     const MOVE_TOLERANCE_PX = 25;
-    const MATCH_THRESHOLD = 0.25; // strenger voor minder foutieve matches
+    const MATCH_THRESHOLD = 0.35;
     const ORIENTATION_PENALTY = 0.6;
-    const SAMPLES_PER_DIGIT = 4;  // aantal metingen per cijfer
+    // Nieuwe waarden voor extra verticale straf
+    const VERTICAL_DIFF_THRESHOLD = 0.2;
+    const VERTICAL_PENALTY = 0.8;
     const LOCAL_STORAGE_KEY = "marboticCalibration";
 
     const DIGIT_ORDER = ["0","1","2","3","4","5","6","7","8","9"];
@@ -359,7 +363,7 @@
       "9": "negen"
     };
 
-    // UI elementen
+    // UI elements
     const modeLabel = document.getElementById("modeLabel");
     const statusLabel = document.getElementById("statusLabel");
     const touchArea = document.getElementById("touchArea");
@@ -374,6 +378,7 @@
     const recalibrateBtn = document.getElementById("recalibrateBtn");
     const resetBtn = document.getElementById("resetBtn");
     const showDataBtn = document.getElementById("showDataBtn");
+    const copyDataBtn = document.getElementById("copyDataBtn");
     const dataSection = document.getElementById("dataSection");
     const dataTextarea = document.getElementById("dataTextarea");
     const debugCanvas = document.getElementById("debugCanvas");
@@ -383,10 +388,9 @@
 
     // State
     let mode = "calibrate"; // "calibrate" of "scan"
-    let calibration = {};   // per cijfer: { digit, samples: [{points, features}, ...] }
+    let calibration = {};
     let calibrationComplete = false;
     let currentDigitIndex = 0;
-    let currentSampleIndex = 0;   // meting 0 tot SAMPLES_PER_DIGIT - 1
     let waitingForRelease = false;
     let stableCandidate = null;
     let lastTouchCount = 0;
@@ -414,6 +418,14 @@
         x: (p0.x + p1.x + p2.x) / 3,
         y: (p0.y + p1.y + p2.y) / 3
       };
+
+      // Verticale verdeling: 0 is hoog in beeld, 1 is laag
+      const ys = [p0.y, p1.y, p2.y];
+      const minY = Math.min(ys[0], ys[1], ys[2]);
+      const maxY = Math.max(ys[0], ys[1], ys[2]);
+      const spanY = maxY - minY || 1;
+      const ysNorm = ys.map(y => (y - minY) / spanY);
+      const verticalSorted = ysNorm.slice().sort((a, b) => a - b);
 
       const d01 = distance(p0, p1);
       const d12 = distance(p1, p2);
@@ -450,7 +462,9 @@
         sides: sidesSorted,
         orientation: orientation,
         cosAngle: cosAngle,
-        centroid: centroid
+        centroid: centroid,
+        // Verticale posities: drie waarden van hoog naar laag
+        vertical: verticalSorted
       };
     }
 
@@ -464,31 +478,40 @@
       const d1 = s1[1] - s2[1];
       const d2 = s1[2] - s2[2];
       const dCos = (f1.cosAngle || 0) - (f2.cosAngle || 0);
+
       let distSq = d0 * d0 + d1 * d1 + d2 * d2 + dCos * dCos;
       let dist = Math.sqrt(distSq);
+
+      // Extra straf als de verticale verdeling niet klopt
+      if (f1.vertical && f2.vertical && f1.vertical.length === 3 && f2.vertical.length === 3) {
+        const v1 = f1.vertical;
+        const v2 = f2.vertical;
+        const midDiff = Math.abs((v1[1] || 0) - (v2[1] || 0));
+        if (midDiff > VERTICAL_DIFF_THRESHOLD) {
+          dist += VERTICAL_PENALTY * (midDiff - VERTICAL_DIFF_THRESHOLD);
+        }
+      }
+
       if ((f1.orientation || 0) !== (f2.orientation || 0)) {
         dist += ORIENTATION_PENALTY;
       }
       return dist;
     }
 
-    // Nu met meerdere samples per cijfer
     function findBestMatch(features, calibrationData) {
       let bestDigit = null;
       let bestDist = Number.POSITIVE_INFINITY;
 
       DIGIT_ORDER.forEach(d => {
         const entry = calibrationData[d];
-        if (!entry || !entry.samples || entry.samples.length === 0) {
+        if (!entry || !entry.features) {
           return;
         }
-        entry.samples.forEach(sample => {
-          const dist = compareFeatures(features, sample.features);
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestDigit = d;
-          }
-        });
+        const dist = compareFeatures(features, entry.features);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestDigit = d;
+        }
       });
 
       return { digit: bestDigit, distance: bestDist };
@@ -553,6 +576,10 @@
         text += "  " + s.map(v => v.toFixed(3)).join("  ") + "\n\n";
         text += "Oriëntatie: " + (features.orientation || 0) + "\n";
         text += "cos(hoek): " + (features.cosAngle || 0).toFixed(3) + "\n";
+        if (features.vertical && features.vertical.length === 3) {
+          text += "\nVerticale posities (0 boven, 1 onder):\n";
+          text += "  " + features.vertical.map(v => v.toFixed(3)).join("  ") + "\n";
+        }
       } else {
         text += "Nog geen geldige driehoek.\n";
       }
@@ -582,11 +609,10 @@
         utter.rate = 1;
         window.speechSynthesis.speak(utter);
       } catch (e) {
-        // stil falen bij problemen met spraak
+        // Stil falen bij problemen met spraak
       }
     }
 
-    // Laden van kalibratie, inclusief ondersteuning voor oude structuur
     function safeLoadCalibration() {
       try {
         const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -594,51 +620,22 @@
           return;
         }
         const parsed = JSON.parse(stored);
-        if (!parsed || typeof parsed !== "object") {
-          return;
-        }
-
         let valid = true;
-        const rebuilt = {};
-
         DIGIT_ORDER.forEach(d => {
-          const entry = parsed[d];
-          if (!entry) {
-            valid = false;
-            return;
-          }
-          if (entry.samples && Array.isArray(entry.samples) && entry.samples.length > 0) {
-            rebuilt[d] = {
-              digit: typeof entry.digit === "number" ? entry.digit : parseInt(d, 10),
-              samples: entry.samples.map(s => ({
-                points: s.points,
-                features: s.features
-              }))
-            };
-          } else if (entry.features && entry.points) {
-            // oude versie met één meting per cijfer
-            rebuilt[d] = {
-              digit: typeof entry.digit === "number" ? entry.digit : parseInt(d, 10),
-              samples: [{
-                points: entry.points,
-                features: entry.features
-              }]
-            };
-          } else {
+          if (!parsed || !parsed[d] || !parsed[d].features) {
             valid = false;
           }
         });
-
-        if (!valid) {
-          return;
+        if (valid) {
+          calibration = parsed;
+          calibrationComplete = true;
+          toScanBtn.disabled = false;
+          statusLabel.textContent = "Kalibratie geladen uit opslag. Je kunt naar scannen gaan of opnieuw kalibreren.";
+          refreshDataTextarea();
+          updateCopyButtonState();
         }
-
-        calibration = rebuilt;
-        calibrationComplete = true;
-        toScanBtn.disabled = false;
-        statusLabel.textContent = "Kalibratie geladen uit opslag. Je kunt naar scannen gaan of opnieuw kalibreren.";
       } catch (e) {
-        // negeer opslagfouten
+        // Als opslag niet werkt, gewoon verder
       }
     }
 
@@ -646,12 +643,17 @@
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(calibration));
       } catch (e) {
-        // geen harde fout bij opslag
+        // Geen harde fout bij opslag
       }
     }
 
     function refreshDataTextarea() {
       dataTextarea.value = JSON.stringify(calibration, null, 2);
+    }
+
+    function updateCopyButtonState() {
+      const hasData = calibration && Object.keys(calibration).length > 0;
+      copyDataBtn.disabled = !hasData;
     }
 
     function updateModeUI() {
@@ -674,35 +676,19 @@
 
     function setCalibrateInstruction() {
       const digitStr = DIGIT_ORDER[currentDigitIndex];
-      const sampleNr = currentSampleIndex + 1;
-      calibrateInstruction.textContent =
-        "Leg nu het cijfer " + digitStr + " op het scherm (meting " + sampleNr + " van " + SAMPLES_PER_DIGIT + ")";
-      if (SAMPLES_PER_DIGIT === 1) {
-        calibrateSubInstruction.textContent =
-          "Raak het scherm alleen met het houten cijfer, de app legt het cijfer automatisch vast.";
-      } else {
-        calibrateSubInstruction.textContent =
-          "Raak het scherm alleen met het houten cijfer en leg het steeds net iets anders neer, bijvoorbeeld anders gedraaid of op een andere plek.";
-      }
-      statusLabel.textContent =
-        "Kalibreren: wacht op drie stabiele aanrakingen voor cijfer " + digitStr + ", meting " + sampleNr + ".";
+      calibrateInstruction.textContent = "Leg nu het cijfer " + digitStr + " op het scherm";
+      calibrateSubInstruction.textContent = "Raak het scherm alleen met het houten cijfer. De app legt het cijfer automatisch vast.";
+      statusLabel.textContent = "Kalibreren: wacht op drie stabiele aanrakingen voor cijfer " + digitStr + ".";
     }
 
     function markDigitCaptured(digitStr) {
-      const sampleNr = currentSampleIndex + 1;
-      calibrateInstruction.textContent =
-        "Meting " + sampleNr + " voor cijfer " + digitStr + " vastgelegd, haal het cijfer van het scherm.";
+      calibrateInstruction.textContent = "Cijfer " + digitStr + " vastgelegd, haal het cijfer van het scherm.";
       calibrateSubInstruction.textContent = "Wacht tot het scherm geen aanrakingen meer heeft.";
-      statusLabel.textContent =
-        "Meting " + sampleNr + " voor cijfer " + digitStr + " vastgelegd. Wacht tot het scherm vrij is.";
+      statusLabel.textContent = "Cijfer " + digitStr + " vastgelegd. Wacht tot het scherm vrij is.";
     }
 
     function checkCalibrationComplete() {
-      return DIGIT_ORDER.every(d =>
-        calibration[d] &&
-        calibration[d].samples &&
-        calibration[d].samples.length >= SAMPLES_PER_DIGIT
-      );
+      return DIGIT_ORDER.every(d => calibration[d] && calibration[d].features);
     }
 
     function finishCalibrationIfReady() {
@@ -710,31 +696,18 @@
         calibrationComplete = true;
         toScanBtn.disabled = false;
         statusLabel.textContent = "Alle cijfers zijn gekalibreerd. Je kunt nu naar scannen gaan.";
-        calibrateInstruction.textContent = "Kalibratie klaar.";
-        calibrateSubInstruction.textContent = "Je kunt nu naar scannen gaan of opnieuw kalibreren.";
         safeSaveCalibration();
         refreshDataTextarea();
+        updateCopyButtonState();
       }
     }
 
-    function advanceCalibrationStep() {
-      if (calibrationComplete) {
-        return;
-      }
-
-      if (currentSampleIndex < SAMPLES_PER_DIGIT - 1) {
-        currentSampleIndex += 1;
-        setCalibrateInstruction();
-        return;
-      }
-
-      // naar volgende cijfer
+    function advanceToNextDigit() {
       if (currentDigitIndex < DIGIT_ORDER.length - 1) {
         currentDigitIndex += 1;
-        currentSampleIndex = 0;
         setCalibrateInstruction();
       } else {
-        calibrateInstruction.textContent = "Kalibratie klaar.";
+        calibrateInstruction.textContent = "Kalibratie compleet.";
         calibrateSubInstruction.textContent = "Je kunt nu naar scannen gaan of opnieuw kalibreren.";
         statusLabel.textContent = "Kalibratie voltooid voor alle cijfers.";
       }
@@ -744,7 +717,6 @@
       calibration = {};
       calibrationComplete = false;
       currentDigitIndex = 0;
-      currentSampleIndex = 0;
       waitingForRelease = false;
       stableCandidate = null;
       lastPrediction = null;
@@ -761,6 +733,7 @@
         }
         refreshDataTextarea();
       }
+      updateCopyButtonState();
     }
 
     function setPrediction(digitStr, distance) {
@@ -848,25 +821,17 @@
           return;
         }
         const digitStr = DIGIT_ORDER[currentDigitIndex];
-        if (!calibration[digitStr]) {
-          calibration[digitStr] = {
-            digit: parseInt(digitStr, 10),
-            samples: []
-          };
-        }
-        // voeg sample toe
-        if (!features) {
-          return;
-        }
-        calibration[digitStr].samples.push({
+        calibration[digitStr] = {
+          digit: parseInt(digitStr, 10),
           points: purePoints,
           features: features
-        });
+        };
         markDigitCaptured(digitStr);
         waitingForRelease = true;
         updateDebugPanel(purePoints, features, null);
         finishCalibrationIfReady();
         refreshDataTextarea();
+        updateCopyButtonState();
       } else if (mode === "scan") {
         if (!calibrationComplete) {
           statusLabel.textContent = "Scannen is niet beschikbaar. Kalibreer eerst alle cijfers.";
@@ -878,7 +843,7 @@
           chosenDigit = match.digit;
           statusLabel.textContent = "Cijfer " + chosenDigit + " herkend.";
         } else {
-          statusLabel.textContent = "Vorm komt niet overeen met kalibratie, of is te onzeker.";
+          statusLabel.textContent = "Vorm komt niet overeen met kalibratie.";
         }
         setPrediction(chosenDigit, match.distance || 0);
         updateDebugPanel(purePoints, features, match);
@@ -895,7 +860,7 @@
           if (count === 0) {
             waitingForRelease = false;
             if (!calibrationComplete) {
-              advanceCalibrationStep();
+              advanceToNextDigit();
             }
           }
           return;
@@ -1016,6 +981,48 @@
       }
     });
 
+    // Nieuwe handler voor kopieerknop
+    copyDataBtn.addEventListener("click", function () {
+      refreshDataTextarea();
+      const text = dataTextarea.value.trim();
+      if (!text) {
+        statusLabel.textContent = "Er zijn nog geen kalibratiegegevens om te kopiëren.";
+        return;
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          statusLabel.textContent = "Kalibratiegegevens gekopieerd naar het klembord.";
+        }).catch(function () {
+          try {
+            dataTextarea.focus();
+            dataTextarea.select();
+            const ok = document.execCommand("copy");
+            if (ok) {
+              statusLabel.textContent = "Kalibratiegegevens gekopieerd naar het klembord.";
+            } else {
+              statusLabel.textContent = "Kopiëren is niet gelukt, selecteer en kopieer de tekst zelf.";
+            }
+          } catch (e) {
+            statusLabel.textContent = "Kopiëren is niet gelukt, selecteer en kopieer de tekst zelf.";
+          }
+        });
+      } else {
+        try {
+          dataTextarea.focus();
+          dataTextarea.select();
+          const ok = document.execCommand("copy");
+          if (ok) {
+            statusLabel.textContent = "Kalibratiegegevens gekopieerd naar het klembord.";
+          } else {
+            statusLabel.textContent = "Kopiëren is niet gelukt, selecteer en kopieer de tekst zelf.";
+          }
+        } catch (e) {
+          statusLabel.textContent = "Kopiëren is niet gelukt, selecteer en kopieer de tekst zelf.";
+        }
+      }
+    });
+
     touchArea.addEventListener("touchstart", onTouchChange, { passive: false });
     touchArea.addEventListener("touchmove", onTouchChange, { passive: false });
     touchArea.addEventListener("touchend", onTouchEndOrCancel, { passive: false });
@@ -1026,6 +1033,7 @@
     updateModeUI();
     if (calibrationComplete) {
       refreshDataTextarea();
+      updateCopyButtonState();
     }
   })();
 </script>
