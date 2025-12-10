@@ -8,7 +8,6 @@
   <style>
     :root {
       color-scheme: light;
-      /* rustige kleuren */
       --bg-top: #f3f6ff;
       --bg-main: #f6fbff;
       --accent: #4f8df5;
@@ -54,8 +53,6 @@
       flex-direction: column;
       background: transparent;
     }
-
-    /* Bovenste uitlegzone */
 
     #infoBar {
       flex: 0 0 clamp(70px, 13vh, 100px);
@@ -132,8 +129,6 @@
       max-width: 170px;
     }
 
-    /* Hoofdveld */
-
     #playArea {
       position: relative;
       flex: 1 1 auto;
@@ -186,8 +181,6 @@
       opacity: 0.9;
       transform: scale(1);
     }
-
-    /* Feedback rondje groen of rood */
 
     #feedbackOverlay {
       position: absolute;
@@ -256,8 +249,6 @@
       100% { transform: translateY(0); }
     }
 
-    /* Loading laag voor kalibratie */
-
     #loadingOverlay {
       position: absolute;
       inset: 0;
@@ -303,8 +294,6 @@
     .hidden {
       display: none !important;
     }
-
-    /* Kleine verfijningen voor liggende stand */
 
     @media (orientation: landscape) {
       #infoBar {
@@ -360,17 +349,13 @@
   </div>
 
   <script>
-    /**
-     * Globale kalibratie uit calibration.json
-     * Wordt gevuld via fetch en daarna gebruikt als window.calibrationData
-     */
     window.calibrationData = null;
 
     (function () {
       "use strict";
 
-      const SHOW_DURATION_FIRST = 3000;   // eerste keer stippen in beeld
-      const SHOW_DURATION_SECOND = 4000;  // tweede kans, iets langer
+      const SHOW_DURATION_FIRST = 3000;
+      const SHOW_DURATION_SECOND = 4000;
       const FEEDBACK_GOOD_MS = 800;
       const FEEDBACK_BAD_MS = 700;
 
@@ -378,7 +363,7 @@
       const appState = {
         currentNumber: null,
         dots: [],
-        phase: "loading", // loading, showingDots, waitingAnswer, feedback
+        phase: "loading",
         secondChance: false,
         dotsTimerId: null,
         lockInput: false,
@@ -422,8 +407,6 @@
       }
 
       function handleResize() {
-        // bij nieuw rondje worden posities opnieuw berekend
-        // als er nu geen rondje speelt, dotposities opnieuw tekenen
         if (appState.dots && appState.dots.length > 0 && typeof appState.currentNumber === "number") {
           appState.dots = generateDotsForNumber(appState.currentNumber, appState.secondChance);
           renderDots();
@@ -440,8 +423,15 @@
           })
           .then(function (data) {
             window.calibrationData = data;
-            expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
+
+            if (typeof data.expectedTouchPoints === "number") {
+              expectedTouchPoints = data.expectedTouchPoints;
+            } else {
+              expectedTouchPoints = 3;
+            }
+
             calibrationPatterns = buildCalibrationPatterns(data);
+
             elements.loadingOverlay.classList.add("hidden");
             elements.infoHint.textContent = "Leg een Marbotic cijfer in het grote veld en til het voorzichtig weer op";
             appState.phase = "idle";
@@ -452,12 +442,11 @@
             elements.infoHint.textContent = "Kalibratie niet gevonden, controleer calibration.json";
             elements.loadingOverlay.classList.add("hidden");
             appState.phase = "idle";
-            // spel kan visueel al gebruikt worden, maar multitouch herkent geen cijfers
             startNewRound();
           });
       }
 
-      /* ====================== AUDIO ====================== */
+      /* ---------- audio ---------- */
 
       function ensureAudioContext() {
         try {
@@ -502,7 +491,7 @@
         playTone(220, 210);
       }
 
-      /* ====================== TOUCH EN MARBOTIC ====================== */
+      /* ---------- touch en Marbotic ---------- */
 
       function handleTouchStart(e) {
         e.preventDefault();
@@ -521,7 +510,6 @@
         e.preventDefault();
         if (appState.lockInput) return;
 
-        // als er geen touches meer op het scherm zijn, proberen we een cijfer te herkennen
         if (e.touches.length === 0 && touchState.activePoints.length > 0) {
           const points = touchState.activePoints.slice();
           touchState.activePoints = [];
@@ -541,7 +529,6 @@
           const t = e.touches[i];
           const x = t.clientX - rect.left;
           const y = t.clientY - rect.top;
-          // alleen punten binnen het speelveld meenemen
           if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
             points.push({ x: x, y: y });
           }
@@ -553,22 +540,49 @@
         }
       }
 
+      /* ---------- kalibratiepatronen uit jouw JSON ---------- */
+
       function buildCalibrationPatterns(data) {
         const patterns = [];
-        if (!data || !Array.isArray(data.digits)) return patterns;
+        if (!data) return patterns;
 
-        data.digits.forEach(function (entry) {
+        // nieuwe compacte structuur met "digits": [ { digit, points } ]
+        if (Array.isArray(data.digits)) {
+          data.digits.forEach(function (entry) {
+            if (!entry || typeof entry.digit === "undefined" || !Array.isArray(entry.points)) return;
+            if (entry.points.length < 2) return;
+            const sig = computeDistanceSignature(entry.points);
+            if (!sig) return;
+            patterns.push({
+              digit: typeof entry.digit === "string" ? parseInt(entry.digit, 10) : entry.digit,
+              signature: sig,
+              count: entry.points.length
+            });
+          });
+          return patterns;
+        }
+
+        // jouw uitgebreide structuur met "0": { digit, samples: [ { points, features }, ... ] }
+        Object.keys(data).forEach(function (key) {
+          if (!/^[0-9]$/.test(key)) {
+            return;
+          }
+          const entry = data[key];
+          if (!entry || !Array.isArray(entry.samples)) return;
+
           const d = typeof entry.digit === "string" ? parseInt(entry.digit, 10) : entry.digit;
           if (Number.isNaN(d)) return;
-          if (!entry.points || entry.points.length < 2) return;
 
-          const signature = computeDistanceSignature(entry.points);
-          if (!signature) return;
-
-          patterns.push({
-            digit: d,
-            signature: signature,
-            count: entry.points.length
+          entry.samples.forEach(function (sample) {
+            if (!sample || !Array.isArray(sample.points)) return;
+            if (sample.points.length < 2) return;
+            const sig = computeDistanceSignature(sample.points);
+            if (!sig) return;
+            patterns.push({
+              digit: d,
+              signature: sig,
+              count: sample.points.length
+            });
           });
         });
 
@@ -606,22 +620,19 @@
       }
 
       function recognizeDigit(points) {
-        if (!calibrationPatterns || calibrationPatterns.length === 0 || !window.calibrationData) {
-          // geen kalibratie, niets herkennen
+        if (!calibrationPatterns || calibrationPatterns.length === 0) {
           return null;
         }
-
         if (points.length !== expectedTouchPoints) {
-          // waarschijnlijk vinger in plaats van Marbotic
           return null;
         }
 
         const candidateSignature = computeDistanceSignature(points);
         if (!candidateSignature) return null;
 
-        const tolerance = typeof window.calibrationData.tolerance === "number"
+        const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
           ? window.calibrationData.tolerance
-          : 0.18;
+          : 0.08;
 
         let bestDigit = null;
         let bestScore = Infinity;
@@ -644,7 +655,7 @@
         return null;
       }
 
-      /* ====================== SPELLOGICA ====================== */
+      /* ---------- spellogica ---------- */
 
       function startNewRound() {
         clearDotsTimer();
@@ -653,7 +664,7 @@
         hideFeedback();
         hideQuestionMark();
 
-        const nextNumber = getRandomNumber();
+        const nextNumber = Math.floor(Math.random() * 10);
         appState.currentNumber = nextNumber;
 
         appState.dots = generateDotsForNumber(nextNumber, false);
@@ -661,11 +672,6 @@
 
         appState.phase = "showingDots";
         scheduleDotsHide(SHOW_DURATION_FIRST);
-      }
-
-      function getRandomNumber() {
-        // willekeurig getal van 0 tot en met 9
-        return Math.floor(Math.random() * 10);
       }
 
       function scheduleDotsHide(durationMs) {
@@ -686,7 +692,6 @@
         appState.dotsTimerId = null;
         if (appState.phase !== "showingDots") return;
 
-        // stippen verdwijnen, vraagteken verschijnt
         appState.dots = [];
         renderDots();
         showQuestionMark();
@@ -725,7 +730,6 @@
             hideFeedback();
 
             if (!appState.secondChance) {
-              // tweede kans, zelfde hoeveelheid, stippen iets langer zichtbaar
               appState.secondChance = true;
               appState.phase = "showingDots";
 
@@ -735,7 +739,6 @@
               appState.lockInput = false;
               scheduleDotsHide(SHOW_DURATION_SECOND);
             } else {
-              // tweede poging ook fout, gewoon door naar nieuwe ronde
               appState.secondChance = false;
               appState.phase = "idle";
               appState.dots = [];
@@ -747,7 +750,7 @@
         }
       }
 
-      /* ====================== DOT LAYOUT EN GROEPJES ====================== */
+      /* ---------- dots en groepjes ---------- */
 
       function generateDotsForNumber(n, isSecondChance) {
         const rect = elements.playInner.getBoundingClientRect();
@@ -760,12 +763,10 @@
         appState.dotRadius = dotRadius;
 
         if (n === 0) {
-          // geen stippen, enkel lege ruimte
           return [];
         }
 
         if (n === 1 || n === 2) {
-          // kleine aantallen, geen verplichte twee clusters
           const dots = [];
           for (let i = 0; i < n; i++) {
             const x = padding + Math.random() * (width - 2 * padding);
@@ -787,7 +788,6 @@
           };
           dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect, dotRadius));
         } else if (groups.length === 2) {
-          // altijd twee visueel gescheiden clusters
           const totalGap = minSide * 0.14;
           const availableWidth = width - 2 * padding - totalGap;
           const clusterWidth = availableWidth / 2;
@@ -803,7 +803,6 @@
           dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect1, dotRadius));
           dots.push.apply(dots, createDotsForGroup(groups[1], clusterRect2, dotRadius));
         } else {
-          // theoretisch niet nodig, maar als vangnet toch alles in één cluster
           const clusterRect = {
             left: padding,
             top: padding,
@@ -849,7 +848,6 @@
         }
 
         if (n === 8) {
-          // eis: twee keer vier, of vijf en drie
           const options = [
             [4, 4],
             [5, 3]
@@ -858,7 +856,6 @@
         }
 
         if (n === 9) {
-          // eis: vijf en vier, of zes en drie
           const options = [
             [5, 4],
             [6, 3]
@@ -893,7 +890,6 @@
       }
 
       function getLocalPattern(count) {
-        // lokale coördinaten rond (0,0) in bereik ongeveer van -1 tot 1
         const d = 0.7;
         if (count === 1) {
           return [{ x: 0, y: 0 }];
@@ -912,7 +908,6 @@
           ];
         }
         if (count === 4) {
-          // dobbelsteenstructuur vier
           return [
             { x: -d, y: -d },
             { x: d, y: -d },
@@ -921,7 +916,6 @@
           ];
         }
         if (count === 5) {
-          // dobbelsteenstructuur vijf
           return [
             { x: -d, y: -d },
             { x: d, y: -d },
@@ -931,7 +925,6 @@
           ];
         }
         if (count === 6) {
-          // dobbelsteenstructuur zes
           return [
             { x: -d, y: -d },
             { x: -d, y: 0 },
@@ -942,7 +935,6 @@
           ];
         }
 
-        // als er toch meer punten nodig zijn, vullen we aan op een kleine rastervorm
         const points = [];
         const cols = Math.ceil(Math.sqrt(count));
         const rows = Math.ceil(count / cols);
@@ -980,8 +972,6 @@
           layer.appendChild(el);
         }
       }
-
-      /* ====================== VISUELE ELEMENTEN ====================== */
 
       function showQuestionMark() {
         elements.questionMark.classList.add("visible");
