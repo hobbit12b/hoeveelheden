@@ -54,6 +54,8 @@
       background: transparent;
     }
 
+    /* Bovenste uitlegzone */
+
     #infoBar {
       flex: 0 0 clamp(70px, 13vh, 100px);
       display: flex;
@@ -126,8 +128,10 @@
       font-size: 0.72rem;
       color: #9aa3c0;
       text-align: right;
-      max-width: 170px;
+      max-width: 190px;
     }
+
+    /* Hoofdveld opgesplitst in stippenvak en scanvak */
 
     #playArea {
       position: relative;
@@ -145,6 +149,21 @@
       width: 100%;
       height: 100%;
       margin: 0;
+      padding: 8px 10px 12px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    #dotsColumn {
+      position: relative;
+      flex: 1 1 64%;
+      border-radius: 26px;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #ffffff 0%, #f1f6ff 55%, #e1f0ff 100%);
+      box-shadow:
+        0 10px 24px rgba(71, 93, 138, 0.18),
+        0 0 0 1px rgba(188, 202, 231, 0.8);
     }
 
     #dotsLayer {
@@ -168,7 +187,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(3.1rem, 9vw, 4.7rem);
+      font-size: clamp(3.1rem, 7vw, 4.7rem);
       font-weight: 700;
       color: var(--question);
       opacity: 0;
@@ -181,6 +200,96 @@
       opacity: 0.9;
       transform: scale(1);
     }
+
+    /* Scanvak rechts */
+
+    #scanPanel {
+      flex: 0 0 30%;
+      min-width: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .scan-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #7b86a2;
+      padding-inline: 4px;
+      user-select: none;
+    }
+
+    .scan-label-icon {
+      font-size: 1.1rem;
+    }
+
+    #scanZone {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 170px;
+      border-radius: 26px;
+      border: 3px solid rgba(128, 140, 170, 0.45);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(241, 246, 255, 0.98));
+      box-shadow:
+        inset 0 8px 14px rgba(91, 107, 142, 0.14),
+        0 12px 22px rgba(73, 93, 132, 0.15);
+      overflow: hidden;
+    }
+
+    #scanZoneInner {
+      position: absolute;
+      inset: 8px;
+      border-radius: 20px;
+      border: 1px dashed rgba(159, 173, 204, 0.9);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      color: rgba(149, 160, 189, 0.9);
+      opacity: 0.75;
+    }
+
+    #scanZoneInner::before {
+      content: "Leg hier het cijfer";
+      font-size: 0.85rem;
+    }
+
+    /* Scan status randkleur */
+
+    #scanZone.state-neutral {
+      border-color: rgba(128, 140, 170, 0.5);
+      box-shadow:
+        inset 0 8px 14px rgba(91, 107, 142, 0.14),
+        0 12px 22px rgba(73, 93, 132, 0.15);
+    }
+
+    #scanZone.state-scanning {
+      border-color: var(--accent);
+      box-shadow:
+        0 0 0 3px rgba(79, 141, 245, 0.25),
+        0 10px 22px rgba(79, 141, 245, 0.35);
+    }
+
+    #scanZone.state-correct {
+      border-color: var(--success);
+      box-shadow:
+        0 0 0 3px rgba(46, 175, 107, 0.35),
+        0 12px 24px rgba(46, 175, 107, 0.45);
+    }
+
+    #scanZone.state-wrong {
+      border-color: var(--error);
+      box-shadow:
+        0 0 0 3px rgba(240, 82, 79, 0.35),
+        0 12px 24px rgba(240, 82, 79, 0.45);
+    }
+
+    /* Centrale feedbackcirkel over het hele speelveld */
 
     #feedbackOverlay {
       position: absolute;
@@ -246,8 +355,11 @@
       40% { transform: translateY(4px); }
       60% { transform: translateY(-3px); }
       80% { transform: translateY(2px); }
-      100% { transform: translateY(0); }
+      100% { transform: translateY(0);
+      }
     }
+
+    /* Loadinglaag */
 
     #loadingOverlay {
       position: absolute;
@@ -304,7 +416,7 @@
         max-width: 290px;
       }
       #infoHint {
-        max-width: 210px;
+        max-width: 220px;
       }
     }
   </style>
@@ -321,14 +433,26 @@
         </div>
       </div>
       <div id="infoHint">
-        Voor leerkracht: kleuters leggen Marbotic in het grote veld en tillen het weer op voor controle
+        Voor leerkracht: leg het cijfer in het scanvak, til het na de feedback weer op
       </div>
     </header>
 
     <main id="playArea">
       <div id="playInner">
-        <div id="dotsLayer"></div>
-        <div id="questionMark">?</div>
+        <div id="dotsColumn">
+          <div id="dotsLayer"></div>
+          <div id="questionMark">?</div>
+        </div>
+
+        <div id="scanPanel">
+          <div class="scan-label">
+            <span class="scan-label-icon">🔢</span>
+            <span>Scanvak: drie puntjes van het cijfer in dit vak</span>
+          </div>
+          <div id="scanZone">
+            <div id="scanZoneInner"></div>
+          </div>
+        </div>
 
         <div id="feedbackOverlay" aria-hidden="true">
           <div id="feedbackCircle">
@@ -375,6 +499,11 @@
         lastUpdate: 0
       };
 
+      const answerFlow = {
+        hasActiveTouches: false,
+        answerGivenThisContact: false
+      };
+
       let calibrationPatterns = [];
       let expectedTouchPoints = 3;
       let audioCtx = null;
@@ -384,8 +513,11 @@
       function init() {
         elements.playArea = document.getElementById("playArea");
         elements.playInner = document.getElementById("playInner");
+        elements.dotsColumn = document.getElementById("dotsColumn");
         elements.dotsLayer = document.getElementById("dotsLayer");
         elements.questionMark = document.getElementById("questionMark");
+        elements.scanPanel = document.getElementById("scanPanel");
+        elements.scanZone = document.getElementById("scanZone");
         elements.infoMessage = document.getElementById("infoMessage");
         elements.infoHint = document.getElementById("infoHint");
         elements.feedbackOverlay = document.getElementById("feedbackOverlay");
@@ -394,6 +526,7 @@
         elements.loadingOverlay = document.getElementById("loadingOverlay");
 
         setupTouchHandlers();
+        setScanPanelState("neutral");
         loadCalibration();
         window.addEventListener("resize", handleResize);
       }
@@ -433,7 +566,7 @@
             calibrationPatterns = buildCalibrationPatterns(data);
 
             elements.loadingOverlay.classList.add("hidden");
-            elements.infoHint.textContent = "Leg een Marbotic cijfer in het grote veld en til het voorzichtig weer op";
+            elements.infoHint.textContent = "Leg een Marbotic cijfer in het scanvak en til het na de feedback weer op";
             appState.phase = "idle";
             startNewRound();
           })
@@ -446,7 +579,7 @@
           });
       }
 
-      /* ---------- audio ---------- */
+      /* audio */
 
       function ensureAudioContext() {
         try {
@@ -491,7 +624,7 @@
         playTone(220, 210);
       }
 
-      /* ---------- touch en Marbotic ---------- */
+      /* touch en Marbotic */
 
       function handleTouchStart(e) {
         e.preventDefault();
@@ -510,19 +643,23 @@
         e.preventDefault();
         if (appState.lockInput) return;
 
-        if (e.touches.length === 0 && touchState.activePoints.length > 0) {
-          const points = touchState.activePoints.slice();
-          touchState.activePoints = [];
+        updateTouchPointsFromEvent(e);
 
-          const digit = recognizeDigit(points);
-          if (digit !== null) {
-            handleDigitAnswer(digit);
+        if (e.touches.length === 0) {
+          touchState.activePoints = [];
+          answerFlow.hasActiveTouches = false;
+          answerFlow.answerGivenThisContact = false;
+          if (!appState.lockInput) {
+            setScanPanelState("neutral");
           }
         }
       }
 
       function updateTouchPointsFromEvent(e) {
-        const rect = elements.playInner.getBoundingClientRect();
+        const zone = elements.scanZone;
+        if (!zone) return;
+
+        const rect = zone.getBoundingClientRect();
         const points = [];
 
         for (let i = 0; i < e.touches.length; i++) {
@@ -534,19 +671,48 @@
           }
         }
 
-        if (points.length > 0) {
-          touchState.activePoints = points;
-          touchState.lastUpdate = Date.now();
+        if (points.length === 0) {
+          touchState.activePoints = [];
+          answerFlow.hasActiveTouches = false;
+          if (!appState.lockInput) {
+            setScanPanelState("neutral");
+          }
+          return;
         }
+
+        touchState.activePoints = points;
+        touchState.lastUpdate = Date.now();
+        answerFlow.hasActiveTouches = true;
+
+        if (appState.lockInput) {
+          return;
+        }
+
+        if (points.length !== expectedTouchPoints) {
+          setScanPanelState("scanning");
+          return;
+        }
+
+        if (answerFlow.answerGivenThisContact) {
+          return;
+        }
+
+        const digit = recognizeDigit(points);
+        if (digit === null) {
+          setScanPanelState("scanning");
+          return;
+        }
+
+        answerFlow.answerGivenThisContact = true;
+        handleDigitAnswer(digit);
       }
 
-      /* ---------- kalibratiepatronen uit jouw JSON ---------- */
+      /* kalibratiepatronen uit jouw JSON */
 
       function buildCalibrationPatterns(data) {
         const patterns = [];
         if (!data) return patterns;
 
-        // nieuwe compacte structuur met "digits": [ { digit, points } ]
         if (Array.isArray(data.digits)) {
           data.digits.forEach(function (entry) {
             if (!entry || typeof entry.digit === "undefined" || !Array.isArray(entry.points)) return;
@@ -562,7 +728,6 @@
           return patterns;
         }
 
-        // jouw uitgebreide structuur met "0": { digit, samples: [ { points, features }, ... ] }
         Object.keys(data).forEach(function (key) {
           if (!/^[0-9]$/.test(key)) {
             return;
@@ -620,44 +785,42 @@
       }
 
       function recognizeDigit(points) {
-  if (!calibrationPatterns || calibrationPatterns.length === 0) {
-    return null;
-  }
+        if (!calibrationPatterns || calibrationPatterns.length === 0) {
+          return null;
+        }
+        if (points.length !== expectedTouchPoints) {
+          return null;
+        }
 
-  if (points.length !== expectedTouchPoints) {
-    // waarschijnlijk vingers of een half contact
-    return null;
-  }
+        const candidateSignature = computeDistanceSignature(points);
+        if (!candidateSignature) return null;
 
-  const candidateSignature = computeDistanceSignature(points);
-  if (!candidateSignature) return null;
+        const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
+          ? window.calibrationData.tolerance
+          : 0.18;
 
-  const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
-    ? window.calibrationData.tolerance
-    : 0.18;  // soepeler standaard
+        let bestDigit = null;
+        let bestScore = Infinity;
 
-  let bestDigit = null;
-  let bestScore = Infinity;
+        for (let i = 0; i < calibrationPatterns.length; i++) {
+          const pattern = calibrationPatterns[i];
+          if (pattern.count !== points.length) continue;
 
-  for (let i = 0; i < calibrationPatterns.length; i++) {
-    const pattern = calibrationPatterns[i];
-    if (pattern.count !== points.length) continue;
+          const score = signatureDistance(candidateSignature, pattern.signature);
+          if (score < bestScore) {
+            bestScore = score;
+            bestDigit = pattern.digit;
+          }
+        }
 
-    const score = signatureDistance(candidateSignature, pattern.signature);
-    if (score < bestScore) {
-      bestScore = score;
-      bestDigit = pattern.digit;
-    }
-  }
+        if (bestDigit === null) return null;
+        if (bestScore <= tolerance) {
+          return bestDigit;
+        }
+        return null;
+      }
 
-  if (bestDigit === null) return null;
-  if (bestScore <= tolerance) {
-    return bestDigit;
-  }
-  return null;
-}
-
-      /* ---------- spellogica ---------- */
+      /* spellogica met directe controle */
 
       function startNewRound() {
         clearDotsTimer();
@@ -665,6 +828,9 @@
         appState.secondChance = false;
         hideFeedback();
         hideQuestionMark();
+        setScanPanelState("neutral");
+        answerFlow.answerGivenThisContact = false;
+        answerFlow.hasActiveTouches = false;
 
         const nextNumber = Math.floor(Math.random() * 10);
         appState.currentNumber = nextNumber;
@@ -708,11 +874,14 @@
         clearDotsTimer();
 
         const isCorrect = digit === target;
+
+        appState.lockInput = true;
+
         if (isCorrect) {
+          setScanPanelState("correct");
           showFeedback(true);
           playGoodSound();
           appState.phase = "feedback";
-          appState.lockInput = true;
 
           setTimeout(function () {
             hideFeedback();
@@ -723,10 +892,10 @@
             startNewRound();
           }, FEEDBACK_GOOD_MS);
         } else {
+          setScanPanelState("wrong");
           showFeedback(false);
           playBadSound();
           appState.phase = "feedback";
-          appState.lockInput = true;
 
           setTimeout(function () {
             hideFeedback();
@@ -739,6 +908,7 @@
               renderDots();
               hideQuestionMark();
               appState.lockInput = false;
+              setScanPanelState("neutral");
               scheduleDotsHide(SHOW_DURATION_SECOND);
             } else {
               appState.secondChance = false;
@@ -752,10 +922,10 @@
         }
       }
 
-      /* ---------- dots en groepjes ---------- */
+      /* dots en groepjes, nu binnen dotsColumn */
 
       function generateDotsForNumber(n, isSecondChance) {
-        const rect = elements.playInner.getBoundingClientRect();
+        const rect = elements.dotsColumn.getBoundingClientRect();
         const width = rect.width || 768;
         const height = rect.height || 512;
 
@@ -975,6 +1145,8 @@
         }
       }
 
+      /* visuele helpers */
+
       function showQuestionMark() {
         elements.questionMark.classList.add("visible");
       }
@@ -1004,8 +1176,15 @@
         elements.feedbackOverlay.classList.remove("visible");
         elements.feedbackCircle.classList.remove("success", "error");
       }
+
+      function setScanPanelState(state) {
+        const zone = elements.scanZone;
+        if (!zone) return;
+        zone.classList.remove("state-neutral", "state-scanning", "state-correct", "state-wrong");
+        if (!state) return;
+        zone.classList.add("state-" + state);
+      }
     })();
   </script>
 </body>
 </html>
-
