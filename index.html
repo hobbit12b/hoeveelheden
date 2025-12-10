@@ -620,40 +620,42 @@
       }
 
       function recognizeDigit(points) {
-        if (!calibrationPatterns || calibrationPatterns.length === 0) {
-          return null;
-        }
-        if (points.length !== expectedTouchPoints) {
-          return null;
-        }
+  if (!calibrationPatterns || calibrationPatterns.length === 0) {
+    return null;
+  }
 
-        const candidateSignature = computeDistanceSignature(points);
-        if (!candidateSignature) return null;
+  if (points.length !== expectedTouchPoints) {
+    // waarschijnlijk vingers of een half contact
+    return null;
+  }
 
-        const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
-          ? window.calibrationData.tolerance
-          : 0.08;
+  const candidateSignature = computeDistanceSignature(points);
+  if (!candidateSignature) return null;
 
-        let bestDigit = null;
-        let bestScore = Infinity;
+  const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
+    ? window.calibrationData.tolerance
+    : 0.18;  // soepeler standaard
 
-        for (let i = 0; i < calibrationPatterns.length; i++) {
-          const pattern = calibrationPatterns[i];
-          if (pattern.count !== points.length) continue;
+  let bestDigit = null;
+  let bestScore = Infinity;
 
-          const score = signatureDistance(candidateSignature, pattern.signature);
-          if (score < bestScore) {
-            bestScore = score;
-            bestDigit = pattern.digit;
-          }
-        }
+  for (let i = 0; i < calibrationPatterns.length; i++) {
+    const pattern = calibrationPatterns[i];
+    if (pattern.count !== points.length) continue;
 
-        if (bestDigit === null) return null;
-        if (bestScore <= tolerance) {
-          return bestDigit;
-        }
-        return null;
-      }
+    const score = signatureDistance(candidateSignature, pattern.signature);
+    if (score < bestScore) {
+      bestScore = score;
+      bestDigit = pattern.digit;
+    }
+  }
+
+  if (bestDigit === null) return null;
+  if (bestScore <= tolerance) {
+    return bestDigit;
+  }
+  return null;
+}
 
       /* ---------- spellogica ---------- */
 
@@ -1006,3 +1008,4 @@
   </script>
 </body>
 </html>
+
