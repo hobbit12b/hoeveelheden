@@ -784,41 +784,58 @@
         return sum / a.length;
       }
 
-      function recognizeDigit(points) {
-        if (!calibrationPatterns || calibrationPatterns.length === 0) {
-          return null;
-        }
-        if (points.length !== expectedTouchPoints) {
-          return null;
-        }
+     function recognizeDigit(points) {
+  if (!calibrationPatterns || calibrationPatterns.length === 0) {
+    return null;
+  }
 
-        const candidateSignature = computeDistanceSignature(points);
-        if (!candidateSignature) return null;
+  if (points.length !== expectedTouchPoints) {
+    return null;
+  }
 
-        const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
-          ? window.calibrationData.tolerance
-          : 0.18;
+  const candidateSignature = computeDistanceSignature(points);
+  if (!candidateSignature) return null;
 
-        let bestDigit = null;
-        let bestScore = Infinity;
+  // basiswaarden, redelijk streng
+  const baseTolerance = 0.06;
+  const baseMargin = 0.01;
 
-        for (let i = 0; i < calibrationPatterns.length; i++) {
-          const pattern = calibrationPatterns[i];
-          if (pattern.count !== points.length) continue;
+  const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
+    ? window.calibrationData.tolerance
+    : baseTolerance;
 
-          const score = signatureDistance(candidateSignature, pattern.signature);
-          if (score < bestScore) {
-            bestScore = score;
-            bestDigit = pattern.digit;
-          }
-        }
+  const margin = (window.calibrationData && typeof window.calibrationData.confidenceMargin === "number")
+    ? window.calibrationData.confidenceMargin
+    : baseMargin;
 
-        if (bestDigit === null) return null;
-        if (bestScore <= tolerance) {
-          return bestDigit;
-        }
-        return null;
-      }
+  let bestDigit = null;
+  let bestScore = Infinity;
+  let secondScore = Infinity;
+
+  for (let i = 0; i < calibrationPatterns.length; i++) {
+    const pattern = calibrationPatterns[i];
+    if (pattern.count !== points.length) continue;
+
+    const score = signatureDistance(candidateSignature, pattern.signature);
+
+    if (score < bestScore) {
+      secondScore = bestScore;
+      bestScore = score;
+      bestDigit = pattern.digit;
+    } else if (score < secondScore) {
+      secondScore = score;
+    }
+  }
+
+  if (bestDigit === null) return null;
+
+  const confidentEnough =
+    bestScore <= tolerance &&
+    (secondScore - bestScore) >= margin;
+
+  return confidentEnough ? bestDigit : null;
+}
+
 
       /* spellogica met directe controle */
 
@@ -924,68 +941,79 @@
 
       /* dots en groepjes, nu binnen dotsColumn */
 
-      function generateDotsForNumber(n, isSecondChance) {
-        const rect = elements.dotsColumn.getBoundingClientRect();
-        const width = rect.width || 768;
-        const height = rect.height || 512;
+     function generateDotsForNumber(n, isSecondChance) {
+  const rect = elements.dotsColumn.getBoundingClientRect();
+  const width = rect.width || 768;
+  const height = rect.height || 512;
 
-        const minSide = Math.min(width, height);
-        const padding = minSide * 0.1;
-        const dotRadius = minSide * 0.045;
-        appState.dotRadius = dotRadius;
+  const minSide = Math.min(width, height);
+  const padding = minSide * 0.1;
+  const dotRadius = minSide * 0.045;
+  appState.dotRadius = dotRadius;
 
-        if (n === 0) {
-          return [];
-        }
+  const bounds = {
+    left: padding,
+    top: padding,
+    right: width - padding,
+    bottom: height - padding
+  };
 
-        if (n === 1 || n === 2) {
-          const dots = [];
-          for (let i = 0; i < n; i++) {
-            const x = padding + Math.random() * (width - 2 * padding);
-            const y = padding + Math.random() * (height - 2 * padding);
-            dots.push({ x: x, y: y, radius: dotRadius });
-          }
-          return dots;
-        }
+  if (n === 0) {
+    return [];
+  }
 
-        const groups = getGroupsForNumber(n);
-        const dots = [];
+  let dots;
 
-        if (groups.length === 1) {
-          const clusterRect = {
-            left: padding,
-            top: padding,
-            width: width - 2 * padding,
-            height: height - 2 * padding
-          };
-          dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect, dotRadius));
-        } else if (groups.length === 2) {
-          const totalGap = minSide * 0.14;
-          const availableWidth = width - 2 * padding - totalGap;
-          const clusterWidth = availableWidth / 2;
-          const clusterHeight = height - 2 * padding;
+  if (n === 1 || n === 2) {
+    dots = [];
+    for (let i = 0; i < n; i++) {
+      const x = padding + Math.random() * (width - 2 * padding);
+      const y = padding + Math.random() * (height - 2 * padding);
+      dots.push({ x: x, y: y, radius: dotRadius });
+    }
+  } else {
+    const groups = getGroupsForNumber(n);
+    dots = [];
 
-          const left1 = padding;
-          const left2 = padding + clusterWidth + totalGap;
-          const top = padding;
+    if (groups.length === 1) {
+      const clusterRect = {
+        left: padding,
+        top: padding,
+        width: width - 2 * padding,
+        height: height - 2 * padding
+      };
+      dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect, dotRadius));
+    } else if (groups.length === 2) {
+      const totalGap = minSide * 0.14;
+      const availableWidth = width - 2 * padding - totalGap;
+      const clusterWidth = availableWidth / 2;
+      const clusterHeight = height - 2 * padding;
 
-          const clusterRect1 = { left: left1, top: top, width: clusterWidth, height: clusterHeight };
-          const clusterRect2 = { left: left2, top: top, width: clusterWidth, height: clusterHeight };
+      const left1 = padding;
+      const left2 = padding + clusterWidth + totalGap;
+      const top = padding;
 
-          dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect1, dotRadius));
-          dots.push.apply(dots, createDotsForGroup(groups[1], clusterRect2, dotRadius));
-        } else {
-          const clusterRect = {
-            left: padding,
-            top: padding,
-            width: width - 2 * padding,
-            height: height - 2 * padding
-          };
-          dots.push.apply(dots, createDotsForGroup(n, clusterRect, dotRadius));
-        }
+      const clusterRect1 = { left: left1, top: top, width: clusterWidth, height: clusterHeight };
+      const clusterRect2 = { left: left2, top: top, width: clusterWidth, height: clusterHeight };
 
-        return dots;
-      }
+      dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect1, dotRadius));
+      dots.push.apply(dots, createDotsForGroup(groups[1], clusterRect2, dotRadius));
+    } else {
+      const clusterRect = {
+        left: padding,
+        top: padding,
+        width: width - 2 * padding,
+        height: height - 2 * padding
+      };
+      dots.push.apply(dots, createDotsForGroup(n, clusterRect, dotRadius));
+    }
+  }
+
+  // hier zorgen we dat er echt ruimte tussen alle cirkels zit
+  enforceDotSpacing(dots, dotRadius, bounds);
+  return dots;
+}
+
 
       function getGroupsForNumber(n) {
         if (n <= 0) return [];
@@ -1039,27 +1067,85 @@
       }
 
       function createDotsForGroup(count, clusterRect, dotRadius) {
-        const pattern = getLocalPattern(count);
-        const dots = [];
-        const cx = clusterRect.left + clusterRect.width / 2;
-        const cy = clusterRect.top + clusterRect.height / 2;
-        const scale = Math.min(clusterRect.width, clusterRect.height) / 4.2;
+  const pattern = getLocalPattern(count);
+  const dots = [];
+  const cx = clusterRect.left + clusterRect.width / 2;
+  const cy = clusterRect.top + clusterRect.height / 2;
+  const scale = Math.min(clusterRect.width, clusterRect.height) / 4.2;
 
-        for (let i = 0; i < pattern.length; i++) {
-          const pt = pattern[i];
-          const jitterX = (Math.random() - 0.5) * 0.17;
-          const jitterY = (Math.random() - 0.5) * 0.17;
-          const x = cx + (pt.x + jitterX) * scale;
-          const y = cy + (pt.y + jitterY) * scale;
-          dots.push({
-            x: x,
-            y: y,
-            radius: dotRadius
-          });
+  for (let i = 0; i < pattern.length; i++) {
+    const pt = pattern[i];
+
+    // lichte variatie, maar niet zo groot dat stippen gaan botsen
+    const jitterX = (Math.random() - 0.5) * 0.10;
+    const jitterY = (Math.random() - 0.5) * 0.10;
+
+    const x = cx + (pt.x + jitterX) * scale;
+    const y = cy + (pt.y + jitterY) * scale;
+
+    dots.push({
+      x: x,
+      y: y,
+      radius: dotRadius
+    });
+  }
+
+  return dots;
+}
+
+      function enforceDotSpacing(dots, radius, bounds) {
+  if (!dots || dots.length < 2) return dots;
+
+  const minDist = radius * 2.2;       // iets meer dan twee keer de straal, dus altijd witruimte
+  const maxIterations = 12;
+
+  for (let iter = 0; iter < maxIterations; iter++) {
+    let movedAny = false;
+
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i + 1; j < dots.length; j++) {
+        const a = dots[i];
+        const b = dots[j];
+
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (!dist) {
+          // exact op elkaar: duw een willekeurige lichte richting op
+          dx = (Math.random() - 0.5) || 0.001;
+          dy = (Math.random() - 0.5) || 0.001;
+          dist = Math.sqrt(dx * dx + dy * dy);
         }
 
-        return dots;
+        if (dist < minDist) {
+          const overlap = minDist - dist;
+          const ux = dx / dist;
+          const uy = dy / dist;
+          const shift = overlap / 2;
+
+          a.x -= ux * shift;
+          a.y -= uy * shift;
+          b.x += ux * shift;
+          b.y += uy * shift;
+
+          // binnen het speelveld houden
+          a.x = Math.min(bounds.right - radius, Math.max(bounds.left + radius, a.x));
+          a.y = Math.min(bounds.bottom - radius, Math.max(bounds.top + radius, a.y));
+          b.x = Math.min(bounds.right - radius, Math.max(bounds.left + radius, b.x));
+          b.y = Math.min(bounds.bottom - radius, Math.max(bounds.top + radius, b.y));
+
+          movedAny = true;
+        }
       }
+    }
+
+    if (!movedAny) break;
+  }
+
+  return dots;
+}
+
 
       function getLocalPattern(count) {
         const d = 0.7;
@@ -1188,3 +1274,4 @@
   </script>
 </body>
 </html>
+
