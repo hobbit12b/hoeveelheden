@@ -172,6 +172,37 @@
     .progress-item strong {
       font-weight: 700;
     }
+
+    .digit-select-container {
+      margin-top: 0.45rem;
+    }
+    .digit-select-label {
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+      color: #4b5563;
+    }
+    .digit-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+    .digit-btn {
+      flex: 0 0 calc(20% - 0.25rem);
+      min-width: 0;
+      padding: 0.3rem 0;
+      font-size: 0.85rem;
+      border-radius: 0.65rem;
+      border: 1px solid #d1d5db;
+      background: #e5e7eb;
+      color: #111827;
+      text-align: center;
+    }
+    .digit-btn.active {
+      background: #111827;
+      color: #f9fafb;
+      border-color: #111827;
+    }
+
     .debug-panel {
       display: flex;
       flex-direction: column;
@@ -240,6 +271,9 @@
       button {
         flex: 1 1 48%;
       }
+      .digit-btn {
+        flex: 0 0 calc(20% - 0.25rem);
+      }
     }
   </style>
 </head>
@@ -280,6 +314,13 @@
         <div class="panel-content">
           <div id="calibrationSummary" style="margin-bottom: 0.15rem; font-size: 0.85rem;"></div>
           <div class="progress-grid" id="calibrationProgress"></div>
+
+          <div class="digit-select-container">
+            <div class="digit-select-label">
+              Kies zelf welk cijfer je nu wilt kalibreren
+            </div>
+            <div class="digit-select" id="digitSelect"></div>
+          </div>
         </div>
       </div>
 
@@ -322,10 +363,9 @@
     const SAMPLES_REQUIRED_PER_DIGIT = 6;
     const STORAGE_KEY = "marboticCalibrationV1";
 
-    const STABLE_DURATION_MS = 250;    // tussen 200 en 300 ms
-    const MOVEMENT_THRESHOLD_PX = 8;   // tolerant voor kleine verschuiving
+    const STABLE_DURATION_MS = 250;
+    const MOVEMENT_THRESHOLD_PX = 8;
 
-    // UI elementen
     const modeDisplayEl = document.getElementById("modeDisplay");
     const statusLineEl = document.getElementById("statusLine");
     const touchAreaEl = document.getElementById("touchArea");
@@ -347,32 +387,30 @@
     const calibrationProgressEl = document.getElementById("calibrationProgress");
     const importTextEl = document.getElementById("importText");
     const importCalibrationBtn = document.getElementById("importCalibrationBtn");
+    const digitSelectEl = document.getElementById("digitSelect");
 
-    // Spraak
     const digitNamesNl = ["nul","een","twee","drie","vier","vijf","zes","zeven","acht","negen"];
     let dutchVoice = null;
 
-    // Toestand
-    let mode = "calibrate"; // "calibrate" of "scan"
+    let mode = "calibrate";
     let calibration = createEmptyCalibration();
     let isCalibrationComplete = false;
     let currentDigitIndex = 0;
 
     let classificationStats = null;
 
-    // Touch tracking
     let lastTouchPoints = null;
     let stableStartTime = null;
     let stableCaptureDone = false;
     let waitingForTouchesClear = false;
     let hasRecognizedCurrentTouches = false;
 
-    // Initialisatie
     document.addEventListener("DOMContentLoaded", function () {
       attachEventHandlers();
       initVoices();
       loadCalibrationFromStorage();
       decideInitialMode();
+      buildDigitSelect();
       updateModeUI();
       renderCalibrationProgress();
       setInitialStatus();
@@ -391,6 +429,7 @@
         }
         updateModeUI();
         updateCalibrationInstruction();
+        updateDigitSelectActive();
       });
 
       toScanBtn.addEventListener("click", function () {
@@ -416,6 +455,7 @@
         resetTouchState();
         updateModeUI();
         renderCalibrationProgress();
+        updateDigitSelectActive();
         setStatus("Kalibratie opnieuw gestart, leg het cijfer 0 op het scherm");
         updateCalibrationInstruction();
       });
@@ -438,6 +478,7 @@
         resetTouchState();
         updateModeUI();
         renderCalibrationProgress();
+        updateDigitSelectActive();
         setStatus("Kalibratie gewist, kies kalibreren om opnieuw te beginnen");
       });
 
@@ -646,6 +687,48 @@
         div.innerHTML = "<strong>" + d + "</strong>: " + count + "/" + SAMPLES_REQUIRED_PER_DIGIT + (enough ? " ✓" : "");
         calibrationProgressEl.appendChild(div);
       });
+
+      updateDigitSelectActive();
+    }
+
+    function buildDigitSelect() {
+      if (!digitSelectEl) return;
+      digitSelectEl.innerHTML = "";
+      DIGIT_ORDER.forEach(function (d) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "digit-btn small";
+        btn.dataset.digit = String(d);
+        btn.textContent = String(d);
+        btn.addEventListener("click", function () {
+          const digit = parseInt(btn.dataset.digit, 10);
+          const idx = DIGIT_ORDER.indexOf(digit);
+          if (idx < 0) return;
+          mode = "calibrate";
+          currentDigitIndex = idx;
+          resetTouchState();
+          updateModeUI();
+          updateCalibrationInstruction();
+          setStatus("Kalibreer nu cijfer " + digit + ", leg het blokje op het scherm");
+          updateDigitSelectActive();
+        });
+        digitSelectEl.appendChild(btn);
+      });
+      updateDigitSelectActive();
+    }
+
+    function updateDigitSelectActive() {
+      if (!digitSelectEl) return;
+      const activeDigit = DIGIT_ORDER[currentDigitIndex] || 0;
+      const buttons = digitSelectEl.querySelectorAll("button");
+      buttons.forEach(function (btn) {
+        const d = parseInt(btn.dataset.digit, 10);
+        if (d === activeDigit) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
     }
 
     function handleTouchEvent(e) {
@@ -806,31 +889,34 @@
       const digit = DIGIT_ORDER[currentDigitIndex] || 0;
       const key = String(digit);
 
+      const prevCount = calibration[key].samples.length;
       const features = computeFeatures(points);
       calibration[key].samples.push({
         points: points,
         features: features
       });
+      const count = calibration[key].samples.length;
+
       saveCalibrationToStorage();
       updateCalibrationCompleteness();
+      if (isCalibrationComplete) {
+        recomputeClassificationStats();
+      }
       renderCalibrationProgress();
       drawDebugTriangle(points, null);
-      updateDebugTextForCalibration(digit, calibration[key].samples.length, features);
+      updateDebugTextForCalibration(digit, count, features);
 
-      const count = calibration[key].samples.length;
       if (count < SAMPLES_REQUIRED_PER_DIGIT) {
         setStatus("Cijfer " + digit + " vastgelegd, sample " + count + " van " + SAMPLES_REQUIRED_PER_DIGIT + ", haal het cijfer van het scherm");
       } else {
-        setStatus("Kalibratie voor cijfer " + digit + " is voldoende, haal het cijfer van het scherm");
+        setStatus("Kalibratie voor cijfer " + digit + " is voldoende, je kunt dit cijfer extra trainen of een ander cijfer kiezen, haal het blokje van het scherm");
       }
       waitingForTouchesClear = true;
 
-      if (count >= SAMPLES_REQUIRED_PER_DIGIT) {
+      if (prevCount < SAMPLES_REQUIRED_PER_DIGIT && count >= SAMPLES_REQUIRED_PER_DIGIT) {
         const nextIndex = findFirstDigitNeedingSamples();
         currentDigitIndex = nextIndex;
-        if (isCalibrationComplete) {
-          recomputeClassificationStats();
-        }
+        updateDigitSelectActive();
       }
     }
 
@@ -1403,6 +1489,7 @@
       renderCalibrationProgress();
       mode = isCalibrationComplete ? "scan" : "calibrate";
       updateModeUI();
+      updateDigitSelectActive();
       setStatus("Kalibratie geïmporteerd, " + (isCalibrationComplete ? "je kunt scannen" : "vul ontbrekende cijfers nog aan"));
     }
 
