@@ -94,7 +94,7 @@
     }
 
     .game-main {
-      flex: 0 0 auto; /* titel + cijfers nemen zo min mogelijk hoogte in */
+      flex: 0 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -111,6 +111,9 @@
       width: 100%;
       max-width: 520px;
       margin-top: clamp(4px, 1vh, 10px);
+    }
+
+    .number-row.row-appear {
       animation: rowIn 0.4s ease-out;
     }
 
@@ -185,15 +188,37 @@
     }
 
     .feedback {
-      min-height: 40px;
+      min-height: 60px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 4px;
+    }
+
+    .feedback-symbol {
       font-size: 2.4rem;
+      line-height: 1;
+      height: 2.4rem;
+    }
+
+    .good-animation {
+      height: 120px;
+      max-width: 200px;
+      object-fit: contain;
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    }
+
+    .good-animation.show {
+      opacity: 1;
+      transform: scale(1);
     }
 
     .game-footer {
-      flex: 1 1 auto; /* scan-zone gebruikt alle ruimte die over is */
+      flex: 1 1 auto;
       padding-bottom: env(safe-area-inset-bottom);
       display: flex;
       flex-direction: column;
@@ -216,8 +241,8 @@
       border-style: dashed;
       border-color: var(--scan-border-neutral);
       background: var(--scan-bg-neutral);
-      flex: 1 1 auto;       /* vult de rest van het scherm */
-      min-height: 40vh;     /* extra zekerheid: ongeveer +1/3 meer t.o.v. eerste versie */
+      flex: 1 1 auto;
+      min-height: 55vh; /* nog hoger gemaakt */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -260,7 +285,6 @@
       color: rgba(0, 0, 0, 0.48);
     }
 
-    /* scan states */
     .scan-area.state-neutral {
       border-style: dashed;
       border-color: var(--scan-border-neutral);
@@ -299,6 +323,9 @@
       .number-slot {
         width: min(24vw, 96px);
       }
+      .good-animation {
+        height: 100px;
+      }
     }
   </style>
 </head>
@@ -312,19 +339,22 @@
     </header>
 
     <main class="game-main">
-      <div class="number-row" id="number-row">
+      <div class="number-row row-appear" id="number-row">
         <div class="number-slot" data-index="0">
-          <span class="number-text">1</span>
+          <span class="number-text">0</span>
         </div>
         <div class="number-slot missing" data-index="1">
           <span class="number-text">?</span>
         </div>
         <div class="number-slot" data-index="2">
-          <span class="number-text">3</span>
+          <span class="number-text">2</span>
         </div>
       </div>
 
-      <div class="feedback" id="feedback" aria-hidden="true"></div>
+      <div class="feedback" id="feedback" aria-hidden="true">
+        <img id="good-animation" src="goed.gif" alt="Goed gedaan!" class="good-animation" />
+        <div id="feedback-symbol" class="feedback-symbol"></div>
+      </div>
     </main>
 
     <footer class="game-footer">
@@ -848,11 +878,13 @@
         document.querySelectorAll(".number-slot")
       );
       const feedbackEl = document.getElementById("feedback");
+      const feedbackSymbol = document.getElementById("feedback-symbol");
+      const goodAnim = document.getElementById("good-animation");
       const scanArea = document.getElementById("scan-area");
 
-      let currentTriple = [1, 2, 3];
+      let currentTriple = [0, 1, 2];
       let missingIndex = 1;
-      let missingNumber = 2;
+      let missingNumber = 1;
       let roundActive = true;
 
       let currentPoints = [];
@@ -886,7 +918,7 @@
         } else {
           slot.classList.remove("missing");
           span.textContent = "";
-          // gebruik Marbotic PNG: marbotic1.png t/m marbotic9.png
+          // gebruik Marbotic PNG: marbotic0.png t/m marbotic9.png
           slot.style.backgroundImage =
             "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
           slot.setAttribute("aria-label", "cijfer " + digit);
@@ -905,16 +937,17 @@
 
       function newRound() {
         roundActive = true;
-        feedbackEl.textContent = "";
+        feedbackSymbol.textContent = "";
+        goodAnim.classList.remove("show");
         setScanState("neutral");
         numberRow.classList.remove("shake");
 
-        const base = 1 + Math.floor(Math.random() * 7); // 1..7 => (1,2,3) t/m (7,8,9)
+        // basis 0..7 → rijtjes 0–2 t/m 7–9
+        const base = Math.floor(Math.random() * 8);
         currentTriple = [base, base + 1, base + 2];
         missingIndex = Math.floor(Math.random() * 3); // 0,1,2
         missingNumber = currentTriple[missingIndex];
 
-        // forceer opnieuw afspelen van de "binnenkomen" animatie
         numberRow.classList.remove("row-appear");
         void numberRow.offsetWidth;
         numberRow.classList.add("row-appear");
@@ -922,16 +955,14 @@
         updateNumberDisplay();
       }
 
-      // helper-classnamen voor row-animatie
-      numberRow.classList.add("row-appear");
-
       function handleRecognitionResult(digit) {
         if (!roundActive) return;
 
         if (digit === missingNumber) {
           roundActive = false;
           setScanState("correct");
-          feedbackEl.textContent = "🎉";
+          feedbackSymbol.textContent = "";
+          goodAnim.classList.add("show");
           playSuccessSound();
 
           const missingSlot = numberSlots[missingIndex];
@@ -943,7 +974,8 @@
           }, 1200);
         } else {
           setScanState("wrong");
-          feedbackEl.textContent = "✖";
+          goodAnim.classList.remove("show");
+          feedbackSymbol.textContent = "✖";
           playErrorSound();
           numberRow.classList.add("shake");
           setTimeout(function () {
@@ -978,7 +1010,7 @@
       }
 
       function handleTouchEvent(e) {
-        ensureAudio(); // audio context activeren op eerste aanraking
+        ensureAudio();
 
         const touches = e.touches || [];
         currentPoints = getPointsFromTouches(touches);
