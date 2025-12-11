@@ -55,7 +55,7 @@
       padding: clamp(12px, 3vh, 24px);
       display: flex;
       flex-direction: column;
-      gap: clamp(6px, 1.5vh, 12px); /* kleiner gat tussen titel en cijfers */
+      gap: 8px;
     }
 
     .game-header {
@@ -67,13 +67,14 @@
     }
 
     .title-badge {
-      background: rgba(255, 255, 255, 0.65);
+      background: rgba(255, 255, 255, 0.75);
       border-radius: 999px;
       padding: 8px 18px;
       display: inline-flex;
       align-items: center;
       gap: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      animation: floatTitle 3s ease-in-out infinite alternate;
     }
 
     .title-icon {
@@ -87,13 +88,18 @@
       white-space: nowrap;
     }
 
+    @keyframes floatTitle {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-3px); }
+    }
+
     .game-main {
-      flex: 1 1 auto;
+      flex: 0 0 auto; /* titel + cijfers nemen zo min mogelijk hoogte in */
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start; /* cijfers direct onder de titel */
-      gap: clamp(8px, 2vh, 16px);
+      justify-content: flex-start;
+      gap: 6px;
       padding-top: 2px;
     }
 
@@ -104,37 +110,54 @@
       gap: clamp(16px, 4vw, 32px);
       width: 100%;
       max-width: 520px;
-      margin-top: clamp(4px, 1vh, 10px); /* klein beetje ruimte onder de titel */
+      margin-top: clamp(4px, 1vh, 10px);
+      animation: rowIn 0.4s ease-out;
+    }
+
+    @keyframes rowIn {
+      0% { transform: translateY(-10px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
     }
 
     .number-slot {
       flex: 0 0 auto;
       width: min(22vw, 110px);
       aspect-ratio: 1 / 1;
-      background: var(--card-bg);
+      background-color: var(--card-bg);
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
       border-radius: 28px;
       box-shadow: var(--card-shadow);
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: min(16vw, 72px);
-      font-weight: 700;
-      color: var(--text-main);
       position: relative;
-      transition: transform 0.18s ease-out, box-shadow 0.18s ease-out,
-                  background 0.18s ease-out, border-color 0.18s ease-out;
+      transition:
+        transform 0.18s ease-out,
+        box-shadow 0.18s ease-out,
+        background 0.18s ease-out,
+        border-color 0.18s ease-out;
       border: 4px solid transparent;
     }
 
-    .number-slot span {
-      display: block;
+    .number-text {
+      font-size: min(16vw, 72px);
+      font-weight: 700;
+      color: var(--text-main);
       transform: translateY(4px);
+      pointer-events: none;
     }
 
     .number-slot.missing {
-      background: var(--accent-soft);
+      background-image: none;
+      background-color: var(--accent-soft);
       border-style: dashed;
       border-color: rgba(255, 138, 101, 0.5);
+      color: var(--accent-strong);
+    }
+
+    .number-slot.missing .number-text {
       color: var(--accent-strong);
     }
 
@@ -170,14 +193,16 @@
     }
 
     .game-footer {
-      flex: 0 0 auto;
+      flex: 1 1 auto; /* scan-zone gebruikt alle ruimte die over is */
       padding-bottom: env(safe-area-inset-bottom);
       display: flex;
       flex-direction: column;
       gap: 8px;
+      margin-top: 4px;
     }
 
     .scan-label {
+      flex: 0 0 auto;
       font-size: 0.95rem;
       text-align: center;
       color: var(--text-soft);
@@ -191,7 +216,8 @@
       border-style: dashed;
       border-color: var(--scan-border-neutral);
       background: var(--scan-bg-neutral);
-      min-height: 44vh; /* veel hogere scan-zone voor het fysieke cijfer */
+      flex: 1 1 auto;       /* vult de rest van het scherm */
+      min-height: 40vh;     /* extra zekerheid: ongeveer +1/3 meer t.o.v. eerste versie */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -215,7 +241,13 @@
     }
 
     .scan-icon {
-      font-size: 2.2rem;
+      font-size: 2.4rem;
+      animation: scanPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scanPulse {
+      0% { transform: scale(1); opacity: 0.9; }
+      100% { transform: scale(1.08); opacity: 1; }
     }
 
     .scan-text {
@@ -310,23 +342,15 @@
   <script>
     /* ================================
        MARBOTIC HERKENNINGSMODULE
-       (ongewijzigd in logica)
+       (logica ongewijzigd)
        ================================ */
 
     const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-    let calibration = null;            // gevulde kalibratie op basis van calibration.json
-    let classificationStats = null;    // drempelwaarden voor herkenning
-    let expectedTouchPoints = 3;       // standaard drie contactpunten
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
 
-    /**
-     * Aanroep na het laden van calibration.json
-     *
-     * Voorbeeld:
-     * fetch("calibration.json")
-     *   .then(r => r.json())
-     *   .then(data => initCalibration(data));
-     */
     function initCalibration(calibrationData) {
       if (!calibrationData || typeof calibrationData !== "object") {
         calibration = null;
@@ -345,23 +369,8 @@
       recomputeClassificationStats();
     }
 
-    /**
-     * Zet de ruwe JSON structuur om in een intern calibration object
-     * met per sample vooraf berekende features.
-     *
-     * Verwachte JSON vorm:
-     * {
-     *   "expectedTouchPoints": 3,
-     *   "0": { "digit": 0, "samples": [ { "points": [ {x,y}, {x,y}, {x,y} ] }, ... ] },
-     *   "1": { ... },
-     *   ...
-     *   "9": { ... }
-     * }
-     */
     function buildCalibrationFromData(data) {
       const obj = {};
-
-      // basisstructuur
       DIGIT_ORDER.forEach(function (d) {
         obj[String(d)] = {
           digit: d,
@@ -369,7 +378,6 @@
         };
       });
 
-      // samples per cijfer inlezen
       DIGIT_ORDER.forEach(function (d) {
         const key = String(d);
         const entry = data[key];
@@ -393,11 +401,6 @@
       return obj;
     }
 
-    /**
-     * Berekent kenmerken uit drie punten:
-     * driehoeksverhoudingen, oriëntatie, hoek, genormeerde posities en aspect ratio.
-     * Levert ook een gewogen featurevector op voor afstandsvergelijking.
-     */
     function computeFeatures(points) {
       if (!points || points.length !== 3) {
         return {
@@ -421,7 +424,6 @@
         y: (p0.y + p1.y + p2.y) / 3
       };
 
-      // isoPoints zijn punten rond de oorsprong, geschaald op max afstand
       const isoPoints = [p0, p1, p2].map(function (p) {
         const dx = p.x - centroidRaw.x;
         const dy = p.y - centroidRaw.y;
@@ -451,7 +453,6 @@
       const L12 = dist(isoPoints[1], isoPoints[2]);
       const L20 = dist(isoPoints[2], isoPoints[0]);
 
-      // zijden, klein naar groot, genormeerd op de langste zijde
       const sides = [
         { len: L01, i: 0, j: 1 },
         { len: L12, i: 1, j: 2 },
@@ -467,7 +468,6 @@
           return s.len / maxSideLen;
         });
 
-      // grootste zijde vinden om oriëntatie en hoek te bepalen
       const largest = sides
         .slice()
         .sort(function (a, b) {
@@ -490,7 +490,6 @@
 
       const orientation = orientationVal(A, B, C);
 
-      // hoek bij punt C via cosinusregel
       const AC = dist(A, C);
       const BC = dist(B, C);
       const AB = largest.len;
@@ -503,7 +502,6 @@
         cosAngle = (AC2 + BC2 - AB2) / denom;
       }
 
-      // bounding box van de drie punten in het echte scherm
       let minX = Math.min(p0.x, p1.x, p2.x);
       let maxX = Math.max(p0.x, p1.x, p2.x);
       let minY = Math.min(p0.y, p1.y, p2.y);
@@ -513,7 +511,6 @@
       if (width < 1e-6) width = 1;
       if (height < 1e-6) height = 1;
 
-      // genormeerde y posities, gesorteerd
       const yNormVals = [p0, p1, p2]
         .map(function (p) {
           return (p.y - minY) / height;
@@ -522,7 +519,6 @@
           return a - b;
         });
 
-      // x patroon, gesorteerd op y van boven naar beneden
       const pointsWithIndex = [
         { p: p0, idx: 0 },
         { p: p1, idx: 1 },
@@ -564,10 +560,6 @@
       };
     }
 
-    /**
-     * Bouwt een gewogen featurevector op
-     * door verschillende aspecten van het patroon te schalen.
-     */
     function buildFeatureVector(f) {
       const wSides = 3.0;
       const wCos = 4.0;
@@ -597,9 +589,6 @@
       return v;
     }
 
-    /**
-     * Euclidische afstand tussen twee featurevectoren.
-     */
     function vectorDistance(a, b) {
       if (!a || !b || a.length !== b.length) return Infinity;
       let sum = 0;
@@ -610,11 +599,6 @@
       return Math.sqrt(sum);
     }
 
-    /**
-     * Berekent drempels op basis van de kalibratiesamples.
-     * thresholdBase: grens tussen zeker en twijfelachtig
-     * thresholdUnknown: grens waarboven een meting als onbekend geldt
-     */
     function recomputeClassificationStats() {
       if (!calibration) {
         classificationStats = {
@@ -695,10 +679,6 @@
       };
     }
 
-    /**
-     * Classificeert een meting op basis van de featurevector
-     * en de kalibratiegegevens.
-     */
     function classifyMeasurement(features) {
       const vec = features.vector;
       if (!vec || !calibration) {
@@ -795,16 +775,6 @@
       };
     }
 
-    /**
-     * Publieke functie voor de rest van je spel.
-     *
-     * Parameters:
-     *   points: array met drie punten binnen de scanzone, elk {x, y}
-     *
-     * Retourneert:
-     *   een cijfer 0 t/m 9 als er een betrouwbare herkenning is,
-     *   of null als de meting onbekend is.
-     */
     function recognizeDigit(points) {
       if (!calibration || !classificationStats) {
         return null;
@@ -825,8 +795,52 @@
     }
 
     /* ================================
-       SPELLOGICA "WELK CIJFER MIST?"
+       SPELLOGICA + SPEELSHEID
        ================================ */
+
+    const DIGIT_IMAGE_PREFIX = "marbotic";
+    const DIGIT_IMAGE_SUFFIX = ".png";
+
+    let audioCtx = null;
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          audioCtx = new AC();
+        }
+      }
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, duration) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    }
+
+    function playSuccessSound() {
+      playTone(880, 0.16);
+      setTimeout(function () {
+        playTone(1175, 0.18);
+      }, 140);
+    }
+
+    function playErrorSound() {
+      playTone(220, 0.22);
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
       const numberRow = document.getElementById("number-row");
@@ -862,15 +876,29 @@
         }
       }
 
+      function setSlotDigit(slot, digit, isMissing) {
+        const span = slot.querySelector(".number-text");
+        slot.classList.remove("missing", "correct-pop");
+        if (isMissing) {
+          slot.style.backgroundImage = "none";
+          slot.classList.add("missing");
+          span.textContent = "?";
+        } else {
+          slot.classList.remove("missing");
+          span.textContent = "";
+          // gebruik Marbotic PNG: marbotic1.png t/m marbotic9.png
+          slot.style.backgroundImage =
+            "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
+          slot.setAttribute("aria-label", "cijfer " + digit);
+        }
+      }
+
       function updateNumberDisplay() {
         numberSlots.forEach(function (slot, idx) {
-          const span = slot.querySelector(".number-text");
-          slot.classList.remove("missing", "correct-pop");
           if (idx === missingIndex) {
-            slot.classList.add("missing");
-            span.textContent = "?";
+            setSlotDigit(slot, currentTriple[idx], true);
           } else {
-            span.textContent = String(currentTriple[idx]);
+            setSlotDigit(slot, currentTriple[idx], false);
           }
         });
       }
@@ -885,31 +913,38 @@
         currentTriple = [base, base + 1, base + 2];
         missingIndex = Math.floor(Math.random() * 3); // 0,1,2
         missingNumber = currentTriple[missingIndex];
+
+        // forceer opnieuw afspelen van de "binnenkomen" animatie
+        numberRow.classList.remove("row-appear");
+        void numberRow.offsetWidth;
+        numberRow.classList.add("row-appear");
+
         updateNumberDisplay();
       }
+
+      // helper-classnamen voor row-animatie
+      numberRow.classList.add("row-appear");
 
       function handleRecognitionResult(digit) {
         if (!roundActive) return;
 
         if (digit === missingNumber) {
-          // goed
           roundActive = false;
           setScanState("correct");
           feedbackEl.textContent = "🎉";
+          playSuccessSound();
 
           const missingSlot = numberSlots[missingIndex];
-          const span = missingSlot.querySelector(".number-text");
-          missingSlot.classList.remove("missing");
+          setSlotDigit(missingSlot, missingNumber, false);
           missingSlot.classList.add("correct-pop");
-          span.textContent = String(missingNumber);
 
           setTimeout(function () {
             newRound();
           }, 1200);
         } else {
-          // fout
           setScanState("wrong");
           feedbackEl.textContent = "✖";
+          playErrorSound();
           numberRow.classList.add("shake");
           setTimeout(function () {
             numberRow.classList.remove("shake");
@@ -943,7 +978,8 @@
       }
 
       function handleTouchEvent(e) {
-        // Multi-touch in scanzone
+        ensureAudio(); // audio context activeren op eerste aanraking
+
         const touches = e.touches || [];
         currentPoints = getPointsFromTouches(touches);
 
@@ -981,7 +1017,6 @@
       addTouchListeners(scanArea);
       newRound();
 
-      // Kalibratie laden
       fetch("calibration.json")
         .then(function (r) {
           return r.json();
@@ -990,7 +1025,6 @@
           initCalibration(data);
         })
         .catch(function (err) {
-          // Geen debug zichtbaar voor kinderen; alleen console.
           console.error("Kalibratie laden mislukt:", err);
         });
     });
