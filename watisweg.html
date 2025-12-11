@@ -2,734 +2,995 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Welk cijfer mist</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
+  <title>Welk cijfer mist?</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <style>
+    :root {
+      --bg-top: #f4f1ff;
+      --bg-bottom: #fef6e9;
+      --card-bg: #ffffff;
+      --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      --accent-soft: #ffe0b2;
+      --accent-strong: #ff8a65;
+      --scan-border-neutral: rgba(255, 255, 255, 0.8);
+      --scan-border-scan: rgba(255, 255, 255, 0.9);
+      --scan-border-good: #4caf50;
+      --scan-border-bad: #e53935;
+      --scan-bg-neutral: rgba(255, 255, 255, 0.12);
+      --scan-bg-scan: rgba(255, 255, 255, 0.22);
+      --scan-bg-good: rgba(76, 175, 80, 0.18);
+      --scan-bg-bad: rgba(229, 57, 53, 0.18);
+      --text-main: #333333;
+      --text-soft: #666666;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f7f4ec;
-      color: #222;
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: none;
     }
 
     body {
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
+      color: var(--text-main);
       display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: stretch;
-    }
-
-    .app-root {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding: 1.5rem;
-      box-sizing: border-box;
-      gap: 1rem;
-    }
-
-    @media (min-aspect-ratio: 4/3) {
-      .app-root {
-        padding: 1rem 3rem;
-      }
-    }
-
-    .app-header {
-      display: flex;
-      align-items: center;
       justify-content: center;
-      gap: 0.75rem;
+      align-items: stretch;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .game {
+      width: 100%;
+      max-width: 900px;
+      min-height: 100vh;
+      padding: clamp(12px, 3vh, 24px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 2vh, 16px);
+    }
+
+    .game-header {
       flex: 0 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .title-badge {
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 999px;
+      padding: 8px 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     }
 
     .title-icon {
-      width: 2.4rem;
-      height: 2.4rem;
-      border-radius: 1.2rem;
-      background: #ffb74d;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-    }
-
-    .app-title {
       font-size: 1.4rem;
-      letter-spacing: 0.03em;
-      font-weight: 700;
     }
 
-    .game-area {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      justify-content: center;
-    }
-
-    .digits-row {
-      flex: 0 0 auto;
-      display: grid;
-      grid-template-columns: repeat(9, minmax(0, 1fr));
-      gap: 0.4rem;
-      align-items: center;
-      justify-items: center;
-    }
-
-    .digit-tile {
-      width: 100%;
-      max-width: 4rem;
-      aspect-ratio: 3 / 4;
-      border-radius: 1.2rem;
-      background: #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-    }
-
-    .digit-tile span {
-      font-size: 1.7rem;
-      font-weight: 800;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.18);
-    }
-
-    .digit-tile[data-digit="1"] span { color: #7cb342; }
-    .digit-tile[data-digit="2"] span { color: #ff7043; }
-    .digit-tile[data-digit="3"] span { color: #ffeb3b; }
-    .digit-tile[data-digit="4"] span { color: #1976d2; }
-    .digit-tile[data-digit="5"] span { color: #f06292; }
-    .digit-tile[data-digit="6"] span { color: #fdd835; }
-    .digit-tile[data-digit="7"] span { color: #26c6da; }
-    .digit-tile[data-digit="8"] span { color: #ec407a; }
-    .digit-tile[data-digit="9"] span { color: #43a047; }
-
-    .digit-missing {
-      background: #fff3cd;
-      border: 2px dashed rgba(0,0,0,0.12);
-    }
-
-    .digit-placeholder {
-      font-size: 1.9rem;
-      color: rgba(0,0,0,0.26);
-    }
-
-    .digits-row.correct-row .digit-tile {
-      background: #e8f5e9;
-      box-shadow: 0 6px 16px rgba(76,175,80,0.35);
-      transform: translateY(-4px);
-    }
-
-    .hint-row {
-      display: flex;
-      justify-content: center;
-      gap: 0.6rem;
+    .title-text {
       font-size: 1rem;
-      opacity: 0.9;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
     }
 
-    .hint-icon {
-      width: 1.6rem;
-      height: 1.6rem;
-      border-radius: 0.8rem;
-      background: #e1f5fe;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .scan-area-wrapper {
+    .game-main {
       flex: 1 1 auto;
-      display: flex;
-      align-items: stretch;
-      justify-content: center;
-    }
-
-    .scan-area {
-      width: 100%;
-      max-width: 22rem;
-      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(16px, 3vh, 24px);
     }
 
-    .scan-box {
-      flex: 1 1 auto;
-      min-height: 8rem;
-      border-radius: 1.6rem;
-      border: 4px solid rgba(0,0,0,0.08);
-      background: #ffffff;
+    .number-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(16px, 4vw, 32px);
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .number-slot {
+      flex: 0 0 auto;
+      width: min(22vw, 110px);
+      aspect-ratio: 1 / 1;
+      background: var(--card-bg);
+      border-radius: 28px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: min(16vw, 72px);
+      font-weight: 700;
+      color: var(--text-main);
       position: relative;
+      transition: transform 0.18s ease-out, box-shadow 0.18s ease-out,
+                  background 0.18s ease-out, border-color 0.18s ease-out;
+      border: 4px solid transparent;
+    }
+
+    .number-slot span {
+      display: block;
+      transform: translateY(4px);
+    }
+
+    .number-slot.missing {
+      background: var(--accent-soft);
+      border-style: dashed;
+      border-color: rgba(255, 138, 101, 0.5);
+      color: var(--accent-strong);
+    }
+
+    .number-slot.correct-pop {
+      animation: pop 0.35s ease-out;
+    }
+
+    .number-row.shake {
+      animation: shake 0.35s ease-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .feedback {
+      min-height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-    }
-
-    .scan-box[data-state="idle"] {
-      border-color: rgba(0,0,0,0.12);
-    }
-
-    .scan-box[data-state="scanning"] {
-      border-color: #42a5f5;
-      box-shadow: 0 0 0 4px rgba(66,165,245,0.18);
-    }
-
-    .scan-box[data-state="success"] {
-      border-color: #66bb6a;
-      box-shadow: 0 0 0 4px rgba(102,187,106,0.24);
-    }
-
-    .scan-box[data-state="error"] {
-      border-color: #ef5350;
-      box-shadow: 0 0 0 4px rgba(239,83,80,0.24);
-    }
-
-    .scan-status-pill {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.6rem;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      background: rgba(0,0,0,0.05);
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .scan-visual {
-      text-align: center;
-      opacity: 0.9;
-    }
-
-    .scan-icon-main {
       font-size: 2.4rem;
     }
 
+    .game-footer {
+      flex: 0 0 auto;
+      padding-bottom: env(safe-area-inset-bottom);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .scan-label {
-      font-size: 1rem;
-      color: rgba(0,0,0,0.6);
-    }
-
-    .scan-footnote {
+      font-size: 0.95rem;
       text-align: center;
-      font-size: 0.8rem;
-      color: rgba(0,0,0,0.55);
+      color: var(--text-soft);
+      opacity: 0.9;
     }
 
-    .calibration-warning {
-      position: fixed;
-      bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      padding: 0.4rem 1rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
-      opacity: 0;
-      transition: opacity 0.3s;
+    .scan-area {
+      margin-top: 4px;
+      border-radius: 28px;
+      border-width: 4px;
+      border-style: dashed;
+      border-color: var(--scan-border-neutral);
+      background: var(--scan-bg-neutral);
+      min-height: 28vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+      transition:
+        border-color 0.18s ease-out,
+        background 0.18s ease-out,
+        box-shadow 0.18s ease-out,
+        transform 0.12s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scan-area-inner {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
       pointer-events: none;
     }
 
-    .calibration-warning.visible {
-      opacity: 1;
-      pointer-events: auto;
+    .scan-icon {
+      font-size: 2.2rem;
+    }
+
+    .scan-text {
+      font-size: 1.05rem;
+      color: var(--text-soft);
+    }
+
+    .scan-hint {
+      font-size: 0.85rem;
+      color: rgba(0, 0, 0, 0.48);
+    }
+
+    /* scan states */
+    .scan-area.state-neutral {
+      border-style: dashed;
+      border-color: var(--scan-border-neutral);
+      background: var(--scan-bg-neutral);
+      transform: translateY(0);
+    }
+
+    .scan-area.state-scanning {
+      border-style: solid;
+      border-color: var(--scan-border-scan);
+      background: var(--scan-bg-scan);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .scan-area.state-correct {
+      border-style: solid;
+      border-color: var(--scan-border-good);
+      background: var(--scan-bg-good);
+      box-shadow: 0 12px 30px rgba(76, 175, 80, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .scan-area.state-wrong {
+      border-style: solid;
+      border-color: var(--scan-border-bad);
+      background: var(--scan-bg-bad);
+      box-shadow: 0 12px 30px rgba(229, 57, 53, 0.35);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 600px) {
+      .title-text {
+        font-size: 0.9rem;
+      }
+      .number-slot {
+        width: min(24vw, 96px);
+      }
     }
   </style>
 </head>
-
 <body>
-  <div class="app-root">
-    <header class="app-header">
-      <div class="title-icon">❓</div>
-      <div class="app-title">Welk cijfer mist</div>
+  <div class="game">
+    <header class="game-header">
+      <div class="title-badge">
+        <span class="title-icon">🔍</span>
+        <span class="title-text">Welk cijfer mist?</span>
+      </div>
     </header>
 
-    <main class="game-area">
-      <section class="digits-row" id="digits-row"></section>
-
-      <div class="hint-row">
-        <div class="hint-icon">🔍</div>
-        Kijk goed, welk cijfer zie je niet
+    <main class="game-main">
+      <div class="number-row" id="number-row">
+        <div class="number-slot" data-index="0">
+          <span class="number-text">1</span>
+        </div>
+        <div class="number-slot missing" data-index="1">
+          <span class="number-text">?</span>
+        </div>
+        <div class="number-slot" data-index="2">
+          <span class="number-text">3</span>
+        </div>
       </div>
 
-      <section class="scan-area-wrapper">
-        <div class="scan-area">
-          <div class="scan-box" id="scan-box" data-state="idle">
-
-            <div class="scan-status-pill">
-              <span id="scan-status-icon">⬚</span>
-              <span id="scan-status-text">Rustig</span>
-            </div>
-
-            <div class="scan-visual">
-              <div class="scan-icon-main" id="scan-icon-main">👉🔢</div>
-              <div class="scan-label" id="scan-label">Leg het cijfer hier</div>
-            </div>
-
-          </div>
-
-          <div class="scan-footnote">
-            📱 Blokje stil laten liggen in het vak
-          </div>
-        </div>
-      </section>
+      <div class="feedback" id="feedback" aria-hidden="true"></div>
     </main>
-  </div>
 
-  <div class="calibration-warning" id="calibration-warning">
-    ⚠️ Kalibratie nodig, vraag de leerkracht om hulp
+    <footer class="game-footer">
+      <div class="scan-label">Leg het houten cijfer in het vak.</div>
+      <div class="scan-area state-neutral" id="scan-area">
+        <div class="scan-area-inner">
+          <div class="scan-icon">🔢</div>
+          <div class="scan-text">Scan-zone</div>
+          <div class="scan-hint">Alle puntjes in het vak.</div>
+        </div>
+      </div>
+    </footer>
   </div>
 
   <script>
-    let calibrationData = null;
-    let calibration = null;
-    let classificationStats = null;
-    let expectedTouchPoints = 3;
+    /* ================================
+       MARBOTIC HERKENNINGSMODULE
+       (ongewijzigd in logica)
+       ================================ */
 
-    let currentPoints = [];
-    let scanState = "idle";
-    let measurementLock = false;
+    const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-    let missingDigit = null;
+    let calibration = null;            // gevulde kalibratie op basis van calibration.json
+    let classificationStats = null;    // drempelwaarden voor herkenning
+    let expectedTouchPoints = 3;       // standaard drie contactpunten
 
-    const digitsRowEl = document.getElementById("digits-row");
-    const scanBoxEl = document.getElementById("scan-box");
-    const scanStatusIconEl = document.getElementById("scan-status-icon");
-    const scanStatusTextEl = document.getElementById("scan-status-text");
-    const scanIconMainEl = document.getElementById("scan-icon-main");
-    const scanLabelEl = document.getElementById("scan-label");
-    const calibrationWarningEl = document.getElementById("calibration-warning");
-
-    function loadCalibration() {
-      fetch("calibration.json", { cache: "no-store" })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Kon calibration.json niet laden");
-          }
-          return response.json();
-        })
-        .then(data => {
-          calibrationData = data;
-          expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
-          calibration = buildCalibrationFromData(data);
-          classificationStats = calibration.classificationStats;
-
-          if (!calibration.allSamples || calibration.allSamples.length === 0) {
-            console.error("Geen samples aanwezig");
-            showCalibrationWarning();
-            return;
-          }
-
-          hideCalibrationWarning();
-          startNewRound();
-        })
-        .catch(err => {
-          console.error("Fout bij laden calibration.json:", err);
-          showCalibrationWarning();
-        });
-    }
-
-    function showCalibrationWarning() {
-      calibrationWarningEl.classList.add("visible");
-    }
-
-    function hideCalibrationWarning() {
-      calibrationWarningEl.classList.remove("visible");
-    }
-
-    function startNewRound() {
-      const digits = [1,2,3,4,5,6,7,8,9];
-      missingDigit = digits[Math.floor(Math.random() * digits.length)];
-
-      digitsRowEl.innerHTML = "";
-      digits.forEach(d => {
-        const tile = document.createElement("div");
-        tile.className = "digit-tile";
-        tile.dataset.digit = d;
-
-        if (d === missingDigit) {
-          tile.classList.add("digit-missing");
-          tile.innerHTML = `<span class="digit-placeholder">?</span>`;
-        } else {
-          tile.innerHTML = `<span>${d}</span>`;
-        }
-
-        digitsRowEl.appendChild(tile);
-      });
-
-      updateScanState("idle");
-    }
-
-    function handleRecognitionResult(recognizedDigit) {
-      if (recognizedDigit == null) return;
-
-      if (recognizedDigit === missingDigit) {
-        updateScanState("success");
-        revealMissingDigit();
-        setTimeout(startNewRound, 1300);
-      } else {
-        updateScanState("error");
-        setTimeout(() => updateScanState("idle"), 700);
-      }
-    }
-
-    function revealMissingDigit() {
-      const tiles = digitsRowEl.querySelectorAll(".digit-tile");
-      tiles.forEach(tile => {
-        if (Number(tile.dataset.digit) === missingDigit) {
-          tile.classList.remove("digit-missing");
-          tile.innerHTML = `<span>${missingDigit}</span>`;
-        }
-      });
-      digitsRowEl.classList.add("correct-row");
-    }
-
-    function updateScanState(state) {
-      scanState = state;
-      scanBoxEl.dataset.state = state;
-
-      if (state === "idle") {
-        scanStatusIconEl.textContent = "⬚";
-        scanStatusTextEl.textContent = "Rustig";
-        scanIconMainEl.textContent = "👉🔢";
-        scanLabelEl.textContent = "Leg het cijfer hier";
-      }
-      else if (state === "scanning") {
-        scanStatusIconEl.textContent = "👆";
-        scanStatusTextEl.textContent = "Scannen";
-        scanIconMainEl.textContent = "✋🔢";
-        scanLabelEl.textContent = "Even stil houden";
-      }
-      else if (state === "success") {
-        scanStatusIconEl.textContent = "✅";
-        scanStatusTextEl.textContent = "Goed";
-        scanIconMainEl.textContent = "🎉";
-        scanLabelEl.textContent = "Knap gedaan!";
-      }
-      else if (state === "error") {
-        scanStatusIconEl.textContent = "✖";
-        scanStatusTextEl.textContent = "Fout";
-        scanIconMainEl.textContent = "🤔";
-        scanLabelEl.textContent = "Probeer opnieuw";
-      }
-    }
-
-    function getTouchesInScanBox(ev) {
-      const rect = scanBoxEl.getBoundingClientRect();
-      const points = [];
-
-      for (let i = 0; i < ev.touches.length; i++) {
-        const t = ev.touches[i];
-        const x = t.clientX - rect.left;
-        const y = t.clientY - rect.top;
-
-        if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
-          points.push({ x, y });
-        }
-      }
-
-      return points;
-    }
-
-    function handleTouch(ev) {
-      if (!calibration || !classificationStats) return;
-
-      ev.preventDefault();
-      const points = getTouchesInScanBox(ev);
-
-      if (points.length === 0) {
-        currentPoints = [];
-        updateScanState("idle");
-        measurementLock = false;
+    /**
+     * Aanroep na het laden van calibration.json
+     *
+     * Voorbeeld:
+     * fetch("calibration.json")
+     *   .then(r => r.json())
+     *   .then(data => initCalibration(data));
+     */
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
         return;
       }
 
-      if (points.length === expectedTouchPoints) {
-        currentPoints = points;
-        updateScanState("scanning");
-
-        if (!measurementLock) {
-          measurementLock = true;
-
-          setTimeout(() => {
-            const digit = recognizeDigit(currentPoints);
-            handleRecognitionResult(digit);
-            measurementLock = false;
-          }, 150);
-        }
+      if (typeof calibrationData.expectedTouchPoints === "number") {
+        expectedTouchPoints = calibrationData.expectedTouchPoints;
       } else {
-        updateScanState("scanning");
-        currentPoints = [];
-        measurementLock = false;
+        expectedTouchPoints = 3;
       }
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
     }
 
-    scanBoxEl.addEventListener("touchstart", handleTouch, { passive: false });
-    scanBoxEl.addEventListener("touchmove", handleTouch, { passive: false });
-    scanBoxEl.addEventListener("touchend", handleTouch, { passive: false });
-    scanBoxEl.addEventListener("touchcancel", handleTouch, { passive: false });
+    /**
+     * Zet de ruwe JSON structuur om in een intern calibration object
+     * met per sample vooraf berekende features.
+     *
+     * Verwachte JSON vorm:
+     * {
+     *   "expectedTouchPoints": 3,
+     *   "0": { "digit": 0, "samples": [ { "points": [ {x,y}, {x,y}, {x,y} ] }, ... ] },
+     *   "1": { ... },
+     *   ...
+     *   "9": { ... }
+     * }
+     */
+    function buildCalibrationFromData(data) {
+      const obj = {};
 
+      // basisstructuur
+      DIGIT_ORDER.forEach(function (d) {
+        obj[String(d)] = {
+          digit: d,
+          samples: []
+        };
+      });
+
+      // samples per cijfer inlezen
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = data[key];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+
+          const pts = s.points.map(function (p) {
+            return { x: Number(p.x), y: Number(p.y) };
+          });
+
+          const features = computeFeatures(pts);
+          obj[key].samples.push({
+            points: pts,
+            features: features
+          });
+        });
+      });
+
+      return obj;
+    }
+
+    /**
+     * Berekent kenmerken uit drie punten:
+     * driehoeksverhoudingen, oriëntatie, hoek, genormeerde posities en aspect ratio.
+     * Levert ook een gewogen featurevector op voor afstandsvergelijking.
+     */
     function computeFeatures(points) {
-      if (!points || points.length !== 3) return null;
+      if (!points || points.length !== 3) {
+        return {
+          sides: [0, 0, 0],
+          orientation: 0,
+          cosAngle: 0,
+          centroid: { x: 0, y: 0 },
+          yNorm: [0, 0, 0],
+          xPattern: [0, 0, 0],
+          aspect: 0,
+          vector: [0, 0, 0]
+        };
+      }
 
       const p0 = points[0];
       const p1 = points[1];
       const p2 = points[2];
 
-      const dx01 = p1.x - p0.x;
-      const dy01 = p1.y - p0.y;
-      const dx12 = p2.x - p1.x;
-      const dy12 = p2.y - p1.y;
-      const dx20 = p0.x - p2.x;
-      const dy20 = p0.y - p2.y;
+      const centroidRaw = {
+        x: (p0.x + p1.x + p2.x) / 3,
+        y: (p0.y + p1.y + p2.y) / 3
+      };
 
-      const d01 = Math.hypot(dx01, dy01);
-      const d12 = Math.hypot(dx12, dy12);
-      const d20 = Math.hypot(dx20, dy20);
+      // isoPoints zijn punten rond de oorsprong, geschaald op max afstand
+      const isoPoints = [p0, p1, p2].map(function (p) {
+        const dx = p.x - centroidRaw.x;
+        const dy = p.y - centroidRaw.y;
+        return { x: dx, y: dy };
+      });
 
-      const distances = [d01, d12, d20].sort((a, b) => a - b);
-      const longest = distances[2] || 1e-6;
-      const ratioSmall = distances[0] / longest;
-      const ratioMid = distances[1] / longest;
+      let maxDist = 0;
+      for (let i = 0; i < isoPoints.length; i++) {
+        const q = isoPoints[i];
+        const d = Math.sqrt(q.x * q.x + q.y * q.y);
+        if (d > maxDist) maxDist = d;
+      }
+      if (maxDist < 1e-6) maxDist = 1;
 
-      const dot = dx01 * dx12 + dy01 * dy12;
-      const len01 = d01 || 1e-6;
-      const len12 = d12 || 1e-6;
-      let cosAngle = dot / (len01 * len12);
-      if (cosAngle > 1) cosAngle = 1;
-      if (cosAngle < -1) cosAngle = -1;
+      for (let i = 0; i < isoPoints.length; i++) {
+        isoPoints[i].x /= maxDist;
+        isoPoints[i].y /= maxDist;
+      }
 
-      const cross = dx01 * dy12 - dy01 * dx12;
-      const orientation = cross >= 0 ? 1 : -1;
+      function dist(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
 
-      const cx = (p0.x + p1.x + p2.x) / 3;
-      const cy = (p0.y + p1.y + p2.y) / 3;
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
 
-      const minX = Math.min(p0.x, p1.x, p2.x);
-      const maxX = Math.max(p0.x, p1.x, p2.x);
-      const minY = Math.min(p0.y, p1.y, p2.y);
-      const maxY = Math.max(p0.y, p1.y, p2.y);
-      const width = maxX - minX || 1e-6;
-      const height = maxY - minY || 1e-6;
-      const aspect = width / height;
+      // zijden, klein naar groot, genormeerd op de langste zijde
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides
+        .slice()
+        .sort(function (a, b) {
+          return a.len - b.len;
+        })
+        .map(function (s) {
+          return s.len / maxSideLen;
+        });
+
+      // grootste zijde vinden om oriëntatie en hoek te bepalen
+      const largest = sides
+        .slice()
+        .sort(function (a, b) {
+          return a.len - b.len;
+        })[2];
+
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      function orientationVal(a, b, c) {
+        const value =
+          (b.x - a.x) * (c.y - a.y) -
+          (b.y - a.y) * (c.x - a.x);
+        if (value > 0) return 1;
+        if (value < 0) return -1;
+        return 0;
+      }
+
+      const orientation = orientationVal(A, B, C);
+
+      // hoek bij punt C via cosinusregel
+      const AC = dist(A, C);
+      const BC = dist(B, C);
+      const AB = largest.len;
+      const AC2 = AC * AC;
+      const BC2 = BC * BC;
+      const AB2 = AB * AB;
+      let cosAngle = 0;
+      const denom = 2 * AC * BC;
+      if (denom > 1e-6) {
+        cosAngle = (AC2 + BC2 - AB2) / denom;
+      }
+
+      // bounding box van de drie punten in het echte scherm
+      let minX = Math.min(p0.x, p1.x, p2.x);
+      let maxX = Math.max(p0.x, p1.x, p2.x);
+      let minY = Math.min(p0.y, p1.y, p2.y);
+      let maxY = Math.max(p0.y, p1.y, p2.y);
+      let width = maxX - minX;
+      let height = maxY - minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      // genormeerde y posities, gesorteerd
+      const yNormVals = [p0, p1, p2]
+        .map(function (p) {
+          return (p.y - minY) / height;
+        })
+        .sort(function (a, b) {
+          return a - b;
+        });
+
+      // x patroon, gesorteerd op y van boven naar beneden
+      const pointsWithIndex = [
+        { p: p0, idx: 0 },
+        { p: p1, idx: 1 },
+        { p: p2, idx: 2 }
+      ].sort(function (a, b) {
+        return a.p.y - b.p.y;
+      });
+
+      const xPattern = pointsWithIndex.map(function (item) {
+        return (item.p.x - minX) / width;
+      });
+
+      const aspect = height / (width + height);
+
+      const centroidBox = {
+        x: (centroidRaw.x - minX) / width,
+        y: (centroidRaw.y - minY) / height
+      };
+
+      const vector = buildFeatureVector({
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect
+      });
 
       return {
-        ratioSmall,
-        ratioMid,
-        cosAngle,
-        orientation,
-        centroidX: cx,
-        centroidY: cy,
-        aspect
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect,
+        vector: vector
       };
     }
 
-    function buildFeatureVector(features) {
-      if (!features) return null;
+    /**
+     * Bouwt een gewogen featurevector op
+     * door verschillende aspecten van het patroon te schalen.
+     */
+    function buildFeatureVector(f) {
+      const wSides = 3.0;
+      const wCos = 4.0;
+      const wOrient = 2.0;
+      const wY = 3.0;
+      const wX = 2.0;
+      const wAspect = 2.0;
 
-      const weights = {
-        ratioSmall: 2.0,
-        ratioMid: 2.0,
-        cosAngle: 1.2,
-        orientation: 0.5,
-        centroidX: 0.25,
-        centroidY: 0.25,
-        aspect: 1.0
-      };
+      const v = [];
+      v.push(f.sides[0] * wSides);
+      v.push(f.sides[1] * wSides);
+      v.push(f.sides[2] * wSides);
 
-      return [
-        features.ratioSmall * weights.ratioSmall,
-        features.ratioMid * weights.ratioMid,
-        features.cosAngle * weights.cosAngle,
-        features.orientation * weights.orientation,
-        features.centroidX * weights.centroidX * 0.01,
-        features.centroidY * weights.centroidY * 0.01,
-        features.aspect * weights.aspect
-      ];
+      v.push(f.cosAngle * wCos);
+      v.push(f.orientation * wOrient);
+
+      v.push(f.yNorm[0] * wY);
+      v.push(f.yNorm[1] * wY);
+      v.push(f.yNorm[2] * wY);
+
+      v.push(f.xPattern[0] * wX);
+      v.push(f.xPattern[1] * wX);
+      v.push(f.xPattern[2] * wX);
+
+      v.push(f.aspect * wAspect);
+
+      return v;
     }
 
+    /**
+     * Euclidische afstand tussen twee featurevectoren.
+     */
     function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
       let sum = 0;
-      const len = Math.min(a.length, b.length);
-      for (let i = 0; i < len; i++) {
-        const d = a[i] - b[i];
-        sum += d * d;
+      for (let i = 0; i < a.length; i++) {
+        const diff = a[i] - b[i];
+        sum += diff * diff;
       }
       return Math.sqrt(sum);
     }
 
-    function buildCalibrationFromData(data) {
-      const calib = {
-        digits: {},
-        allSamples: [],
-        classificationStats: null
-      };
-
-      const expected = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
-
-      for (const key in data) {
-        if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
-        if (!/^[0-9]$/.test(key)) continue;
-
-        const entry = data[key];
-        if (!entry || !Array.isArray(entry.samples)) continue;
-
-        const digit = Number(key);
-        const bucket = {
-          digit,
-          samples: []
+    /**
+     * Berekent drempels op basis van de kalibratiesamples.
+     * thresholdBase: grens tussen zeker en twijfelachtig
+     * thresholdUnknown: grens waarboven een meting als onbekend geldt
+     */
+    function recomputeClassificationStats() {
+      if (!calibration) {
+        classificationStats = {
+          thresholdBase: 0.8,
+          thresholdUnknown: 1.5
         };
-
-        entry.samples.forEach(sample => {
-          if (!sample || !Array.isArray(sample.points)) return;
-          if (sample.points.length !== expected) return;
-
-          const pts = sample.points.map(p => ({ x: p.x, y: p.y }));
-          const features = computeFeatures(pts);
-          const vector = buildFeatureVector(features);
-          if (!features || !vector) return;
-
-          const sampleObj = {
-            digit,
-            points: pts,
-            features,
-            vector
-          };
-
-          bucket.samples.push(sampleObj);
-          calib.allSamples.push(sampleObj);
-        });
-
-        if (bucket.samples.length > 0) {
-          calib.digits[key] = bucket;
-        }
+        return;
       }
 
-      calib.classificationStats = recomputeClassificationStats(calib);
-      return calib;
+      const allSamples = [];
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        if (!calibration[key]) return;
+        const samples = calibration[key].samples || [];
+        samples.forEach(function (s) {
+          allSamples.push({ digit: d, features: s.features });
+        });
+      });
+
+      if (allSamples.length < 2) {
+        classificationStats = {
+          thresholdBase: 0.6,
+          thresholdUnknown: 1.0
+        };
+        return;
+      }
+
+      const sameMinDistances = [];
+      const betweenMinDistances = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        const vecA = a.features.vector;
+        let minSame = Infinity;
+        let minOther = Infinity;
+
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const vecB = b.features.vector;
+          const dist = vectorDistance(vecA, vecB);
+
+          if (a.digit === b.digit) {
+            if (dist < minSame) minSame = dist;
+          } else {
+            if (dist < minOther) minOther = dist;
+          }
+        }
+
+        if (minSame < Infinity) sameMinDistances.push(minSame);
+        if (minOther < Infinity) betweenMinDistances.push(minOther);
+      }
+
+      if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
+        classificationStats = {
+          thresholdBase: 0.7,
+          thresholdUnknown: 1.2
+        };
+        return;
+      }
+
+      const maxSame = Math.max.apply(null, sameMinDistances);
+      const minBetween = Math.min.apply(null, betweenMinDistances);
+
+      let thresholdBase;
+      if (minBetween > maxSame) {
+        thresholdBase = (maxSame + minBetween) / 2;
+      } else {
+        thresholdBase = maxSame * 1.3;
+      }
+      const thresholdUnknown = thresholdBase * 1.5;
+
+      classificationStats = {
+        thresholdBase: thresholdBase,
+        thresholdUnknown: thresholdUnknown,
+        maxSame: maxSame,
+        minBetween: minBetween
+      };
     }
 
-    function recomputeClassificationStats(calibration) {
-      const samples = calibration.allSamples || [];
-      const sameDistances = [];
-      const diffDistances = [];
+    /**
+     * Classificeert een meting op basis van de featurevector
+     * en de kalibratiegegevens.
+     */
+    function classifyMeasurement(features) {
+      const vec = features.vector;
+      if (!vec || !calibration) {
+        return {
+          digit: null,
+          bestDist: null,
+          certainty: "onbekend",
+          isUnknown: true,
+          topMatches: []
+        };
+      }
 
-      for (let i = 0; i < samples.length; i++) {
-        for (let j = i + 1; j < samples.length; j++) {
-          const sa = samples[i];
-          const sb = samples[j];
-          const dist = vectorDistance(sa.vector, sb.vector);
-          if (sa.digit === sb.digit) {
-            sameDistances.push(dist);
-          } else {
-            diffDistances.push(dist);
+      const bestPerDigit = {};
+      DIGIT_ORDER.forEach(function (d) {
+        bestPerDigit[d] = Infinity;
+      });
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = calibration[key];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const sampleVec = samples[i].features.vector;
+          const dist = vectorDistance(vec, sampleVec);
+          if (dist < bestPerDigit[d]) {
+            bestPerDigit[d] = dist;
+          }
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestDigit = d;
+          }
+        }
+      });
+
+      const perDigitArray = [];
+      DIGIT_ORDER.forEach(function (d) {
+        const val = bestPerDigit[d];
+        if (val < Infinity) {
+          perDigitArray.push({ digit: d, distance: val });
+        }
+      });
+      perDigitArray.sort(function (a, b) {
+        return a.distance - b.distance;
+      });
+      const topMatches = perDigitArray.slice(0, 3);
+
+      if (bestDigit === null || bestDist === Infinity) {
+        return {
+          digit: null,
+          bestDist: null,
+          certainty: "onbekend",
+          isUnknown: true,
+          topMatches: topMatches
+        };
+      }
+
+      let stats = classificationStats;
+      if (!stats) {
+        stats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
+      }
+
+      const base = stats.thresholdBase;
+      const unknownThresh = stats.thresholdUnknown;
+
+      let isUnknown = false;
+      let certainty = "zeker";
+
+      if (bestDist > unknownThresh) {
+        isUnknown = true;
+      } else if (bestDist > base) {
+        certainty = "twijfelachtig";
+      }
+
+      if (!isUnknown && topMatches.length > 1) {
+        const second = topMatches[1].distance;
+        if (second > 0) {
+          const ratio = bestDist / second;
+          if (ratio > 0.9 && certainty === "zeker") {
+            certainty = "twijfelachtig";
           }
         }
       }
 
-      function stats(arr) {
-        if (!arr.length) return { mean: 0, std: 0, min: 0, max: 0 };
-        const sum = arr.reduce((a, b) => a + b, 0);
-        const mean = sum / arr.length;
-        const variance = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length;
-        const std = Math.sqrt(variance);
-        const min = Math.min.apply(null, arr);
-        const max = Math.max.apply(null, arr);
-        return { mean, std, min, max };
-      }
-
-      const sameStats = stats(sameDistances);
-      const diffStats = stats(diffDistances);
-
-      let thresholdBase;
-      let thresholdUnknown;
-
-      if (sameDistances.length > 0) {
-        thresholdBase = sameStats.mean + sameStats.std * 1.5;
-      } else {
-        thresholdBase = 0.18;
-      }
-
-      if (diffDistances.length > 0) {
-        thresholdUnknown = (sameStats.mean + diffStats.mean) / 2;
-      } else {
-        thresholdUnknown = thresholdBase * 1.8;
-      }
-
-      if (thresholdUnknown < thresholdBase) {
-        thresholdUnknown = thresholdBase * 1.6;
-      }
-
       return {
-        thresholdBase,
-        thresholdUnknown,
-        sameStats,
-        diffStats
+        digit: isUnknown ? null : bestDigit,
+        bestDist: bestDist,
+        certainty: certainty,
+        isUnknown: isUnknown,
+        topMatches: topMatches
       };
     }
 
-    function classifyMeasurement(measurementVector, calibration, stats) {
-      const allSamples = calibration.allSamples || [];
-      let bestDigit = null;
-      let bestDistance = Infinity;
+    /**
+     * Publieke functie voor de rest van je spel.
+     *
+     * Parameters:
+     *   points: array met drie punten binnen de scanzone, elk {x, y}
+     *
+     * Retourneert:
+     *   een cijfer 0 t/m 9 als er een betrouwbare herkenning is,
+     *   of null als de meting onbekend is.
+     */
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) {
+        return null;
+      }
 
-      for (let i = 0; i < allSamples.length; i++) {
-        const sample = allSamples[i];
-        const dist = vectorDistance(measurementVector, sample.vector);
-        if (dist < bestDistance) {
-          bestDistance = dist;
-          bestDigit = sample.digit;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) {
+        return null;
+      }
+
+      const features = computeFeatures(points);
+      const classification = classifyMeasurement(features);
+
+      if (!classification || classification.isUnknown || classification.digit == null) {
+        return null;
+      }
+
+      return classification.digit;
+    }
+
+    /* ================================
+       SPELLOGICA "WELK CIJFER MIST?"
+       ================================ */
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const numberRow = document.getElementById("number-row");
+      const numberSlots = Array.from(
+        document.querySelectorAll(".number-slot")
+      );
+      const feedbackEl = document.getElementById("feedback");
+      const scanArea = document.getElementById("scan-area");
+
+      let currentTriple = [1, 2, 3];
+      let missingIndex = 1;
+      let missingNumber = 2;
+      let roundActive = true;
+
+      let currentPoints = [];
+      let hasResultForCurrentTouches = false;
+
+      function setScanState(state) {
+        scanArea.classList.remove(
+          "state-neutral",
+          "state-scanning",
+          "state-correct",
+          "state-wrong"
+        );
+        if (state === "scanning") {
+          scanArea.classList.add("state-scanning");
+        } else if (state === "correct") {
+          scanArea.classList.add("state-correct");
+        } else if (state === "wrong") {
+          scanArea.classList.add("state-wrong");
+        } else {
+          scanArea.classList.add("state-neutral");
         }
       }
 
-      if (bestDigit == null) {
-        return { digit: null, distance: bestDistance, certainty: "unknown" };
+      function updateNumberDisplay() {
+        numberSlots.forEach(function (slot, idx) {
+          const span = slot.querySelector(".number-text");
+          slot.classList.remove("missing", "correct-pop");
+          if (idx === missingIndex) {
+            slot.classList.add("missing");
+            span.textContent = "?";
+          } else {
+            span.textContent = String(currentTriple[idx]);
+          }
+        });
       }
 
-      let certainty = "unknown";
-      if (bestDistance <= stats.thresholdBase) {
-        certainty = "certain";
-      } else if (bestDistance <= stats.thresholdUnknown) {
-        certainty = "uncertain";
-      } else {
-        certainty = "unknown";
+      function newRound() {
+        roundActive = true;
+        feedbackEl.textContent = "";
+        setScanState("neutral");
+        numberRow.classList.remove("shake");
+
+        const base = 1 + Math.floor(Math.random() * 7); // 1..7 => (1,2,3) t/m (7,8,9)
+        currentTriple = [base, base + 1, base + 2];
+        missingIndex = Math.floor(Math.random() * 3); // 0,1,2
+        missingNumber = currentTriple[missingIndex];
+        updateNumberDisplay();
       }
 
-      return { digit: bestDigit, distance: bestDistance, certainty };
-    }
+      function handleRecognitionResult(digit) {
+        if (!roundActive) return;
 
-    function recognizeDigit(points) {
-      if (!calibration || !classificationStats) return null;
-      if (!points || points.length !== expectedTouchPoints) return null;
+        if (digit === missingNumber) {
+          // goed
+          roundActive = false;
+          setScanState("correct");
+          feedbackEl.textContent = "🎉";
 
-      const features = computeFeatures(points);
-      const vector = buildFeatureVector(features);
-      if (!features || !vector) return null;
+          const missingSlot = numberSlots[missingIndex];
+          const span = missingSlot.querySelector(".number-text");
+          missingSlot.classList.remove("missing");
+          missingSlot.classList.add("correct-pop");
+          span.textContent = String(missingNumber);
 
-      const result = classifyMeasurement(vector, calibration, classificationStats);
-      if (!result || result.digit == null) return null;
-      if (result.certainty !== "certain") return null;
+          setTimeout(function () {
+            newRound();
+          }, 1200);
+        } else {
+          // fout
+          setScanState("wrong");
+          feedbackEl.textContent = "✖";
+          numberRow.classList.add("shake");
+          setTimeout(function () {
+            numberRow.classList.remove("shake");
+            if (currentPoints.length === 0) {
+              setScanState("neutral");
+            } else {
+              setScanState("scanning");
+            }
+          }, 450);
+        }
+      }
 
-      return result.digit;
-    }
+      function getPointsFromTouches(touchList) {
+        const rect = scanArea.getBoundingClientRect();
+        const points = [];
 
-    window.addEventListener("load", () => {
-      loadCalibration();
+        for (let i = 0; i < touchList.length; i++) {
+          const t = touchList[i];
+          const x = t.clientX;
+          const y = t.clientY;
+          if (
+            x >= rect.left &&
+            x <= rect.right &&
+            y >= rect.top &&
+            y <= rect.bottom
+          ) {
+            points.push({ x: x, y: y });
+          }
+        }
+        return points;
+      }
+
+      function handleTouchEvent(e) {
+        // Multi-touch in scanzone
+        const touches = e.touches || [];
+        currentPoints = getPointsFromTouches(touches);
+
+        if (currentPoints.length === 0) {
+          hasResultForCurrentTouches = false;
+          setScanState("neutral");
+          return;
+        }
+
+        if (currentPoints.length !== expectedTouchPoints) {
+          hasResultForCurrentTouches = false;
+          setScanState("scanning");
+          return;
+        }
+
+        setScanState("scanning");
+
+        if (!hasResultForCurrentTouches && roundActive) {
+          const digit = recognizeDigit(currentPoints);
+          if (digit !== null && typeof digit === "number") {
+            hasResultForCurrentTouches = true;
+            handleRecognitionResult(digit);
+          }
+        }
+      }
+
+      function addTouchListeners(elem) {
+        ["touchstart", "touchmove", "touchend", "touchcancel"].forEach(
+          function (type) {
+            elem.addEventListener(type, handleTouchEvent, { passive: true });
+          }
+        );
+      }
+
+      addTouchListeners(scanArea);
+      newRound();
+
+      // Kalibratie laden
+      fetch("calibration.json")
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (data) {
+          initCalibration(data);
+        })
+        .catch(function (err) {
+          // Geen debug zichtbaar voor kinderen; alleen console.
+          console.error("Kalibratie laden mislukt:", err);
+        });
     });
   </script>
 </body>
