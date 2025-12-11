@@ -478,6 +478,8 @@
     (function () {
       "use strict";
 
+      const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+
       const SHOW_DURATION_FIRST = 3000;
       const SHOW_DURATION_SECOND = 4000;
       const FEEDBACK_GOOD_MS = 800;
@@ -504,7 +506,8 @@
         answerGivenThisContact: false
       };
 
-      let calibrationPatterns = [];
+      let calibration = null;           // zelfde structuur als in kalibratie tool
+      let classificationStats = null;   // drempels voor herkenning
       let expectedTouchPoints = 3;
       let audioCtx = null;
 
@@ -563,7 +566,9 @@
               expectedTouchPoints = 3;
             }
 
-            calibrationPatterns = buildCalibrationPatterns(data);
+            calibration = buildCalibrationFromData(data);
+            classificationStats = null;
+            recomputeClassificationStats();
 
             elements.loadingOverlay.classList.add("hidden");
             elements.infoHint.textContent = "Leg een Marbotic cijfer in het scanvak en til het na de feedback weer op";
@@ -577,6 +582,38 @@
             appState.phase = "idle";
             startNewRound();
           });
+      }
+
+      /* bouw calibration object zoals in de kalibratie tool */
+
+      function buildCalibrationFromData(data) {
+        const obj = {};
+        DIGIT_ORDER.forEach(function (d) {
+          obj[String(d)] = {
+            digit: d,
+            samples: []
+          };
+        });
+
+        DIGIT_ORDER.forEach(function (d) {
+          const key = String(d);
+          const entry = data[key];
+          if (!entry || !Array.isArray(entry.samples)) return;
+
+          entry.samples.forEach(function (s) {
+            if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+            const pts = s.points.map(function (p) {
+              return { x: Number(p.x), y: Number(p.y) };
+            });
+            const features = computeFeatures(pts);
+            obj[key].samples.push({
+              points: pts,
+              features: features
+            });
+          });
+        });
+
+        return obj;
       }
 
       /* audio */
@@ -707,135 +744,380 @@
         handleDigitAnswer(digit);
       }
 
-      /* kalibratiepatronen uit jouw JSON */
+      /* herkenning, zelfde logica als in kalibratie tool */
 
-      function buildCalibrationPatterns(data) {
-        const patterns = [];
-        if (!data) return patterns;
-
-        if (Array.isArray(data.digits)) {
-          data.digits.forEach(function (entry) {
-            if (!entry || typeof entry.digit === "undefined" || !Array.isArray(entry.points)) return;
-            if (entry.points.length < 2) return;
-            const sig = computeDistanceSignature(entry.points);
-            if (!sig) return;
-            patterns.push({
-              digit: typeof entry.digit === "string" ? parseInt(entry.digit, 10) : entry.digit,
-              signature: sig,
-              count: entry.points.length
-            });
-          });
-          return patterns;
+      function computeFeatures(points) {
+        if (!points || points.length !== 3) {
+          return {
+            sides: [0,0,0],
+            orientation: 0,
+            cosAngle: 0,
+            centroid: {x: 0, y: 0},
+            yNorm: [0,0,0],
+            xPattern: [0,0,0],
+            aspect: 0,
+            vector: [0,0,0]
+          };
         }
 
-        Object.keys(data).forEach(function (key) {
-          if (!/^[0-9]$/.test(key)) {
-            return;
-          }
-          const entry = data[key];
-          if (!entry || !Array.isArray(entry.samples)) return;
+        const p0 = points[0];
+        const p1 = points[1];
+        const p2 = points[2];
 
-          const d = typeof entry.digit === "string" ? parseInt(entry.digit, 10) : entry.digit;
-          if (Number.isNaN(d)) return;
+        const centroidRaw = {
+          x: (p0.x + p1.x + p2.x) / 3,
+          y: (p0.y + p1.y + p2.y) / 3
+        };
 
-          entry.samples.forEach(function (sample) {
-            if (!sample || !Array.isArray(sample.points)) return;
-            if (sample.points.length < 2) return;
-            const sig = computeDistanceSignature(sample.points);
-            if (!sig) return;
-            patterns.push({
-              digit: d,
-              signature: sig,
-              count: sample.points.length
-            });
-          });
+        const isoPoints = [p0, p1, p2].map(function (p) {
+          const dx = p.x - centroidRaw.x;
+          const dy = p.y - centroidRaw.y;
+          return {x: dx, y: dy};
+        });
+        let maxDist = 0;
+        for (let i = 0; i < isoPoints.length; i++) {
+          const q = isoPoints[i];
+          const d = Math.sqrt(q.x * q.x + q.y * q.y);
+          if (d > maxDist) maxDist = d;
+        }
+        if (maxDist < 1e-6) maxDist = 1;
+        for (let i = 0; i < isoPoints.length; i++) {
+          isoPoints[i].x /= maxDist;
+          isoPoints[i].y /= maxDist;
+        }
+
+        function dist(a, b) {
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        const L01 = dist(isoPoints[0], isoPoints[1]);
+        const L12 = dist(isoPoints[1], isoPoints[2]);
+        const L20 = dist(isoPoints[2], isoPoints[0]);
+
+        const sides = [
+          {len: L01, i: 0, j: 1},
+          {len: L12, i: 1, j: 2},
+          {len: L20, i: 2, j: 0}
+        ];
+        const maxSideLen = Math.max(L01, L12, L20) || 1;
+        const sidesNormSorted = sides.slice().sort(function (a, b) {
+          return a.len - b.len;
+        }).map(function (s) {
+          return s.len / maxSideLen;
         });
 
-        return patterns;
-      }
+        const largest = sides.slice().sort(function (a, b) {
+          return a.len - b.len;
+        })[2];
+        const A = isoPoints[largest.i];
+        const B = isoPoints[largest.j];
+        const CIndex = 3 - largest.i - largest.j;
+        const C = isoPoints[CIndex];
 
-      function computeDistanceSignature(points) {
-        const distances = [];
-        for (let i = 0; i < points.length; i++) {
-          for (let j = i + 1; j < points.length; j++) {
-            const dx = points[i].x - points[j].x;
-            const dy = points[i].y - points[j].y;
-            const d = Math.sqrt(dx * dx + dy * dy);
-            if (d > 0) {
-              distances.push(d);
-            }
-          }
+        function orientationVal(a, b, c) {
+          const value = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+          if (value > 0) return 1;
+          if (value < 0) return -1;
+          return 0;
         }
-        if (distances.length === 0) return null;
-        const maxD = Math.max.apply(null, distances) || 1;
-        const normalized = distances
-          .map(function (d) { return d / maxD; })
-          .sort(function (a, b) { return a - b; });
-        return normalized;
+        const orientation = orientationVal(A, B, C);
+
+        const AC = dist(A, C);
+        const BC = dist(B, C);
+        const AB = largest.len;
+        const AC2 = AC * AC;
+        const BC2 = BC * BC;
+        const AB2 = AB * AB;
+        let cosAngle = 0;
+        const denom = 2 * AC * BC;
+        if (denom > 1e-6) {
+          cosAngle = (AC2 + BC2 - AB2) / denom;
+        }
+
+        let minX = Math.min(p0.x, p1.x, p2.x);
+        let maxX = Math.max(p0.x, p1.x, p2.x);
+        let minY = Math.min(p0.y, p1.y, p2.y);
+        let maxY = Math.max(p0.y, p1.y, p2.y);
+        let width = maxX - minX;
+        let height = maxY - minY;
+        if (width < 1e-6) width = 1;
+        if (height < 1e-6) height = 1;
+
+        const yNormVals = [p0, p1, p2].map(function (p) {
+          return (p.y - minY) / height;
+        }).sort(function (a, b) { return a - b; });
+
+        const pointsWithIndex = [
+          {p: p0, idx: 0},
+          {p: p1, idx: 1},
+          {p: p2, idx: 2}
+        ].sort(function (a, b) {
+          return a.p.y - b.p.y;
+        });
+        const xPattern = pointsWithIndex.map(function (item) {
+          return (item.p.x - minX) / width;
+        });
+
+        const aspect = height / (width + height);
+
+        const centroidBox = {
+          x: (centroidRaw.x - minX) / width,
+          y: (centroidRaw.y - minY) / height
+        };
+
+        const vector = buildFeatureVector({
+          sides: sidesNormSorted,
+          orientation: orientation,
+          cosAngle: cosAngle,
+          centroid: centroidBox,
+          yNorm: yNormVals,
+          xPattern: xPattern,
+          aspect: aspect
+        });
+
+        return {
+          sides: sidesNormSorted,
+          orientation: orientation,
+          cosAngle: cosAngle,
+          centroid: centroidBox,
+          yNorm: yNormVals,
+          xPattern: xPattern,
+          aspect: aspect,
+          vector: vector
+        };
       }
 
-      function signatureDistance(a, b) {
+      function buildFeatureVector(f) {
+        const wSides = 3.0;
+        const wCos = 4.0;
+        const wOrient = 2.0;
+        const wY = 3.0;
+        const wX = 2.0;
+        const wAspect = 2.0;
+
+        const v = [];
+        v.push(f.sides[0] * wSides);
+        v.push(f.sides[1] * wSides);
+        v.push(f.sides[2] * wSides);
+
+        v.push(f.cosAngle * wCos);
+        v.push(f.orientation * wOrient);
+
+        v.push(f.yNorm[0] * wY);
+        v.push(f.yNorm[1] * wY);
+        v.push(f.yNorm[2] * wY);
+
+        v.push(f.xPattern[0] * wX);
+        v.push(f.xPattern[1] * wX);
+        v.push(f.xPattern[2] * wX);
+
+        v.push(f.aspect * wAspect);
+
+        return v;
+      }
+
+      function vectorDistance(a, b) {
         if (!a || !b || a.length !== b.length) return Infinity;
         let sum = 0;
         for (let i = 0; i < a.length; i++) {
           const diff = a[i] - b[i];
-          sum += Math.abs(diff);
+          sum += diff * diff;
         }
-        return sum / a.length;
+        return Math.sqrt(sum);
       }
 
-     function recognizeDigit(points) {
-  if (!calibrationPatterns || calibrationPatterns.length === 0) {
-    return null;
-  }
+      function recomputeClassificationStats() {
+        if (!calibration) {
+          classificationStats = {
+            thresholdBase: 0.8,
+            thresholdUnknown: 1.5
+          };
+          return;
+        }
 
-  if (points.length !== expectedTouchPoints) {
-    return null;
-  }
+        const allSamples = [];
+        DIGIT_ORDER.forEach(function (d) {
+          const key = String(d);
+          if (!calibration[key]) return;
+          calibration[key].samples.forEach(function (s) {
+            allSamples.push({digit: d, features: s.features});
+          });
+        });
 
-  const candidateSignature = computeDistanceSignature(points);
-  if (!candidateSignature) return null;
+        if (allSamples.length < 2) {
+          classificationStats = {
+            thresholdBase: 0.6,
+            thresholdUnknown: 1.0
+          };
+          return;
+        }
 
-  // basiswaarden, redelijk streng
-  const baseTolerance = 0.06;
-  const baseMargin = 0.01;
+        const sameMinDistances = [];
+        const betweenMinDistances = [];
 
-  const tolerance = (window.calibrationData && typeof window.calibrationData.tolerance === "number")
-    ? window.calibrationData.tolerance
-    : baseTolerance;
+        for (let i = 0; i < allSamples.length; i++) {
+          const a = allSamples[i];
+          const vecA = a.features.vector;
+          let minSame = Infinity;
+          let minOther = Infinity;
+          for (let j = 0; j < allSamples.length; j++) {
+            if (i === j) continue;
+            const b = allSamples[j];
+            const vecB = b.features.vector;
+            const dist = vectorDistance(vecA, vecB);
+            if (a.digit === b.digit) {
+              if (dist < minSame) minSame = dist;
+            } else {
+              if (dist < minOther) minOther = dist;
+            }
+          }
+          if (minSame < Infinity) sameMinDistances.push(minSame);
+          if (minOther < Infinity) betweenMinDistances.push(minOther);
+        }
 
-  const margin = (window.calibrationData && typeof window.calibrationData.confidenceMargin === "number")
-    ? window.calibrationData.confidenceMargin
-    : baseMargin;
+        if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
+          classificationStats = {
+            thresholdBase: 0.7,
+            thresholdUnknown: 1.2
+          };
+          return;
+        }
 
-  let bestDigit = null;
-  let bestScore = Infinity;
-  let secondScore = Infinity;
+        const maxSame = Math.max.apply(null, sameMinDistances);
+        const minBetween = Math.min.apply(null, betweenMinDistances);
 
-  for (let i = 0; i < calibrationPatterns.length; i++) {
-    const pattern = calibrationPatterns[i];
-    if (pattern.count !== points.length) continue;
+        let thresholdBase;
+        if (minBetween > maxSame) {
+          thresholdBase = (maxSame + minBetween) / 2;
+        } else {
+          thresholdBase = maxSame * 1.3;
+        }
+        const thresholdUnknown = thresholdBase * 1.5;
 
-    const score = signatureDistance(candidateSignature, pattern.signature);
+        classificationStats = {
+          thresholdBase: thresholdBase,
+          thresholdUnknown: thresholdUnknown,
+          maxSame: maxSame,
+          minBetween: minBetween
+        };
+      }
 
-    if (score < bestScore) {
-      secondScore = bestScore;
-      bestScore = score;
-      bestDigit = pattern.digit;
-    } else if (score < secondScore) {
-      secondScore = score;
-    }
-  }
+      function classifyMeasurement(features) {
+        const vec = features.vector;
+        if (!vec || !calibration) {
+          return {
+            digit: null,
+            bestDist: null,
+            certainty: "onbekend",
+            isUnknown: true,
+            topMatches: []
+          };
+        }
 
-  if (bestDigit === null) return null;
+        const bestPerDigit = {};
+        DIGIT_ORDER.forEach(function (d) {
+          bestPerDigit[d] = Infinity;
+        });
 
-  const confidentEnough =
-    bestScore <= tolerance &&
-    (secondScore - bestScore) >= margin;
+        let bestDigit = null;
+        let bestDist = Infinity;
 
-  return confidentEnough ? bestDigit : null;
-}
+        DIGIT_ORDER.forEach(function (d) {
+          const key = String(d);
+          const entry = calibration[key];
+          if (!entry) return;
+          const samples = entry.samples || [];
+          for (let i = 0; i < samples.length; i++) {
+            const sampleVec = samples[i].features.vector;
+            const dist = vectorDistance(vec, sampleVec);
+            if (dist < bestPerDigit[d]) {
+              bestPerDigit[d] = dist;
+            }
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestDigit = d;
+            }
+          }
+        });
 
+        const perDigitArray = [];
+        DIGIT_ORDER.forEach(function (d) {
+          const val = bestPerDigit[d];
+          if (val < Infinity) {
+            perDigitArray.push({digit: d, distance: val});
+          }
+        });
+        perDigitArray.sort(function (a, b) {
+          return a.distance - b.distance;
+        });
+        const topMatches = perDigitArray.slice(0, 3);
+
+        if (bestDigit === null || bestDist === Infinity) {
+          return {
+            digit: null,
+            bestDist: null,
+            certainty: "onbekend",
+            isUnknown: true,
+            topMatches: topMatches
+          };
+        }
+
+        let stats = classificationStats;
+        if (!stats) {
+          stats = {thresholdBase: 0.8, thresholdUnknown: 1.5};
+        }
+
+        const base = stats.thresholdBase;
+        const unknownThresh = stats.thresholdUnknown;
+
+        let isUnknown = false;
+        let certainty = "zeker";
+
+        if (bestDist > unknownThresh) {
+          isUnknown = true;
+        } else if (bestDist > base) {
+          certainty = "twijfelachtig";
+        }
+
+        if (!isUnknown && topMatches.length > 1) {
+          const second = topMatches[1].distance;
+          if (second > 0) {
+            const ratio = bestDist / second;
+            if (ratio > 0.9 && certainty === "zeker") {
+              certainty = "twijfelachtig";
+            }
+          }
+        }
+
+        return {
+          digit: isUnknown ? null : bestDigit,
+          bestDist: bestDist,
+          certainty: certainty,
+          isUnknown: isUnknown,
+          topMatches: topMatches
+        };
+      }
+
+      function recognizeDigit(points) {
+        if (!calibration || !classificationStats) {
+          return null;
+        }
+
+        if (points.length !== expectedTouchPoints) {
+          return null;
+        }
+
+        const features = computeFeatures(points);
+        const classification = classifyMeasurement(features);
+
+        if (!classification || classification.isUnknown || classification.digit == null) {
+          return null;
+        }
+
+        return classification.digit;
+      }
 
       /* spellogica met directe controle */
 
@@ -939,81 +1221,79 @@
         }
       }
 
-      /* dots en groepjes, nu binnen dotsColumn */
+      /* dots en groepjes, met spacing */
 
-     function generateDotsForNumber(n, isSecondChance) {
-  const rect = elements.dotsColumn.getBoundingClientRect();
-  const width = rect.width || 768;
-  const height = rect.height || 512;
+      function generateDotsForNumber(n, isSecondChance) {
+        const rect = elements.dotsColumn.getBoundingClientRect();
+        const width = rect.width || 768;
+        const height = rect.height || 512;
 
-  const minSide = Math.min(width, height);
-  const padding = minSide * 0.1;
-  const dotRadius = minSide * 0.045;
-  appState.dotRadius = dotRadius;
+        const minSide = Math.min(width, height);
+        const padding = minSide * 0.1;
+        const dotRadius = minSide * 0.045;
+        appState.dotRadius = dotRadius;
 
-  const bounds = {
-    left: padding,
-    top: padding,
-    right: width - padding,
-    bottom: height - padding
-  };
+        const bounds = {
+          left: padding,
+          top: padding,
+          right: width - padding,
+          bottom: height - padding
+        };
 
-  if (n === 0) {
-    return [];
-  }
+        if (n === 0) {
+          return [];
+        }
 
-  let dots;
+        let dots;
 
-  if (n === 1 || n === 2) {
-    dots = [];
-    for (let i = 0; i < n; i++) {
-      const x = padding + Math.random() * (width - 2 * padding);
-      const y = padding + Math.random() * (height - 2 * padding);
-      dots.push({ x: x, y: y, radius: dotRadius });
-    }
-  } else {
-    const groups = getGroupsForNumber(n);
-    dots = [];
+        if (n === 1 || n === 2) {
+          dots = [];
+          for (let i = 0; i < n; i++) {
+            const x = padding + Math.random() * (width - 2 * padding);
+            const y = padding + Math.random() * (height - 2 * padding);
+            dots.push({ x: x, y: y, radius: dotRadius });
+          }
+        } else {
+          const groups = getGroupsForNumber(n);
+          dots = [];
 
-    if (groups.length === 1) {
-      const clusterRect = {
-        left: padding,
-        top: padding,
-        width: width - 2 * padding,
-        height: height - 2 * padding
-      };
-      dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect, dotRadius));
-    } else if (groups.length === 2) {
-      const totalGap = minSide * 0.14;
-      const availableWidth = width - 2 * padding - totalGap;
-      const clusterWidth = availableWidth / 2;
-      const clusterHeight = height - 2 * padding;
+          if (groups.length === 1) {
+            const clusterRect = {
+              left: padding,
+              top: padding,
+              width: width - 2 * padding,
+              height: height - 2 * padding
+            };
+            dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect, dotRadius));
+          } else if (groups.length === 2) {
+            const totalGap = minSide * 0.14;
+            const availableWidth = width - 2 * padding - totalGap;
+            const clusterWidth = availableWidth / 2;
+            const clusterHeight = height - 2 * padding;
 
-      const left1 = padding;
-      const left2 = padding + clusterWidth + totalGap;
-      const top = padding;
+            const left1 = padding;
+            const left2 = padding + clusterWidth + totalGap;
+            const top = padding;
 
-      const clusterRect1 = { left: left1, top: top, width: clusterWidth, height: clusterHeight };
-      const clusterRect2 = { left: left2, top: top, width: clusterWidth, height: clusterHeight };
+            const clusterRect1 = { left: left1, top: top, width: clusterWidth, height: clusterHeight };
+            const clusterRect2 = { left: left2, top: top, width: clusterWidth, height: clusterHeight };
 
-      dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect1, dotRadius));
-      dots.push.apply(dots, createDotsForGroup(groups[1], clusterRect2, dotRadius));
-    } else {
-      const clusterRect = {
-        left: padding,
-        top: padding,
-        width: width - 2 * padding,
-        height: height - 2 * padding
-      };
-      dots.push.apply(dots, createDotsForGroup(n, clusterRect, dotRadius));
-    }
-  }
+            dots.push.apply(dots, createDotsForGroup(groups[0], clusterRect1, dotRadius));
+            dots.push.apply(dots, createDotsForGroup(groups[1], clusterRect2, dotRadius));
+          } else {
+            const clusterRect = {
+              left: padding,
+              top: padding,
+              width: width - 2 * padding,
+              height: height - 2 * padding
+            };
+            dots.push.apply(dots, createDotsForGroup(n, clusterRect, dotRadius));
+          }
+        }
 
-  // hier zorgen we dat er echt ruimte tussen alle cirkels zit
-  enforceDotSpacing(dots, dotRadius, bounds);
-  return dots;
-}
-
+        enforceDotSpacing(dots, dotRadius, bounds);
+        return dots;
+      }
 
       function getGroupsForNumber(n) {
         if (n <= 0) return [];
@@ -1067,85 +1347,81 @@
       }
 
       function createDotsForGroup(count, clusterRect, dotRadius) {
-  const pattern = getLocalPattern(count);
-  const dots = [];
-  const cx = clusterRect.left + clusterRect.width / 2;
-  const cy = clusterRect.top + clusterRect.height / 2;
-  const scale = Math.min(clusterRect.width, clusterRect.height) / 4.2;
+        const pattern = getLocalPattern(count);
+        const dots = [];
+        const cx = clusterRect.left + clusterRect.width / 2;
+        const cy = clusterRect.top + clusterRect.height / 2;
+        const scale = Math.min(clusterRect.width, clusterRect.height) / 4.2;
 
-  for (let i = 0; i < pattern.length; i++) {
-    const pt = pattern[i];
+        for (let i = 0; i < pattern.length; i++) {
+          const pt = pattern[i];
 
-    // lichte variatie, maar niet zo groot dat stippen gaan botsen
-    const jitterX = (Math.random() - 0.5) * 0.10;
-    const jitterY = (Math.random() - 0.5) * 0.10;
+          const jitterX = (Math.random() - 0.5) * 0.10;
+          const jitterY = (Math.random() - 0.5) * 0.10;
 
-    const x = cx + (pt.x + jitterX) * scale;
-    const y = cy + (pt.y + jitterY) * scale;
+          const x = cx + (pt.x + jitterX) * scale;
+          const y = cy + (pt.y + jitterY) * scale;
 
-    dots.push({
-      x: x,
-      y: y,
-      radius: dotRadius
-    });
-  }
+          dots.push({
+            x: x,
+            y: y,
+            radius: dotRadius
+          });
+        }
 
-  return dots;
-}
+        return dots;
+      }
 
       function enforceDotSpacing(dots, radius, bounds) {
-  if (!dots || dots.length < 2) return dots;
+        if (!dots || dots.length < 2) return dots;
 
-  const minDist = radius * 2.2;       // iets meer dan twee keer de straal, dus altijd witruimte
-  const maxIterations = 12;
+        const minDist = radius * 2.2;
+        const maxIterations = 12;
 
-  for (let iter = 0; iter < maxIterations; iter++) {
-    let movedAny = false;
+        for (let iter = 0; iter < maxIterations; iter++) {
+          let movedAny = false;
 
-    for (let i = 0; i < dots.length; i++) {
-      for (let j = i + 1; j < dots.length; j++) {
-        const a = dots[i];
-        const b = dots[j];
+          for (let i = 0; i < dots.length; i++) {
+            for (let j = i + 1; j < dots.length; j++) {
+              const a = dots[i];
+              const b = dots[j];
 
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
+              let dx = b.x - a.x;
+              let dy = b.y - a.y;
+              let dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (!dist) {
-          // exact op elkaar: duw een willekeurige lichte richting op
-          dx = (Math.random() - 0.5) || 0.001;
-          dy = (Math.random() - 0.5) || 0.001;
-          dist = Math.sqrt(dx * dx + dy * dy);
+              if (!dist) {
+                dx = (Math.random() - 0.5) || 0.001;
+                dy = (Math.random() - 0.5) || 0.001;
+                dist = Math.sqrt(dx * dx + dy * dy);
+              }
+
+              if (dist < minDist) {
+                const overlap = minDist - dist;
+                const ux = dx / dist;
+                const uy = dy / dist;
+                const shift = overlap / 2;
+
+                a.x -= ux * shift;
+                a.y -= uy * shift;
+                b.x += ux * shift;
+                b.y += uy * shift;
+
+                a.x = Math.min(bounds.right - radius, Math.max(bounds.left + radius, a.x));
+                a.y = Math.min(bounds.bottom - radius, Math.max(bounds.top + radius, a.y));
+                b.x = Math.min(bounds.right - radius, Math.max(bounds.left + radius, b.x));
+                b.y = Math.min(bounds.bottom - radius, Math.max(bounds.top + radius, b.y));
+
+                movedAny = true;
+              }
+            }
+          }
+
+          if (!movedAny) break;
         }
 
-        if (dist < minDist) {
-          const overlap = minDist - dist;
-          const ux = dx / dist;
-          const uy = dy / dist;
-          const shift = overlap / 2;
-
-          a.x -= ux * shift;
-          a.y -= uy * shift;
-          b.x += ux * shift;
-          b.y += uy * shift;
-
-          // binnen het speelveld houden
-          a.x = Math.min(bounds.right - radius, Math.max(bounds.left + radius, a.x));
-          a.y = Math.min(bounds.bottom - radius, Math.max(bounds.top + radius, a.y));
-          b.x = Math.min(bounds.right - radius, Math.max(bounds.left + radius, b.x));
-          b.y = Math.min(bounds.bottom - radius, Math.max(bounds.top + radius, b.y));
-
-          movedAny = true;
-        }
+        return dots;
       }
-    }
-
-    if (!movedAny) break;
-  }
-
-  return dots;
-}
-
 
       function getLocalPattern(count) {
         const d = 0.7;
@@ -1274,4 +1550,3 @@
   </script>
 </body>
 </html>
-
