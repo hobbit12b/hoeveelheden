@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Marbotic: Welk cijfer mist</title>
+  <title>Welk cijfer mist</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -95,7 +95,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
       transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
 
@@ -117,7 +116,7 @@
 
     .digit-missing {
       background: #fff3cd;
-      border: 2px dashed rgba(0,0,0,0.08);
+      border: 2px dashed rgba(0,0,0,0.12);
     }
 
     .digit-placeholder {
@@ -131,13 +130,8 @@
       transform: translateY(-4px);
     }
 
-    .digits-row.correct-row .digit-tile span {
-      color: #2e7d32;
-    }
-
     .hint-row {
       display: flex;
-      align-items: center;
       justify-content: center;
       gap: 0.6rem;
       font-size: 1rem;
@@ -152,7 +146,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
     }
 
     .scan-area-wrapper {
@@ -177,28 +170,47 @@
       border-radius: 1.6rem;
       border: 4px solid rgba(0,0,0,0.08);
       background: #ffffff;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
       position: relative;
-      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+    }
+    .scan-box[data-state="idle"] {
+      border-color: rgba(0,0,0,0.12);
     }
 
-    .scan-box-inner {
+    .scan-box[data-state="scanning"] {
+      border-color: #42a5f5;
+      box-shadow: 0 0 0 4px rgba(66,165,245,0.18);
+    }
+
+    .scan-box[data-state="success"] {
+      border-color: #66bb6a;
+      box-shadow: 0 0 0 4px rgba(102,187,106,0.24);
+    }
+
+    .scan-box[data-state="error"] {
+      border-color: #ef5350;
+      box-shadow: 0 0 0 4px rgba(239,83,80,0.24);
+    }
+
+    .scan-status-pill {
       position: absolute;
-      inset: 0;
+      top: 0.5rem;
+      right: 0.6rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: rgba(0,0,0,0.05);
       display: flex;
       align-items: center;
-      justify-content: center;
-      pointer-events: none;
+      gap: 0.3rem;
     }
 
     .scan-visual {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.4rem;
+      text-align: center;
       opacity: 0.9;
     }
 
@@ -211,111 +223,34 @@
       color: rgba(0,0,0,0.6);
     }
 
-    .scan-status-pill {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.6rem;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: rgba(0,0,0,0.04);
-      backdrop-filter: blur(8px);
-    }
-
-    .scan-status-icon {
-      font-size: 1rem;
-    }
-
-    .scan-status-text {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .scan-box[data-state="idle"] {
-      border-color: rgba(0,0,0,0.12);
-    }
-
-    .scan-box[data-state="scanning"] {
-      border-color: #42a5f5;
-      box-shadow: 0 0 0 4px rgba(66,165,245,0.18), 0 10px 22px rgba(0,0,0,0.18);
-    }
-
-    .scan-box[data-state="success"] {
-      border-color: #66bb6a;
-      box-shadow: 0 0 0 4px rgba(102,187,106,0.24), 0 10px 22px rgba(0,0,0,0.22);
-    }
-
-    .scan-box[data-state="error"] {
-      border-color: #ef5350;
-      box-shadow: 0 0 0 4px rgba(239,83,80,0.24), 0 10px 22px rgba(0,0,0,0.22);
-    }
-
-    .scan-box[data-state="success"] .scan-visual {
-      animation: pulse-success 0.7s ease-out;
-    }
-
-    .scan-box[data-state="error"] .scan-visual {
-      animation: shake-error 0.4s ease-out;
-    }
-
-    @keyframes pulse-success {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.08); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes shake-error {
-      0% { transform: translateX(0); }
-      20% { transform: translateX(-5px); }
-      40% { transform: translateX(4px); }
-      60% { transform: translateX(-3px); }
-      100% { transform: translateX(0); }
-    }
-
     .scan-footnote {
       text-align: center;
       font-size: 0.8rem;
       color: rgba(0,0,0,0.55);
     }
 
-    .scan-footnote .small-icon {
-      font-size: 0.9rem;
-      margin-right: 0.25rem;
-    }
-
     .calibration-warning {
       position: fixed;
+      bottom: 1rem;
       left: 50%;
-      bottom: 0.9rem;
       transform: translateX(-50%);
-      padding: 0.4rem 0.9rem;
+      background: #fff;
+      padding: 0.4rem 1rem;
       border-radius: 999px;
-      background: rgba(255,255,255,0.96);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
       font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      z-index: 40;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
       opacity: 0;
+      transition: opacity 0.3s;
       pointer-events: none;
-      transition: opacity 0.25s ease;
     }
 
     .calibration-warning.visible {
       opacity: 1;
       pointer-events: auto;
     }
-
-    .calibration-warning-icon {
-      font-size: 1rem;
-    }
   </style>
 </head>
+
 <body>
   <div class="app-root">
     <header class="app-header">
@@ -328,26 +263,27 @@
 
       <div class="hint-row">
         <div class="hint-icon">🔍</div>
-        <div class="hint-text">Kijk goed, welk cijfer zie je niet</div>
+        Kijk goed, welk cijfer zie je niet
       </div>
 
       <section class="scan-area-wrapper">
         <div class="scan-area">
           <div class="scan-box" id="scan-box" data-state="idle">
+
             <div class="scan-status-pill">
-              <span class="scan-status-icon" id="scan-status-icon">⬚</span>
-              <span class="scan-status-text" id="scan-status-text">Rustig</span>
+              <span id="scan-status-icon">⬚</span>
+              <span id="scan-status-text">Rustig</span>
             </div>
-            <div class="scan-box-inner">
-              <div class="scan-visual" id="scan-visual">
-                <div class="scan-icon-main" id="scan-icon-main">👉🔢</div>
-                <div class="scan-label" id="scan-label">Leg het cijfer hier</div>
-              </div>
+
+            <div class="scan-visual">
+              <div class="scan-icon-main" id="scan-icon-main">👉🔢</div>
+              <div class="scan-label" id="scan-label">Leg het cijfer hier</div>
             </div>
+
           </div>
+
           <div class="scan-footnote">
-            <span class="small-icon">📱</span>
-            Blokje stil laten liggen in het vak
+            📱 Blokje stil laten liggen in het vak
           </div>
         </div>
       </section>
@@ -355,8 +291,7 @@
   </div>
 
   <div class="calibration-warning" id="calibration-warning">
-    <span class="calibration-warning-icon">⚠️</span>
-    <span>Kalibratie nodig, vraag de leerkracht om hulp</span>
+    ⚠️ Kalibratie nodig, vraag de leerkracht om hulp
   </div>
 
   <script>
@@ -379,36 +314,34 @@
     const scanLabelEl = document.getElementById("scan-label");
     const calibrationWarningEl = document.getElementById("calibration-warning");
 
+    // -----------------------------------------------------
+    // LADEN VAN KALIBRATIE
+    // -----------------------------------------------------
     function loadCalibration() {
       fetch("calibration.json", { cache: "no-store" })
         .then(response => {
           if (!response.ok) {
-            throw new Error("Kon calibration.json niet laden, status " + response.status);
+            throw new Error("Kon calibration.json niet laden");
           }
           return response.json();
         })
         .then(data => {
-          try {
-            calibrationData = data;
-            expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
-            calibration = buildCalibrationFromData(data);
-            classificationStats = calibration.classificationStats;
+          calibrationData = data;
+          expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
+          calibration = buildCalibrationFromData(data);
+          classificationStats = calibration.classificationStats;
 
-            if (!calibration.allSamples || calibration.allSamples.length === 0) {
-              console.error("Geen geldige samples in kalibratie");
-              showCalibrationWarning();
-              return;
-            }
-
-            hideCalibrationWarning();
-            startNewRound();
-          } catch (err) {
-            console.error("Fout in kalibratieverwerking", err);
+          if (!calibration.allSamples || calibration.allSamples.length === 0) {
+            console.error("Geen samples aanwezig");
             showCalibrationWarning();
+            return;
           }
+
+          hideCalibrationWarning();
+          startNewRound();
         })
-        .catch(error => {
-          console.error("Fout bij laden kalibratie", error);
+        .catch(err => {
+          console.error("Fout bij laden calibration.json:", err);
           showCalibrationWarning();
         });
     }
@@ -421,23 +354,24 @@
       calibrationWarningEl.classList.remove("visible");
     }
 
+    // -----------------------------------------------------
+    // SPEL STARTEN
+    // -----------------------------------------------------
     function startNewRound() {
       const digits = [1,2,3,4,5,6,7,8,9];
       missingDigit = digits[Math.floor(Math.random() * digits.length)];
 
-      digitsRowEl.classList.remove("correct-row");
       digitsRowEl.innerHTML = "";
-
       digits.forEach(d => {
         const tile = document.createElement("div");
         tile.className = "digit-tile";
-        tile.dataset.digit = String(d);
+        tile.dataset.digit = d;
 
         if (d === missingDigit) {
           tile.classList.add("digit-missing");
-          tile.innerHTML = '<span class="digit-placeholder">?</span>';
+          tile.innerHTML = `<span class="digit-placeholder">?</span>`;
         } else {
-          tile.innerHTML = '<span class="digit-label">' + d + "</span>";
+          tile.innerHTML = `<span>${d}</span>`;
         }
 
         digitsRowEl.appendChild(tile);
@@ -447,112 +381,111 @@
     }
 
     function handleRecognitionResult(recognizedDigit) {
-      if (recognizedDigit == null) {
-        return;
-      }
+      if (recognizedDigit == null) return;
 
       if (recognizedDigit === missingDigit) {
         updateScanState("success");
-        fillMissingDigit();
-        setTimeout(() => {
-          startNewRound();
-        }, 1500);
+        revealMissingDigit();
+        setTimeout(startNewRound, 1300);
       } else {
         updateScanState("error");
-        setTimeout(() => {
-          updateScanState("idle");
-        }, 900);
+        setTimeout(() => updateScanState("idle"), 700);
       }
     }
 
-    function fillMissingDigit() {
+    function revealMissingDigit() {
       const tiles = digitsRowEl.querySelectorAll(".digit-tile");
       tiles.forEach(tile => {
-        const d = Number(tile.dataset.digit);
-        if (d === missingDigit) {
+        if (Number(tile.dataset.digit) === missingDigit) {
           tile.classList.remove("digit-missing");
-          tile.innerHTML = '<span class="digit-label">' + d + "</span>";
+          tile.innerHTML = `<span>${missingDigit}</span>`;
         }
       });
-
       digitsRowEl.classList.add("correct-row");
     }
 
-    function updateScanState(newState) {
-      scanState = newState;
-      scanBoxEl.dataset.state = newState;
+    // -----------------------------------------------------
+    // UI STATES
+    // -----------------------------------------------------
+    function updateScanState(state) {
+      scanState = state;
+      scanBoxEl.dataset.state = state;
 
-      if (newState === "idle") {
+      if (state === "idle") {
         scanStatusIconEl.textContent = "⬚";
         scanStatusTextEl.textContent = "Rustig";
         scanIconMainEl.textContent = "👉🔢";
         scanLabelEl.textContent = "Leg het cijfer hier";
-      } else if (newState === "scanning") {
+      }
+      else if (state === "scanning") {
         scanStatusIconEl.textContent = "👆";
         scanStatusTextEl.textContent = "Scannen";
         scanIconMainEl.textContent = "✋🔢";
-        scanLabelEl.textContent = "Blokje even stil laten liggen";
-      } else if (newState === "success") {
+        scanLabelEl.textContent = "Even stil houden";
+      }
+      else if (state === "success") {
         scanStatusIconEl.textContent = "✅";
         scanStatusTextEl.textContent = "Goed";
         scanIconMainEl.textContent = "🎉";
-        scanLabelEl.textContent = "Knap gedaan";
-      } else if (newState === "error") {
+        scanLabelEl.textContent = "Knap gedaan!";
+      }
+      else if (state === "error") {
         scanStatusIconEl.textContent = "✖";
-        scanStatusTextEl.textContent = "Nog een keer";
+        scanStatusTextEl.textContent = "Fout";
         scanIconMainEl.textContent = "🤔";
-        scanLabelEl.textContent = "Probeer een ander cijfer";
+        scanLabelEl.textContent = "Probeer opnieuw";
       }
     }
 
-    function getTouchesInScanBox(touchEvent) {
+    // -----------------------------------------------------
+    // TOUCH LOGICA
+    // -----------------------------------------------------
+    function getTouchesInScanBox(ev) {
       const rect = scanBoxEl.getBoundingClientRect();
-      const touches = [];
+      const points = [];
 
-      for (let i = 0; i < touchEvent.touches.length; i += 1) {
-        const t = touchEvent.touches[i];
+      for (let i = 0; i < ev.touches.length; i++) {
+        const t = ev.touches[i];
         const x = t.clientX - rect.left;
         const y = t.clientY - rect.top;
 
         if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
-          touches.push({ x, y });
+          points.push({ x, y });
         }
       }
 
-      return { rect, touches };
+      return points;
     }
 
-    function handleTouch(event) {
-      if (!calibration || !classificationStats) {
-        return;
-      }
+    function handleTouch(ev) {
+      if (!calibration || !classificationStats) return;
 
-      event.preventDefault();
-      const result = getTouchesInScanBox(event);
-      const touches = result.touches;
+      ev.preventDefault();
+      const points = getTouchesInScanBox(ev);
 
-      if (touches.length === 0) {
+      if (points.length === 0) {
         currentPoints = [];
         updateScanState("idle");
         measurementLock = false;
         return;
       }
 
-      if (touches.length === expectedTouchPoints) {
-        currentPoints = touches.map(p => ({ x: p.x, y: p.y }));
+      if (points.length === expectedTouchPoints) {
+        currentPoints = points;
+        updateScanState("scanning");
+
         if (!measurementLock) {
           measurementLock = true;
-          updateScanState("scanning");
 
           setTimeout(() => {
             const digit = recognizeDigit(currentPoints);
             handleRecognitionResult(digit);
             measurementLock = false;
-          }, 160);
+          }, 150);
         }
       } else {
-        currentPoints = [];
         updateScanState("scanning");
+        currentPoints = [];
         measurementLock = false;
       }
     }
@@ -561,11 +494,11 @@
     scanBoxEl.addEventListener("touchmove", handleTouch, { passive: false });
     scanBoxEl.addEventListener("touchend", handleTouch, { passive: false });
     scanBoxEl.addEventListener("touchcancel", handleTouch, { passive: false });
-
+    // -----------------------------------------------------
+    // HERKENNINGSMODULE
+    // -----------------------------------------------------
     function computeFeatures(points) {
-      if (!points || points.length !== 3) {
-        return null;
-      }
+      if (!points || points.length !== 3) return null;
 
       const p0 = points[0];
       const p1 = points[1];
@@ -646,7 +579,7 @@
     function vectorDistance(a, b) {
       let sum = 0;
       const len = Math.min(a.length, b.length);
-      for (let i = 0; i < len; i += 1) {
+      for (let i = 0; i < len; i++) {
         const d = a[i] - b[i];
         sum += d * d;
       }
@@ -654,7 +587,7 @@
     }
 
     function buildCalibrationFromData(data) {
-      const calibration = {
+      const calib = {
         digits: {},
         allSamples: [],
         classificationStats: null
@@ -670,7 +603,7 @@
         if (!entry || !Array.isArray(entry.samples)) continue;
 
         const digit = Number(key);
-        const digitBucket = {
+        const bucket = {
           digit,
           samples: []
         };
@@ -691,17 +624,17 @@
             vector
           };
 
-          digitBucket.samples.push(sampleObj);
-          calibration.allSamples.push(sampleObj);
+          bucket.samples.push(sampleObj);
+          calib.allSamples.push(sampleObj);
         });
 
-        if (digitBucket.samples.length > 0) {
-          calibration.digits[key] = digitBucket;
+        if (bucket.samples.length > 0) {
+          calib.digits[key] = bucket;
         }
       }
 
-      calibration.classificationStats = recomputeClassificationStats(calibration);
-      return calibration;
+      calib.classificationStats = recomputeClassificationStats(calib);
+      return calib;
     }
 
     function recomputeClassificationStats(calibration) {
@@ -709,23 +642,21 @@
       const sameDistances = [];
       const diffDistances = [];
 
-      for (let i = 0; i < samples.length; i += 1) {
-        for (let j = i + 1; j < samples.length; j += 1) {
-          const sa = samples[i];
-          const sb = samples[j];
-          const dist = vectorDistance(sa.vector, sb.vector);
-          if (sa.digit === sb.digit) {
-            sameDistances.push(dist);
-          } else {
-            diffDistances.push(dist);
-          }
+      for (let i = 0; i < samples.length; i++) {
+        for (let j = i + 1; j < samples.length; j++) {
+        const sa = samples[i];
+        const sb = samples[j];
+        const dist = vectorDistance(sa.vector, sb.vector);
+        if (sa.digit === sb.digit) {
+          sameDistances.push(dist);
+        } else {
+          diffDistances.push(dist);
+        }
         }
       }
 
       function stats(arr) {
-        if (!arr.length) {
-          return { mean: 0, std: 0, min: 0, max: 0 };
-        }
+        if (!arr.length) return { mean: 0, std: 0, min: 0, max: 0 };
         const sum = arr.reduce((a, b) => a + b, 0);
         const mean = sum / arr.length;
         const variance = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length;
@@ -770,7 +701,7 @@
       let bestDigit = null;
       let bestDistance = Infinity;
 
-      for (let i = 0; i < allSamples.length; i += 1) {
+      for (let i = 0; i < allSamples.length; i++) {
         const sample = allSamples[i];
         const dist = vectorDistance(measurementVector, sample.vector);
         if (dist < bestDistance) {
@@ -796,31 +727,23 @@
     }
 
     function recognizeDigit(points) {
-      if (!calibration || !classificationStats) {
-        return null;
-      }
-      if (!points || points.length !== expectedTouchPoints) {
-        return null;
-      }
+      if (!calibration || !classificationStats) return null;
+      if (!points || points.length !== expectedTouchPoints) return null;
 
       const features = computeFeatures(points);
       const vector = buildFeatureVector(features);
-      if (!features || !vector) {
-        return null;
-      }
+      if (!features || !vector) return null;
 
       const result = classifyMeasurement(vector, calibration, classificationStats);
-      if (!result || result.digit == null) {
-        return null;
-      }
-
-      if (result.certainty !== "certain") {
-        return null;
-      }
+      if (!result || result.digit == null) return null;
+      if (result.certainty !== "certain") return null;
 
       return result.digit;
     }
 
+    // -----------------------------------------------------
+    // INIT
+    // -----------------------------------------------------
     window.addEventListener("load", () => {
       loadCalibration();
     });
