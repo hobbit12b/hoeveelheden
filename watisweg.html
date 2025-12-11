@@ -177,6 +177,7 @@
       overflow: hidden;
       box-shadow: 0 8px 18px rgba(0,0,0,0.12);
     }
+
     .scan-box[data-state="idle"] {
       border-color: rgba(0,0,0,0.12);
     }
@@ -314,9 +315,6 @@
     const scanLabelEl = document.getElementById("scan-label");
     const calibrationWarningEl = document.getElementById("calibration-warning");
 
-    // -----------------------------------------------------
-    // LADEN VAN KALIBRATIE
-    // -----------------------------------------------------
     function loadCalibration() {
       fetch("calibration.json", { cache: "no-store" })
         .then(response => {
@@ -354,9 +352,6 @@
       calibrationWarningEl.classList.remove("visible");
     }
 
-    // -----------------------------------------------------
-    // SPEL STARTEN
-    // -----------------------------------------------------
     function startNewRound() {
       const digits = [1,2,3,4,5,6,7,8,9];
       missingDigit = digits[Math.floor(Math.random() * digits.length)];
@@ -404,9 +399,6 @@
       digitsRowEl.classList.add("correct-row");
     }
 
-    // -----------------------------------------------------
-    // UI STATES
-    // -----------------------------------------------------
     function updateScanState(state) {
       scanState = state;
       scanBoxEl.dataset.state = state;
@@ -437,9 +429,6 @@
       }
     }
 
-    // -----------------------------------------------------
-    // TOUCH LOGICA
-    // -----------------------------------------------------
     function getTouchesInScanBox(ev) {
       const rect = scanBoxEl.getBoundingClientRect();
       const points = [];
@@ -494,9 +483,7 @@
     scanBoxEl.addEventListener("touchmove", handleTouch, { passive: false });
     scanBoxEl.addEventListener("touchend", handleTouch, { passive: false });
     scanBoxEl.addEventListener("touchcancel", handleTouch, { passive: false });
-    // -----------------------------------------------------
-    // HERKENNINGSMODULE
-    // -----------------------------------------------------
+
     function computeFeatures(points) {
       if (!points || points.length !== 3) return null;
 
@@ -644,14 +631,14 @@
 
       for (let i = 0; i < samples.length; i++) {
         for (let j = i + 1; j < samples.length; j++) {
-        const sa = samples[i];
-        const sb = samples[j];
-        const dist = vectorDistance(sa.vector, sb.vector);
-        if (sa.digit === sb.digit) {
-          sameDistances.push(dist);
-        } else {
-          diffDistances.push(dist);
-        }
+          const sa = samples[i];
+          const sb = samples[j];
+          const dist = vectorDistance(sa.vector, sb.vector);
+          if (sa.digit === sb.digit) {
+            sameDistances.push(dist);
+          } else {
+            diffDistances.push(dist);
+          }
         }
       }
 
@@ -741,9 +728,6 @@
       return result.digit;
     }
 
-    // -----------------------------------------------------
-    // INIT
-    // -----------------------------------------------------
     window.addEventListener("load", () => {
       loadCalibration();
     });
