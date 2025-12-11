@@ -360,7 +360,6 @@
   </div>
 
   <script>
-    // Globale spel en scanvariabelen
     let calibrationData = null;
     let calibration = null;
     let classificationStats = null;
@@ -380,26 +379,36 @@
     const scanLabelEl = document.getElementById("scan-label");
     const calibrationWarningEl = document.getElementById("calibration-warning");
 
-    // --------- KALIBRATIE LADEN ---------
-
     function loadCalibration() {
       fetch("calibration.json", { cache: "no-store" })
         .then(response => {
           if (!response.ok) {
-            throw new Error("Kon calibration.json niet laden");
+            throw new Error("Kon calibration.json niet laden, status " + response.status);
           }
           return response.json();
         })
         .then(data => {
-          calibrationData = data;
-          expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
-          calibration = buildCalibrationFromData(data);
-          classificationStats = calibration.classificationStats;
-          hideCalibrationWarning();
-          startNewRound();
+          try {
+            calibrationData = data;
+            expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
+            calibration = buildCalibrationFromData(data);
+            classificationStats = calibration.classificationStats;
+
+            if (!calibration.allSamples || calibration.allSamples.length === 0) {
+              console.error("Geen geldige samples in kalibratie");
+              showCalibrationWarning();
+              return;
+            }
+
+            hideCalibrationWarning();
+            startNewRound();
+          } catch (err) {
+            console.error("Fout in kalibratieverwerking", err);
+            showCalibrationWarning();
+          }
         })
         .catch(error => {
-          console.error(error);
+          console.error("Fout bij laden kalibratie", error);
           showCalibrationWarning();
         });
     }
@@ -411,8 +420,6 @@
     function hideCalibrationWarning() {
       calibrationWarningEl.classList.remove("visible");
     }
-
-    // --------- SPELLOGICA ---------
 
     function startNewRound() {
       const digits = [1,2,3,4,5,6,7,8,9];
@@ -498,8 +505,6 @@
       }
     }
 
-    // --------- TOUCHAFHANDELING ---------
-
     function getTouchesInScanBox(touchEvent) {
       const rect = scanBoxEl.getBoundingClientRect();
       const touches = [];
@@ -556,10 +561,6 @@
     scanBoxEl.addEventListener("touchmove", handleTouch, { passive: false });
     scanBoxEl.addEventListener("touchend", handleTouch, { passive: false });
     scanBoxEl.addEventListener("touchcancel", handleTouch, { passive: false });
-
-    // --------- HERKENNINGSMODULE ---------
-    // Deze module gebruikt drie aanraakpunten binnen het scanvak
-    // en vergelijkt deze met alle voorbeeldsamples uit calibration.json.
 
     function computeFeatures(points) {
       if (!points || points.length !== 3) {
@@ -819,8 +820,6 @@
 
       return result.digit;
     }
-
-    // --------- INIT ---------
 
     window.addEventListener("load", () => {
       loadCalibration();
