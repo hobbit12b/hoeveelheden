@@ -102,22 +102,28 @@
       padding-top: 2px;
     }
 
+    /* ✅ gecentreerde cijfers + animatie rechts (grid met linker spacer) */
     .top-layout {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      justify-content: center;
-      gap: 10px;
       width: 100%;
       max-width: 640px;
+      gap: 10px;
+    }
+
+    .side-spacer {
+      width: min(26vw, 140px);
+      height: 1px;
     }
 
     .good-box {
-      flex: 0 0 auto;
       width: min(26vw, 140px);
       height: min(26vw, 140px);
       display: flex;
       align-items: center;
       justify-content: center;
+      justify-self: end;
     }
 
     .good-animation {
@@ -137,11 +143,11 @@
     }
 
     .number-area {
-      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
+      justify-self: center;
     }
 
     .number-row {
@@ -329,6 +335,7 @@
       .title-text { font-size: 0.9rem; }
       .number-slot { width: min(24vw, 96px); }
       .good-box { width: min(26vw, 120px); height: min(26vw, 120px); }
+      .side-spacer { width: min(26vw, 120px); }
     }
   </style>
 </head>
@@ -343,9 +350,8 @@
 
     <main class="game-main">
       <div class="top-layout">
-        <div class="good-box">
-          <img id="good-animation" src="goed.gif" alt="Goed gedaan!" class="good-animation" />
-        </div>
+        <div class="side-spacer" aria-hidden="true"></div>
+
         <div class="number-area">
           <div class="number-row row-appear" id="number-row">
             <div class="number-slot" data-index="0"><span class="number-text">0</span></div>
@@ -353,6 +359,10 @@
             <div class="number-slot" data-index="2"><span class="number-text">2</span></div>
           </div>
           <div id="feedback-symbol" class="feedback-symbol"></div>
+        </div>
+
+        <div class="good-box">
+          <img id="good-animation" src="goed.gif" alt="Goed gedaan!" class="good-animation" />
         </div>
       </div>
     </main>
@@ -368,7 +378,6 @@
     </footer>
   </div>
 
-  <!-- Voice prompt voor level 2 -->
   <audio id="voice-grote-buur" src="audio/grote buurgetal.mp3" preload="auto"></audio>
 
   <script>
@@ -819,22 +828,18 @@
       const titleText = document.getElementById("title-text");
       const voiceGroteBuur = document.getElementById("voice-grote-buur");
 
-      // Level state
       let level = 1;                 // 1 = "Welk cijfer mist?", 2 = "Grote buur"
-      let correctStreak = 0;         // alleen voor level 1: goed-op-rij teller
+      let correctStreak = 0;         // alleen level 1
       let roundActive = true;
 
-      // Huidige opgave (werkt voor beide levels)
       let visibleSlots = 3;          // 3 in level 1, 2 in level 2
-      let sequence = [0, 1, 2];      // wat er “logisch” staat (bij missing tonen we ?)
+      let sequence = [0, 1, 2];
       let missingIndex = 1;
       let missingNumber = 1;
 
-      // Touch/recognition state
       let currentPoints = [];
       let hasResultForCurrentTouches = false;
 
-      // Voice prompt state (iOS: liefst op user gesture)
       let voicePending = false;
 
       function setScanState(state) {
@@ -862,11 +867,7 @@
 
       function applyVisibleSlots() {
         numberSlots.forEach(function (slot, idx) {
-          if (idx < visibleSlots) {
-            slot.style.display = "flex";
-          } else {
-            slot.style.display = "none";
-          }
+          slot.style.display = (idx < visibleSlots) ? "flex" : "none";
         });
       }
 
@@ -898,12 +899,8 @@
         voiceGroteBuur.currentTime = 0;
         const p = voiceGroteBuur.play();
         if (p && typeof p.then === "function") {
-          p.then(function () {
-            voicePending = false;
-          }).catch(function () {
-            // iOS kan dit blokkeren zonder gesture → opnieuw proberen bij volgende touch
-            voicePending = true;
-          });
+          p.then(function () { voicePending = false; })
+           .catch(function () { voicePending = true; });
         } else {
           voicePending = false;
         }
@@ -917,7 +914,6 @@
         numberRow.classList.remove("shake");
 
         if (level === 1) {
-          // rijtjes 0–2 t/m 7–9
           const base = Math.floor(Math.random() * 8);
           sequence = [base, base + 1, base + 2];
           visibleSlots = 3;
@@ -925,7 +921,6 @@
           missingIndex = Math.floor(Math.random() * 3);
           missingNumber = sequence[missingIndex];
         } else {
-          // Grote buur: laat 0..8 zien, vraag +1
           const start = Math.floor(Math.random() * 9); // 0..8
           const target = start + 1;                    // 1..9
           sequence = [start, target];
@@ -934,7 +929,6 @@
           missingIndex = 1;
           missingNumber = target;
 
-          // stem: “welk getal is de grote buur”
           voicePending = true;
         }
 
@@ -944,7 +938,6 @@
 
         updateNumberDisplay();
 
-        // probeer alvast te spelen; als het niet mag (iOS), dan gebeurt het bij de volgende touch
         if (level === 2) tryPlayVoicePrompt();
       }
 
@@ -971,8 +964,6 @@
 
           if (level === 1) {
             correctStreak += 1;
-
-            // 2 achter elkaar goed → automatisch naar level 2
             if (correctStreak >= 2) {
               setTimeout(function () { goToLevel2(); }, 1200);
             } else {
@@ -1016,7 +1007,6 @@
       function handleTouchEvent(e) {
         ensureAudio();
 
-        // Voice prompt (level 2) proberen op een echte touch-actie
         if (level === 2 && voicePending) {
           tryPlayVoicePrompt();
         }
@@ -1055,7 +1045,6 @@
 
       addTouchListeners(scanArea);
 
-      // Start in level 1
       setLevelUI();
       newRound();
 
