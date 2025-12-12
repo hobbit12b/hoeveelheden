@@ -24,16 +24,8 @@
       --text-soft: #666666;
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; height: 100%; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -86,10 +78,7 @@
       white-space: nowrap;
     }
 
-    @keyframes floatTitle {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-3px); }
-    }
+    @keyframes floatTitle { 0%{transform:translateY(0)} 100%{transform:translateY(-3px)} }
 
     .game-main {
       flex: 0 0 auto;
@@ -116,24 +105,32 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: visible;
+      pointer-events: none;
     }
     .side-box.left { justify-self: start; }
     .side-box.right { justify-self: end; }
 
     .side-animation {
+      --shift-x: 0px;
       width: 100%;
       height: 100%;
       max-width: 160px;
       object-fit: contain;
       opacity: 0;
-      transform: scale(0.8);
+      transform: translateX(var(--shift-x)) scale(0.8);
       pointer-events: none;
       transition: opacity 0.25s ease-out, transform 0.25s ease-out;
     }
     .side-animation.show {
       opacity: 1;
-      transform: scale(1);
+      transform: translateX(var(--shift-x)) scale(1);
     }
+
+    /* ✅ overlap per level */
+    .game[data-level="2"] #right-animation { --shift-x: -16px; } /* schuift iets naar links -> overlap rechter blok */
+    .game[data-level="3"] #left-animation  { --shift-x:  16px; } /* schuift iets naar rechts -> overlap linker blok */
 
     .number-area {
       display: flex;
@@ -154,11 +151,7 @@
     }
 
     .number-row.row-appear { animation: rowIn 0.4s ease-out; }
-
-    @keyframes rowIn {
-      0% { transform: translateY(-10px); opacity: 0; }
-      100% { transform: translateY(0); opacity: 1; }
-    }
+    @keyframes rowIn { 0%{transform:translateY(-10px);opacity:0} 100%{transform:translateY(0);opacity:1} }
 
     .number-slot {
       flex: 0 0 auto;
@@ -193,33 +186,18 @@
       border-color: rgba(255, 138, 101, 0.5);
       color: var(--accent-strong);
     }
-
     .number-slot.missing .number-text { color: var(--accent-strong); }
 
     .number-slot.correct-pop { animation: pop 0.35s ease-out; }
     .number-row.shake { animation: shake 0.35s ease-out; }
 
-    @keyframes pop {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.08); }
-      100% { transform: scale(1); }
-    }
-
+    @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
     @keyframes shake {
-      0% { transform: translateX(0); }
-      20% { transform: translateX(-6px); }
-      40% { transform: translateX(6px); }
-      60% { transform: translateX(-4px); }
-      80% { transform: translateX(4px); }
-      100% { transform: translateX(0); }
+      0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)}
+      60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)}
     }
 
-    .feedback-symbol {
-      font-size: 2.4rem;
-      line-height: 1;
-      height: 2.4rem;
-      text-align: center;
-    }
+    .feedback-symbol { font-size: 2.4rem; line-height: 1; height: 2.4rem; text-align: center; }
 
     .game-footer {
       flex: 1 1 auto;
@@ -256,23 +234,16 @@
       pointer-events: none;
     }
 
-    .scan-icon {
-      font-size: 2.4rem;
-      animation: scanPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes scanPulse {
-      0% { transform: scale(1); opacity: 0.9; }
-      100% { transform: scale(1.08); opacity: 1; }
-    }
+    .scan-icon { font-size: 2.4rem; animation: scanPulse 2s ease-in-out infinite; }
+    @keyframes scanPulse { 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
 
     .scan-text { font-size: 1.05rem; color: var(--text-soft); }
-    .scan-hint { font-size: 0.85rem; color: rgba(0, 0, 0, 0.48); }
+    .scan-hint { font-size: 0.85rem; color: rgba(0,0,0,0.48); }
 
-    .scan-area.state-neutral { border-style: dashed; border-color: var(--scan-border-neutral); background: var(--scan-bg-neutral); transform: translateY(0); }
-    .scan-area.state-scanning { border-style: solid; border-color: var(--scan-border-scan); background: var(--scan-bg-scan); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16); transform: translateY(-2px); }
-    .scan-area.state-correct { border-style: solid; border-color: var(--scan-border-good); background: var(--scan-bg-good); box-shadow: 0 12px 30px rgba(76, 175, 80, 0.35); transform: translateY(-2px); }
-    .scan-area.state-wrong { border-style: solid; border-color: var(--scan-border-bad); background: var(--scan-bg-bad); box-shadow: 0 12px 30px rgba(229, 57, 53, 0.35); transform: translateY(-2px); }
+    .scan-area.state-neutral { border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
+    .scan-area.state-scanning { border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 12px 26px rgba(0,0,0,0.16); transform:translateY(-2px); }
+    .scan-area.state-correct { border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
+    .scan-area.state-wrong { border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
 
     @media (max-width: 600px) {
       .title-text { font-size: 0.9rem; }
@@ -281,8 +252,9 @@
     }
   </style>
 </head>
+
 <body>
-  <div class="game">
+  <div class="game" id="game" data-level="1">
     <header class="game-header">
       <div class="title-badge" id="title-badge" role="button" aria-label="Luister nog een keer">
         <span class="title-icon" id="title-icon">🔍</span>
@@ -624,11 +596,9 @@
       const minBetween = Math.min.apply(null, betweenMinDistances);
 
       let thresholdBase;
-      if (minBetween > maxSame) {
-        thresholdBase = (maxSame + minBetween) / 2;
-      } else {
-        thresholdBase = maxSame * 1.3;
-      }
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
       const thresholdUnknown = thresholdBase * 1.5;
 
       classificationStats = {
@@ -660,10 +630,7 @@
           const sampleVec = samples[i].features.vector;
           const dist = vectorDistance(vec, sampleVec);
           if (dist < bestPerDigit[d]) bestPerDigit[d] = dist;
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestDigit = d;
-          }
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
         }
       });
 
@@ -686,19 +653,14 @@
       let isUnknown = false;
       let certainty = "zeker";
 
-      if (bestDist > unknownThresh) {
-        isUnknown = true;
-      } else if (bestDist > base) {
-        certainty = "twijfelachtig";
-      }
+      if (bestDist > unknownThresh) isUnknown = true;
+      else if (bestDist > base) certainty = "twijfelachtig";
 
       if (!isUnknown && topMatches.length > 1) {
         const second = topMatches[1].distance;
         if (second > 0) {
           const ratio = bestDist / second;
-          if (ratio > 0.9 && certainty === "zeker") {
-            certainty = "twijfelachtig";
-          }
+          if (ratio > 0.9 && certainty === "zeker") certainty = "twijfelachtig";
         }
       }
 
@@ -753,13 +715,12 @@
       osc.start(now);
       osc.stop(now + duration + 0.05);
     }
-    function playSuccessSound() {
-      playTone(880, 0.16);
-      setTimeout(function () { playTone(1175, 0.18); }, 140);
-    }
+    function playSuccessSound() { playTone(880, 0.16); setTimeout(function () { playTone(1175, 0.18); }, 140); }
     function playErrorSound() { playTone(220, 0.22); }
 
     document.addEventListener("DOMContentLoaded", function () {
+      const gameEl = document.getElementById("game");
+
       const numberRow = document.getElementById("number-row");
       const numberSlots = Array.from(document.querySelectorAll(".number-slot"));
       const feedbackSymbol = document.getElementById("feedback-symbol");
@@ -793,13 +754,8 @@
       // iOS media unlock
       let mediaUnlocked = false;
 
-      // Intro voice (alleen level 2 & 3): moet 1x volledig afspelen, daarna alleen via titel
-      const intro = {
-        pending: false,
-        playing: false,
-        done: true,
-        el: null
-      };
+      // Intro voice: 1x automatisch bij start level 2/3, daarna alleen via titel
+      const intro = { el: null, done: true, playing: false, pending: false };
 
       function setScanState(state) {
         scanArea.classList.remove("state-neutral", "state-scanning", "state-correct", "state-wrong");
@@ -823,6 +779,7 @@
       function setSlotDigit(slot, digit, isMissing) {
         const span = slot.querySelector(".number-text");
         slot.classList.remove("missing", "correct-pop");
+
         if (isMissing) {
           slot.style.backgroundImage = "none";
           slot.classList.add("missing");
@@ -896,74 +853,56 @@
         unlockAudioElement(voiceKleine);
       }
 
-      function playVoice(el) {
+      function tryPlay(el, onFail) {
         if (!el) return;
-        stopVoice(el);
+        try { el.currentTime = 0; } catch (e) {}
         const p = el.play();
-        if (p && typeof p.catch === "function") p.catch(function () {});
+        if (p && typeof p.catch === "function") p.catch(onFail || function () {});
       }
 
       function setupIntroForLevel() {
-        if (level === 2) {
-          intro.el = voiceGrote;
-          intro.pending = true;
-          intro.playing = false;
-          intro.done = false;
-        } else if (level === 3) {
-          intro.el = voiceKleine;
-          intro.pending = true;
-          intro.playing = false;
-          intro.done = false;
-        } else {
-          intro.el = null;
-          intro.pending = false;
-          intro.playing = false;
-          intro.done = true;
+        intro.playing = false;
+        intro.pending = false;
+        intro.done = true;
+        intro.el = null;
+
+        if (level === 2) { intro.el = voiceGrote; intro.done = false; }
+        if (level === 3) { intro.el = voiceKleine; intro.done = false; }
+
+        if (intro.el) {
+          intro.pending = true; // we proberen meteen, en als dat faalt proberen we op de volgende touch
+          intro.el.load?.();    // helpt vaak om sneller te starten
         }
       }
 
-      function startIntroIfNeeded() {
+      function startIntroNow() {
         if (!intro.el) return;
-        if (!intro.pending) return;
-        if (intro.playing) return;
         if (intro.done) return;
-
-        stopAllVoice();
+        if (intro.playing) return;
 
         intro.pending = false;
         intro.playing = true;
 
-        try { intro.el.currentTime = 0; } catch (e) {}
-
-        const p = intro.el.play();
-        if (p && typeof p.then === "function") {
-          p.catch(function () {
-            // geblokkeerd → later opnieuw proberen
-            intro.playing = false;
-            intro.pending = true;
-          });
-        }
+        tryPlay(intro.el, function () {
+          intro.playing = false;
+          intro.pending = true; // retry op volgende touch
+        });
       }
 
       if (voiceGrote) {
         voiceGrote.addEventListener("ended", function () {
-          if (intro.el === voiceGrote && intro.playing) {
-            intro.playing = false;
-            intro.done = true;
-          }
+          if (intro.el === voiceGrote) { intro.playing = false; intro.done = true; }
         });
       }
       if (voiceKleine) {
         voiceKleine.addEventListener("ended", function () {
-          if (intro.el === voiceKleine && intro.playing) {
-            intro.playing = false;
-            intro.done = true;
-          }
+          if (intro.el === voiceKleine) { intro.playing = false; intro.done = true; }
         });
       }
 
       function setLevelUI() {
         hideAnimations();
+        gameEl.dataset.level = String(level);
 
         if (level === 1) {
           titleIcon.textContent = "🔍";
@@ -992,7 +931,6 @@
         hasResultForCurrentTouches = false;
 
         if (level === 1) {
-          // 0–2 t/m 7–9
           const base = Math.floor(Math.random() * 8);
           sequence = [base, base + 1, base + 2];
           visibleSlots = 3;
@@ -1000,22 +938,20 @@
           missingIndex = Math.floor(Math.random() * 3);
           missingNumber = sequence[missingIndex];
         } else if (level === 2) {
-          // Grote buur: [cijfer, ?] → antwoord is +1
           const start = Math.floor(Math.random() * 9); // 0..8
           const target = start + 1;                    // 1..9
           sequence = [start, target];
           visibleSlots = 2;
 
-          missingIndex = 1;
+          missingIndex = 1;       // ? rechts
           missingNumber = target;
         } else {
-          // Kleine buur: [?, cijfer] → antwoord is -1
           const shown = 1 + Math.floor(Math.random() * 9); // 1..9
           const answer = shown - 1;                        // 0..8
           sequence = [answer, shown];
           visibleSlots = 2;
 
-          missingIndex = 0; // ? links
+          missingIndex = 0;       // ? links
           missingNumber = answer;
         }
 
@@ -1034,7 +970,11 @@
         setupIntroForLevel();
         setLevelUI();
         newRound();
-        // (intro start op de eerstvolgende touch, zodat iOS het toelaat én volledig kan afspelen)
+
+        // ✅ meteen proberen te starten (werkt meestal na "unlock")
+        ensureAudio();
+        unlockMediaOnce();
+        startIntroNow();
       }
 
       function handleRecognitionResult(digit) {
@@ -1053,18 +993,11 @@
 
           correctStreak += 1;
 
-          // ✅ na 2x achter elkaar goed → volgende level (1→2→3)
+          // ✅ 2x achter elkaar goed -> volgend level (1->2->3)
           if (correctStreak >= 2) {
-            if (level === 1) {
-              setTimeout(function () { goToLevel(2); }, 1200);
-              return;
-            }
-            if (level === 2) {
-              setTimeout(function () { goToLevel(3); }, 1200);
-              return;
-            }
-            // level 3: geen volgend level → gewoon doorgaan
-            correctStreak = 0;
+            if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
+            if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
+            correctStreak = 0; // level 3 blijft doorlopen
           }
 
           setTimeout(function () { newRound(); }, 1200);
@@ -1074,7 +1007,6 @@
           feedbackSymbol.textContent = "✖";
           playErrorSound();
           numberRow.classList.add("shake");
-
           correctStreak = 0;
 
           setTimeout(function () {
@@ -1103,17 +1035,11 @@
         ensureAudio();
         unlockMediaOnce();
 
+        // ✅ als autoplay intro ooit faalde: bij elke touch opnieuw proberen
+        if (intro.pending && !intro.playing && !intro.done) startIntroNow();
+
         const touches = e.touches || [];
         currentPoints = getPointsFromTouches(touches);
-
-        // Start intro (level 2/3) op eerste touch; blokkeer antwoorden tot audio klaar is
-        startIntroIfNeeded();
-        if (intro.playing) {
-          // wel visueel "scannen", maar geen herkenning terwijl de stem praat
-          if (currentPoints.length === 0) setScanState("neutral");
-          else setScanState("scanning");
-          return;
-        }
 
         if (currentPoints.length === 0) {
           hasResultForCurrentTouches = false;
@@ -1144,26 +1070,26 @@
         });
       }
 
-      // Titel: na de intro alleen nog afspelen op klik (niet onderbreken tijdens intro)
+      // ✅ Titelknop: meteen afspelen (ook terwijl je door kunt spelen)
       let lastTitleTouch = 0;
-      function onTitleTrigger() {
+
+      function playTitleVoiceNow() {
         ensureAudio();
         unlockMediaOnce();
-        if (intro.playing) return;
 
-        if (level === 2) playVoice(voiceGrote);
-        else if (level === 3) playVoice(voiceKleine);
+        stopAllVoice(); // direct starten zonder “wachttijd”
+        if (level === 2) tryPlay(voiceGrote);
+        else if (level === 3) tryPlay(voiceKleine);
       }
 
       titleBadge.addEventListener("touchstart", function () {
         lastTitleTouch = Date.now();
-        onTitleTrigger();
+        playTitleVoiceNow();
       }, { passive: true });
 
       titleBadge.addEventListener("click", function () {
-        // voorkom dubbel (touchstart + click)
         if (Date.now() - lastTitleTouch < 500) return;
-        onTitleTrigger();
+        playTitleVoiceNow();
       });
 
       // Start level 1
@@ -1176,9 +1102,7 @@
       fetch("calibration.json")
         .then(function (r) { return r.json(); })
         .then(function (data) { initCalibration(data); })
-        .catch(function (err) {
-          console.error("Kalibratie laden mislukt:", err);
-        });
+        .catch(function (err) { console.error("Kalibratie laden mislukt:", err); });
     });
   </script>
 </body>
