@@ -89,17 +89,17 @@
       padding-top: 2px;
     }
 
-    /* ✅ echte center: links + midden + rechts even breed */
-    .top-layout {
+    /* ✅ dichter bij de cijfers: zij-kolommen zijn net zo breed als de animatie */
+    .top-layout{
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-columns: min(26vw, 140px) auto min(26vw, 140px);
       align-items: center;
       width: 100%;
       max-width: 640px;
-      gap: 10px;
+      gap: 0;
     }
 
-    .side-box {
+    .side-box{
       width: min(26vw, 140px);
       height: min(26vw, 140px);
       display: flex;
@@ -109,10 +109,12 @@
       overflow: visible;
       pointer-events: none;
     }
-    .side-box.left { justify-self: start; }
-    .side-box.right { justify-self: end; }
 
-    .side-animation {
+    /* ✅ “plak” richting het midden */
+    .side-box.left  { justify-self: start; justify-content: flex-end; }
+    .side-box.right { justify-self: end;   justify-content: flex-start; }
+
+    .side-animation{
       --shift-x: 0px;
       width: 100%;
       height: 100%;
@@ -122,17 +124,25 @@
       transform: translateX(var(--shift-x)) scale(0.8);
       pointer-events: none;
       transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+      position: relative;
+      z-index: 5; /* boven de cijferblokken */
     }
-    .side-animation.show {
+    .side-animation.show{
       opacity: 1;
       transform: translateX(var(--shift-x)) scale(1);
     }
 
-    /* ✅ overlap per level */
-    .game[data-level="2"] #right-animation { --shift-x: -16px; } /* schuift iets naar links -> overlap rechter blok */
-    .game[data-level="3"] #left-animation  { --shift-x:  16px; } /* schuift iets naar rechts -> overlap linker blok */
+    /* cijferblokken onder de animatie */
+    .number-slot{
+      position: relative;
+      z-index: 1;
+    }
 
-    .number-area {
+    /* ✅ overlap per level */
+    .game[data-level="2"] #right-animation{ --shift-x: -42px; } /* overlap rechter cijferblok */
+    .game[data-level="3"] #left-animation { --shift-x:  42px; } /* overlap linker cijferblok */
+
+    .number-area{
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -140,7 +150,7 @@
       justify-self: center;
     }
 
-    .number-row {
+    .number-row{
       display: flex;
       justify-content: center;
       align-items: center;
@@ -153,7 +163,7 @@
     .number-row.row-appear { animation: rowIn 0.4s ease-out; }
     @keyframes rowIn { 0%{transform:translateY(-10px);opacity:0} 100%{transform:translateY(0);opacity:1} }
 
-    .number-slot {
+    .number-slot{
       flex: 0 0 auto;
       width: min(22vw, 110px);
       aspect-ratio: 1 / 1;
@@ -166,12 +176,11 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative;
       transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, background 0.18s ease-out, border-color 0.18s ease-out;
       border: 4px solid transparent;
     }
 
-    .number-text {
+    .number-text{
       font-size: min(16vw, 72px);
       font-weight: 700;
       color: var(--text-main);
@@ -179,14 +188,14 @@
       pointer-events: none;
     }
 
-    .number-slot.missing {
+    .number-slot.missing{
       background-image: none;
       background-color: var(--accent-soft);
       border-style: dashed;
       border-color: rgba(255, 138, 101, 0.5);
       color: var(--accent-strong);
     }
-    .number-slot.missing .number-text { color: var(--accent-strong); }
+    .number-slot.missing .number-text{ color: var(--accent-strong); }
 
     .number-slot.correct-pop { animation: pop 0.35s ease-out; }
     .number-row.shake { animation: shake 0.35s ease-out; }
@@ -199,7 +208,7 @@
 
     .feedback-symbol { font-size: 2.4rem; line-height: 1; height: 2.4rem; text-align: center; }
 
-    .game-footer {
+    .game-footer{
       flex: 1 1 auto;
       padding-bottom: env(safe-area-inset-bottom);
       display: flex;
@@ -207,7 +216,7 @@
       margin-top: 2px;
     }
 
-    .scan-area {
+    .scan-area{
       border-radius: 28px;
       border-width: 4px;
       border-style: dashed;
@@ -225,7 +234,7 @@
       margin-top: 2px;
     }
 
-    .scan-area-inner {
+    .scan-area-inner{
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -234,21 +243,24 @@
       pointer-events: none;
     }
 
-    .scan-icon { font-size: 2.4rem; animation: scanPulse 2s ease-in-out infinite; }
+    .scan-icon{ font-size: 2.4rem; animation: scanPulse 2s ease-in-out infinite; }
     @keyframes scanPulse { 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
 
-    .scan-text { font-size: 1.05rem; color: var(--text-soft); }
-    .scan-hint { font-size: 0.85rem; color: rgba(0,0,0,0.48); }
+    .scan-text{ font-size: 1.05rem; color: var(--text-soft); }
+    .scan-hint{ font-size: 0.85rem; color: rgba(0,0,0,0.48); }
 
-    .scan-area.state-neutral { border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
-    .scan-area.state-scanning { border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 12px 26px rgba(0,0,0,0.16); transform:translateY(-2px); }
-    .scan-area.state-correct { border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
-    .scan-area.state-wrong { border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
+    .scan-area.state-neutral{ border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
+    .scan-area.state-scanning{ border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 12px 26px rgba(0,0,0,0.16); transform:translateY(-2px); }
+    .scan-area.state-correct{ border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
+    .scan-area.state-wrong{ border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
 
     @media (max-width: 600px) {
       .title-text { font-size: 0.9rem; }
       .number-slot { width: min(24vw, 96px); }
       .side-box { width: min(26vw, 120px); height: min(26vw, 120px); }
+      .top-layout { grid-template-columns: min(26vw, 120px) auto min(26vw, 120px); }
+      .game[data-level="2"] #right-animation{ --shift-x: -34px; }
+      .game[data-level="3"] #left-animation { --shift-x:  34px; }
     }
   </style>
 </head>
@@ -754,7 +766,7 @@
       // iOS media unlock
       let mediaUnlocked = false;
 
-      // Intro voice: 1x automatisch bij start level 2/3, daarna alleen via titel
+      // Intro voice: 1x automatisch bij start level 2/3 (zonder blokkeren), daarna alleen via titel
       const intro = { el: null, done: true, playing: false, pending: false };
 
       function setScanState(state) {
@@ -870,8 +882,8 @@
         if (level === 3) { intro.el = voiceKleine; intro.done = false; }
 
         if (intro.el) {
-          intro.pending = true; // we proberen meteen, en als dat faalt proberen we op de volgende touch
-          intro.el.load?.();    // helpt vaak om sneller te starten
+          intro.pending = true;
+          try { intro.el.load(); } catch (e) {}
         }
       }
 
@@ -885,7 +897,7 @@
 
         tryPlay(intro.el, function () {
           intro.playing = false;
-          intro.pending = true; // retry op volgende touch
+          intro.pending = true;
         });
       }
 
@@ -966,7 +978,6 @@
         level = nextLevel;
         correctStreak = 0;
 
-        stopAllVoice();
         setupIntroForLevel();
         setLevelUI();
         newRound();
@@ -1035,7 +1046,7 @@
         ensureAudio();
         unlockMediaOnce();
 
-        // ✅ als autoplay intro ooit faalde: bij elke touch opnieuw proberen
+        // ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
         if (intro.pending && !intro.playing && !intro.done) startIntroNow();
 
         const touches = e.touches || [];
@@ -1070,16 +1081,29 @@
         });
       }
 
-      // ✅ Titelknop: meteen afspelen (ook terwijl je door kunt spelen)
+      // ✅ Titelknop: meteen afspelen (en je kunt doorspelen)
       let lastTitleTouch = 0;
 
       function playTitleVoiceNow() {
         ensureAudio();
         unlockMediaOnce();
 
-        stopAllVoice(); // direct starten zonder “wachttijd”
-        if (level === 2) tryPlay(voiceGrote);
-        else if (level === 3) tryPlay(voiceKleine);
+        // meteen starten: stop eventueel lopende stem en speel opnieuw
+        stopAllVoice();
+
+        if (level === 2) {
+          intro.el = voiceGrote;
+          intro.done = true; // intro is al geweest; dit is handmatig
+          intro.playing = false;
+          intro.pending = false;
+          tryPlay(voiceGrote);
+        } else if (level === 3) {
+          intro.el = voiceKleine;
+          intro.done = true;
+          intro.playing = false;
+          intro.pending = false;
+          tryPlay(voiceKleine);
+        }
       }
 
       titleBadge.addEventListener("touchstart", function () {
