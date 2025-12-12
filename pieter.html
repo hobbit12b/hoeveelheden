@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spring naar het volgende getal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <style>
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #8ec5fc;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  touch-action: none;
+}
+
+.game-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #8ec5fc 0%, #e0c3fc 40%, #fdfbfb 100%);
+}
+
+.game-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem 0.4rem;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.game-header .title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.game-header .score {
+  font-size: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);
+}
+
+.game-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.6rem 0.8rem;
+  gap: 0.4rem;
+}
+
+#gameArea {
+  flex: 1 1 auto;
+  border-radius: 1.2rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  background: transparent;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#uiArea {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.2rem;
+}
+
+.question-panel {
+  background: rgba(255,255,255,0.92);
+  border-radius: 1.1rem;
+  padding: 0.4rem 0.7rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.question-panel.hidden {
+  display: none;
+}
+
+.question-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.question-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.question-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.big-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.big-question {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ff6b6b;
+}
+
+.question-row .arrow {
+  font-size: 1.4rem;
+}
+
+.question-hint {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.scan-zone {
+  position: relative;
+  border-radius: 1.3rem;
+  border: 3px solid rgba(255,255,255,0.7);
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  padding: 0.35rem 0.6rem;
+  touch-action: none;
+}
+
+.scan-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.scan-icon {
+  font-size: 1.4rem;
+}
+
+.scan-message {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* Scan status kleuren */
+.scan-zone.status-neutral {
+  border-color: rgba(255,255,255,0.85);
+}
+
+.scan-zone.status-scanning {
+  border-color: #f2c14f;
+  box-shadow: 0 0 12px rgba(242,193,79,0.9);
+}
+
+.scan-zone.status-correct {
+  border-color: #35c27c;
+  box-shadow: 0 0 14px rgba(53,194,124,0.9);
+}
+
+.scan-zone.status-wrong {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 14px rgba(255,107,107,0.9);
+}
+
+.controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.control-btn {
+  flex: 1 1 0;
+  padding: 0.55rem 0;
+  border-radius: 999px;
+  border: none;
+  font-size: 1.6rem;
+  background: rgba(255,255,255,0.96);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.control-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.9), rgba(233,248,255,0.9));
+}
+
+.overlay-card {
+  background: rgba(255,255,255,0.97);
+  padding: 1rem 1.4rem;
+  border-radius: 1.4rem;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 3px solid rgba(0,0,0,0.08);
+  border-top-color: #4facfe;
+  animation: spin 1s linear infinite;
+}
+
+.overlay-text {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Klein scherm-finetuning */
+@media (max-width: 768px) {
+  .game-header .title {
+    font-size: 1rem;
+  }
+  .question-hint {
+    font-size: 0.7rem;
+  }
+  .scan-message {
+    font-size: 0.8rem;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <div id="loadingOverlay" class="fullscreen-overlay">
+      <div class="overlay-card">
+        <div class="spinner"></div>
+        <div class="overlay-text">Scanvak klaarzetten...</div>
+      </div>
+    </div>
+
+    <header class="game-header">
+      <div class="title">Spring naar het volgende getal</div>
+      <div class="score">⭐ <span id="scoreValue">0</span></div>
+    </header>
+
+    <main class="game-main">
+      <div id="gameArea">
+        <canvas id="gameCanvas"></canvas>
+      </div>
+
+      <div id="uiArea">
+        <div id="questionPanel" class="question-panel hidden">
+          <div class="question-main">
+            <span class="question-label">Volgende cijfer</span>
+            <div class="question-row">
+              <span id="questionDigit" class="big-number">6</span>
+              <span class="arrow">➜</span>
+              <span class="big-question">?</span>
+            </div>
+          </div>
+          <div class="question-hint">Leg het volgende cijfer in het scanvak.</div>
+        </div>
+
+        <div id="scanZone" class="scan-zone status-neutral">
+          <div class="scan-inner">
+            <div class="scan-icon">🔢</div>
+            <div id="scanMessage" class="scan-message">Leg je cijfer hier</div>
+          </div>
+        </div>
+
+        <div class="controls-row">
+          <button id="leftBtn" class="control-btn">◀</button>
+          <button id="rightBtn" class="control-btn">▶</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+let calibration = null;            // gevulde kalibratie op basis van calibration.json
+let classificationStats = null;    // drempelwaarden voor herkenning
+let expectedTouchPoints = 3;       // standaard drie contactpunten
+
+/**
+ * Aanroep na het laden van calibration.json
+ * 
+ * Voorbeeld:
+ * fetch("calibration.json")
+ *   .then(r => r.json())
+ *   .then(data => initCalibration(data));
+ */
+function initCalibration(calibrationData) {
+  if (!calibrationData || typeof calibrationData !== "object") {
+    calibration = null;
+    classificationStats = null;
+    expectedTouchPoints = 3;
+    return;
+  }
+
+  if (typeof calibrationData.expectedTouchPoints === "number") {
+    expectedTouchPoints = calibrationData.expectedTouchPoints;
+  } else {
+    expectedTouchPoints = 3;
+  }
+
+  calibration = buildCalibrationFromData(calibrationData);
+  recomputeClassificationStats();
+}
+
+/**
+ * Zet de ruwe JSON structuur om in een intern calibration object
+ * met per sample vooraf berekende features.
+ *
+ * Verwachte JSON vorm:
+ * {
+ *   "expectedTouchPoints": 3,
+ *   "0": { "digit": 0, "samples": [ { "points": [ {x,y}, {x,y}, {x,y} ] }, ... ] },
+ *   "1": { ... },
+ *   ...
+ *   "9": { ... }
+ * }
+ */
+function buildCalibrationFromData(data) {
+  const obj = {};
+
+  // basisstructuur
+  DIGIT_ORDER.forEach(function (d) {
+    obj[String(d)] = {
+      digit: d,
+      samples: []
+    };
+  });
+
+  // samples per cijfer inlezen
+  DIGIT_ORDER.forEach(function (d) {
+    const key = String(d);
+    const entry = data[key];
+    if (!entry || !Array.isArray(entry.samples)) return;
+
+    entry.samples.forEach(function (s) {
+      if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+
+      const pts = s.points.map(function (p) {
+        return { x: Number(p.x), y: Number(p.y) };
+      });
+
+      const features = computeFeatures(pts);
+      obj[key].samples.push({
+        points: pts,
+        features: features
+      });
+    });
+  });
+
+  return obj;
+}
+
+/**
+ * Berekent kenmerken uit drie punten:
+ * driehoeksverhoudingen, oriëntatie, hoek, genormeerde posities en aspect ratio.
+ * Levert ook een gewogen featurevector op voor afstandsvergelijking.
+ */
+function computeFeatures(points) {
+  if (!points || points.length !== 3) {
+    return {
+      sides: [0, 0, 0],
+      orientation: 0,
+      cosAngle: 0,
+      centroid: { x: 0, y: 0 },
+      yNorm: [0, 0, 0],
+      xPattern: [0, 0, 0],
+      aspect: 0,
+      vector: [0, 0, 0]
+    };
+  }
+
+  const p0 = points[0];
+  const p1 = points[1];
+  const p2 = points[2];
+
+  const centroidRaw = {
+    x: (p0.x + p1.x + p2.x) / 3,
+    y: (p0.y + p1.y + p2.y) / 3
+  };
+
+  // isoPoints zijn punten rond de oorsprong, geschaald op max afstand
+  const isoPoints = [p0, p1, p2].map(function (p) {
+    const dx = p.x - centroidRaw.x;
+    const dy = p.y - centroidRaw.y;
+    return { x: dx, y: dy };
+  });
+
+  let maxDist = 0;
+  for (let i = 0; i < isoPoints.length; i++) {
+    const q = isoPoints[i];
+    const d = Math.sqrt(q.x * q.x + q.y * q.y);
+    if (d > maxDist) maxDist = d;
+  }
+  if (maxDist < 1e-6) maxDist = 1;
+
+  for (let i = 0; i < isoPoints.length; i++) {
+    isoPoints[i].x /= maxDist;
+    isoPoints[i].y /= maxDist;
+  }
+
+  function dist(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  const L01 = dist(isoPoints[0], isoPoints[1]);
+  const L12 = dist(isoPoints[1], isoPoints[2]);
+  const L20 = dist(isoPoints[2], isoPoints[0]);
+
+  // zijden, klein naar groot, genormeerd op de langste zijde
+  const sides = [
+    { len: L01, i: 0, j: 1 },
+    { len: L12, i: 1, j: 2 },
+    { len: L20, i: 2, j: 0 }
+  ];
+  const maxSideLen = Math.max(L01, L12, L20) || 1;
+  const sidesNormSorted = sides
+    .slice()
+    .sort(function (a, b) {
+      return a.len - b.len;
+    })
+    .map(function (s) {
+      return s.len / maxSideLen;
+    });
+
+  // grootste zijde vinden om oriëntatie en hoek te bepalen
+  const largest = sides
+    .slice()
+    .sort(function (a, b) {
+      return a.len - b.len;
+    })[2];
+
+  const A = isoPoints[largest.i];
+  const B = isoPoints[largest.j];
+  const CIndex = 3 - largest.i - largest.j;
+  const C = isoPoints[CIndex];
+
+  function orientationVal(a, b, c) {
+    const value =
+      (b.x - a.x) * (c.y - a.y) -
+      (b.y - a.y) * (c.x - a.x);
+    if (value > 0) return 1;
+    if (value < 0) return -1;
+    return 0;
+  }
+
+  const orientation = orientationVal(A, B, C);
+
+  // hoek bij punt C via cosinusregel
+  const AC = dist(A, C);
+  const BC = dist(B, C);
+  const AB = largest.len;
+  const AC2 = AC * AC;
+  const BC2 = BC * BC;
+  const AB2 = AB * AB;
+  let cosAngle = 0;
+  const denom = 2 * AC * BC;
+  if (denom > 1e-6) {
+    cosAngle = (AC2 + BC2 - AB2) / denom;
+  }
+
+  // bounding box van de drie punten in het echte scherm
+  let minX = Math.min(p0.x, p1.x, p2.x);
+  let maxX = Math.max(p0.x, p1.x, p2.x);
+  let minY = Math.min(p0.y, p1.y, p2.y);
+  let maxY = Math.max(p0.y, p1.y, p2.y);
+  let width = maxX - minX;
+  let height = maxY - minY;
+  if (width < 1e-6) width = 1;
+  if (height < 1e-6) height = 1;
+
+  // genormeerde y posities, gesorteerd
+  const yNormVals = [p0, p1, p2]
+    .map(function (p) {
+      return (p.y - minY) / height;
+    })
+    .sort(function (a, b) {
+      return a - b;
+    });
+
+  // x patroon, gesorteerd op y van boven naar beneden
+  const pointsWithIndex = [
+    { p: p0, idx: 0 },
+    { p: p1, idx: 1 },
+    { p: p2, idx: 2 }
+  ].sort(function (a, b) {
+    return a.p.y - b.p.y;
+  });
+
+  const xPattern = pointsWithIndex.map(function (item) {
+    return (item.p.x - minX) / width;
+  });
+
+  const aspect = height / (width + height);
+
+  const centroidBox = {
+    x: (centroidRaw.x - minX) / width,
+    y: (centroidRaw.y - minY) / height
+  };
+
+  const vector = buildFeatureVector({
+    sides: sidesNormSorted,
+    orientation: orientation,
+    cosAngle: cosAngle,
+    centroid: centroidBox,
+    yNorm: yNormVals,
+    xPattern: xPattern,
+    aspect: aspect
+  });
+
+  return {
+    sides: sidesNormSorted,
+    orientation: orientation,
+    cosAngle: cosAngle,
+    centroid: centroidBox,
+    yNorm: yNormVals,
+    xPattern: xPattern,
+    aspect: aspect,
+    vector: vector
+  };
+}
+
+/**
+ * Bouwt een gewogen featurevector op
+ * door verschillende aspecten van het patroon te schalen.
+ */
+function buildFeatureVector(f) {
+  const wSides = 3.0;
+  const wCos = 4.0;
+  const wOrient = 2.0;
+  const wY = 3.0;
+  const wX = 2.0;
+  const wAspect = 2.0;
+
+  const v = [];
+  v.push(f.sides[0] * wSides);
+  v.push(f.sides[1] * wSides);
+  v.push(f.sides[2] * wSides);
+
+  v.push(f.cosAngle * wCos);
+  v.push(f.orientation * wOrient);
+
+  v.push(f.yNorm[0] * wY);
+  v.push(f.yNorm[1] * wY);
+  v.push(f.yNorm[2] * wY);
+
+  v.push(f.xPattern[0] * wX);
+  v.push(f.xPattern[1] * wX);
+  v.push(f.xPattern[2] * wX);
+
+  v.push(f.aspect * wAspect);
+
+  return v;
+}
+
+/**
+ * Euclidische afstand tussen twee featurevectoren.
+ */
+function vectorDistance(a, b) {
+  if (!a || !b || a.length !== b.length) return Infinity;
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    const diff = a[i] - b[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
+}
+
+/**
+ * Berekent drempels op basis van de kalibratiesamples.
+ * thresholdBase: grens tussen zeker en twijfelachtig
+ * thresholdUnknown: grens waarboven een meting als onbekend geldt
+ */
+function recomputeClassificationStats() {
+  if (!calibration) {
+    classificationStats = {
+      thresholdBase: 0.8,
+      thresholdUnknown: 1.5
+    };
+    return;
+  }
+
+  const allSamples = [];
+  DIGIT_ORDER.forEach(function (d) {
+    const key = String(d);
+    if (!calibration[key]) return;
+    const samples = calibration[key].samples || [];
+    samples.forEach(function (s) {
+      allSamples.push({ digit: d, features: s.features });
+    });
+  });
+
+  if (allSamples.length < 2) {
+    classificationStats = {
+      thresholdBase: 0.6,
+      thresholdUnknown: 1.0
+    };
+    return;
+  }
+
+  const sameMinDistances = [];
+  const betweenMinDistances = [];
+
+  for (let i = 0; i < allSamples.length; i++) {
+    const a = allSamples[i];
+    const vecA = a.features.vector;
+    let minSame = Infinity;
+    let minOther = Infinity;
+
+    for (let j = 0; j < allSamples.length; j++) {
+      if (i === j) continue;
+      const b = allSamples[j];
+      const vecB = b.features.vector;
+      const dist = vectorDistance(vecA, vecB);
+
+      if (a.digit === b.digit) {
+        if (dist < minSame) minSame = dist;
+      } else {
+        if (dist < minOther) minOther = dist;
+      }
+    }
+
+    if (minSame < Infinity) sameMinDistances.push(minSame);
+    if (minOther < Infinity) betweenMinDistances.push(minOther);
+  }
+
+  if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
+    classificationStats = {
+      thresholdBase: 0.7,
+      thresholdUnknown: 1.2
+    };
+    return;
+  }
+
+  const maxSame = Math.max.apply(null, sameMinDistances);
+  const minBetween = Math.min.apply(null, betweenMinDistances);
+
+  let thresholdBase;
+  if (minBetween > maxSame) {
+    thresholdBase = (maxSame + minBetween) / 2;
+  } else {
+    thresholdBase = maxSame * 1.3;
+  }
+  const thresholdUnknown = thresholdBase * 1.5;
+
+  classificationStats = {
+    thresholdBase: thresholdBase,
+    thresholdUnknown: thresholdUnknown,
+    maxSame: maxSame,
+    minBetween: minBetween
+  };
+}
+
+/**
+ * Classificeert een meting op basis van de featurevector
+ * en de kalibratiegegevens.
+ */
+function classifyMeasurement(features) {
+  const vec = features.vector;
+  if (!vec || !calibration) {
+    return {
+      digit: null,
+      bestDist: null,
+      certainty: "onbekend",
+      isUnknown: true,
+      topMatches: []
+    };
+  }
+
+  const bestPerDigit = {};
+  DIGIT_ORDER.forEach(function (d) {
+    bestPerDigit[d] = Infinity;
+  });
+
+  let bestDigit = null;
+  let bestDist = Infinity;
+
+  DIGIT_ORDER.forEach(function (d) {
+    const key = String(d);
+    const entry = calibration[key];
+    if (!entry) return;
+    const samples = entry.samples || [];
+    for (let i = 0; i < samples.length; i++) {
+      const sampleVec = samples[i].features.vector;
+      const dist = vectorDistance(vec, sampleVec);
+      if (dist < bestPerDigit[d]) {
+        bestPerDigit[d] = dist;
+      }
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestDigit = d;
+      }
+    }
+  });
+
+  const perDigitArray = [];
+  DIGIT_ORDER.forEach(function (d) {
+    const val = bestPerDigit[d];
+    if (val < Infinity) {
+      perDigitArray.push({ digit: d, distance: val });
+    }
+  });
+  perDigitArray.sort(function (a, b) {
+    return a.distance - b.distance;
+  });
+  const topMatches = perDigitArray.slice(0, 3);
+
+  if (bestDigit === null || bestDist === Infinity) {
+    return {
+      digit: null,
+      bestDist: null,
+      certainty: "onbekend",
+      isUnknown: true,
+      topMatches: topMatches
+    };
+  }
+
+  let stats = classificationStats;
+  if (!stats) {
+    stats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
+  }
+
+  const base = stats.thresholdBase;
+  const unknownThresh = stats.thresholdUnknown;
+
+  let isUnknown = false;
+  let certainty = "zeker";
+
+  if (bestDist > unknownThresh) {
+    isUnknown = true;
+  } else if (bestDist > base) {
+    certainty = "twijfelachtig";
+  }
+
+  if (!isUnknown && topMatches.length > 1) {
+    const second = topMatches[1].distance;
+    if (second > 0) {
+      const ratio = bestDist / second;
+      if (ratio > 0.9 && certainty === "zeker") {
+        certainty = "twijfelachtig";
+      }
+    }
+  }
+
+  return {
+    digit: isUnknown ? null : bestDigit,
+    bestDist: bestDist,
+    certainty: certainty,
+    isUnknown: isUnknown,
+    topMatches: topMatches
+  };
+}
+
+/**
+ * Publieke functie voor de rest van je spel.
+ * 
+ * Parameters:
+ *   points: array met drie punten binnen de scanzone, elk {x, y}
+ *
+ * Retourneert:
+ *   een cijfer 0 t/m 9 als er een betrouwbare herkenning is,
+ *   of null als de meting onbekend is.
+ */
+function recognizeDigit(points) {
+  if (!calibration || !classificationStats) {
+    return null;
+  }
+
+  if (!Array.isArray(points) || points.length !== expectedTouchPoints) {
+    return null;
+  }
+
+  const features = computeFeatures(points);
+  const classification = classifyMeasurement(features);
+
+  if (!classification || classification.isUnknown || classification.digit == null) {
+    return null;
+  }
+
+  return classification.digit;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const gameArea = document.getElementById("gameArea");
+  const scoreValue = document.getElementById("scoreValue");
+  const questionPanel = document.getElementById("questionPanel");
+  const questionDigitSpan = document.getElementById("questionDigit");
+  const scanZone = document.getElementById("scanZone");
+  const scanMessage = document.getElementById("scanMessage");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const leftBtn = document.getElementById("leftBtn");
+  const rightBtn = document.getElementById("rightBtn");
+
+  let width = 0;
+  let height = 0;
+
+  const player = {
+    x: 0,
+    y: 0,
+    radius: 18,
+    vy: 0
+  };
+
+  const platforms = [];
+  const PLATFORM_WIDTH = 90;
+  const PLATFORM_HEIGHT = 22;
+  const PLATFORM_COUNT = 10;
+  const PLATFORM_SPACING = 120;
+
+  const GRAVITY = 0.35;
+  const JUMP_VELOCITY = -9.5;
+  const HORIZ_SPEED = 3.2;
+
+  let movingLeft = false;
+  let movingRight = false;
+
+  let gameFrozen = false;
+  let awaitingAnswer = false;
+  let currentDigit = null;
+  let expectedAnswer = null;
+
+  let heightScore = 0;
+
+  let lastTime = 0;
+  let rafId = null;
+
+  function resizeCanvas() {
+    const rect = gameArea.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+    canvas.width = width;
+    canvas.height = height;
+  }
+
+  function randomDigitForPlatform() {
+    // Alleen 0 t/m 8, zodat "volgende" altijd ook een enkel cijfer is
+    return Math.floor(Math.random() * 9);
+  }
+
+  function createInitialPlatforms() {
+    platforms.length = 0;
+    const baseY = height - 60;
+    for (let i = 0; i < PLATFORM_COUNT; i++) {
+      const pY = baseY - i * PLATFORM_SPACING;
+      const margin = 40;
+      const pX = margin + Math.random() * (width - margin * 2 - PLATFORM_WIDTH);
+      platforms.push({
+        x: pX,
+        y: pY,
+        w: PLATFORM_WIDTH,
+        h: PLATFORM_HEIGHT,
+        digit: randomDigitForPlatform()
+      });
+    }
+  }
+
+  function resetPlayer() {
+    player.x = width / 2;
+    player.y = height - 120;
+    player.vy = 0;
+  }
+
+  function setScanStatus(status) {
+    scanZone.classList.remove(
+      "status-neutral",
+      "status-scanning",
+      "status-correct",
+      "status-wrong"
+    );
+    scanZone.classList.add("status-" + status);
+
+    if (!awaitingAnswer) {
+      scanMessage.textContent = "Leg je cijfer hier";
+      return;
+    }
+
+    if (status === "neutral") {
+      scanMessage.textContent = "Leg het volgende cijfer neer";
+    } else if (status === "scanning") {
+      scanMessage.textContent = "We kijken...";
+    } else if (status === "correct") {
+      scanMessage.textContent = "Goed zo!";
+    } else if (status === "wrong") {
+      scanMessage.textContent = "Nog een keer";
+    }
+  }
+
+  function showQuestion(digit) {
+    currentDigit = digit;
+    expectedAnswer = digit + 1;
+    // extra veiligheid: als het volgende cijfer > 9 is, geen vraag stellen
+    if (expectedAnswer > 9) {
+      currentDigit = null;
+      expectedAnswer = null;
+      return;
+    }
+
+    awaitingAnswer = true;
+    gameFrozen = true;
+
+    questionDigitSpan.textContent = String(digit);
+    questionPanel.classList.remove("hidden");
+
+    setScanStatus("neutral");
+  }
+
+  function hideQuestion() {
+    awaitingAnswer = false;
+    gameFrozen = false;
+    currentDigit = null;
+    expectedAnswer = null;
+    questionPanel.classList.add("hidden");
+    setScanStatus("neutral");
+  }
+
+  function handleCorrectAnswer() {
+    setScanStatus("correct");
+    // Kort momentje feedback, dan weer verder springen
+    setTimeout(function () {
+      hideQuestion();
+    }, 600);
+  }
+
+  function handleWrongAnswer() {
+    setScanStatus("wrong");
+  }
+
+  function onPlatformLanded(platform) {
+    if (!awaitingAnswer && typeof platform.digit === "number") {
+      showQuestion(platform.digit);
+    }
+  }
+
+  function wrapPlayerHorizontally() {
+    if (player.x < -player.radius) {
+      player.x = width + player.radius;
+    } else if (player.x > width + player.radius) {
+      player.x = -player.radius;
+    }
+  }
+
+  function highestPlatformY() {
+    let minY = Infinity;
+    for (const p of platforms) {
+      if (p.y < minY) minY = p.y;
+    }
+    return minY;
+  }
+
+  function updateGame(dt) {
+    if (gameFrozen) {
+      return;
+    }
+
+    if (movingLeft) {
+      player.x -= HORIZ_SPEED * dt;
+    }
+    if (movingRight) {
+      player.x += HORIZ_SPEED * dt;
+    }
+    wrapPlayerHorizontally();
+
+    player.vy += GRAVITY * dt;
+    let nextY = player.y + player.vy * dt;
+
+    let landed = false;
+    for (const p of platforms) {
+      const withinX =
+        player.x + player.radius > p.x &&
+        player.x - player.radius < p.x + p.w;
+
+      if (
+        !landed &&
+        player.vy > 0 &&
+        withinX &&
+        player.y + player.radius <= p.y &&
+        nextY + player.radius >= p.y
+      ) {
+        landed = true;
+        nextY = p.y - player.radius;
+        player.vy = JUMP_VELOCITY;
+        onPlatformLanded(p);
+      }
+    }
+
+    player.y = nextY;
+
+    // Camera / wereld verschuiving: hou speler rond 40% van het scherm
+    const targetY = height * 0.4;
+    if (player.y < targetY) {
+      const diff = targetY - player.y;
+      player.y += diff;
+      heightScore += diff;
+      for (const p of platforms) {
+        p.y += diff;
+      }
+
+      const minY = highestPlatformY();
+      for (const p of platforms) {
+        if (p.y > height + PLATFORM_HEIGHT + 20) {
+          p.y = minY - PLATFORM_SPACING;
+          p.x =
+            40 + Math.random() * (width - 80 - PLATFORM_WIDTH);
+          p.digit = randomDigitForPlatform();
+        }
+      }
+    }
+
+    if (player.y - player.radius > height + 80) {
+      // gevallen -> rustig opnieuw
+      heightScore = 0;
+      createInitialPlatforms();
+      resetPlayer();
+    }
+
+    scoreValue.textContent = Math.floor(heightScore);
+  }
+
+  function drawRoundedRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function renderGame() {
+    ctx.clearRect(0, 0, width, height);
+
+    // achtergrond
+    const grd = ctx.createLinearGradient(0, 0, 0, height);
+    grd.addColorStop(0, "#8ec5fc");
+    grd.addColorStop(1, "#e0c3fc");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, width, height);
+
+    // eenvoudige "wolken"
+    ctx.globalAlpha = 0.2;
+    for (let i = 0; i < 4; i++) {
+      const cx = (i * 0.25 + 0.2) * width;
+      const cy = 80 + (i % 2) * 40;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+      ctx.arc(cx + 35, cy + 10, 26, 0, Math.PI * 2);
+      ctx.arc(cx - 28, cy + 10, 22, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // platforms
+    for (const p of platforms) {
+      drawRoundedRect(p.x, p.y, p.w, p.h, 10);
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(0,0,0,0.08)";
+      ctx.stroke();
+
+      if (typeof p.digit === "number") {
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 24px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(p.digit), p.x + p.w / 2, p.y + p.h / 2 + 1);
+      }
+    }
+
+    // speler
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffdd59";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(0,0,0,0.15)";
+    ctx.stroke();
+
+    // oogjes
+    ctx.fillStyle = "#333";
+    ctx.beginPath();
+    ctx.arc(player.x - 5, player.y - 4, 2, 0, Math.PI * 2);
+    ctx.arc(player.x + 5, player.y - 4, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // lach
+    ctx.beginPath();
+    ctx.arc(player.x, player.y + 3, 7, 0.2 * Math.PI, 0.8 * Math.PI);
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = "#333";
+    ctx.stroke();
+  }
+
+  function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const deltaMs = timestamp - lastTime;
+    lastTime = timestamp;
+    const dt = Math.min(2, deltaMs / 16.67); // max ~2x frame
+
+    updateGame(dt);
+    renderGame();
+
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  function bindControlButton(button, direction) {
+    function start(e) {
+      e.preventDefault();
+      if (direction === "left") {
+        movingLeft = true;
+      } else {
+        movingRight = true;
+      }
+    }
+    function stop(e) {
+      e.preventDefault();
+      if (direction === "left") {
+        movingLeft = false;
+      } else {
+        movingRight = false;
+      }
+    }
+    button.addEventListener("touchstart", start, { passive: false });
+    button.addEventListener("mousedown", start);
+    button.addEventListener("touchend", stop);
+    button.addEventListener("touchcancel", stop);
+    document.addEventListener("mouseup", stop);
+  }
+
+  function initTouchScanZone() {
+    function handleTouch(e) {
+      e.preventDefault();
+
+      const rect = scanZone.getBoundingClientRect();
+      const touches = e.touches;
+      const points = [];
+
+      for (let i = 0; i < touches.length; i++) {
+        const t = touches[i];
+        const x = t.clientX - rect.left;
+        const y = t.clientY - rect.top;
+        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+          points.push({ x: x, y: y });
+        }
+      }
+
+      if (!awaitingAnswer) {
+        if (points.length === 0) {
+          setScanStatus("neutral");
+        } else {
+          setScanStatus("scanning");
+        }
+        return;
+      }
+
+      if (points.length === expectedTouchPoints) {
+        setScanStatus("scanning");
+        const digit = recognizeDigit(points);
+        if (digit !== null && typeof digit === "number") {
+          if (digit === expectedAnswer) {
+            handleCorrectAnswer();
+          } else {
+            handleWrongAnswer();
+          }
+        }
+      } else {
+        if (points.length === 0) {
+          setScanStatus("neutral");
+        } else {
+          setScanStatus("scanning");
+        }
+      }
+    }
+
+    ["touchstart", "touchmove", "touchend", "touchcancel"].forEach(function (evtName) {
+      scanZone.addEventListener(evtName, handleTouch, { passive: false });
+    });
+  }
+
+  function startGame() {
+    resizeCanvas();
+    createInitialPlatforms();
+    resetPlayer();
+    heightScore = 0;
+    scoreValue.textContent = "0";
+    setScanStatus("neutral");
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTime = 0;
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  window.addEventListener("resize", function () {
+    resizeCanvas();
+  });
+
+  bindControlButton(leftBtn, "left");
+  bindControlButton(rightBtn, "right");
+  initTouchScanZone();
+
+  // Kalibratie laden, daarna spel starten
+  fetch("calibration.json")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      initCalibration(data);
+      if (loadingOverlay) {
+        loadingOverlay.style.display = "none";
+      }
+      startGame();
+    })
+    .catch(function (err) {
+      console.error("Kalibratie laden mislukt", err);
+      if (loadingOverlay) {
+        var textEl = loadingOverlay.querySelector(".overlay-text");
+        if (textEl) {
+          textEl.textContent = "Scanvak niet klaar (kalibratie ontbreekt)";
+        }
+        loadingOverlay.style.display = "none";
+      }
+      startGame();
+    });
+});
+  </script>
+</body>
+</html>
