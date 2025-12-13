@@ -1005,7 +1005,7 @@
           correctStreak += 1;
 
           // ✅ 2x achter elkaar goed -> volgend level (1->2->3)
-          if (correctStreak >= 2) {
+          if (correctStreak >= 7) {
             if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
             if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
             correctStreak = 0; // level 3 blijft doorlopen
