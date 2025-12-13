@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Marbotic - Spellen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <style>
+    :root{
+      --bg-top:#f4f1ff;
+      --bg-bottom:#fef6e9;
+      --card:#ffffff;
+      --shadow:0 10px 25px rgba(0,0,0,0.08);
+      --text:#333;
+      --text-soft:#666;
+      --tile-outline:rgba(255,255,255,0.9);
+      --disabled:rgba(255,255,255,0.55);
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ height:100%; margin:0; padding:0; }
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      background:linear-gradient(to bottom,var(--bg-top),var(--bg-bottom));
+      color:var(--text);
+      display:flex;
+      justify-content:center;
+      align-items:stretch;
+      touch-action:none;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+    }
+    .app{
+      width:100%;
+      max-width:900px;
+      min-height:100vh;
+      padding:clamp(14px,3vh,26px);
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      padding-top:calc(clamp(14px,3vh,26px) + env(safe-area-inset-top));
+      padding-bottom:calc(clamp(14px,3vh,26px) + env(safe-area-inset-bottom));
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:8px;
+      text-align:center;
+    }
+    .badge{
+      background:rgba(255,255,255,0.75);
+      border-radius:999px;
+      padding:10px 18px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.06);
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+    }
+    .badge .icon{ font-size:1.4rem; }
+    .badge .title{ font-weight:700; letter-spacing:.02em; }
+    .subtitle{
+      font-size:0.95rem;
+      color:var(--text-soft);
+    }
+
+    .grid{
+      flex:1 1 auto;
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:clamp(12px,2.2vh,18px);
+      align-content:start;
+    }
+
+    .tile{
+      position:relative;
+      background:rgba(255,255,255,0.8);
+      border:3px solid var(--tile-outline);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height: min(28vh, 240px);
+      cursor:pointer;
+      transition: transform .12s ease-out, box-shadow .12s ease-out, background .12s ease-out;
+    }
+    .tile:active{ transform:scale(0.99); box-shadow:0 8px 20px rgba(0,0,0,0.10); }
+    .tile-top{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .tile-ico{
+      width:64px; height:64px;
+      border-radius:22px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(0,0,0,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:2rem;
+      flex:0 0 auto;
+    }
+    .tile-labels{ display:flex; flex-direction:column; gap:4px; }
+    .tile-name{ font-weight:800; font-size:1.12rem; }
+    .tile-goal{ color:var(--text-soft); font-size:0.95rem; }
+
+    .tile-bottom{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      margin-top:14px;
+    }
+    .pill{
+      background:#fff;
+      border-radius:999px;
+      padding:8px 12px;
+      box-shadow:0 6px 16px rgba(0,0,0,0.06);
+      font-weight:700;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .tile.disabled{
+      background:var(--disabled);
+      cursor:default;
+      opacity:0.9;
+    }
+    .tile.disabled:active{ transform:none; box-shadow:var(--shadow); }
+    .soon{
+      position:absolute;
+      inset:auto 14px 14px auto;
+      background:rgba(255,255,255,0.8);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:800;
+      font-size:0.9rem;
+      box-shadow:0 6px 16px rgba(0,0,0,0.06);
+    }
+
+    @media (max-width: 680px){
+      .tile{ min-height:min(26vh, 220px); padding:16px; }
+      .tile-ico{ width:58px; height:58px; font-size:1.9rem; border-radius:20px; }
+      .tile-name{ font-size:1.05rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="badge" aria-label="Start">
+        <span class="icon">🧸</span>
+        <span class="title">Kies een spel</span>
+      </div>
+      <div class="subtitle">Tik op een kaartje</div>
+    </header>
+
+    <main class="grid" aria-label="Spellen">
+      <div class="tile" role="button" aria-label="TG07 Cijfers oefenen" onclick="go('tg07.html')">
+        <div class="tile-top">
+          <div class="tile-ico">🔢</div>
+          <div class="tile-labels">
+            <div class="tile-name">Cijfers</div>
+            <div class="tile-goal">TG07</div>
+          </div>
+        </div>
+        <div class="tile-bottom">
+          <div class="pill"><span>Spelen</span><span>▶️</span></div>
+        </div>
+      </div>
+
+      <div class="tile" role="button" aria-label="TG08 Rij en buurgetallen" onclick="go('tg08.html')">
+        <div class="tile-top">
+          <div class="tile-ico">🧩</div>
+          <div class="tile-labels">
+            <div class="tile-name">Rij & buren</div>
+            <div class="tile-goal">TG08</div>
+          </div>
+        </div>
+        <div class="tile-bottom">
+          <div class="pill"><span>Spelen</span><span>▶️</span></div>
+        </div>
+      </div>
+
+      <div class="tile disabled" aria-label="TG05 Binnenkort">
+        <div class="tile-top">
+          <div class="tile-ico">🍓</div>
+          <div class="tile-labels">
+            <div class="tile-name">Hoeveelheden</div>
+            <div class="tile-goal">TG05</div>
+          </div>
+        </div>
+        <div class="tile-bottom">
+          <div class="pill"><span>Binnenkort</span>✨</div>
+        </div>
+        <div class="soon">Binnenkort</div>
+      </div>
+
+      <div class="tile disabled" aria-label="TG11 Binnenkort">
+        <div class="tile-top">
+          <div class="tile-ico">🏠</div>
+          <div class="tile-labels">
+            <div class="tile-name">Splitsen</div>
+            <div class="tile-goal">TG11</div>
+          </div>
+        </div>
+        <div class="tile-bottom">
+          <div class="pill"><span>Binnenkort</span>✨</div>
+        </div>
+        <div class="soon">Binnenkort</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function go(path){
+      window.location.href = path;
+    }
+  </script>
+</body>
+</html>

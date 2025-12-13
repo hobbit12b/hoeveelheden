@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Marbotic - Levels</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <style>
+    :root {
+      --bg-top: #f4f1ff;
+      --bg-bottom: #fef6e9;
+      --card-bg: #ffffff;
+      --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      --accent-soft: #ffe0b2;
+      --accent-strong: #ff8a65;
+      --scan-border-neutral: rgba(255, 255, 255, 0.8);
+      --scan-border-scan: rgba(255, 255, 255, 0.9);
+      --scan-border-good: #4caf50;
+      --scan-border-bad: #e53935;
+      --scan-bg-neutral: rgba(255, 255, 255, 0.12);
+      --scan-bg-scan: rgba(255, 255, 255, 0.22);
+      --scan-bg-good: rgba(76, 175, 80, 0.18);
+      --scan-bg-bad: rgba(229, 57, 53, 0.18);
+      --text-main: #333333;
+      --text-soft: #666666;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .game {
+      width: 100%;
+      max-width: 900px;
+      min-height: 100vh;
+      padding: clamp(12px, 3vh, 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .game-header {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: env(safe-area-inset-top);
+      position: relative;
+    }
+
+    /* home button */
+    .home-btn{
+      position:absolute;
+      left: 0;
+      top: env(safe-area-inset-top);
+      margin-left: 0;
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.75);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.6rem;
+      text-decoration:none;
+      color: inherit;
+      -webkit-user-select:none;
+      user-select:none;
+    }
+    .home-btn:active{ transform: scale(0.98); }
+
+    .title-badge {
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 999px;
+      padding: 8px 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      animation: floatTitle 3s ease-in-out infinite alternate;
+      cursor: pointer;
+    }
+
+    .title-icon { font-size: 1.4rem; }
+    .title-text {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    @keyframes floatTitle { 0%{transform:translateY(0)} 100%{transform:translateY(-3px)} }
+
+    .game-main {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 2px;
+    }
+
+    /* ✅ dichter bij de cijfers: zij-kolommen zijn net zo breed als de animatie */
+    .top-layout{
+      display: grid;
+      grid-template-columns: min(26vw, 140px) auto min(26vw, 140px);
+      align-items: center;
+      width: 100%;
+      max-width: 640px;
+      gap: 0;
+    }
+
+    .side-box{
+      width: min(26vw, 140px);
+      height: min(26vw, 140px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    /* ✅ “plak” richting het midden */
+    .side-box.left  { justify-self: start; justify-content: flex-end; }
+    .side-box.right { justify-self: end;   justify-content: flex-start; }
+
+    .side-animation{
+      --shift-x: 0px;
+      width: 100%;
+      height: 100%;
+      max-width: 160px;
+      object-fit: contain;
+      opacity: 0;
+      transform: translateX(var(--shift-x)) scale(0.8);
+      pointer-events: none;
+      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+      position: relative;
+      z-index: 5; /* boven de cijferblokken */
+    }
+    .side-animation.show{
+      opacity: 1;
+      transform: translateX(var(--shift-x)) scale(1);
+    }
+
+    /* cijferblokken onder de animatie */
+    .number-slot{
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ✅ overlap per level */
+    .game[data-level="2"] #right-animation{ --shift-x: -42px; } /* overlap rechter cijferblok */
+    .game[data-level="3"] #left-animation { --shift-x:  42px; } /* overlap linker cijferblok */
+
+    .number-area{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      justify-self: center;
+    }
+
+    .number-row{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(16px, 4vw, 32px);
+      width: 100%;
+      max-width: 520px;
+      margin-top: clamp(4px, 1vh, 10px);
+    }
+
+    .number-row.row-appear { animation: rowIn 0.4s ease-out; }
+    @keyframes rowIn { 0%{transform:translateY(-10px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+
+    .number-slot{
+      flex: 0 0 auto;
+      width: min(22vw, 110px);
+      aspect-ratio: 1 / 1;
+      background-color: var(--card-bg);
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      border-radius: 28px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, background 0.18s ease-out, border-color 0.18s ease-out;
+      border: 4px solid transparent;
+    }
+
+    .number-text{
+      font-size: min(16vw, 72px);
+      font-weight: 700;
+      color: var(--text-main);
+      transform: translateY(4px);
+      pointer-events: none;
+    }
+
+    .number-slot.missing{
+      background-image: none;
+      background-color: var(--accent-soft);
+      border-style: dashed;
+      border-color: rgba(255, 138, 101, 0.5);
+      color: var(--accent-strong);
+    }
+    .number-slot.missing .number-text{ color: var(--accent-strong); }
+
+    .number-slot.correct-pop { animation: pop 0.35s ease-out; }
+    .number-row.shake { animation: shake 0.35s ease-out; }
+
+    @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
+    @keyframes shake {
+      0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)}
+      60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)}
+    }
+
+    .feedback-symbol { font-size: 2.4rem; line-height: 1; height: 2.4rem; text-align: center; }
+
+    .game-footer{
+      flex: 1 1 auto;
+      padding-bottom: env(safe-area-inset-bottom);
+      display: flex;
+      flex-direction: column;
+      margin-top: 2px;
+    }
+
+    .scan-area{
+      border-radius: 28px;
+      border-width: 4px;
+      border-style: dashed;
+      border-color: var(--scan-border-neutral);
+      background: var(--scan-bg-neutral);
+      flex: 1 1 auto;
+      min-height: 55vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+      transition: border-color 0.18s ease-out, background 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
+      position: relative;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .scan-area-inner{
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .scan-icon{ font-size: 2.4rem; animation: scanPulse 2s ease-in-out infinite; }
+    @keyframes scanPulse { 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
+
+    .scan-text{ font-size: 1.05rem; color: var(--text-soft); }
+    .scan-hint{ font-size: 0.85rem; color: rgba(0,0,0,0.48); }
+
+    .scan-area.state-neutral{ border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
+    .scan-area.state-scanning{ border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 12px 26px rgba(0,0,0,0.16); transform:translateY(-2px); }
+    .scan-area.state-correct{ border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
+    .scan-area.state-wrong{ border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
+
+    @media (max-width: 600px) {
+      .title-text { font-size: 0.9rem; }
+      .number-slot { width: min(24vw, 96px); }
+      .side-box { width: min(26vw, 120px); height: min(26vw, 120px); }
+      .top-layout { grid-template-columns: min(26vw, 120px) auto min(26vw, 120px); }
+      .game[data-level="2"] #right-animation{ --shift-x: -34px; }
+      .game[data-level="3"] #left-animation { --shift-x:  34px; }
+      .home-btn{ width:50px; height:50px; border-radius:16px; }
+      .game-header{ padding-top: calc(env(safe-area-inset-top) + 2px); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game" id="game" data-level="1">
+    <header class="game-header">
+      <a class="home-btn" href="index.html" aria-label="Terug naar start">🏠</a>
+      <div class="title-badge" id="title-badge" role="button" aria-label="Luister nog een keer">
+        <span class="title-icon" id="title-icon">🔍</span>
+        <span class="title-text" id="title-text">Welk cijfer mist?</span>
+      </div>
+    </header>
+
+    <main class="game-main">
+      <div class="top-layout">
+        <div class="side-box left">
+          <img id="left-animation" src="love-heart.gif" alt="" class="side-animation" />
+        </div>
+
+        <div class="number-area">
+          <div class="number-row row-appear" id="number-row">
+            <div class="number-slot" data-index="0"><span class="number-text">0</span></div>
+            <div class="number-slot missing" data-index="1"><span class="number-text">?</span></div>
+            <div class="number-slot" data-index="2"><span class="number-text">2</span></div>
+          </div>
+          <div id="feedback-symbol" class="feedback-symbol"></div>
+        </div>
+
+        <div class="side-box right">
+          <img id="right-animation" src="goed.gif" alt="" class="side-animation" />
+        </div>
+      </div>
+    </main>
+
+    <footer class="game-footer">
+      <div class="scan-area state-neutral" id="scan-area">
+        <div class="scan-area-inner">
+          <div class="scan-icon">🔢</div>
+          <div class="scan-text">Leg het houten cijfer in het vak.</div>
+          <div class="scan-hint">Alle puntjes in het vak.</div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Voice prompts -->
+  <audio id="voice-grote" src="audio/grote buurgetal.mp3" preload="auto"></audio>
+  <audio id="voice-kleine" src="audio/kleine buurgetal.mp3" preload="auto"></audio>
+
+  <script>
+    /* ================================
+       MARBOTIC HERKENNINGSMODULE
+       (logica ongewijzigd)
+       ================================ */
+
+    const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
+        return;
+      }
+
+      if (typeof calibrationData.expectedTouchPoints === "number") {
+        expectedTouchPoints = calibrationData.expectedTouchPoints;
+      } else {
+        expectedTouchPoints = 3;
+      }
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
+    }
+
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(function (d) {
+        obj[String(d)] = { digit: d, samples: [] };
+      });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = data[key];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+
+          const pts = s.points.map(function (p) {
+            return { x: Number(p.x), y: Number(p.y) };
+          });
+
+          const features = computeFeatures(pts);
+          obj[key].samples.push({ points: pts, features: features });
+        });
+      });
+
+      return obj;
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) {
+        return {
+          sides: [0, 0, 0],
+          orientation: 0,
+          cosAngle: 0,
+          centroid: { x: 0, y: 0 },
+          yNorm: [0, 0, 0],
+          xPattern: [0, 0, 0],
+          aspect: 0,
+          vector: [0, 0, 0]
+        };
+      }
+
+      const p0 = points[0];
+      const p1 = points[1];
+      const p2 = points[2];
+
+      const centroidRaw = {
+        x: (p0.x + p1.x + p2.x) / 3,
+        y: (p0.y + p1.y + p2.y) / 3
+      };
+
+      const isoPoints = [p0, p1, p2].map(function (p) {
+        const dx = p.x - centroidRaw.x;
+        const dy = p.y - centroidRaw.y;
+        return { x: dx, y: dy };
+      });
+
+      let maxDist = 0;
+      for (let i = 0; i < isoPoints.length; i++) {
+        const q = isoPoints[i];
+        const d = Math.sqrt(q.x * q.x + q.y * q.y);
+        if (d > maxDist) maxDist = d;
+      }
+      if (maxDist < 1e-6) maxDist = 1;
+
+      for (let i = 0; i < isoPoints.length; i++) {
+        isoPoints[i].x /= maxDist;
+        isoPoints[i].y /= maxDist;
+      }
+
+      function dist(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides
+        .slice()
+        .sort(function (a, b) { return a.len - b.len; })
+        .map(function (s) { return s.len / maxSideLen; });
+
+      const largest = sides
+        .slice()
+        .sort(function (a, b) { return a.len - b.len; })[2];
+
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      function orientationVal(a, b, c) {
+        const value =
+          (b.x - a.x) * (c.y - a.y) -
+          (b.y - a.y) * (c.x - a.x);
+        if (value > 0) return 1;
+        if (value < 0) return -1;
+        return 0;
+      }
+
+      const orientation = orientationVal(A, B, C);
+
+      const AC = dist(A, C);
+      const BC = dist(B, C);
+      const AB = largest.len;
+      const AC2 = AC * AC;
+      const BC2 = BC * BC;
+      const AB2 = AB * AB;
+      let cosAngle = 0;
+      const denom = 2 * AC * BC;
+      if (denom > 1e-6) {
+        cosAngle = (AC2 + BC2 - AB2) / denom;
+      }
+
+      let minX = Math.min(p0.x, p1.x, p2.x);
+      let maxX = Math.max(p0.x, p1.x, p2.x);
+      let minY = Math.min(p0.y, p1.y, p2.y);
+      let maxY = Math.max(p0.y, p1.y, p2.y);
+      let width = maxX - minX;
+      let height = maxY - minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNormVals = [p0, p1, p2]
+        .map(function (p) { return (p.y - minY) / height; })
+        .sort(function (a, b) { return a - b; });
+
+      const pointsWithIndex = [
+        { p: p0, idx: 0 },
+        { p: p1, idx: 1 },
+        { p: p2, idx: 2 }
+      ].sort(function (a, b) { return a.p.y - b.p.y; });
+
+      const xPattern = pointsWithIndex.map(function (item) {
+        return (item.p.x - minX) / width;
+      });
+
+      const aspect = height / (width + height);
+
+      const centroidBox = {
+        x: (centroidRaw.x - minX) / width,
+        y: (centroidRaw.y - minY) / height
+      };
+
+      const vector = buildFeatureVector({
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect
+      });
+
+      return {
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect,
+        vector: vector
+      };
+    }
+
+    function buildFeatureVector(f) {
+      const wSides = 3.0;
+      const wCos = 4.0;
+      const wOrient = 2.0;
+      const wY = 3.0;
+      const wX = 2.0;
+      const wAspect = 2.0;
+
+      const v = [];
+      v.push(f.sides[0] * wSides);
+      v.push(f.sides[1] * wSides);
+      v.push(f.sides[2] * wSides);
+
+      v.push(f.cosAngle * wCos);
+      v.push(f.orientation * wOrient);
+
+      v.push(f.yNorm[0] * wY);
+      v.push(f.yNorm[1] * wY);
+      v.push(f.yNorm[2] * wY);
+
+      v.push(f.xPattern[0] * wX);
+      v.push(f.xPattern[1] * wX);
+      v.push(f.xPattern[2] * wX);
+
+      v.push(f.aspect * wAspect);
+
+      return v;
+    }
+
+    function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) {
+        const diff = a[i] - b[i];
+        sum += diff * diff;
+      }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeClassificationStats() {
+      if (!calibration) {
+        classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
+        return;
+      }
+
+      const allSamples = [];
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        if (!calibration[key]) return;
+        const samples = calibration[key].samples || [];
+        samples.forEach(function (s) {
+          allSamples.push({ digit: d, features: s.features });
+        });
+      });
+
+      if (allSamples.length < 2) {
+        classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 };
+        return;
+      }
+
+      const sameMinDistances = [];
+      const betweenMinDistances = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        const vecA = a.features.vector;
+        let minSame = Infinity;
+        let minOther = Infinity;
+
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const vecB = b.features.vector;
+          const dist = vectorDistance(vecA, vecB);
+
+          if (a.digit === b.digit) {
+            if (dist < minSame) minSame = dist;
+          } else {
+            if (dist < minOther) minOther = dist;
+          }
+        }
+
+        if (minSame < Infinity) sameMinDistances.push(minSame);
+        if (minOther < Infinity) betweenMinDistances.push(minOther);
+      }
+
+      if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
+        classificationStats = { thresholdBase: 0.7, thresholdUnknown: 1.2 };
+        return;
+      }
+
+      const maxSame = Math.max.apply(null, sameMinDistances);
+      const minBetween = Math.min.apply(null, betweenMinDistances);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      const thresholdUnknown = thresholdBase * 1.5;
+
+      classificationStats = {
+        thresholdBase: thresholdBase,
+        thresholdUnknown: thresholdUnknown,
+        maxSame: maxSame,
+        minBetween: minBetween
+      };
+    }
+
+    function classifyMeasurement(features) {
+      const vec = features.vector;
+      if (!vec || !calibration) {
+        return { digit: null, bestDist: null, certainty: "onbekend", isUnknown: true, topMatches: [] };
+      }
+
+      const bestPerDigit = {};
+      DIGIT_ORDER.forEach(function (d) { bestPerDigit[d] = Infinity; });
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = calibration[key];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const sampleVec = samples[i].features.vector;
+          const dist = vectorDistance(vec, sampleVec);
+          if (dist < bestPerDigit[d]) bestPerDigit[d] = dist;
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+        }
+      });
+
+      const perDigitArray = [];
+      DIGIT_ORDER.forEach(function (d) {
+        const val = bestPerDigit[d];
+        if (val < Infinity) perDigitArray.push({ digit: d, distance: val });
+      });
+      perDigitArray.sort(function (a, b) { return a.distance - b.distance; });
+      const topMatches = perDigitArray.slice(0, 3);
+
+      if (bestDigit === null || bestDist === Infinity) {
+        return { digit: null, bestDist: null, certainty: "onbekend", isUnknown: true, topMatches: topMatches };
+      }
+
+      let stats = classificationStats || { thresholdBase: 0.8, thresholdUnknown: 1.5 };
+      const base = stats.thresholdBase;
+      const unknownThresh = stats.thresholdUnknown;
+
+      let isUnknown = false;
+      let certainty = "zeker";
+
+      if (bestDist > unknownThresh) isUnknown = true;
+      else if (bestDist > base) certainty = "twijfelachtig";
+
+      if (!isUnknown && topMatches.length > 1) {
+        const second = topMatches[1].distance;
+        if (second > 0) {
+          const ratio = bestDist / second;
+          if (ratio > 0.9 && certainty === "zeker") certainty = "twijfelachtig";
+        }
+      }
+
+      return {
+        digit: isUnknown ? null : bestDigit,
+        bestDist: bestDist,
+        certainty: certainty,
+        isUnknown: isUnknown,
+        topMatches: topMatches
+      };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const features = computeFeatures(points);
+      const classification = classifyMeasurement(features);
+
+      if (!classification || classification.isUnknown || classification.digit == null) return null;
+      return classification.digit;
+    }
+
+    /* ================================
+       SPELLOGICA + 3 LEVELS
+       ================================ */
+
+    const DIGIT_IMAGE_PREFIX = "marbotic";
+    const DIGIT_IMAGE_SUFFIX = ".png";
+
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function playTone(freq, duration) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    }
+    function playSuccessSound() { playTone(880, 0.16); setTimeout(function () { playTone(1175, 0.18); }, 140); }
+    function playErrorSound() { playTone(220, 0.22); }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const gameEl = document.getElementById("game");
+
+      const numberRow = document.getElementById("number-row");
+      const numberSlots = Array.from(document.querySelectorAll(".number-slot"));
+      const feedbackSymbol = document.getElementById("feedback-symbol");
+      const scanArea = document.getElementById("scan-area");
+
+      const titleBadge = document.getElementById("title-badge");
+      const titleIcon = document.getElementById("title-icon");
+      const titleText = document.getElementById("title-text");
+
+      const leftAnim = document.getElementById("left-animation");
+      const rightAnim = document.getElementById("right-animation");
+
+      const voiceGrote = document.getElementById("voice-grote");
+      const voiceKleine = document.getElementById("voice-kleine");
+
+      // Levels: 1 = 3 cijfers, 2 = grote buur, 3 = kleine buur
+      let level = 1;
+      let correctStreak = 0;
+
+      // Opgave
+      let roundActive = true;
+      let visibleSlots = 3;
+      let sequence = [0, 1, 2];
+      let missingIndex = 1;
+      let missingNumber = 1;
+
+      // Touch/recognition
+      let currentPoints = [];
+      let hasResultForCurrentTouches = false;
+
+      // iOS media unlock
+      let mediaUnlocked = false;
+
+      // Intro voice: 1x automatisch bij start level 2/3 (zonder blokkeren), daarna alleen via titel
+      const intro = { el: null, done: true, playing: false, pending: false };
+
+      function setScanState(state) {
+        scanArea.classList.remove("state-neutral", "state-scanning", "state-correct", "state-wrong");
+        if (state === "scanning") scanArea.classList.add("state-scanning");
+        else if (state === "correct") scanArea.classList.add("state-correct");
+        else if (state === "wrong") scanArea.classList.add("state-wrong");
+        else scanArea.classList.add("state-neutral");
+      }
+
+      function hideAnimations() {
+        leftAnim.classList.remove("show");
+        rightAnim.classList.remove("show");
+      }
+
+      function showSuccessAnimation() {
+        hideAnimations();
+        if (level === 3) leftAnim.classList.add("show");
+        else rightAnim.classList.add("show");
+      }
+
+      function setSlotDigit(slot, digit, isMissing) {
+        const span = slot.querySelector(".number-text");
+        slot.classList.remove("missing", "correct-pop");
+
+        if (isMissing) {
+          slot.style.backgroundImage = "none";
+          slot.classList.add("missing");
+          span.textContent = "?";
+        } else {
+          span.textContent = "";
+          slot.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
+          slot.setAttribute("aria-label", "cijfer " + digit);
+        }
+      }
+
+      function applyVisibleSlots() {
+        numberSlots.forEach(function (slot, idx) {
+          slot.style.display = (idx < visibleSlots) ? "flex" : "none";
+        });
+      }
+
+      function updateNumberDisplay() {
+        applyVisibleSlots();
+        for (let i = 0; i < visibleSlots; i++) {
+          const slot = numberSlots[i];
+          if (i === missingIndex) setSlotDigit(slot, sequence[i], true);
+          else setSlotDigit(slot, sequence[i], false);
+        }
+      }
+
+      function stopVoice(el) {
+        if (!el) return;
+        try { el.pause(); el.currentTime = 0; } catch (e) {}
+      }
+
+      function stopAllVoice() {
+        stopVoice(voiceGrote);
+        stopVoice(voiceKleine);
+        intro.playing = false;
+      }
+
+      function unlockAudioElement(el) {
+        if (!el) return;
+        try {
+          const oldMuted = el.muted;
+          const oldVol = el.volume;
+          el.muted = true;
+          el.volume = 0;
+          const p = el.play();
+          if (p && typeof p.then === "function") {
+            p.then(function () {
+              el.pause();
+              el.currentTime = 0;
+              el.muted = oldMuted;
+              el.volume = oldVol;
+            }).catch(function () {
+              el.pause();
+              el.currentTime = 0;
+              el.muted = oldMuted;
+              el.volume = oldVol;
+            });
+          } else {
+            el.pause();
+            el.currentTime = 0;
+            el.muted = oldMuted;
+            el.volume = oldVol;
+          }
+        } catch (e) {}
+      }
+
+      function unlockMediaOnce() {
+        if (mediaUnlocked) return;
+        mediaUnlocked = true;
+        unlockAudioElement(voiceGrote);
+        unlockAudioElement(voiceKleine);
+      }
+
+      function tryPlay(el, onFail) {
+        if (!el) return;
+        try { el.currentTime = 0; } catch (e) {}
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(onFail || function () {});
+      }
+
+      function setupIntroForLevel() {
+        intro.playing = false;
+        intro.pending = false;
+        intro.done = true;
+        intro.el = null;
+
+        if (level === 2) { intro.el = voiceGrote; intro.done = false; }
+        if (level === 3) { intro.el = voiceKleine; intro.done = false; }
+
+        if (intro.el) {
+          intro.pending = true;
+          try { intro.el.load(); } catch (e) {}
+        }
+      }
+
+      function startIntroNow() {
+        if (!intro.el) return;
+        if (intro.done) return;
+        if (intro.playing) return;
+
+        intro.pending = false;
+        intro.playing = true;
+
+        tryPlay(intro.el, function () {
+          intro.playing = false;
+          intro.pending = true;
+        });
+      }
+
+      if (voiceGrote) {
+        voiceGrote.addEventListener("ended", function () {
+          if (intro.el === voiceGrote) { intro.playing = false; intro.done = true; }
+        });
+      }
+      if (voiceKleine) {
+        voiceKleine.addEventListener("ended", function () {
+          if (intro.el === voiceKleine) { intro.playing = false; intro.done = true; }
+        });
+      }
+
+      function setLevelUI() {
+        hideAnimations();
+        gameEl.dataset.level = String(level);
+
+        if (level === 1) {
+          titleIcon.textContent = "🔍";
+          titleText.textContent = "Welk cijfer mist?";
+          rightAnim.src = "goed.gif";
+          leftAnim.src = "love-heart.gif";
+        } else if (level === 2) {
+          titleIcon.textContent = "🔊";
+          titleText.textContent = "Grote buur";
+          rightAnim.src = "happy-excited.gif";
+          leftAnim.src = "love-heart.gif";
+        } else {
+          titleIcon.textContent = "🔊";
+          titleText.textContent = "Kleine buur";
+          rightAnim.src = "happy-excited.gif";
+          leftAnim.src = "love-heart.gif";
+        }
+      }
+
+      function newRound() {
+        roundActive = true;
+        feedbackSymbol.textContent = "";
+        hideAnimations();
+        setScanState("neutral");
+        numberRow.classList.remove("shake");
+        hasResultForCurrentTouches = false;
+
+        if (level === 1) {
+          const base = Math.floor(Math.random() * 8);
+          sequence = [base, base + 1, base + 2];
+          visibleSlots = 3;
+
+          missingIndex = Math.floor(Math.random() * 3);
+          missingNumber = sequence[missingIndex];
+        } else if (level === 2) {
+          const start = Math.floor(Math.random() * 9); // 0..8
+          const target = start + 1;                    // 1..9
+          sequence = [start, target];
+          visibleSlots = 2;
+
+          missingIndex = 1;       // ? rechts
+          missingNumber = target;
+        } else {
+          const shown = 1 + Math.floor(Math.random() * 9); // 1..9
+          const answer = shown - 1;                        // 0..8
+          sequence = [answer, shown];
+          visibleSlots = 2;
+
+          missingIndex = 0;       // ? links
+          missingNumber = answer;
+        }
+
+        numberRow.classList.remove("row-appear");
+        void numberRow.offsetWidth;
+        numberRow.classList.add("row-appear");
+
+        updateNumberDisplay();
+      }
+
+      function goToLevel(nextLevel) {
+        level = nextLevel;
+        correctStreak = 0;
+
+        setupIntroForLevel();
+        setLevelUI();
+        newRound();
+
+        // ✅ meteen proberen te starten (werkt meestal na "unlock")
+        ensureAudio();
+        unlockMediaOnce();
+        startIntroNow();
+      }
+
+      function handleRecognitionResult(digit) {
+        if (!roundActive) return;
+
+        if (digit === missingNumber) {
+          roundActive = false;
+          setScanState("correct");
+          feedbackSymbol.textContent = "";
+          showSuccessAnimation();
+          playSuccessSound();
+
+          const missingSlot = numberSlots[missingIndex];
+          setSlotDigit(missingSlot, missingNumber, false);
+          missingSlot.classList.add("correct-pop");
+
+          correctStreak += 1;
+
+          // ✅ 7x achter elkaar goed -> volgend level (1->2->3)
+          if (correctStreak >= 7) {
+            if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
+            if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
+            // level 3 blijft doorlopen
+            correctStreak = 0;
+          }
+
+          setTimeout(function () { newRound(); }, 1200);
+        } else {
+          setScanState("wrong");
+          hideAnimations();
+          feedbackSymbol.textContent = "✖";
+          playErrorSound();
+          numberRow.classList.add("shake");
+          correctStreak = 0;
+
+          setTimeout(function () {
+            numberRow.classList.remove("shake");
+            if (currentPoints.length === 0) setScanState("neutral");
+            else setScanState("scanning");
+          }, 450);
+        }
+      }
+
+      function getPointsFromTouches(touchList) {
+        const rect = scanArea.getBoundingClientRect();
+        const points = [];
+        for (let i = 0; i < touchList.length; i++) {
+          const t = touchList[i];
+          const x = t.clientX;
+          const y = t.clientY;
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            points.push({ x: x, y: y });
+          }
+        }
+        return points;
+      }
+
+      function handleTouchEvent(e) {
+        ensureAudio();
+        unlockMediaOnce();
+
+        // ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
+        if (intro.pending && !intro.playing && !intro.done) startIntroNow();
+
+        const touches = e.touches || [];
+        currentPoints = getPointsFromTouches(touches);
+
+        if (currentPoints.length === 0) {
+          hasResultForCurrentTouches = false;
+          setScanState("neutral");
+          return;
+        }
+
+        if (currentPoints.length !== expectedTouchPoints) {
+          hasResultForCurrentTouches = false;
+          setScanState("scanning");
+          return;
+        }
+
+        setScanState("scanning");
+
+        if (!hasResultForCurrentTouches && roundActive) {
+          const digit = recognizeDigit(currentPoints);
+          if (digit !== null && typeof digit === "number") {
+            hasResultForCurrentTouches = true;
+            handleRecognitionResult(digit);
+          }
+        }
+      }
+
+      function addTouchListeners(elem) {
+        ["touchstart", "touchmove", "touchend", "touchcancel"].forEach(function (type) {
+          elem.addEventListener(type, handleTouchEvent, { passive: true });
+        });
+      }
+
+      // ✅ Titelknop: meteen afspelen (en je kunt doorspelen)
+      let lastTitleTouch = 0;
+
+      function playTitleVoiceNow() {
+        ensureAudio();
+        unlockMediaOnce();
+
+        // meteen starten: stop eventueel lopende stem en speel opnieuw
+        stopAllVoice();
+
+        if (level === 2) {
+          intro.el = voiceGrote;
+          intro.done = true; // intro is al geweest; dit is handmatig
+          intro.playing = false;
+          intro.pending = false;
+          tryPlay(voiceGrote);
+        } else if (level === 3) {
+          intro.el = voiceKleine;
+          intro.done = true;
+          intro.playing = false;
+          intro.pending = false;
+          tryPlay(voiceKleine);
+        }
+      }
+
+      titleBadge.addEventListener("touchstart", function () {
+        lastTitleTouch = Date.now();
+        playTitleVoiceNow();
+      }, { passive: true });
+
+      titleBadge.addEventListener("click", function () {
+        if (Date.now() - lastTitleTouch < 500) return;
+        playTitleVoiceNow();
+      });
+
+      // Start level 1
+      setupIntroForLevel();
+      setLevelUI();
+      newRound();
+
+      addTouchListeners(scanArea);
+
+      fetch("calibration.json")
+        .then(function (r) { return r.json(); })
+        .then(function (data) { initCalibration(data); })
+        .catch(function () { /* geen debug in UI */ });
+    });
+  </script>
+</body>
+</html>
