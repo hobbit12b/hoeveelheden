@@ -104,9 +104,11 @@
       gap: 10px;
     }
 
+    /* ✅ minder breed, hoogte blijft zoals jij goed vond */
     .stage{
-      width: min(86vw, 520px);
-      height: min(22vh, 180px);
+      width: min(72vw, 420px);     /* smaller */
+      height: min(22vh, 180px);    /* zelfde hoogte */
+      margin: 0 auto;
       border-radius: 30px;
       box-shadow: var(--card-shadow);
       background: rgba(255,255,255,0.75);
@@ -129,7 +131,7 @@
       background-size: contain;
     }
 
-    /* ✅ Gordijnen als IMG: iPad toont gif betrouwbaarder */
+    /* ✅ Gordijnen als IMG: behoud verhoudingen */
     .curtains{
       position:absolute;
       inset:0;
@@ -140,7 +142,8 @@
     .curtain-img{
       width:50%;
       height:100%;
-      object-fit: cover;
+      object-fit: contain;       /* behoud verhoudingen */
+      object-position: center;
       filter:saturate(1.05) contrast(1.05);
       will-change: transform;
       transition: transform 0.55s cubic-bezier(.2,.8,.2,1);
@@ -224,7 +227,7 @@
     @media (max-width: 600px){
       .btn{ width:50px; height:50px; border-radius:16px; }
       .title-badge{ font-size:0.95rem; }
-      .stage{ border-radius:26px; height:min(20vh, 160px); }
+      .stage{ border-radius:26px; height:min(20vh, 160px); width:min(76vw, 420px); }
       .reveal-digit{ border-radius:20px; }
       .pip{ width:13px; height:13px; }
     }
@@ -559,7 +562,7 @@
     const NUMBER_WORDS={ 0:"nul",1:"één",2:"twee",3:"drie",4:"vier",5:"vijf",6:"zes",7:"zeven",8:"acht",9:"negen" };
     function wordFor(d){ return NUMBER_WORDS[d] || String(d); }
 
-    // WebAudio piepjes
+    // WebAudio piepjes (nog steeds gebruikt voor korte feedback, maar TTS is de stem)
     let audioCtx=null;
     function ensureAudio(){
       if (!audioCtx){
@@ -586,19 +589,7 @@
     function sfxGood(){ playTone(880,0.14); setTimeout(function(){ playTone(1175,0.16); },120); }
     function sfxBad(){ playTone(220,0.20); }
 
-    // TTS + fallback cue
-    function playDigitCue(d){
-      playTone(523, 0.08);
-      let i=0;
-      const n = Math.max(1, Math.min(9, d));
-      const tick = function(){
-        i++;
-        playTone(784, 0.06);
-        if (i < n) setTimeout(tick, 110);
-      };
-      setTimeout(tick, 160);
-    }
-
+    // SpeechSynthesis (stem)
     let preferredVoice=null;
     let speechBusy=false;
 
@@ -621,18 +612,26 @@
       ensureVoice();
     }
 
-    function speak(text, interrupt, fallbackDigit){
-      if (!("speechSynthesis" in window)) {
-        if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
-        return Promise.resolve();
-      }
+    // ✅ prime iOS TTS na eerste tik (helpt vaak enorm)
+    function primeTTS(){
+      if (!("speechSynthesis" in window)) return;
+      try{
+        const u = new SpeechSynthesisUtterance(" ");
+        u.lang = "nl-NL";
+        u.volume = 0.01;
+        window.speechSynthesis.speak(u);
+      }catch(e){}
+    }
+
+    function speak(text, interrupt){
+      if (!("speechSynthesis" in window)) return Promise.resolve();
 
       if (interrupt){
         try{ window.speechSynthesis.cancel(); }catch(e){}
       } else if (speechBusy){
         return new Promise(function(resolve){
           const t=setInterval(function(){
-            if (!speechBusy){ clearInterval(t); speak(text,false,fallbackDigit).then(resolve); }
+            if (!speechBusy){ clearInterval(t); speak(text,false).then(resolve); }
           },50);
         });
       }
@@ -645,6 +644,7 @@
         if (preferredVoice) u.voice = preferredVoice;
         u.rate=0.95;
         u.pitch=1.05;
+        u.volume = 1.0;
 
         let finished=false;
         const done=function(){
@@ -654,36 +654,35 @@
           resolve();
         };
 
+        // ✅ meer tijd voor iOS; geen bliep-fallback op timeout
         const timeout = setTimeout(function(){
           if (!finished){
             try{ window.speechSynthesis.cancel(); }catch(e){}
-            if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
             done();
           }
-        }, 1600);
+        }, 3500);
 
         speechBusy=true;
         u.onend=function(){ clearTimeout(timeout); done(); };
-        u.onerror=function(){ clearTimeout(timeout); if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit); done(); };
+        u.onerror=function(){ clearTimeout(timeout); done(); };
 
         setTimeout(function(){
           try{ window.speechSynthesis.speak(u); }
           catch(e){
             clearTimeout(timeout);
-            if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
             done();
           }
         },0);
       });
     }
 
-    function sayPrompt(d){ return speak("Zoek de " + wordFor(d) + ".", true, d); }
-    function sayGood(d){ return speak("Goed zo! Dat is " + wordFor(d) + "!", false, d); }
-    function sayTryAgain(d){ return speak("Oeps. Zoek de " + wordFor(d) + ".", false, d); }
+    function sayPrompt(d){ return speak("Zoek de " + wordFor(d) + ".", true); }
+    function sayGood(d){ return speak("Goed zo! Dat is " + wordFor(d) + "!", false); }
+    function sayTryAgain(d){ return speak("Oeps. Zoek de " + wordFor(d) + ".", false); }
     function sayTeachAndRetryLater(d){
-      return speak("Dit is de " + wordFor(d) + ". Ik vraag hem straks nog een keer. Dit is dus de " + wordFor(d) + ".", false, d);
+      return speak("Dit is de " + wordFor(d) + ". Ik vraag hem straks nog een keer. Dit is dus de " + wordFor(d) + ".", false);
     }
-    function sayLevelUp(){ return speak("Goed gedaan! Volgende level!", false, 9); }
+    function sayLevelUp(){ return speak("Goed gedaan! Volgende level!", false); }
 
     function shuffle(arr){
       const a=arr.slice();
@@ -763,7 +762,7 @@
 
       // state
       let level=1;
-      let levelDigits=[1,2,3,4,5];
+      let levelDigits=[1,2,3,4,5]; // level 1: geen 0
       let bag=shuffle(levelDigits);
       let mastered={};
       let reviewQueue=[];
@@ -783,6 +782,7 @@
         if (audioUnlocked) return;
         audioUnlocked=true;
         ensureAudio();
+        primeTTS();
         try{ if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }catch(e){}
       }
 
@@ -1018,8 +1018,7 @@
           startRound(getNextTarget());
         })
         .catch(function(){
-          // Zonder calibration wordt er nooit herkend => rand wordt nooit groen.
-          // (Geen debugtekst in de UI.)
+          // Zonder calibration wordt er nooit herkend -> rand nooit groen.
           startRound(getNextTarget());
         });
     });
