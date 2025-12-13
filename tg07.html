@@ -129,6 +129,7 @@
       background-size: contain;
     }
 
+    /* ✅ Gordijnen als IMG: iPad toont gif betrouwbaarder */
     .curtains{
       position:absolute;
       inset:0;
@@ -136,21 +137,18 @@
       pointer-events:none;
       z-index:5;
     }
-    .curtain{
+    .curtain-img{
       width:50%;
       height:100%;
-      background-size:cover;
-      background-repeat:no-repeat;
-      will-change:transform;
-      transition: transform 0.55s cubic-bezier(.2,.8,.2,1);
+      object-fit: cover;
       filter:saturate(1.05) contrast(1.05);
-      background-image:url('gordijnen_still.png');
+      will-change: transform;
+      transition: transform 0.55s cubic-bezier(.2,.8,.2,1);
     }
-    .curtains.anim .curtain{ background-image:url('gordijnen.gif'); }
-    .curtain.left { background-position:left center; transform:translateX(0); }
-    .curtain.right{ background-position:right center; transform:translateX(0); }
-    .curtains.open .curtain.left { transform:translateX(-102%); }
-    .curtains.open .curtain.right{ transform:translateX(102%); }
+    .curtain-img.left { transform:translateX(0); }
+    .curtain-img.right{ transform:translateX(0); }
+    .curtains.open .curtain-img.left { transform:translateX(-102%); }
+    .curtains.open .curtain-img.right{ transform:translateX(102%); }
     .curtains.hidden{ display:none; }
 
     .progress{
@@ -246,8 +244,8 @@
         <div class="reveal-digit" id="reveal-digit" aria-hidden="true"></div>
 
         <div class="curtains" id="curtains" aria-hidden="true">
-          <div class="curtain left"></div>
-          <div class="curtain right"></div>
+          <img class="curtain-img left"  id="curtain-left"  src="gordijnen_still.png" alt="" />
+          <img class="curtain-img right" id="curtain-right" src="gordijnen_still.png" alt="" />
         </div>
       </div>
 
@@ -561,7 +559,7 @@
     const NUMBER_WORDS={ 0:"nul",1:"één",2:"twee",3:"drie",4:"vier",5:"vijf",6:"zes",7:"zeven",8:"acht",9:"negen" };
     function wordFor(d){ return NUMBER_WORDS[d] || String(d); }
 
-    // WebAudio (piepjes) – werkt altijd na 1x tik
+    // WebAudio piepjes
     let audioCtx=null;
     function ensureAudio(){
       if (!audioCtx){
@@ -588,12 +586,11 @@
     function sfxGood(){ playTone(880,0.14); setTimeout(function(){ playTone(1175,0.16); },120); }
     function sfxBad(){ playTone(220,0.20); }
 
-    // fallback “digit-melodie” (als TTS stil blijft op iPad)
+    // TTS + fallback cue
     function playDigitCue(d){
-      // simpele toonladder: starttoon + d korte tikjes
       playTone(523, 0.08);
       let i=0;
-      const n = Math.max(1, Math.min(9, d)); // 0 -> 1 tikje
+      const n = Math.max(1, Math.min(9, d));
       const tick = function(){
         i++;
         playTone(784, 0.06);
@@ -602,7 +599,6 @@
       setTimeout(tick, 160);
     }
 
-    // SpeechSynthesis – met timeout + fallback
     let preferredVoice=null;
     let speechBusy=false;
 
@@ -626,7 +622,6 @@
     }
 
     function speak(text, interrupt, fallbackDigit){
-      // fallbackDigit: speel een “digit cue” als iPad niets uitspreekt
       if (!("speechSynthesis" in window)) {
         if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
         return Promise.resolve();
@@ -659,7 +654,6 @@
           resolve();
         };
 
-        // timeout: als iOS stil blijft, toch door + fallback cue
         const timeout = setTimeout(function(){
           if (!finished){
             try{ window.speechSynthesis.cancel(); }catch(e){}
@@ -672,7 +666,6 @@
         u.onend=function(){ clearTimeout(timeout); done(); };
         u.onerror=function(){ clearTimeout(timeout); if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit); done(); };
 
-        // iOS soms beter met microtask
         setTimeout(function(){
           try{ window.speechSynthesis.speak(u); }
           catch(e){
@@ -705,6 +698,8 @@
       const scanArea = document.getElementById("scan-area");
       const earBtn = document.getElementById("ear-btn");
       const curtains = document.getElementById("curtains");
+      const curtainLeft = document.getElementById("curtain-left");
+      const curtainRight = document.getElementById("curtain-right");
       const revealDigit = document.getElementById("reveal-digit");
       const progressEl = document.getElementById("progress");
 
@@ -718,24 +713,25 @@
         else scanArea.classList.add("state-neutral");
       }
 
-      function curtainsAnimate(on){ curtains.classList.toggle("anim", !!on); }
-      function setCurtainsOpen(open){ curtains.classList.toggle("open", !!open); }
-      function hideCurtainsLayer(){ curtains.classList.add("hidden"); }
-      function showCurtainsLayer(){ curtains.classList.remove("hidden"); }
-
       function closeCurtainsStill(){
-        showCurtainsLayer();
-        curtainsAnimate(false);
-        setCurtainsOpen(false);
+        curtains.classList.remove("hidden");
+        curtains.classList.remove("open");
+        if (curtainLeft) curtainLeft.src = "gordijnen_still.png";
+        if (curtainRight) curtainRight.src = "gordijnen_still.png";
       }
 
       function openCurtainsThenHide(){
-        showCurtainsLayer();
-        curtainsAnimate(true);
-        requestAnimationFrame(function(){ setCurtainsOpen(true); });
+        curtains.classList.remove("hidden");
+
+        const bust = "v=" + Date.now();
+        if (curtainLeft) curtainLeft.src = "gordijnen.gif?" + bust;
+        if (curtainRight) curtainRight.src = "gordijnen.gif?" + bust;
+
+        requestAnimationFrame(function(){ curtains.classList.add("open"); });
+
         setTimeout(function(){
-          curtainsAnimate(false);
-          hideCurtainsLayer();
+          curtains.classList.add("hidden");
+          curtains.classList.remove("open");
         }, CURTAIN_HIDE_AFTER_OPEN_MS);
       }
 
@@ -746,7 +742,7 @@
         revealDigit.style.backgroundImage = "none";
       }
 
-      // score pips
+      // progress
       let pips=[];
       function buildProgress(levelDigits){
         progressEl.innerHTML="";
@@ -767,7 +763,7 @@
 
       // state
       let level=1;
-      let levelDigits=[1,2,3,4,5];      // level 1: geen 0
+      let levelDigits=[1,2,3,4,5];
       let bag=shuffle(levelDigits);
       let mastered={};
       let reviewQueue=[];
@@ -807,14 +803,11 @@
           if (bag.length===0 || Math.random()<0.35) return dueReview;
           reviewQueue.push({ digit: dueReview, dueAt: roundCount });
         }
-
         if (bag.length>0) return bag.pop();
-
         if (reviewQueue.length>0){
           reviewQueue.sort(function(a,b){ return a.dueAt-b.dueAt; });
           return reviewQueue.shift().digit;
         }
-
         return null;
       }
 
@@ -855,7 +848,6 @@
         closeCurtainsStill();
         hideDigit();
 
-        // probeer (maar iOS kan blokkeren; we doen het zeker bij 1e aanraking)
         speakPromptNow();
       }
 
@@ -998,17 +990,36 @@
       setScanState("neutral");
       promptEverSpoken=false;
 
-      // kalibratie laden (sterker pad voor GitHub Pages)
-      const calibUrl = new URL("calibration.json", location.href).toString();
+      // ✅ Robuust calibration laden (meerdere paden)
+      function fetchJsonTry(urls){
+        return new Promise(function(resolve, reject){
+          let i=0;
+          function next(){
+            if (i >= urls.length) return reject(new Error("calibration.json niet gevonden"));
+            const url = urls[i++];
+            fetch(url, { cache:"no-store" })
+              .then(function(r){ if (!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+              .then(resolve)
+              .catch(next);
+          }
+          next();
+        });
+      }
 
-      fetch(calibUrl, { cache: "no-store" })
-        .then(function(r){ return r.json(); })
+      const bust = "v=" + Date.now();
+      const u1 = new URL("./calibration.json?"+bust, location.href).toString();
+      const u2 = new URL("/calibration.json?"+bust, location.origin).toString();
+      const dir = location.href.replace(/[^/]*$/, "");
+      const u3 = dir + "calibration.json?" + bust;
+
+      fetchJsonTry([u1,u2,u3])
         .then(function(data){
           initCalibration(data);
           startRound(getNextTarget());
         })
         .catch(function(){
-          // zonder calibration werkt recognizeDigit niet, maar game start wel
+          // Zonder calibration wordt er nooit herkend => rand wordt nooit groen.
+          // (Geen debugtekst in de UI.)
           startRound(getNextTarget());
         });
     });
