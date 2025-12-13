@@ -2,349 +2,1029 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Marbotic – TG07 Luister & Leg</title>
-
+  <title>Marbotic - TG07 Luister & Leg</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
   <style>
-    :root {
-      --bg-top: #f4f1ff;
-      --bg-bottom: #fef6e9;
-      --card-bg: #ffffff;
-      --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    :root{
+      --bg-top:#f4f1ff;
+      --bg-bottom:#fef6e9;
+      --card-bg:#ffffff;
+      --card-shadow:0 10px 25px rgba(0,0,0,0.08);
 
-      --scan-border-neutral: rgba(255, 255, 255, 0.8);
-      --scan-border-scan: rgba(255, 255, 255, 0.9);
-      --scan-border-good: #4caf50;
-      --scan-border-bad: #e53935;
+      --scan-border-neutral:rgba(255,255,255,0.8);
+      --scan-border-scan:rgba(255,255,255,0.9);
+      --scan-border-good:#4caf50;
+      --scan-border-bad:#e53935;
 
-      --scan-bg-neutral: rgba(255, 255, 255, 0.12);
-      --scan-bg-scan: rgba(255, 255, 255, 0.22);
-      --scan-bg-good: rgba(76, 175, 80, 0.18);
-      --scan-bg-bad: rgba(229, 57, 53, 0.18);
+      --scan-bg-neutral:rgba(255,255,255,0.12);
+      --scan-bg-scan:rgba(255,255,255,0.22);
+      --scan-bg-good:rgba(76,175,80,0.18);
+      --scan-bg-bad:rgba(229,57,53,0.18);
 
-      --text-main: #333333;
-      --text-soft: #666666;
+      --text-main:#333;
+      --text-soft:#666;
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { margin: 0; padding: 0; height: 100%; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; padding:0; height:100%; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-      overflow: hidden;
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      background:linear-gradient(to bottom,var(--bg-top),var(--bg-bottom));
+      color:var(--text-main);
+      display:flex;
+      justify-content:center;
+      align-items:stretch;
+      touch-action:none;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+      overflow:hidden;
     }
 
-    .game {
-      width: 100%;
-      max-width: 900px;
-      min-height: 100vh;
-      padding: clamp(12px, 3vh, 24px);
-      padding-top: calc(clamp(12px, 3vh, 24px) + env(safe-area-inset-top));
-      padding-bottom: calc(clamp(12px, 3vh, 24px) + env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .game{
+      width:100%;
+      max-width:900px;
+      min-height:100vh;
+      padding:clamp(12px,3vh,24px);
+      padding-top:calc(clamp(12px,3vh,24px) + env(safe-area-inset-top));
+      padding-bottom:calc(clamp(12px,3vh,24px) + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+      gap:10px;
     }
 
-    header {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+    header{
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
     }
 
-    .btn {
-      width: 54px;
-      height: 54px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      cursor: pointer;
+    .btn{
+      width:54px;
+      height:54px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.75);
+      box-shadow:0 4px 12px rgba(0,0,0,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.5rem;
+      text-decoration:none;
+      color:inherit;
+      flex:0 0 auto;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:active{ transform:scale(0.98); }
+
+    .title-badge{
+      flex:1 1 auto;
+      background:rgba(255,255,255,0.75);
+      border-radius:999px;
+      padding:10px 14px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:54px;
+      font-weight:800;
+      letter-spacing:0.02em;
+      white-space:nowrap;
     }
 
-    .title-badge {
-      flex: 1 1 auto;
-      background: rgba(255, 255, 255, 0.75);
-      border-radius: 999px;
-      padding: 10px 14px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
+    .stage-wrap{
+      flex:0 0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
     }
 
-    .stage-wrap {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
+    /* ✅ Gordijn: ~half zo hoog als eerder + originele verhouding 498/286 */
+    .stage{
+      width:min(68vw, 360px);
+      aspect-ratio:498 / 286;
+      height:auto;
+      max-height:min(12vh, 110px);   /* <- “ongeveer half zo klein” */
+      border-radius:26px;
+      box-shadow:var(--card-shadow);
+      background:rgba(255,255,255,0.75);
+      position:relative;
+      overflow:hidden;
+      border:4px solid rgba(255,255,255,0.6);
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
 
-    .stage {
-      width: min(70vw, 360px);
-      aspect-ratio: 498 / 286; /* exacte verhouding gordijn */
-      height: auto;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.75);
-      box-shadow: var(--card-shadow);
-      position: relative;
-      overflow: hidden;
-      border: 4px solid rgba(255, 255, 255, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .reveal-digit{
+      height:80%;
+      aspect-ratio:1 / 1;
+      border-radius:18px;
+      background:#fff;
+      box-shadow:0 10px 22px rgba(0,0,0,0.10);
+      background-repeat:no-repeat;
+      background-position:center;
+      background-size:contain;
     }
 
-    .reveal-digit {
-      width: 60%;
-      aspect-ratio: 1 / 1;
-      border-radius: 22px;
-      background: #fff;
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
+    /* ✅ Gordijnen zoals TG08: 2 panelen schuiven open */
+    .curtains{
+      position:absolute;
+      inset:0;
+      display:flex;
+      pointer-events:none;
+      z-index:5;
+    }
+    .curtain{
+      width:50%;
+      height:100%;
+      background-image:url("gordijnen_still.png");
+      background-size:cover;
+      background-repeat:no-repeat;
+      will-change:transform;
+      transition:transform 0.55s cubic-bezier(.2,.8,.2,1);
+      filter:saturate(1.05) contrast(1.05);
+    }
+    .curtain.left{ background-position:left center; transform:translateX(0); }
+    .curtain.right{ background-position:right center; transform:translateX(0); }
+
+    .curtains.anim .curtain{ background-image:url("gordijnen.gif"); }
+
+    .curtains.open .curtain.left{ transform:translateX(-102%); }
+    .curtains.open .curtain.right{ transform:translateX(102%); }
+
+    .curtains.hidden{ display:none; }
+
+    .progress{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:center;
+      padding:8px 12px;
+      background:rgba(255,255,255,0.55);
+      border-radius:999px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.05);
+      flex-wrap:wrap;
+      max-width:min(86vw, 520px);
+    }
+    .pip{
+      width:14px; height:14px;
+      border-radius:999px;
+      background:rgba(0,0,0,0.14);
+      opacity:0.75;
+      transition:transform .16s ease-out, opacity .16s ease-out, background .16s ease-out;
+    }
+    .pip.on{
+      opacity:1;
+      transform:scale(1.12);
+      background:rgba(0,0,0,0.30);
     }
 
-    /* gordijnen */
-    .curtains {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      pointer-events: none;
-      z-index: 5;
+    .game-footer{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
     }
 
-    .curtain {
-      width: 50%;
-      height: 100%;
-      background-image: url("gordijnen_still.png");
-      background-size: cover;
-      background-position: center;
-      transition: transform 0.55s cubic-bezier(.2, .8, .2, 1);
+    /* ✅ Scanvlak groot (zoals TG08-gevoel) */
+    .scan-area{
+      border-radius:28px;
+      border-width:4px;
+      border-style:dashed;
+      border-color:var(--scan-border-neutral);
+      background:var(--scan-bg-neutral);
+
+      flex:1 1 auto;
+      min-height:68vh;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      box-shadow:0 10px 22px rgba(0,0,0,0.12);
+      transition:border-color 0.18s ease-out, background 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
+      position:relative;
+      overflow:hidden;
     }
 
-    .curtains.anim .curtain {
-      background-image: url("gordijnen.gif");
+    .scan-area-inner{
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      pointer-events:none;
     }
+    .scan-icon{ font-size:2.4rem; animation:scanPulse 2s ease-in-out infinite; }
+    @keyframes scanPulse{ 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
+    .scan-text{ font-size:1.05rem; color:var(--text-soft); }
+    .scan-hint{ font-size:0.85rem; color:rgba(0,0,0,0.48); }
 
-    .curtain.left {
-      transform: translateX(0);
-    }
+    .scan-area.state-neutral{ border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
+    .scan-area.state-scanning{ border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 12px 26px rgba(0,0,0,0.16); transform:translateY(-2px); }
+    .scan-area.state-correct{ border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
+    .scan-area.state-wrong{ border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
 
-    .curtain.right {
-      transform: translateX(0);
-    }
-
-    .curtains.open .curtain.left {
-      transform: translateX(-102%);
-    }
-
-    .curtains.open .curtain.right {
-      transform: translateX(102%);
-    }
-
-    .curtains.hidden {
-      display: none;
-    }
-
-    /* ===== PROGRESS ===== */
-
-    .progress {
-      display: flex;
-      gap: 8px;
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.55);
-      border-radius: 999px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-
-    .pip {
-      width: 14px;
-      height: 14px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.14);
-      opacity: 0.75;
-    }
-
-    .pip.on {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.30);
-    }
-
-    /* ===== SCAN ===== */
-
-    .game-footer {
-      flex: 1;
-    }
-
-    .scan-area {
-      flex: 1;
-      min-height: 62vh;
-      border-radius: 28px;
-      border: 4px dashed var(--scan-border-neutral);
-      background: var(--scan-bg-neutral);
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: border-color 0.18s ease-out, background 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
-      position: relative;
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    .scan-area-inner {
-      text-align: center;
-      color: var(--text-soft);
+    @media (max-width:600px){
+      .btn{ width:50px; height:50px; border-radius:16px; }
+      .title-badge{ font-size:0.95rem; }
+      .pip{ width:13px; height:13px; }
+      .stage{ width:min(72vw, 360px); max-height:min(12vh, 100px); border-radius:24px; }
+      .reveal-digit{ border-radius:16px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="game">
-
+  <div class="game" id="game" data-level="1">
     <header>
-      <a class="btn" href="index.html">🏠</a>
-      <div class="title-badge">Luister & leg</div>
-      <div class="btn" id="ear">👂</div>
+      <a class="btn" href="index.html" aria-label="Terug naar start">🏠</a>
+      <div class="title-badge" aria-label="Titel">Luister & leg</div>
+      <div class="btn" id="ear-btn" role="button" aria-label="Nog een keer luisteren">👂</div>
     </header>
 
     <div class="stage-wrap">
-      <div class="stage">
-        <div class="reveal-digit" id="reveal"></div>
+      <div class="stage" aria-label="Gordijn">
+        <div class="reveal-digit" id="reveal-digit" aria-hidden="true"></div>
 
-        <div class="curtains" id="curtains">
+        <div class="curtains" id="curtains" aria-hidden="true">
           <div class="curtain left"></div>
           <div class="curtain right"></div>
         </div>
       </div>
 
-      <div class="progress" id="progress"></div>
+      <div class="progress" id="progress" aria-label="Voortgang"></div>
     </div>
 
     <footer class="game-footer">
-      <div class="scan-area state-neutral" id="scan">
+      <div class="scan-area state-neutral" id="scan-area" aria-label="Scanvak">
         <div class="scan-area-inner">
-          <div style="font-size:2.4rem">🔢</div>
-          <div>Leg het houten cijfer in het vak</div>
+          <div class="scan-icon">🔢</div>
+          <div class="scan-text">Leg het houten cijfer in het vak</div>
+          <div class="scan-hint">Alle puntjes in het vak</div>
         </div>
       </div>
     </footer>
-
   </div>
 
   <script>
-    /* =====================
-       iPad zoom blokkeren
-    ===================== */
-    ["gesturestart", "gesturechange", "gestureend"].forEach(t => {
-      document.addEventListener(t, e => e.preventDefault(), { passive: false });
-    });
+    /* =====================================================
+       iPad Safari: zoom blokkeren (zonder scan te slopen)
+       ===================================================== */
+    (function(){
+      document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive:false });
+      document.addEventListener('gesturechange', function(e){ e.preventDefault(); }, { passive:false });
+      document.addEventListener('gestureend', function(e){ e.preventDefault(); }, { passive:false });
 
-    /* =====================
-       AUDIO – echte stem
-    ===================== */
-    let voice = null;
+      // voorkom dubbel-tap zoom
+      let lastEnd = 0;
+      document.addEventListener('touchend', function(e){
+        const now = Date.now();
+        if (now - lastEnd <= 300) e.preventDefault();
+        lastEnd = now;
+      }, { passive:false });
+    })();
 
-    function loadVoice() {
-      const v = window.speechSynthesis.getVoices();
-      voice = v.find(x => x.lang.startsWith("nl")) || v[0];
+    /* ================================
+       MARBOTIC HERKENNINGSMODULE
+       (logica ongewijzigd)
+       ================================ */
+
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
+        return;
+      }
+      if (typeof calibrationData.expectedTouchPoints === "number") expectedTouchPoints = calibrationData.expectedTouchPoints;
+      else expectedTouchPoints = 3;
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
     }
-    window.speechSynthesis.onvoiceschanged = loadVoice;
-    loadVoice();
 
-    function speak(text) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "nl-NL";
-      if (voice) u.voice = voice;
-      window.speechSynthesis.speak(u);
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(function (d) { obj[String(d)] = { digit: d, samples: [] }; });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = data[key];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+          const pts = s.points.map(function (p) { return { x: Number(p.x), y: Number(p.y) }; });
+          const features = computeFeatures(pts);
+          obj[key].samples.push({ points: pts, features: features });
+        });
+      });
+
+      return obj;
     }
 
-    /* =====================
-       TG07 SPELLOGICA
-    ===================== */
-    const DIGITS = [1, 2, 3, 4, 5];
-    const WORDS = { 1: "één", 2: "twee", 3: "drie", 4: "vier", 5: "vijf" };
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) {
+        return { sides:[0,0,0], orientation:0, cosAngle:0, centroid:{x:0,y:0}, yNorm:[0,0,0], xPattern:[0,0,0], aspect:0, vector:[0,0,0] };
+      }
 
-    let bag = [...DIGITS].sort(() => Math.random() - .5);
-    let target = bag.pop();
-    let mastered = {};
+      const p0 = points[0], p1 = points[1], p2 = points[2];
 
-    const reveal = document.getElementById("reveal");
-    const curtains = document.getElementById("curtains");
-    const scan = document.getElementById("scan");
-    const progress = document.getElementById("progress");
+      const centroidRaw = { x:(p0.x+p1.x+p2.x)/3, y:(p0.y+p1.y+p2.y)/3 };
 
-    DIGITS.forEach(() => progress.appendChild(document.createElement("div")).className = "pip");
+      const isoPoints = [p0,p1,p2].map(function(p){
+        return { x:(p.x-centroidRaw.x), y:(p.y-centroidRaw.y) };
+      });
 
-    function updateProgress() {
-      [...progress.children].forEach((p, i) => {
-        p.classList.toggle("on", mastered[DIGITS[i]]);
+      let maxDist = 0;
+      for (let i=0;i<isoPoints.length;i++){
+        const q = isoPoints[i];
+        const d = Math.sqrt(q.x*q.x + q.y*q.y);
+        if (d > maxDist) maxDist = d;
+      }
+      if (maxDist < 1e-6) maxDist = 1;
+      for (let i=0;i<isoPoints.length;i++){
+        isoPoints[i].x /= maxDist;
+        isoPoints[i].y /= maxDist;
+      }
+
+      function dist(a,b){
+        const dx=a.x-b.x, dy=a.y-b.y;
+        return Math.sqrt(dx*dx + dy*dy);
+      }
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i:0, j:1 },
+        { len: L12, i:1, j:2 },
+        { len: L20, i:2, j:0 }
+      ];
+      const maxSideLen = Math.max(L01,L12,L20) || 1;
+      const sidesNormSorted = sides.slice().sort(function(a,b){ return a.len-b.len; }).map(function(s){ return s.len/maxSideLen; });
+
+      const largest = sides.slice().sort(function(a,b){ return a.len-b.len; })[2];
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      function orientationVal(a,b,c){
+        const value = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+        if (value > 0) return 1;
+        if (value < 0) return -1;
+        return 0;
+      }
+      const orientation = orientationVal(A,B,C);
+
+      const AC = dist(A,C);
+      const BC = dist(B,C);
+      const AB = largest.len;
+      const AC2 = AC*AC, BC2 = BC*BC, AB2 = AB*AB;
+      let cosAngle = 0;
+      const denom = 2*AC*BC;
+      if (denom > 1e-6) cosAngle = (AC2 + BC2 - AB2) / denom;
+
+      let minX = Math.min(p0.x,p1.x,p2.x);
+      let maxX = Math.max(p0.x,p1.x,p2.x);
+      let minY = Math.min(p0.y,p1.y,p2.y);
+      let maxY = Math.max(p0.y,p1.y,p2.y);
+      let width = maxX-minX;
+      let height = maxY-minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNormVals = [p0,p1,p2].map(function(p){ return (p.y-minY)/height; }).sort(function(a,b){ return a-b; });
+
+      const pointsWithIndex = [
+        {p:p0, idx:0},
+        {p:p1, idx:1},
+        {p:p2, idx:2}
+      ].sort(function(a,b){ return a.p.y - b.p.y; });
+
+      const xPattern = pointsWithIndex.map(function(item){ return (item.p.x-minX)/width; });
+
+      const aspect = height / (width + height);
+
+      const centroidBox = {
+        x: (centroidRaw.x - minX) / width,
+        y: (centroidRaw.y - minY) / height
+      };
+
+      const vector = buildFeatureVector({
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect
+      });
+
+      return {
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect,
+        vector: vector
+      };
+    }
+
+    function buildFeatureVector(f){
+      const wSides=3.0, wCos=4.0, wOrient=2.0, wY=3.0, wX=2.0, wAspect=2.0;
+      const v=[];
+      v.push(f.sides[0]*wSides); v.push(f.sides[1]*wSides); v.push(f.sides[2]*wSides);
+      v.push(f.cosAngle*wCos);
+      v.push(f.orientation*wOrient);
+      v.push(f.yNorm[0]*wY); v.push(f.yNorm[1]*wY); v.push(f.yNorm[2]*wY);
+      v.push(f.xPattern[0]*wX); v.push(f.xPattern[1]*wX); v.push(f.xPattern[2]*wX);
+      v.push(f.aspect*wAspect);
+      return v;
+    }
+
+    function vectorDistance(a,b){
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum=0;
+      for (let i=0;i<a.length;i++){
+        const diff=a[i]-b[i];
+        sum += diff*diff;
+      }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeClassificationStats(){
+      if (!calibration){ classificationStats={ thresholdBase:0.8, thresholdUnknown:1.5 }; return; }
+
+      const allSamples=[];
+      DIGIT_ORDER.forEach(function(d){
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        (entry.samples||[]).forEach(function(s){
+          allSamples.push({ digit:d, features:s.features });
+        });
+      });
+
+      if (allSamples.length < 2){ classificationStats={ thresholdBase:0.6, thresholdUnknown:1.0 }; return; }
+
+      const sameMinDistances=[];
+      const betweenMinDistances=[];
+
+      for (let i=0;i<allSamples.length;i++){
+        const a=allSamples[i];
+        const vecA=a.features.vector;
+        let minSame=Infinity, minOther=Infinity;
+
+        for (let j=0;j<allSamples.length;j++){
+          if (i===j) continue;
+          const b=allSamples[j];
+          const dist=vectorDistance(vecA, b.features.vector);
+          if (a.digit===b.digit){ if (dist<minSame) minSame=dist; }
+          else { if (dist<minOther) minOther=dist; }
+        }
+        if (minSame<Infinity) sameMinDistances.push(minSame);
+        if (minOther<Infinity) betweenMinDistances.push(minOther);
+      }
+
+      if (sameMinDistances.length===0 || betweenMinDistances.length===0){
+        classificationStats={ thresholdBase:0.7, thresholdUnknown:1.2 }; return;
+      }
+
+      const maxSame = Math.max.apply(null, sameMinDistances);
+      const minBetween = Math.min.apply(null, betweenMinDistances);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      classificationStats = {
+        thresholdBase: thresholdBase,
+        thresholdUnknown: thresholdBase * 1.5
+      };
+    }
+
+    function classifyMeasurement(features){
+      const vec = features.vector;
+      if (!vec || !calibration) return { digit:null, isUnknown:true };
+
+      const bestPerDigit={};
+      DIGIT_ORDER.forEach(function(d){ bestPerDigit[d]=Infinity; });
+
+      let bestDigit=null;
+      let bestDist=Infinity;
+
+      DIGIT_ORDER.forEach(function(d){
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i=0;i<samples.length;i++){
+          const dist = vectorDistance(vec, samples[i].features.vector);
+          if (dist < bestPerDigit[d]) bestPerDigit[d] = dist;
+          if (dist < bestDist){ bestDist=dist; bestDigit=d; }
+        }
+      });
+
+      if (bestDigit===null || bestDist===Infinity) return { digit:null, isUnknown:true };
+
+      const stats = classificationStats || { thresholdBase:0.8, thresholdUnknown:1.5 };
+      if (bestDist > stats.thresholdUnknown) return { digit:null, isUnknown:true };
+
+      return { digit:bestDigit, isUnknown:false };
+    }
+
+    function recognizeDigit(points){
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+      const features = computeFeatures(points);
+      const classification = classifyMeasurement(features);
+      if (!classification || classification.isUnknown || classification.digit == null) return null;
+      return classification.digit;
+    }
+
+    /* ================================
+       TG07 SPEL
+       ================================ */
+
+    const DIGIT_IMAGE_PREFIX = "marbotic";
+    const DIGIT_IMAGE_SUFFIX = ".png";
+
+    const NUMBER_WORDS = {
+      0:"nul",1:"één",2:"twee",3:"drie",4:"vier",5:"vijf",
+      6:"zes",7:"zeven",8:"acht",9:"negen"
+    };
+    function wordFor(d){ return NUMBER_WORDS[d] || String(d); }
+
+    // Piepjes (klein) + stem via TTS
+    let audioCtx=null;
+    function ensureAudio(){
+      if (!audioCtx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    }
+    function playTone(freq, duration){
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value=freq;
+      osc.type="sine";
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now=audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.22, now+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now+duration);
+      osc.start(now);
+      osc.stop(now+duration+0.05);
+    }
+    function sfxGood(){ playTone(880,0.14); setTimeout(function(){ playTone(1175,0.16); },120); }
+    function sfxBad(){ playTone(220,0.20); }
+
+    // TTS (tijdelijk totdat je mp3’s hebt)
+    let preferredVoice=null;
+    let speechBusy=false;
+
+    function pickDutchVoice(){
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+      if (!voices || voices.length===0) return null;
+      for (let i=0;i<voices.length;i++){
+        const v=voices[i];
+        if ((v.lang||"").toLowerCase().startsWith("nl")) return v;
+      }
+      return voices[0] || null;
+    }
+    function ensureVoice(){
+      if (!("speechSynthesis" in window)) return;
+      if (!preferredVoice) preferredVoice = pickDutchVoice();
+    }
+    if ("speechSynthesis" in window){
+      window.speechSynthesis.onvoiceschanged = function(){ preferredVoice = pickDutchVoice(); };
+      ensureVoice();
+    }
+
+    function primeTTS(){
+      if (!("speechSynthesis" in window)) return;
+      try{
+        const u = new SpeechSynthesisUtterance(" ");
+        u.lang = "nl-NL";
+        u.volume = 0.01;
+        window.speechSynthesis.speak(u);
+      }catch(e){}
+    }
+
+    function speak(text, interrupt){
+      if (!("speechSynthesis" in window)) return Promise.resolve();
+
+      if (interrupt){
+        try{ window.speechSynthesis.cancel(); }catch(e){}
+      } else if (speechBusy){
+        return new Promise(function(resolve){
+          const t=setInterval(function(){
+            if (!speechBusy){ clearInterval(t); speak(text,false).then(resolve); }
+          },50);
+        });
+      }
+
+      ensureVoice();
+
+      return new Promise(function(resolve){
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang="nl-NL";
+        if (preferredVoice) u.voice = preferredVoice;
+        u.rate=0.95;
+        u.pitch=1.05;
+        u.volume=1.0;
+
+        let finished=false;
+        const done=function(){
+          if (finished) return;
+          finished=true;
+          speechBusy=false;
+          resolve();
+        };
+
+        // geef iOS ruim de tijd
+        const timeout = setTimeout(function(){
+          if (!finished){
+            try{ window.speechSynthesis.cancel(); }catch(e){}
+            done();
+          }
+        }, 3500);
+
+        speechBusy=true;
+        u.onend=function(){ clearTimeout(timeout); done(); };
+        u.onerror=function(){ clearTimeout(timeout); done(); };
+
+        setTimeout(function(){
+          try{ window.speechSynthesis.speak(u); }
+          catch(e){
+            clearTimeout(timeout);
+            done();
+          }
+        },0);
       });
     }
 
-    function closeCurtains() {
-      curtains.classList.remove("open", "hidden", "anim");
+    function sayPrompt(d){ return speak("Zoek de " + wordFor(d) + ".", true); }
+    function sayGood(d){ return speak("Goed zo! Dat is " + wordFor(d) + "!", false); }
+    function sayTryAgain(d){ return speak("Oeps. Zoek de " + wordFor(d) + ".", false); }
+    function sayTeachAndRetryLater(d){
+      return speak("Dit is de " + wordFor(d) + ". Ik vraag hem straks nog een keer. Dit is dus de " + wordFor(d) + ".", false);
     }
+    function sayLevelUp(){ return speak("Goed gedaan! Volgende level!", false); }
 
-    function openCurtains() {
-      curtains.classList.add("anim");
-      requestAnimationFrame(() => curtains.classList.add("open"));
-      setTimeout(() => curtains.classList.add("hidden"), 900);
-    }
-
-    function newRound() {
-      closeCurtains();
-      reveal.style.backgroundImage = "none";
-      scan.className = "scan-area state-neutral";
-
-      if (bag.length === 0) {
-        bag = [...DIGITS].sort(() => Math.random() - .5);
-        mastered = {};
-        updateProgress();
+    function shuffle(arr){
+      const a=arr.slice();
+      for (let i=a.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        const t=a[i]; a[i]=a[j]; a[j]=t;
       }
-      target = bag.pop();
-      speak("Zoek de " + WORDS[target]);
+      return a;
     }
 
-    function correct() {
-      scan.className = "scan-area state-correct";
-      mastered[target] = true;
-      updateProgress();
+    document.addEventListener("DOMContentLoaded", function(){
+      const scanArea = document.getElementById("scan-area");
+      const earBtn = document.getElementById("ear-btn");
+      const curtains = document.getElementById("curtains");
+      const revealDigit = document.getElementById("reveal-digit");
+      const progressEl = document.getElementById("progress");
 
-      reveal.style.backgroundImage = `url(marbotic${target}.png)`;
-      openCurtains();
-      speak("Goed zo! Dat is " + WORDS[target]);
+      const CURTAIN_HIDE_AFTER_OPEN_MS = 950;
 
-      setTimeout(newRound, 1600);
-    }
+      function setScanState(state){
+        scanArea.classList.remove("state-neutral","state-scanning","state-correct","state-wrong");
+        if (state==="scanning") scanArea.classList.add("state-scanning");
+        else if (state==="correct") scanArea.classList.add("state-correct");
+        else if (state==="wrong") scanArea.classList.add("state-wrong");
+        else scanArea.classList.add("state-neutral");
+      }
 
-    /* DEMO: klik = goed (vervangt herkenning) */
-    scan.addEventListener("click", correct);
+      function curtainsAnimate(on){ curtains.classList.toggle("anim", !!on); }
+      function setCurtainsOpen(open){ curtains.classList.toggle("open", !!open); }
+      function hideCurtainsLayer(){ curtains.classList.add("hidden"); }
+      function showCurtainsLayer(){ curtains.classList.remove("hidden"); }
 
-    document.getElementById("ear").onclick = () => speak("Zoek de " + WORDS[target]);
+      function closeCurtainsStill(){
+        showCurtainsLayer();
+        curtainsAnimate(false);
+        setCurtainsOpen(false);
+      }
 
-    newRound();
+      function openCurtainsThenHide(){
+        showCurtainsLayer();
+        curtainsAnimate(true);
+        requestAnimationFrame(function(){ setCurtainsOpen(true); });
+        setTimeout(function(){
+          curtainsAnimate(false);
+          hideCurtainsLayer();
+        }, CURTAIN_HIDE_AFTER_OPEN_MS);
+      }
+
+      function showDigit(d){
+        revealDigit.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + d + DIGIT_IMAGE_SUFFIX + "')";
+      }
+      function hideDigit(){
+        revealDigit.style.backgroundImage = "none";
+      }
+
+      // progress pips: één keer per digit in het level
+      let pips=[];
+      function buildProgress(levelDigits){
+        progressEl.innerHTML="";
+        pips=[];
+        for (let i=0;i<levelDigits.length;i++){
+          const pip=document.createElement("div");
+          pip.className="pip";
+          progressEl.appendChild(pip);
+          pips.push(pip);
+        }
+      }
+      function updateProgress(levelDigits, mastered){
+        for (let i=0;i<levelDigits.length;i++){
+          const d=levelDigits[i];
+          pips[i].classList.toggle("on", !!mastered[d]);
+        }
+      }
+
+      // game state
+      let level=1;
+      let levelDigits=[1,2,3,4,5];   // level 1: geen 0
+      let bag=shuffle(levelDigits);
+      let mastered={};
+      let reviewQueue=[];
+      let roundCount=0;
+
+      let targetDigit = bag.pop();
+      let wrongCount = 0;
+      let roundActive = true;
+
+      // touch/recognition (zoals TG08)
+      let currentPoints=[];
+      let hasResultForCurrentTouches=false;
+
+      let audioUnlocked=false;
+      let promptEverSpoken=false;
+
+      function unlockAudioOnce(){
+        if (audioUnlocked) return;
+        audioUnlocked=true;
+        ensureAudio();
+        primeTTS();
+        try{ if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }catch(e){}
+      }
+
+      function getDueReview(){
+        const dueIdx=[];
+        for (let i=0;i<reviewQueue.length;i++){
+          if (reviewQueue[i].dueAt <= roundCount) dueIdx.push(i);
+        }
+        if (dueIdx.length===0) return null;
+        const pickIndex = dueIdx[Math.floor(Math.random()*dueIdx.length)];
+        const item = reviewQueue.splice(pickIndex,1)[0];
+        return item.digit;
+      }
+
+      function getNextTarget(){
+        const dueReview = getDueReview();
+        if (dueReview !== null){
+          if (bag.length===0 || Math.random()<0.35) return dueReview;
+          reviewQueue.push({ digit: dueReview, dueAt: roundCount });
+        }
+
+        if (bag.length>0) return bag.pop();
+
+        if (reviewQueue.length>0){
+          reviewQueue.sort(function(a,b){ return a.dueAt-b.dueAt; });
+          return reviewQueue.shift().digit;
+        }
+
+        return null;
+      }
+
+      function maybeLevelUp(){
+        if (level !== 1) return Promise.resolve(false);
+
+        for (let i=0;i<levelDigits.length;i++){
+          if (!mastered[levelDigits[i]]) return Promise.resolve(false);
+        }
+        if (reviewQueue.length>0) return Promise.resolve(false);
+        if (bag.length>0) return Promise.resolve(false);
+
+        // naar level 2
+        level=2;
+        levelDigits=[0,1,2,3,4,5,6,7,8,9];
+        bag=shuffle(levelDigits);
+        mastered={};
+        reviewQueue=[];
+        roundCount=0;
+
+        buildProgress(levelDigits);
+        updateProgress(levelDigits, mastered);
+
+        return sayLevelUp().then(function(){ return true; });
+      }
+
+      function speakPromptNow(){
+        promptEverSpoken=true;
+        return sayPrompt(targetDigit);
+      }
+
+      function startRound(nextDigit){
+        targetDigit = nextDigit;
+        wrongCount = 0;
+        roundActive = true;
+        hasResultForCurrentTouches = false;
+
+        setScanState("neutral");
+        closeCurtainsStill();
+        hideDigit();
+
+        // op iOS kan dit pas na 1e aanraking echt klinken
+        speakPromptNow();
+      }
+
+      function newRound(){
+        const next = getNextTarget();
+        if (next === null){
+          return maybeLevelUp().then(function(didUp){
+            if (didUp) startRound(getNextTarget());
+            else {
+              // cycle opnieuw
+              bag=shuffle(levelDigits);
+              mastered={};
+              reviewQueue=[];
+              roundCount=0;
+              updateProgress(levelDigits, mastered);
+              startRound(getNextTarget());
+            }
+          });
+        }
+        startRound(next);
+        return Promise.resolve();
+      }
+
+      function afterFeedbackGoNext(){
+        closeCurtainsStill();
+        hideDigit();
+        setTimeout(function(){ newRound(); }, 180);
+      }
+
+      function handleCorrect(){
+        if (!roundActive) return;
+        roundActive=false;
+
+        setScanState("correct");
+        sfxGood();
+
+        showDigit(targetDigit);
+        openCurtainsThenHide();
+
+        mastered[targetDigit]=true;
+        updateProgress(levelDigits, mastered);
+        roundCount += 1;
+
+        // wacht tot stem klaar is, dan pas nieuwe opdracht
+        sayGood(targetDigit).then(function(){ afterFeedbackGoNext(); });
+      }
+
+      function handleWrong(){
+        if (!roundActive) return;
+
+        wrongCount += 1;
+        setScanState("wrong");
+        sfxBad();
+
+        if (wrongCount < 2){
+          // 1e fout: alleen opnieuw vragen (geen cijfer tonen)
+          sayTryAgain(targetDigit).then(function(){
+            setTimeout(function(){
+              if (currentPoints.length===0) setScanState("neutral");
+              else setScanState("scanning");
+            }, 250);
+          });
+          return;
+        }
+
+        // 2e fout: tonen + uitleg + later nog eens terug
+        roundActive=false;
+
+        showDigit(targetDigit);
+        openCurtainsThenHide();
+
+        reviewQueue.push({ digit: targetDigit, dueAt: roundCount + 3 });
+        roundCount += 1;
+
+        sayTeachAndRetryLater(targetDigit).then(function(){ afterFeedbackGoNext(); });
+      }
+
+      function getPointsFromTouches(touchList){
+        const rect = scanArea.getBoundingClientRect();
+        const points=[];
+        for (let i=0;i<touchList.length;i++){
+          const t=touchList[i];
+          const x=t.clientX, y=t.clientY;
+          if (x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){
+            points.push({ x:x, y:y });
+          }
+        }
+        return points;
+      }
+
+      /* ✅ Touch handling zoals TG08 (passive:true, geen preventDefault) */
+      function handleTouchEvent(e){
+        unlockAudioOnce();
+
+        if (!promptEverSpoken){
+          speakPromptNow();
+        }
+
+        const touches = e.touches || [];
+        currentPoints = getPointsFromTouches(touches);
+
+        if (currentPoints.length===0){
+          hasResultForCurrentTouches=false;
+          if (roundActive) setScanState("neutral");
+          return;
+        }
+
+        if (roundActive) setScanState("scanning");
+
+        if (currentPoints.length !== expectedTouchPoints){
+          hasResultForCurrentTouches=false;
+          return;
+        }
+
+        if (!hasResultForCurrentTouches && roundActive){
+          const digit = recognizeDigit(currentPoints);
+          if (digit !== null && typeof digit === "number"){
+            hasResultForCurrentTouches = true;
+            if (digit === targetDigit) handleCorrect();
+            else handleWrong();
+          }
+        }
+      }
+
+      function addTouchListeners(elem){
+        ["touchstart","touchmove","touchend","touchcancel"].forEach(function(type){
+          elem.addEventListener(type, handleTouchEvent, { passive:true });
+        });
+      }
+
+      // oor-knop herhaalt opdracht
+      let lastEarTouch=0;
+      function repeatPrompt(){
+        unlockAudioOnce();
+        speakPromptNow();
+      }
+      earBtn.addEventListener("touchstart", function(){
+        lastEarTouch = Date.now();
+        repeatPrompt();
+      }, { passive:true });
+      earBtn.addEventListener("click", function(){
+        if (Date.now() - lastEarTouch < 500) return;
+        repeatPrompt();
+      });
+
+      // init UI
+      buildProgress(levelDigits);
+      updateProgress(levelDigits, mastered);
+      closeCurtainsStill();
+      hideDigit();
+      setScanState("neutral");
+      promptEverSpoken=false;
+
+      addTouchListeners(scanArea);
+
+      // kalibratie laden (zoals TG08)
+      fetch("calibration.json")
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          initCalibration(data);
+          startRound(getNextTarget());
+        })
+        .catch(function(){
+          // zonder calibration wordt er niet herkend
+          startRound(getNextTarget());
+        });
+    });
   </script>
 </body>
 </html>
