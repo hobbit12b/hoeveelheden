@@ -2,9 +2,8 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Gordijnen zonder flikker</title>
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Gordijnen: still → gif → reveal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <style>
   *{ box-sizing:border-box; }
@@ -21,7 +20,7 @@
 
   .stage{
     width:360px;
-    aspect-ratio:498 / 286;      /* originele gordijnverhouding */
+    aspect-ratio:498 / 286; /* originele verhouding */
     position:relative;
     border-radius:24px;
     overflow:hidden;
@@ -29,7 +28,7 @@
     box-shadow:0 10px 25px rgba(0,0,0,.15);
   }
 
-  /* Cijfer (achter alles) */
+  /* Cijfer achter alles */
   .digit{
     position:absolute;
     inset:0;
@@ -42,29 +41,29 @@
     z-index:1;
   }
 
-  /* Gordijn-lagen */
   .curtain-layer{
     position:absolute;
     inset:0;
     pointer-events:none;
   }
 
-  /* Still blijft ALTIJD zichtbaar */
+  /* Still laag */
   .curtain-still{
     z-index:5;
+    opacity:1;
+    transition:opacity .12s linear;
+    will-change:opacity;
   }
+  .curtain-still.off{ opacity:0; }
 
-  /* Animatie ligt erboven en fade-in */
+  /* GIF laag */
   .curtain-anim{
     z-index:6;
     opacity:0;
     transition:opacity .08s linear;
     will-change:opacity;
   }
-
-  .curtain-anim.on{
-    opacity:1;
-  }
+  .curtain-anim.on{ opacity:1; }
 
   .curtain-layer img{
     width:100%;
@@ -73,8 +72,14 @@
     display:block;
   }
 
-  button{
+  .controls{
     margin-top:16px;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+  }
+
+  button{
     padding:12px 18px;
     font-size:16px;
     border-radius:12px;
@@ -83,70 +88,85 @@
     color:#fff;
     cursor:pointer;
   }
+  button.secondary{ background:#7c8cff; }
 </style>
 </head>
 
 <body>
-
 <div>
   <div class="stage">
-    <!-- cijfer -->
-    <div class="digit">5</div>
+    <div class="digit" id="digit">5</div>
 
-    <!-- STILL: altijd zichtbaar -->
-    <div class="curtain-layer curtain-still">
+    <!-- STILL (dicht) -->
+    <div class="curtain-layer curtain-still" id="still">
       <img src="gordijnen_still.png" alt="">
     </div>
 
-    <!-- ANIMATIE: fade-in boven still -->
-    <div class="curtain-layer curtain-anim" id="curtain-anim">
-      <img id="curtain-gif" src="gordijnen_openen.gif" alt="">
+    <!-- GIF (openen) -->
+    <div class="curtain-layer curtain-anim" id="anim">
+      <img id="gif" src="gordijnen_openen.gif" alt="">
     </div>
   </div>
 
-  <div style="text-align:center">
-    <button id="play">Speel animatie</button>
+  <div class="controls">
+    <button id="openBtn">Open</button>
+    <button class="secondary" id="closeBtn">Volgende ronde</button>
   </div>
 </div>
 
 <script>
-  const animLayer = document.getElementById("curtain-anim");
-  const gifEl     = document.getElementById("curtain-gif");
-  const playBtn   = document.getElementById("play");
+  const still = document.getElementById("still");
+  const anim  = document.getElementById("anim");
+  const gifEl = document.getElementById("gif");
 
-  // 👉 stel dit in op de echte lengte van jouw GIF
+  // Zet dit op de echte duur van je GIF (in ms)
   const GIF_DURATION_MS = 1400;
 
-  // Preload om witte flits te voorkomen
-  function preloadGif(){
-    return new Promise(resolve=>{
+  let busy = false;
+
+  function preload(url){
+    return new Promise((resolve)=>{
       const img = new Image();
-      img.onload = ()=>resolve();
-      img.onerror = ()=>resolve();
-      img.src = "gordijnen_openen.gif";
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
+      img.src = url;
     });
   }
 
-  async function playCurtain(){
-    // 1. zorg dat GIF al in cache zit
-    await preloadGif();
+  async function openCurtains(){
+    if (busy) return;
+    busy = true;
 
-    // 2. forceer herstart van GIF
-    gifEl.src = "gordijnen_openen.gif?t=" + Date.now();
+    // 1) Zorg dat de still al zichtbaar is (dicht)
+    still.classList.remove("off");
 
-    // 3. pas zichtbaar maken als browser kan tekenen
-    gifEl.onload = ()=>{
-      animLayer.classList.add("on");
+    // 2) Preload GIF om flits te voorkomen
+    await preload("gordijnen_openen.gif");
 
-      // 4. na volledige animatie weer weg
-      setTimeout(()=>{
-        animLayer.classList.remove("on");
+    // 3) Herstart GIF (cache-bust)
+    const src = "gordijnen_openen.gif?t=" + Date.now();
+    gifEl.onload = () => {
+      // 4) Toon GIF bovenop still
+      anim.classList.add("on");
+
+      // 5) Na afloop: verberg GIF én still → cijfer zichtbaar
+      setTimeout(() => {
+        anim.classList.remove("on"); // gif weg
+        still.classList.add("off");  // still ook weg => reveal
+        busy = false;
       }, GIF_DURATION_MS);
     };
+    gifEl.src = src;
   }
 
-  playBtn.addEventListener("click", playCurtain);
-</script>
+  function closeForNextRound(){
+    // “Gordijnen weer dicht” voor nieuwe opdracht
+    anim.classList.remove("on");
+    still.classList.remove("off");
+  }
 
+  document.getElementById("openBtn").addEventListener("click", openCurtains);
+  document.getElementById("closeBtn").addEventListener("click", closeForNextRound);
+</script>
 </body>
 </html>
