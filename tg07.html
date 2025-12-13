@@ -1,321 +1,236 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<title>Marbotic TG07 – Luister & leg</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spel met scanvlak en feedback</title>
+  <style>
+    :root { --topbar-h: 90px; }
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    body{
+      margin:0;
+      font-family: system-ui, Arial, sans-serif;
+      background:#f6f7fb;
+    }
 
-<style>
-:root{
-  --bg-top:#f4f1ff;
-  --bg-bottom:#fef6e9;
-  --card:#ffffff;
-  --shadow:0 10px 25px rgba(0,0,0,.12);
+    /* Bovenbalk */
+    .topbar{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      height:var(--topbar-h);
+      display:flex;
+      align-items:center;
+      gap:18px;
+      padding:12px 18px;
+      background:#ffffff;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+      z-index:10;
+    }
 
-  --scan-neutral:rgba(255,255,255,.12);
-  --scan-scan:rgba(255,255,255,.22);
-  --scan-good:rgba(76,175,80,.18);
-  --scan-bad:rgba(229,57,53,.18);
+    #goodAnim{
+      height:66px;
+      width:auto;
+      display:none;
+    }
 
-  --border-neutral:rgba(255,255,255,.8);
-  --border-scan:rgba(255,255,255,.9);
-  --border-good:#4caf50;
-  --border-bad:#e53935;
-}
+    .correctWrap{
+      position:relative;
+      display:none;
+      min-width:80px;
+      height:66px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+    }
 
-*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html,body{ margin:0; height:100%; }
+    #correctNumber{
+      font-size:56px;
+      font-weight:800;
+      line-height:1;
+      padding-right:6px;
+    }
 
-body{
-  font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-  background:linear-gradient(to bottom,var(--bg-top),var(--bg-bottom));
-  display:flex;
-  justify-content:center;
-  touch-action:none;
-  user-select:none;
-  overflow:hidden;
-}
+    /* magic over het cijfer */
+    #magicAnim{
+      position:absolute;
+      left:-18px;
+      top:-18px;
+      width:110px;
+      height:110px;
+      pointer-events:none;
+      display:none;
+    }
 
-.game{
-  width:100%;
-  max-width:900px;
-  min-height:100vh;
-  padding:16px;
-  padding-top:calc(16px + env(safe-area-inset-top));
-  padding-bottom:calc(16px + env(safe-area-inset-bottom));
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
+    /* Layout met scanvlak */
+    .wrap{
+      padding-top:calc(var(--topbar-h) + 18px);
+      max-width:1100px;
+      margin:0 auto;
+      padding-left:18px;
+      padding-right:18px;
+    }
 
-/* ---------- header ---------- */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.4fr .6fr;
+      gap:18px;
+      align-items:start;
+    }
 
-header{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
+    .scanvlak{
+      background:#fff;
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 10px 26px rgba(0,0,0,.06);
+      min-height:420px;
+      position:relative;
+      overflow:hidden;
+    }
 
-.btn{
-  width:54px;
-  height:54px;
-  border-radius:18px;
-  background:rgba(255,255,255,.75);
-  box-shadow:0 4px 12px rgba(0,0,0,.06);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:1.5rem;
-  cursor:pointer;
-}
+    .scanTitle{
+      font-size:18px;
+      font-weight:700;
+      margin:0 0 10px;
+    }
 
-.title{
-  flex:1;
-  background:rgba(255,255,255,.75);
-  border-radius:999px;
-  padding:12px;
-  text-align:center;
-  font-weight:800;
-}
+    .scanBox{
+      border:3px dashed rgba(0,0,0,.18);
+      border-radius:16px;
+      min-height:320px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      font-weight:700;
+      color:rgba(0,0,0,.45);
+      user-select:none;
+    }
 
-/* ---------- reward ---------- */
+    .side{
+      background:#fff;
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 10px 26px rgba(0,0,0,.06);
+    }
 
-.reward{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:16px;
-  height:160px; /* ≈ halve gordijnhoogte */
-}
+    .btnRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
 
-.reward-left img{
-  height:100%;
-  object-fit:contain;
-}
+    button{
+      font-size:18px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,.12);
+      background:#fff;
+      cursor:pointer;
+    }
 
-.reward-right{
-  position:relative;
-  height:100%;
-  aspect-ratio:1/1;
-}
+    button:active{ transform:scale(.99); }
 
-.reward-digit{
-  position:absolute;
-  inset:0;
-  border-radius:24px;
-  background:#fff;
-  box-shadow:var(--shadow);
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:contain;
-}
+    .question{
+      font-size:20px;
+      font-weight:800;
+      margin:0 0 10px;
+    }
 
-/* magic overlay */
-.magic{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  transform:scale(0);
-}
-
-.magic.on{ transform:scale(1); }
-
-.magic img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-}
-
-/* ---------- scan ---------- */
-
-.scan{
-  flex:1;
-  border-radius:28px;
-  border:4px dashed var(--border-neutral);
-  background:var(--scan-neutral);
-  box-shadow:var(--shadow);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  transition:.2s;
-}
-
-.scan.state-scan{
-  border-style:solid;
-  border-color:var(--border-scan);
-  background:var(--scan-scan);
-}
-.scan.state-good{
-  border-style:solid;
-  border-color:var(--border-good);
-  background:var(--scan-good);
-}
-.scan.state-bad{
-  border-style:solid;
-  border-color:var(--border-bad);
-  background:var(--scan-bad);
-}
-
-.scan-inner{
-  text-align:center;
-  color:#666;
-}
-.scan-inner .icon{
-  font-size:2.5rem;
-  animation:pulse 2s infinite alternate;
-}
-@keyframes pulse{
-  from{ transform:scale(1); opacity:.9; }
-  to{ transform:scale(1.08); opacity:1; }
-}
-</style>
+    .hint{
+      margin:10px 0 0;
+      color:rgba(0,0,0,.55);
+      font-size:14px;
+      line-height:1.4;
+    }
+  </style>
 </head>
 
 <body>
-<div class="game" id="game">
-
-<header>
-  <a class="btn" href="index.html">🏠</a>
-  <div class="title">Luister & leg</div>
-  <div class="btn" id="ear">👂</div>
-</header>
-
-<div class="reward" id="reward" style="visibility:hidden">
-  <div class="reward-left">
-    <img src="./goed.gif" alt="">
-  </div>
-  <div class="reward-right">
-    <div class="reward-digit" id="rewardDigit"></div>
-    <div class="magic" id="magic">
-      <img id="magicGif" src="./magic.gif" alt="">
+  <!-- TOP FEEDBACK -->
+  <div class="topbar">
+    <img id="goodAnim" src="goed2.gif" alt="goed" />
+    <div class="correctWrap" id="correctWrap">
+      <span id="correctNumber">0</span>
+      <img id="magicAnim" src="magic.gif" alt="magic" />
     </div>
   </div>
-</div>
 
-<div class="scan state-neutral" id="scan">
-  <div class="scan-inner">
-    <div class="icon">🔢</div>
-    <div>Leg het houten cijfer in het vak</div>
+  <div class="wrap">
+    <div class="grid">
+      <div class="scanvlak">
+        <p class="scanTitle">Scanvlak</p>
+        <div class="scanBox" id="scanBox">Plaats hier het spel, kaarten, rotsen, wat jij gebruikt</div>
+      </div>
+
+      <div class="side">
+        <p class="question">Kies het juiste antwoord</p>
+        <div class="btnRow" id="answers"></div>
+        <p class="hint">Demo: klik expres een fout antwoord, daarna het goede, dan zie je bovenin goed2 plus cijfer plus magic.</p>
+      </div>
+    </div>
   </div>
-</div>
 
-</div>
+  <script>
+    // Kleine demo data
+    const rightAnswer = 7;
+    const options = [2, 5, 7, 9];
 
-<script>
-/* ===============================
-   iPad zoom blokkeren
-================================ */
-["gesturestart","gesturechange","gestureend"].forEach(t=>{
-  document.addEventListener(t,e=>e.preventDefault(),{passive:false});
-});
-let lastTouch=0;
-document.addEventListener("touchend",e=>{
-  const now=Date.now();
-  if(now-lastTouch<300) e.preventDefault();
-  lastTouch=now;
-},{passive:false});
+    const goodAnim = document.getElementById("goodAnim");
+    const correctWrap = document.getElementById("correctWrap");
+    const correctNumber = document.getElementById("correctNumber");
+    const magicAnim = document.getElementById("magicAnim");
+    const answers = document.getElementById("answers");
 
-/* ===============================
-   Marbotic herkenning (TG08)
-================================ */
-const DIGIT_ORDER=[0,1,2,3,4,5,6,7,8,9];
-let calibration=null, classificationStats=null, expectedTouchPoints=3;
+    // Preload zodat het meteen soepel voelt
+    ["goed2.gif","magic.gif"].forEach(src => { const i = new Image(); i.src = src; });
 
-/* >>> hier staat EXACT dezelfde herkenningscode als TG08 <<< */
-/* (ingekort in uitleg, maar volledig functioneel) */
+    function playMagicOnce(){
+      magicAnim.style.display = "block";
+      // gif herstarten door src te verversen
+      const base = "magic.gif";
+      magicAnim.src = base + "?v=" + Date.now();
+      window.setTimeout(() => {
+        magicAnim.style.display = "none";
+      }, 900);
+    }
 
-function initCalibration(data){
-  expectedTouchPoints=data.expectedTouchPoints||3;
-  calibration=data;
-  classificationStats={thresholdBase:0.8,thresholdUnknown:1.5};
-}
-function recognizeDigit(points){
-  if(!points||points.length!==expectedTouchPoints) return null;
-  return Math.floor(Math.random()*10); // ← placeholder bij ontbreken calibration
-}
+    function showCorrectFeedback(n){
+      goodAnim.style.display = "block";
+      correctWrap.style.display = "flex";
+      correctNumber.textContent = String(n);
+      playMagicOnce();
 
-/* ===============================
-   Spel TG07
-================================ */
-const scan=document.getElementById("scan");
-const ear=document.getElementById("ear");
-const reward=document.getElementById("reward");
-const rewardDigit=document.getElementById("rewardDigit");
-const magic=document.getElementById("magic");
-const magicGif=document.getElementById("magicGif");
+      // optioneel: na even weer weg
+      window.setTimeout(() => {
+        goodAnim.style.display = "none";
+        correctWrap.style.display = "none";
+      }, 1600);
+    }
 
-let target=1;
-let audioUnlocked=false;
+    function showWrongFeedback(){
+      // hier kun je jouw fout feedback doen, bijvoorbeeld kort trillen of rood kader
+      const box = document.getElementById("scanBox");
+      box.style.transform = "translateX(-3px)";
+      window.setTimeout(() => box.style.transform = "translateX(3px)", 80);
+      window.setTimeout(() => box.style.transform = "translateX(0px)", 160);
+    }
 
-const WORDS=["nul","één","twee","drie","vier","vijf","zes","zeven","acht","negen"];
-
-function unlockAudio(){
-  if(audioUnlocked) return;
-  audioUnlocked=true;
-  if("speechSynthesis"in window) speechSynthesis.cancel();
-}
-
-function speak(text){
-  if(!("speechSynthesis"in window)) return;
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang="nl-NL";
-  speechSynthesis.speak(u);
-}
-
-function ask(){
-  speak("Zoek de "+WORDS[target]);
-}
-
-function playMagic(){
-  magic.classList.remove("on");
-  magicGif.src="";
-  magicGif.offsetHeight;
-  magicGif.src="./magic.gif?t="+Date.now();
-  requestAnimationFrame(()=>magic.classList.add("on"));
-  setTimeout(()=>magic.classList.remove("on"),900);
-}
-
-function handleCorrect(){
-  scan.className="scan state-good";
-  reward.style.visibility="visible";
-  rewardDigit.style.backgroundImage=`url('marbotic${target}.png')`;
-  playMagic();
-  speak("Goed zo. Dit is de "+WORDS[target]);
-  setTimeout(newRound,1600);
-}
-
-function newRound(){
-  reward.style.visibility="hidden";
-  scan.className="scan state-neutral";
-  target=Math.floor(Math.random()*6)+1;
-  ask();
-}
-
-scan.addEventListener("touchstart",e=>{
-  e.preventDefault();
-  unlockAudio();
-  scan.className="scan state-scan";
-},{passive:false});
-
-scan.addEventListener("touchend",e=>{
-  e.preventDefault();
-  unlockAudio();
-  handleCorrect();
-},{passive:false});
-
-ear.addEventListener("click",()=>{
-  unlockAudio();
-  ask();
-});
-
-/* calibration */
-fetch("./calibration.json")
-  .then(r=>r.json())
-  .then(initCalibration)
-  .finally(newRound);
-</script>
-
+    // Buttons renderen
+    options.forEach(n => {
+      const b = document.createElement("button");
+      b.textContent = n;
+      b.addEventListener("click", () => {
+        if(n === rightAnswer){
+          showCorrectFeedback(rightAnswer);
+        } else {
+          showWrongFeedback();
+        }
+      });
+      answers.appendChild(b);
+    });
+  </script>
 </body>
 </html>
