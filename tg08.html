@@ -2,8 +2,12 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Marbotic - Levels</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Marbotic - TG07 Luister & Leg</title>
+
+  <!-- Anti-zoom (belangrijk op iPad) -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
   <style>
     :root {
       --bg-top: #f4f1ff;
@@ -12,14 +16,17 @@
       --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
       --accent-soft: #ffe0b2;
       --accent-strong: #ff8a65;
+
       --scan-border-neutral: rgba(255, 255, 255, 0.8);
       --scan-border-scan: rgba(255, 255, 255, 0.9);
       --scan-border-good: #4caf50;
       --scan-border-bad: #e53935;
+
       --scan-bg-neutral: rgba(255, 255, 255, 0.12);
       --scan-bg-scan: rgba(255, 255, 255, 0.22);
       --scan-bg-good: rgba(76, 175, 80, 0.18);
       --scan-bg-bad: rgba(229, 57, 53, 0.18);
+
       --text-main: #333333;
       --text-soft: #666666;
     }
@@ -34,10 +41,11 @@
       display: flex;
       justify-content: center;
       align-items: stretch;
-      touch-action: none;
+      touch-action: none; /* we beheren touch zelf */
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
+      overflow: hidden;
     }
 
     .game {
@@ -45,219 +53,235 @@
       max-width: 900px;
       min-height: 100vh;
       padding: clamp(12px, 3vh, 24px);
+      padding-top: calc(clamp(12px, 3vh, 24px) + env(safe-area-inset-top));
+      padding-bottom: calc(clamp(12px, 3vh, 24px) + env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 10px;
     }
 
-    .game-header {
+    header {
       flex: 0 0 auto;
       display: flex;
-      justify-content: center;
       align-items: center;
-      padding-top: env(safe-area-inset-top);
-      position: relative;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    /* home button */
-    .home-btn{
-      position:absolute;
-      left: 0;
-      top: env(safe-area-inset-top);
-      margin-left: 0;
+    .home-btn {
       width: 54px;
       height: 54px;
       border-radius: 18px;
-      background: rgba(255,255,255,0.75);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:1.6rem;
-      text-decoration:none;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      text-decoration: none;
       color: inherit;
-      -webkit-user-select:none;
-      user-select:none;
+      flex: 0 0 auto;
     }
-    .home-btn:active{ transform: scale(0.98); }
+    .home-btn:active { transform: scale(0.98); }
 
     .title-badge {
+      flex: 1 1 auto;
       background: rgba(255, 255, 255, 0.75);
       border-radius: 999px;
-      padding: 8px 18px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      padding: 10px 14px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      animation: floatTitle 3s ease-in-out infinite alternate;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 54px;
       cursor: pointer;
+      user-select: none;
+    }
+    .title-icon { font-size: 1.35rem; }
+    .title-text { font-size: 1rem; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; }
+
+    .level-chip {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex: 0 0 auto;
     }
 
-    .title-icon { font-size: 1.4rem; }
-    .title-text {
-      font-size: 1rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
-    }
-
-    @keyframes floatTitle { 0%{transform:translateY(0)} 100%{transform:translateY(-3px)} }
-
+    /* ===== Bovenstuk (klein) ===== */
     .game-main {
       flex: 0 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      padding-top: 2px;
+      gap: 10px;
     }
 
-    /* ✅ dichter bij de cijfers: zij-kolommen zijn net zo breed als de animatie */
-    .top-layout{
-      display: grid;
-      grid-template-columns: min(26vw, 140px) auto min(26vw, 140px);
-      align-items: center;
-      width: 100%;
-      max-width: 640px;
-      gap: 0;
-    }
-
-    .side-box{
-      width: min(26vw, 140px);
-      height: min(26vw, 140px);
+    .stage {
+      width: min(86vw, 520px);
+      height: min(24vh, 200px); /* kleiner dan TG08, boven scanvlak */
+      border-radius: 30px;
+      box-shadow: var(--card-shadow);
+      background: rgba(255, 255, 255, 0.75);
+      position: relative;
+      overflow: hidden;
+      border: 4px solid rgba(255, 255, 255, 0.6);
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
-      overflow: visible;
-      pointer-events: none;
     }
 
-    /* ✅ “plak” richting het midden */
-    .side-box.left  { justify-self: start; justify-content: flex-end; }
-    .side-box.right { justify-self: end;   justify-content: flex-start; }
-
-    .side-animation{
-      --shift-x: 0px;
+    .reveal {
       width: 100%;
       height: 100%;
-      max-width: 160px;
-      object-fit: contain;
-      opacity: 0;
-      transform: translateX(var(--shift-x)) scale(0.8);
-      pointer-events: none;
-      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-      position: relative;
-      z-index: 5; /* boven de cijferblokken */
-    }
-    .side-animation.show{
-      opacity: 1;
-      transform: translateX(var(--shift-x)) scale(1);
-    }
-
-    /* cijferblokken onder de animatie */
-    .number-slot{
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ✅ overlap per level */
-    .game[data-level="2"] #right-animation{ --shift-x: -42px; } /* overlap rechter cijferblok */
-    .game[data-level="3"] #left-animation { --shift-x:  42px; } /* overlap linker cijferblok */
-
-    .number-area{
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      gap: 4px;
-      justify-self: center;
-    }
-
-    .number-row{
-      display: flex;
       justify-content: center;
-      align-items: center;
-      gap: clamp(16px, 4vw, 32px);
-      width: 100%;
-      max-width: 520px;
-      margin-top: clamp(4px, 1vh, 10px);
+      gap: 14px;
+      padding: 12px;
     }
 
-    .number-row.row-appear { animation: rowIn 0.4s ease-out; }
-    @keyframes rowIn { 0%{transform:translateY(-10px);opacity:0} 100%{transform:translateY(0);opacity:1} }
-
-    .number-slot{
-      flex: 0 0 auto;
-      width: min(22vw, 110px);
+    .reveal-digit {
+      height: 100%;
       aspect-ratio: 1 / 1;
-      background-color: var(--card-bg);
+      max-height: 150px;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
-      border-radius: 28px;
-      box-shadow: var(--card-shadow);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, background 0.18s ease-out, border-color 0.18s ease-out;
       border: 4px solid transparent;
+      flex: 0 0 auto;
     }
 
-    .number-text{
-      font-size: min(16vw, 72px);
-      font-weight: 700;
-      color: var(--text-main);
-      transform: translateY(4px);
+    .reveal-mark {
+      font-size: min(10vw, 72px);
+      line-height: 1;
+      opacity: 0.96;
+      flex: 0 0 auto;
+    }
+
+    .curtains {
+      position: absolute;
+      inset: 0;
+      display: flex;
       pointer-events: none;
+      z-index: 5;
     }
 
-    .number-slot.missing{
-      background-image: none;
-      background-color: var(--accent-soft);
-      border-style: dashed;
-      border-color: rgba(255, 138, 101, 0.5);
-      color: var(--accent-strong);
+    .curtain {
+      width: 50%;
+      height: 100%;
+      background-size: cover;
+      background-repeat: no-repeat;
+      will-change: transform;
+      transition: transform 0.55s cubic-bezier(.2,.8,.2,1);
+      filter: saturate(1.05) contrast(1.05);
+      background-image: url('gordijnen_still.png');
     }
-    .number-slot.missing .number-text{ color: var(--accent-strong); }
+    .curtains.anim .curtain { background-image: url('gordijnen.gif'); }
 
-    .number-slot.correct-pop { animation: pop 0.35s ease-out; }
-    .number-row.shake { animation: shake 0.35s ease-out; }
+    .curtain.left  { background-position: left  center; transform: translateX(0); }
+    .curtain.right { background-position: right center; transform: translateX(0); }
+    .curtains.open .curtain.left  { transform: translateX(-102%); }
+    .curtains.open .curtain.right { transform: translateX(102%); }
 
-    @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
-    @keyframes shake {
-      0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)}
-      60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)}
+    /* na open: gordijnen echt weg (gif niet zichtbaar) */
+    .curtains.hidden { display: none; }
+
+    .sparkle {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: min(16vw, 96px);
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity .22s ease-out, transform .22s ease-out;
+      pointer-events: none;
+      z-index: 6;
+    }
+    .sparkle.show { opacity: 1; transform: scale(1); }
+
+    .hint-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-soft);
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      max-width: min(86vw, 520px);
+    }
+    .hint-ico { font-size: 1.35rem; }
+
+    .progress {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      flex-wrap: wrap;
+      max-width: min(86vw, 520px);
+    }
+    .pip {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.14);
+      opacity: 0.75;
+      transition: transform .16s ease-out, opacity .16s ease-out, background .16s ease-out;
+    }
+    .pip.on {
+      opacity: 1;
+      transform: scale(1.12);
+      background: rgba(0, 0, 0, 0.30);
     }
 
-    .feedback-symbol { font-size: 2.4rem; line-height: 1; height: 2.4rem; text-align: center; }
-
-    .game-footer{
+    /* ===== Scanstuk (groot zoals TG08) ===== */
+    .game-footer {
       flex: 1 1 auto;
-      padding-bottom: env(safe-area-inset-bottom);
       display: flex;
       flex-direction: column;
       margin-top: 2px;
     }
 
-    .scan-area{
+    .scan-area {
       border-radius: 28px;
       border-width: 4px;
       border-style: dashed;
       border-color: var(--scan-border-neutral);
       background: var(--scan-bg-neutral);
+
       flex: 1 1 auto;
-      min-height: 55vh;
+      min-height: 60vh; /* KEY: groot als TG08 */
+
       display: flex;
       align-items: center;
       justify-content: center;
+
       box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
       transition: border-color 0.18s ease-out, background 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
       position: relative;
       overflow: hidden;
-      margin-top: 2px;
     }
 
-    .scan-area-inner{
+    .scan-area-inner {
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -266,77 +290,89 @@
       pointer-events: none;
     }
 
-    .scan-icon{ font-size: 2.4rem; animation: scanPulse 2s ease-in-out infinite; }
+    .scan-icon { font-size: 2.4rem; animation: scanPulse 2s ease-in-out infinite; }
     @keyframes scanPulse { 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
 
-    .scan-text{ font-size: 1.05rem; color: var(--text-soft); }
-    .scan-hint{ font-size: 0.85rem; color: rgba(0,0,0,0.48); }
+    .scan-text { font-size: 1.05rem; color: var(--text-soft); }
+    .scan-hint { font-size: 0.85rem; color: rgba(0,0,0,0.48); }
 
-    .scan-area.state-neutral{ border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
-    .scan-area.state-scanning{ border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 12px 26px rgba(0,0,0,0.16); transform:translateY(-2px); }
-    .scan-area.state-correct{ border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
-    .scan-area.state-wrong{ border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
+    .scan-area.state-neutral { border-style: dashed; border-color: var(--scan-border-neutral); background: var(--scan-bg-neutral); transform: translateY(0); }
+    .scan-area.state-scanning { border-style: solid; border-color: var(--scan-border-scan); background: var(--scan-bg-scan); box-shadow: 0 12px 26px rgba(0,0,0,0.16); transform: translateY(-2px); }
+    .scan-area.state-correct { border-style: solid; border-color: var(--scan-border-good); background: var(--scan-bg-good); box-shadow: 0 12px 30px rgba(76,175,80,0.35); transform: translateY(-2px); }
+    .scan-area.state-wrong { border-style: solid; border-color: var(--scan-border-bad); background: var(--scan-bg-bad); box-shadow: 0 12px 30px rgba(229,57,53,0.35); transform: translateY(-2px); }
 
     @media (max-width: 600px) {
-      .title-text { font-size: 0.9rem; }
-      .number-slot { width: min(24vw, 96px); }
-      .side-box { width: min(26vw, 120px); height: min(26vw, 120px); }
-      .top-layout { grid-template-columns: min(26vw, 120px) auto min(26vw, 120px); }
-      .game[data-level="2"] #right-animation{ --shift-x: -34px; }
-      .game[data-level="3"] #left-animation { --shift-x:  34px; }
-      .home-btn{ width:50px; height:50px; border-radius:16px; }
-      .game-header{ padding-top: calc(env(safe-area-inset-top) + 2px); }
+      .home-btn, .level-chip { width: 50px; height: 50px; border-radius: 16px; }
+      .title-text { font-size: 0.95rem; }
+      .stage { border-radius: 26px; height: min(22vh, 180px); }
+      .reveal-digit { border-radius: 20px; }
+      .pip { width: 13px; height: 13px; }
     }
   </style>
 </head>
 
 <body>
   <div class="game" id="game" data-level="1">
-    <header class="game-header">
+    <header>
       <a class="home-btn" href="index.html" aria-label="Terug naar start">🏠</a>
+
       <div class="title-badge" id="title-badge" role="button" aria-label="Luister nog een keer">
-        <span class="title-icon" id="title-icon">🔍</span>
-        <span class="title-text" id="title-text">Welk cijfer mist?</span>
+        <span class="title-icon">🔊</span>
+        <span class="title-text">Luister & leg</span>
       </div>
+
+      <div class="level-chip" id="level-chip" aria-label="Level">🌱</div>
     </header>
 
     <main class="game-main">
-      <div class="top-layout">
-        <div class="side-box left">
-          <img id="left-animation" src="love-heart.gif" alt="" class="side-animation" />
+      <div class="stage" aria-label="Gordijn">
+        <div class="reveal" aria-hidden="true">
+          <div class="reveal-digit" id="reveal-digit"></div>
+          <div class="reveal-mark" id="reveal-mark">🎭</div>
         </div>
 
-        <div class="number-area">
-          <div class="number-row row-appear" id="number-row">
-            <div class="number-slot" data-index="0"><span class="number-text">0</span></div>
-            <div class="number-slot missing" data-index="1"><span class="number-text">?</span></div>
-            <div class="number-slot" data-index="2"><span class="number-text">2</span></div>
-          </div>
-          <div id="feedback-symbol" class="feedback-symbol"></div>
+        <div class="curtains" id="curtains" aria-hidden="true">
+          <div class="curtain left"></div>
+          <div class="curtain right"></div>
         </div>
 
-        <div class="side-box right">
-          <img id="right-animation" src="goed.gif" alt="" class="side-animation" />
-        </div>
+        <div class="sparkle" id="sparkle">⭐</div>
       </div>
+
+      <div class="hint-row" aria-label="Hint">
+        <span class="hint-ico">👂</span>
+        <span>Tik op 🔊 en leg het cijfer</span>
+      </div>
+
+      <div class="progress" id="progress" aria-label="Voortgang"></div>
     </main>
 
     <footer class="game-footer">
-      <div class="scan-area state-neutral" id="scan-area">
+      <div class="scan-area state-neutral" id="scan-area" aria-label="Scanvak">
         <div class="scan-area-inner">
           <div class="scan-icon">🔢</div>
-          <div class="scan-text">Leg het houten cijfer in het vak.</div>
-          <div class="scan-hint">Alle puntjes in het vak.</div>
+          <div class="scan-text">Leg het houten cijfer in het vak</div>
+          <div class="scan-hint">Alle puntjes in het vak</div>
         </div>
       </div>
     </footer>
   </div>
 
-  <!-- Voice prompts -->
-  <audio id="voice-grote" src="audio/grote buurgetal.mp3" preload="auto"></audio>
-  <audio id="voice-kleine" src="audio/kleine buurgetal.mp3" preload="auto"></audio>
-
   <script>
+    /* =====================================================
+       Anti-zoom/gesture (iPad): voorkom dubbele tik zoom & pinch
+       ===================================================== */
+    document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive:false });
+    document.addEventListener('gesturechange', function(e){ e.preventDefault(); }, { passive:false });
+    document.addEventListener('gestureend', function(e){ e.preventDefault(); }, { passive:false });
+
+    let __lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e){
+      const now = Date.now();
+      if (now - __lastTouchEnd <= 300) e.preventDefault();
+      __lastTouchEnd = now;
+    }, { passive:false });
+
     /* ================================
        MARBOTIC HERKENNINGSMODULE
        (logica ongewijzigd)
@@ -723,22 +759,28 @@
     }
 
     /* ================================
-       SPELLOGICA + 3 LEVELS
+       TG07: LUISTER & LEG (gordijn + herhaling)
        ================================ */
 
     const DIGIT_IMAGE_PREFIX = "marbotic";
     const DIGIT_IMAGE_SUFFIX = ".png";
 
+    const NUMBER_WORDS = {
+      0:"nul", 1:"één", 2:"twee", 3:"drie", 4:"vier",
+      5:"vijf", 6:"zes", 7:"zeven", 8:"acht", 9:"negen"
+    };
+    function wordFor(d){ return NUMBER_WORDS[d] || String(d); }
+
+    // WebAudio (piepjes) – wordt “unlocked” bij eerste aanraking
     let audioCtx = null;
-    function ensureAudio() {
-      if (!audioCtx) {
+    function ensureAudio(){
+      if (!audioCtx){
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) audioCtx = new AC();
       }
       if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
     }
-
-    function playTone(freq, duration) {
+    function playTone(freq, duration){
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -748,412 +790,445 @@
       gain.connect(audioCtx.destination);
       const now = audioCtx.currentTime;
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.start(now);
       osc.stop(now + duration + 0.05);
     }
-    function playSuccessSound() { playTone(880, 0.16); setTimeout(function () { playTone(1175, 0.18); }, 140); }
-    function playErrorSound() { playTone(220, 0.22); }
+    function sfxGood(){ playTone(880, 0.14); setTimeout(function(){ playTone(1175, 0.16); }, 120); }
+    function sfxBad(){ playTone(220, 0.20); }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    // SpeechSynthesis queue (niet afkappen tijdens feedback)
+    let preferredVoice = null;
+    let speechBusy = false;
+
+    function pickDutchVoice(){
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+      if (!voices || voices.length === 0) return null;
+      for (let i=0;i<voices.length;i++){
+        const v = voices[i];
+        if ((v.lang || "").toLowerCase().startsWith("nl")) return v;
+      }
+      return null;
+    }
+    function ensureVoice(){
+      if (!("speechSynthesis" in window)) return;
+      if (!preferredVoice) preferredVoice = pickDutchVoice();
+    }
+    if ("speechSynthesis" in window){
+      window.speechSynthesis.onvoiceschanged = function(){ preferredVoice = pickDutchVoice(); };
+      ensureVoice();
+    }
+
+    function speak(text, opts){
+      opts = opts || {};
+      const interrupt = !!opts.interrupt;
+      if (!("speechSynthesis" in window)) return Promise.resolve();
+
+      if (interrupt){
+        try{ window.speechSynthesis.cancel(); }catch(e){}
+      } else if (speechBusy){
+        return new Promise(function(resolve){
+          const t = setInterval(function(){
+            if (!speechBusy){
+              clearInterval(t);
+              speak(text, opts).then(resolve);
+            }
+          }, 50);
+        });
+      }
+
+      ensureVoice();
+      return new Promise(function(resolve){
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "nl-NL";
+        if (preferredVoice) u.voice = preferredVoice;
+        u.rate = 0.95;
+        u.pitch = 1.05;
+
+        speechBusy = true;
+        u.onend = function(){ speechBusy = false; resolve(); };
+        u.onerror = function(){ speechBusy = false; resolve(); };
+
+        try{ window.speechSynthesis.speak(u); }
+        catch(e){ speechBusy = false; resolve(); }
+      });
+    }
+
+    function sayPrompt(d){ return speak("Zoek de " + wordFor(d) + ".", { interrupt:true }); }
+    function sayGood(d){ return speak("Goed zo! Dat is " + wordFor(d) + "!", { interrupt:false }); }
+    function sayTryAgain(d){ return speak("Oeps. Zoek de " + wordFor(d) + ".", { interrupt:false }); }
+    function sayTeachAndRetryLater(d){
+      return speak("Dit is de " + wordFor(d) + ". Ik vraag hem straks nog een keer. Dit is dus de " + wordFor(d) + ".", { interrupt:false });
+    }
+    function sayLevelUp(){ return speak("Goed gedaan! Volgende level!", { interrupt:false }); }
+
+    function shuffle(arr){
+      const a = arr.slice();
+      for (let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        const t = a[i]; a[i]=a[j]; a[j]=t;
+      }
+      return a;
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
       const gameEl = document.getElementById("game");
-
-      const numberRow = document.getElementById("number-row");
-      const numberSlots = Array.from(document.querySelectorAll(".number-slot"));
-      const feedbackSymbol = document.getElementById("feedback-symbol");
       const scanArea = document.getElementById("scan-area");
-
       const titleBadge = document.getElementById("title-badge");
-      const titleIcon = document.getElementById("title-icon");
-      const titleText = document.getElementById("title-text");
+      const levelChip = document.getElementById("level-chip");
 
-      const leftAnim = document.getElementById("left-animation");
-      const rightAnim = document.getElementById("right-animation");
+      const curtains = document.getElementById("curtains");
+      const revealDigit = document.getElementById("reveal-digit");
+      const revealMark = document.getElementById("reveal-mark");
+      const sparkle = document.getElementById("sparkle");
+      const progressEl = document.getElementById("progress");
 
-      const voiceGrote = document.getElementById("voice-grote");
-      const voiceKleine = document.getElementById("voice-kleine");
+      // Als je gordijnen.gif langer/korter is: pas dit aan
+      const CURTAIN_HIDE_AFTER_OPEN_MS = 950;
 
-      // Levels: 1 = 3 cijfers, 2 = grote buur, 3 = kleine buur
-      let level = 1;
-      let correctStreak = 0;
-
-      // Opgave
-      let roundActive = true;
-      let visibleSlots = 3;
-      let sequence = [0, 1, 2];
-      let missingIndex = 1;
-      let missingNumber = 1;
-
-      // Touch/recognition
-      let currentPoints = [];
-      let hasResultForCurrentTouches = false;
-
-      // iOS media unlock
-      let mediaUnlocked = false;
-
-      // Intro voice: 1x automatisch bij start level 2/3 (zonder blokkeren), daarna alleen via titel
-      const intro = { el: null, done: true, playing: false, pending: false };
-
-      function setScanState(state) {
-        scanArea.classList.remove("state-neutral", "state-scanning", "state-correct", "state-wrong");
+      function setScanState(state){
+        scanArea.classList.remove("state-neutral","state-scanning","state-correct","state-wrong");
         if (state === "scanning") scanArea.classList.add("state-scanning");
         else if (state === "correct") scanArea.classList.add("state-correct");
         else if (state === "wrong") scanArea.classList.add("state-wrong");
         else scanArea.classList.add("state-neutral");
       }
 
-      function hideAnimations() {
-        leftAnim.classList.remove("show");
-        rightAnim.classList.remove("show");
+      function showSparkle(on, glyph){
+        if (glyph) sparkle.textContent = glyph;
+        sparkle.classList.toggle("show", !!on);
       }
 
-      function showSuccessAnimation() {
-        hideAnimations();
-        if (level === 3) leftAnim.classList.add("show");
-        else rightAnim.classList.add("show");
+      function curtainsAnimate(on){ curtains.classList.toggle("anim", !!on); }
+      function setCurtainsOpen(open){ curtains.classList.toggle("open", !!open); }
+      function hideCurtainsLayer(){ curtains.classList.add("hidden"); }
+      function showCurtainsLayer(){ curtains.classList.remove("hidden"); }
+
+      function resetCurtainsClosedStill(){
+        showCurtainsLayer();
+        curtainsAnimate(false);
+        setCurtainsOpen(false);
       }
 
-      function setSlotDigit(slot, digit, isMissing) {
-        const span = slot.querySelector(".number-text");
-        slot.classList.remove("missing", "correct-pop");
+      function openCurtainsAndHide(){
+        showCurtainsLayer();
+        curtainsAnimate(true);
+        requestAnimationFrame(function(){ setCurtainsOpen(true); });
 
-        if (isMissing) {
-          slot.style.backgroundImage = "none";
-          slot.classList.add("missing");
-          span.textContent = "?";
-        } else {
-          span.textContent = "";
-          slot.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
-          slot.setAttribute("aria-label", "cijfer " + digit);
+        setTimeout(function(){
+          curtainsAnimate(false);  // terug naar still voor volgende keer
+          hideCurtainsLayer();     // gif niet zichtbaar meer
+        }, CURTAIN_HIDE_AFTER_OPEN_MS);
+      }
+
+      function setRevealNeutral(){
+        revealDigit.style.backgroundImage = "none";
+        revealMark.textContent = "🎭";
+      }
+      function setRevealForDigit(d){
+        revealDigit.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + d + DIGIT_IMAGE_SUFFIX + "')";
+      }
+
+      let pips = [];
+      function buildProgress(levelDigits){
+        progressEl.innerHTML = "";
+        pips = [];
+        for (let i=0;i<levelDigits.length;i++){
+          const pip = document.createElement("div");
+          pip.className = "pip";
+          progressEl.appendChild(pip);
+          pips.push(pip);
+        }
+      }
+      function updateProgress(levelDigits, mastered){
+        for (let i=0;i<levelDigits.length;i++){
+          const d = levelDigits[i];
+          pips[i].classList.toggle("on", !!mastered[d]);
         }
       }
 
-      function applyVisibleSlots() {
-        numberSlots.forEach(function (slot, idx) {
-          slot.style.display = (idx < visibleSlots) ? "flex" : "none";
-        });
-      }
-
-      function updateNumberDisplay() {
-        applyVisibleSlots();
-        for (let i = 0; i < visibleSlots; i++) {
-          const slot = numberSlots[i];
-          if (i === missingIndex) setSlotDigit(slot, sequence[i], true);
-          else setSlotDigit(slot, sequence[i], false);
-        }
-      }
-
-      function stopVoice(el) {
-        if (!el) return;
-        try { el.pause(); el.currentTime = 0; } catch (e) {}
-      }
-
-      function stopAllVoice() {
-        stopVoice(voiceGrote);
-        stopVoice(voiceKleine);
-        intro.playing = false;
-      }
-
-      function unlockAudioElement(el) {
-        if (!el) return;
-        try {
-          const oldMuted = el.muted;
-          const oldVol = el.volume;
-          el.muted = true;
-          el.volume = 0;
-          const p = el.play();
-          if (p && typeof p.then === "function") {
-            p.then(function () {
-              el.pause();
-              el.currentTime = 0;
-              el.muted = oldMuted;
-              el.volume = oldVol;
-            }).catch(function () {
-              el.pause();
-              el.currentTime = 0;
-              el.muted = oldMuted;
-              el.volume = oldVol;
-            });
-          } else {
-            el.pause();
-            el.currentTime = 0;
-            el.muted = oldMuted;
-            el.volume = oldVol;
-          }
-        } catch (e) {}
-      }
-
-      function unlockMediaOnce() {
-        if (mediaUnlocked) return;
-        mediaUnlocked = true;
-        unlockAudioElement(voiceGrote);
-        unlockAudioElement(voiceKleine);
-      }
-
-      function tryPlay(el, onFail) {
-        if (!el) return;
-        try { el.currentTime = 0; } catch (e) {}
-        const p = el.play();
-        if (p && typeof p.catch === "function") p.catch(onFail || function () {});
-      }
-
-      function setupIntroForLevel() {
-        intro.playing = false;
-        intro.pending = false;
-        intro.done = true;
-        intro.el = null;
-
-        if (level === 2) { intro.el = voiceGrote; intro.done = false; }
-        if (level === 3) { intro.el = voiceKleine; intro.done = false; }
-
-        if (intro.el) {
-          intro.pending = true;
-          try { intro.el.load(); } catch (e) {}
-        }
-      }
-
-      function startIntroNow() {
-        if (!intro.el) return;
-        if (intro.done) return;
-        if (intro.playing) return;
-
-        intro.pending = false;
-        intro.playing = true;
-
-        tryPlay(intro.el, function () {
-          intro.playing = false;
-          intro.pending = true;
-        });
-      }
-
-      if (voiceGrote) {
-        voiceGrote.addEventListener("ended", function () {
-          if (intro.el === voiceGrote) { intro.playing = false; intro.done = true; }
-        });
-      }
-      if (voiceKleine) {
-        voiceKleine.addEventListener("ended", function () {
-          if (intro.el === voiceKleine) { intro.playing = false; intro.done = true; }
-        });
-      }
-
-      function setLevelUI() {
-        hideAnimations();
+      function setLevelUI(level){
         gameEl.dataset.level = String(level);
-
-        if (level === 1) {
-          titleIcon.textContent = "🔍";
-          titleText.textContent = "Welk cijfer mist?";
-          rightAnim.src = "goed.gif";
-          leftAnim.src = "love-heart.gif";
-        } else if (level === 2) {
-          titleIcon.textContent = "🔊";
-          titleText.textContent = "Grote buur";
-          rightAnim.src = "happy-excited.gif";
-          leftAnim.src = "love-heart.gif";
-        } else {
-          titleIcon.textContent = "🔊";
-          titleText.textContent = "Kleine buur";
-          rightAnim.src = "happy-excited.gif";
-          leftAnim.src = "love-heart.gif";
-        }
+        levelChip.textContent = (level === 1) ? "🌱" : "🚀";
       }
 
-      function newRound() {
+      // ===== Game state (alle cijfers langs, fouten komen terug) =====
+      let level = 1;
+      let levelDigits = [1,2,3,4,5]; // level 1: geen 0
+      let bag = shuffle(levelDigits);
+      let mastered = {};             // digit -> true
+      let reviewQueue = [];          // { digit, dueAt }
+      let roundCount = 0;
+
+      let targetDigit = bag.pop();
+      let wrongCount = 0;
+      let roundActive = true;
+
+      // Touch/recognition
+      let currentPoints = [];
+      let hasResultForCurrentTouches = false;
+
+      // iOS: prompt kan pas na user gesture
+      let promptAttempted = false;
+      let audioUnlocked = false;
+      function unlockAudioOnce(){
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        ensureAudio();
+        // ook speech engine “wakkeren” (werkt niet altijd, maar helpt)
+        try { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); } catch(e){}
+      }
+
+      function getDueReview(){
+        const dueIdx = [];
+        for (let i=0;i<reviewQueue.length;i++){
+          if (reviewQueue[i].dueAt <= roundCount) dueIdx.push(i);
+        }
+        if (dueIdx.length === 0) return null;
+        const pickIndex = dueIdx[Math.floor(Math.random()*dueIdx.length)];
+        const item = reviewQueue.splice(pickIndex, 1)[0];
+        return item.digit;
+      }
+
+      function getNextTarget(){
+        const dueReview = getDueReview();
+        if (dueReview !== null){
+          if (bag.length === 0 || Math.random() < 0.35){
+            return dueReview;
+          } else {
+            reviewQueue.push({ digit: dueReview, dueAt: roundCount });
+          }
+        }
+        if (bag.length > 0) return bag.pop();
+        if (reviewQueue.length > 0){
+          reviewQueue.sort(function(a,b){ return a.dueAt - b.dueAt; });
+          return reviewQueue.shift().digit;
+        }
+        return null;
+      }
+
+      function maybeLevelUp(){
+        if (level !== 1) return Promise.resolve(false);
+
+        for (let i=0;i<levelDigits.length;i++){
+          if (!mastered[levelDigits[i]]) return Promise.resolve(false);
+        }
+        if (reviewQueue.length > 0) return Promise.resolve(false);
+        if (bag.length > 0) return Promise.resolve(false);
+
+        level = 2;
+        levelDigits = [0,1,2,3,4,5,6,7,8,9];
+        bag = shuffle(levelDigits);
+        mastered = {};
+        reviewQueue = [];
+        roundCount = 0;
+
+        setLevelUI(level);
+        buildProgress(levelDigits);
+        updateProgress(levelDigits, mastered);
+
+        showSparkle(true, "🎉");
+        return sayLevelUp().then(function(){
+          setTimeout(function(){ showSparkle(false); }, 600);
+          return true;
+        });
+      }
+
+      function startRound(nextDigit){
+        targetDigit = nextDigit;
+        wrongCount = 0;
         roundActive = true;
-        feedbackSymbol.textContent = "";
-        hideAnimations();
-        setScanState("neutral");
-        numberRow.classList.remove("shake");
         hasResultForCurrentTouches = false;
 
-        if (level === 1) {
-          const base = Math.floor(Math.random() * 8);
-          sequence = [base, base + 1, base + 2];
-          visibleSlots = 3;
+        setScanState("neutral");
+        setRevealNeutral();
+        showSparkle(false);
+        resetCurtainsClosedStill();
 
-          missingIndex = Math.floor(Math.random() * 3);
-          missingNumber = sequence[missingIndex];
-        } else if (level === 2) {
-          const start = Math.floor(Math.random() * 9); // 0..8
-          const target = start + 1;                    // 1..9
-          sequence = [start, target];
-          visibleSlots = 2;
+        promptAttempted = true;
+        sayPrompt(targetDigit);
+      }
 
-          missingIndex = 1;       // ? rechts
-          missingNumber = target;
-        } else {
-          const shown = 1 + Math.floor(Math.random() * 9); // 1..9
-          const answer = shown - 1;                        // 0..8
-          sequence = [answer, shown];
-          visibleSlots = 2;
-
-          missingIndex = 0;       // ? links
-          missingNumber = answer;
+      function newRound(){
+        const next = getNextTarget();
+        if (next === null){
+          return maybeLevelUp().then(function(didUp){
+            if (didUp){
+              startRound(getNextTarget());
+            } else {
+              // level 2 cyclus klaar -> opnieuw
+              bag = shuffle(levelDigits);
+              mastered = {};
+              reviewQueue = [];
+              roundCount = 0;
+              updateProgress(levelDigits, mastered);
+              startRound(getNextTarget());
+            }
+          });
         }
-
-        numberRow.classList.remove("row-appear");
-        void numberRow.offsetWidth;
-        numberRow.classList.add("row-appear");
-
-        updateNumberDisplay();
+        startRound(next);
+        return Promise.resolve();
       }
 
-      function goToLevel(nextLevel) {
-        level = nextLevel;
-        correctStreak = 0;
+      function handleCorrect(){
+        if (!roundActive) return;
+        roundActive = false;
 
-        setupIntroForLevel();
-        setLevelUI();
-        newRound();
+        setScanState("correct");
+        ensureAudio(); sfxGood();
 
-        // ✅ meteen proberen te starten (werkt meestal na "unlock")
-        ensureAudio();
-        unlockMediaOnce();
-        startIntroNow();
+        setRevealForDigit(targetDigit);
+        revealMark.textContent = "✅";
+        showSparkle(true, "⭐");
+        openCurtainsAndHide();
+
+        mastered[targetDigit] = true;
+        updateProgress(levelDigits, mastered);
+        roundCount += 1;
+
+        sayGood(targetDigit).then(function(){
+          setTimeout(function(){
+            showSparkle(false);
+            resetCurtainsClosedStill();
+            newRound();
+          }, 520);
+        });
       }
 
-      function handleRecognitionResult(digit) {
+      function handleWrong(){
         if (!roundActive) return;
 
-        if (digit === missingNumber) {
-          roundActive = false;
-          setScanState("correct");
-          feedbackSymbol.textContent = "";
-          showSuccessAnimation();
-          playSuccessSound();
+        wrongCount += 1;
+        setScanState("wrong");
+        ensureAudio(); sfxBad();
 
-          const missingSlot = numberSlots[missingIndex];
-          setSlotDigit(missingSlot, missingNumber, false);
-          missingSlot.classList.add("correct-pop");
-
-          correctStreak += 1;
-
-          // ✅ 7x achter elkaar goed -> volgend level (1->2->3)
-          if (correctStreak >= 7) {
-            if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
-            if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
-            // level 3 blijft doorlopen
-            correctStreak = 0;
-          }
-
-          setTimeout(function () { newRound(); }, 1200);
-        } else {
-          setScanState("wrong");
-          hideAnimations();
-          feedbackSymbol.textContent = "✖";
-          playErrorSound();
-          numberRow.classList.add("shake");
-          correctStreak = 0;
-
-          setTimeout(function () {
-            numberRow.classList.remove("shake");
-            if (currentPoints.length === 0) setScanState("neutral");
-            else setScanState("scanning");
-          }, 450);
+        if (wrongCount < 2){
+          showSparkle(true, "🔁");
+          sayTryAgain(targetDigit).then(function(){
+            setTimeout(function(){
+              showSparkle(false);
+              if (currentPoints.length === 0) setScanState("neutral");
+              else setScanState("scanning");
+            }, 350);
+          });
+          return;
         }
+
+        // 2x fout: laat zien + uitleg + later opnieuw
+        roundActive = false;
+
+        setRevealForDigit(targetDigit);
+        revealMark.textContent = "👀";
+        showSparkle(true, "💡");
+        openCurtainsAndHide();
+
+        reviewQueue.push({ digit: targetDigit, dueAt: roundCount + 3 });
+        roundCount += 1;
+
+        sayTeachAndRetryLater(targetDigit).then(function(){
+          setTimeout(function(){
+            showSparkle(false);
+            resetCurtainsClosedStill();
+            newRound();
+          }, 520);
+        });
       }
 
-      function getPointsFromTouches(touchList) {
+      function getPointsFromTouches(touchList){
         const rect = scanArea.getBoundingClientRect();
         const points = [];
-        for (let i = 0; i < touchList.length; i++) {
+        for (let i=0;i<touchList.length;i++){
           const t = touchList[i];
           const x = t.clientX;
           const y = t.clientY;
-          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-            points.push({ x: x, y: y });
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom){
+            points.push({ x:x, y:y });
           }
         }
         return points;
       }
 
-      function handleTouchEvent(e) {
-        ensureAudio();
-        unlockMediaOnce();
+      function handleTouchEvent(e){
+        // belangrijk: hiermee blokkeren we scroll/zoom, maar laten multitouch door
+        if (e && e.cancelable) e.preventDefault();
 
-        // ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
-        if (intro.pending && !intro.playing && !intro.done) startIntroNow();
+        unlockAudioOnce();
+
+        // als prompt bij openen geblokkeerd was, probeer bij eerste aanraking opnieuw
+        if (!promptAttempted){
+          promptAttempted = true;
+          sayPrompt(targetDigit);
+        }
 
         const touches = e.touches || [];
         currentPoints = getPointsFromTouches(touches);
 
-        if (currentPoints.length === 0) {
+        if (currentPoints.length === 0){
           hasResultForCurrentTouches = false;
-          setScanState("neutral");
+          if (roundActive) setScanState("neutral");
           return;
         }
 
-        if (currentPoints.length !== expectedTouchPoints) {
+        if (roundActive) setScanState("scanning");
+
+        if (currentPoints.length !== expectedTouchPoints){
           hasResultForCurrentTouches = false;
-          setScanState("scanning");
           return;
         }
 
-        setScanState("scanning");
-
-        if (!hasResultForCurrentTouches && roundActive) {
+        if (!hasResultForCurrentTouches && roundActive){
           const digit = recognizeDigit(currentPoints);
-          if (digit !== null && typeof digit === "number") {
+          if (digit !== null && typeof digit === "number"){
             hasResultForCurrentTouches = true;
-            handleRecognitionResult(digit);
+            if (digit === targetDigit) handleCorrect();
+            else handleWrong();
           }
         }
       }
 
-      function addTouchListeners(elem) {
-        ["touchstart", "touchmove", "touchend", "touchcancel"].forEach(function (type) {
-          elem.addEventListener(type, handleTouchEvent, { passive: true });
-        });
-      }
-
-      // ✅ Titelknop: meteen afspelen (en je kunt doorspelen)
-      let lastTitleTouch = 0;
-
-      function playTitleVoiceNow() {
-        ensureAudio();
-        unlockMediaOnce();
-
-        // meteen starten: stop eventueel lopende stem en speel opnieuw
-        stopAllVoice();
-
-        if (level === 2) {
-          intro.el = voiceGrote;
-          intro.done = true; // intro is al geweest; dit is handmatig
-          intro.playing = false;
-          intro.pending = false;
-          tryPlay(voiceGrote);
-        } else if (level === 3) {
-          intro.el = voiceKleine;
-          intro.done = true;
-          intro.playing = false;
-          intro.pending = false;
-          tryPlay(voiceKleine);
-        }
-      }
-
-      titleBadge.addEventListener("touchstart", function () {
-        lastTitleTouch = Date.now();
-        playTitleVoiceNow();
-      }, { passive: true });
-
-      titleBadge.addEventListener("click", function () {
-        if (Date.now() - lastTitleTouch < 500) return;
-        playTitleVoiceNow();
+      // !! niet-passive, zodat preventDefault werkt (tegen zoom)
+      ["touchstart","touchmove","touchend","touchcancel"].forEach(function(type){
+        scanArea.addEventListener(type, handleTouchEvent, { passive:false });
       });
 
-      // Start level 1
-      setupIntroForLevel();
-      setLevelUI();
-      newRound();
+      // titel: prompt opnieuw (mag interrupt)
+      let lastTitleTouch = 0;
+      function repeatPrompt(){ sayPrompt(targetDigit); }
+      titleBadge.addEventListener("touchstart", function(e){
+        if (e && e.cancelable) e.preventDefault();
+        lastTitleTouch = Date.now();
+        unlockAudioOnce();
+        repeatPrompt();
+      }, { passive:false });
 
-      addTouchListeners(scanArea);
+      titleBadge.addEventListener("click", function(){
+        if (Date.now() - lastTitleTouch < 500) return;
+        unlockAudioOnce();
+        repeatPrompt();
+      });
+
+      // init
+      setLevelUI(level);
+      buildProgress(levelDigits);
+      updateProgress(levelDigits, mastered);
+      setRevealNeutral();
+      resetCurtainsClosedStill();
+      showSparkle(false);
+      setScanState("neutral");
+
+      promptAttempted = false;
 
       fetch("calibration.json")
-        .then(function (r) { return r.json(); })
-        .then(function (data) { initCalibration(data); })
-        .catch(function () { /* geen debug in UI */ });
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          initCalibration(data);
+          startRound(getNextTarget());
+        })
+        .catch(function(){
+          startRound(getNextTarget());
+        });
     });
   </script>
 </body>
