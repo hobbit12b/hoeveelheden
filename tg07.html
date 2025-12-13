@@ -2,16 +2,13 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Marbotic - TG07 Cijfers</title>
+  <title>Marbotic - TG07 Luister & Leg</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <style>
     :root{
       --bg-top:#f4f1ff;
       --bg-bottom:#fef6e9;
-      --card:#ffffff;
       --shadow:0 10px 25px rgba(0,0,0,0.08);
-      --accent-soft:#ffe0b2;
-      --accent-strong:#ff8a65;
 
       --scan-border-neutral:rgba(255,255,255,0.8);
       --scan-border-scan:rgba(255,255,255,0.9);
@@ -88,9 +85,12 @@
       justify-content:center;
       gap:10px;
       min-height:54px;
+      cursor:pointer;
+      -webkit-user-select:none;
+      user-select:none;
     }
-    .title-icon{ font-size:1.4rem; }
-    .title-text{ font-size:1rem; font-weight:700; letter-spacing:.02em; white-space:nowrap; }
+    .title-icon{ font-size:1.35rem; }
+    .title-text{ font-size:1rem; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
 
     .level-chip{
       width:54px;
@@ -112,26 +112,84 @@
       gap:12px;
     }
 
-    .target-card{
-      width:min(78vw, 420px);
+    .stage{
+      width:min(86vw, 520px);
       aspect-ratio: 4 / 3;
-      background:var(--card);
       border-radius:34px;
       box-shadow:var(--shadow);
+      background:rgba(255,255,255,0.75);
+      position:relative;
+      overflow:hidden;
       display:flex;
       align-items:center;
       justify-content:center;
-      position:relative;
-      overflow:hidden;
-      border:4px solid transparent;
+      border:4px solid rgba(255,255,255,0.6);
     }
-    .target-inner{
-      width:86%;
-      height:86%;
+
+    .reveal{
+      width:100%;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:16px;
+    }
+
+    .reveal-digit{
+      width:min(55%, 260px);
+      aspect-ratio: 1 / 1;
+      border-radius:28px;
+      background:#fff;
+      box-shadow:0 10px 22px rgba(0,0,0,0.10);
       background-repeat:no-repeat;
       background-position:center;
       background-size:contain;
+      border:4px solid transparent;
     }
+
+    .reveal-mark{
+      font-size:min(18vw, 92px);
+      line-height:1;
+      transform:translateY(-2px);
+      opacity:0.98;
+    }
+
+    .curtains{
+      position:absolute;
+      inset:0;
+      display:flex;
+      pointer-events:none;
+    }
+    .curtain{
+      width:50%;
+      height:100%;
+      background-image:url('gordijnen.gif');
+      background-size:cover;
+      background-repeat:no-repeat;
+      will-change:transform;
+      transition:transform 0.55s cubic-bezier(.2,.8,.2,1);
+      filter:saturate(1.05) contrast(1.05);
+    }
+    .curtain.left{ background-position:left center; transform:translateX(0); }
+    .curtain.right{ background-position:right center; transform:translateX(0); }
+    .curtains.open .curtain.left{ transform:translateX(-102%); }
+    .curtains.open .curtain.right{ transform:translateX(102%); }
+
+    .sparkle{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:min(22vw, 120px);
+      opacity:0;
+      transform:scale(0.92);
+      transition:opacity .22s ease-out, transform .22s ease-out;
+      pointer-events:none;
+    }
+    .sparkle.show{ opacity:1; transform:scale(1); }
 
     .hint-row{
       display:flex;
@@ -139,9 +197,14 @@
       justify-content:center;
       gap:10px;
       color:var(--text-soft);
-      font-weight:700;
+      font-weight:800;
+      background:rgba(255,255,255,0.55);
+      border-radius:999px;
+      padding:10px 14px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.05);
     }
-    .hint-ico{ font-size:1.4rem; }
+    .hint-ico{ font-size:1.35rem; }
+
     .progress{
       display:flex;
       gap:8px;
@@ -151,19 +214,20 @@
       background:rgba(255,255,255,0.55);
       border-radius:999px;
       box-shadow:0 4px 12px rgba(0,0,0,0.05);
+      flex-wrap:wrap;
+      max-width:min(86vw, 520px);
     }
-    .dot{
+    .pip{
       width:14px; height:14px;
       border-radius:999px;
       background:rgba(0,0,0,0.14);
-      transform:scale(1);
-      transition: transform .16s ease-out, opacity .16s ease-out;
       opacity:0.75;
+      transition:transform .16s ease-out, opacity .16s ease-out, background .16s ease-out;
     }
-    .dot.on{
+    .pip.on{
       opacity:1;
       transform:scale(1.12);
-      background:rgba(0,0,0,0.28);
+      background:rgba(0,0,0,0.30);
     }
 
     .footer{
@@ -198,7 +262,7 @@
       gap:6px;
       pointer-events:none;
     }
-    .scan-icon{ font-size:2.4rem; animation: pulse 2s ease-in-out infinite; }
+    .scan-icon{ font-size:2.4rem; animation:pulse 2s ease-in-out infinite; }
     @keyframes pulse{ 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
     .scan-text{ font-size:1.05rem; color:var(--text-soft); }
     .scan-hint{ font-size:0.85rem; color:rgba(0,0,0,0.48); }
@@ -208,52 +272,49 @@
     .scan-area.state-correct{ border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 12px 30px rgba(76,175,80,0.35); transform:translateY(-2px); }
     .scan-area.state-wrong{ border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 12px 30px rgba(229,57,53,0.35); transform:translateY(-2px); }
 
-    .celebrate{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:min(22vw, 120px);
-      opacity:0;
-      transform:scale(0.92);
-      pointer-events:none;
-      transition: opacity .22s ease-out, transform .22s ease-out;
-    }
-    .celebrate.show{ opacity:1; transform:scale(1); }
-
     @media (max-width: 600px){
       .home-btn, .level-chip{ width:50px; height:50px; border-radius:16px; }
       .title-text{ font-size:0.95rem; }
-      .target-card{ border-radius:30px; }
+      .stage{ border-radius:30px; }
+      .reveal-digit{ border-radius:24px; }
+      .pip{ width:13px; height:13px; }
     }
   </style>
 </head>
 <body>
-  <div class="game" id="game">
+  <div class="game" id="game" data-level="1">
     <header>
       <a class="home-btn" href="index.html" aria-label="Terug naar start">🏠</a>
-      <div class="title-badge" aria-label="TG07 Cijfers">
-        <span class="title-icon">🔢</span>
-        <span class="title-text">Leg hetzelfde cijfer</span>
+
+      <div class="title-badge" id="title-badge" role="button" aria-label="Luister nog een keer">
+        <span class="title-icon">🔊</span>
+        <span class="title-text">Luister & leg</span>
       </div>
+
       <div class="level-chip" id="level-chip" aria-label="Level">🌱</div>
     </header>
 
     <main class="main">
-      <div class="target-card" id="target-card" aria-label="Doelcijfer">
-        <div class="target-inner" id="target-inner"></div>
-        <div class="celebrate" id="celebrate">⭐</div>
+      <div class="stage" aria-label="Podium">
+        <div class="reveal" aria-hidden="true">
+          <div class="reveal-digit" id="reveal-digit"></div>
+          <div class="reveal-mark" id="reveal-mark">🎭</div>
+        </div>
+
+        <div class="curtains" id="curtains" aria-hidden="true">
+          <div class="curtain left"></div>
+          <div class="curtain right"></div>
+        </div>
+
+        <div class="sparkle" id="sparkle">⭐</div>
       </div>
 
       <div class="hint-row" aria-label="Hint">
-        <span class="hint-ico">👉</span>
-        <span>Leg het houten cijfer in het vak</span>
+        <span class="hint-ico">👂</span>
+        <span>Tik op 🔊 en leg het cijfer</span>
       </div>
 
-      <div class="progress" id="progress" aria-label="Reeks goed">
-        <!-- 7 dots -->
-      </div>
+      <div class="progress" id="progress" aria-label="Voortgang"></div>
     </main>
 
     <footer class="footer">
@@ -654,16 +715,24 @@
     }
 
     /* ================================
-       SPELLOGICA TG07
-       - Level 1: 0..5
-       - Level 2: 0..9
-       - 7x achter elkaar goed -> level omhoog
+       TG07: LUISTER & LEG (met gordijn)
        ================================ */
 
     const DIGIT_IMAGE_PREFIX = "marbotic";
     const DIGIT_IMAGE_SUFFIX = ".png";
 
-    const STREAK_TO_LEVEL_UP = 7;
+    const NUMBER_WORDS = {
+      0: "nul",
+      1: "één",
+      2: "twee",
+      3: "drie",
+      4: "vier",
+      5: "vijf",
+      6: "zes",
+      7: "zeven",
+      8: "acht",
+      9: "negen"
+    };
 
     let audioCtx = null;
     function ensureAudio(){
@@ -683,7 +752,7 @@
       gain.connect(audioCtx.destination);
       const now = audioCtx.currentTime;
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.start(now);
       osc.stop(now + duration + 0.05);
@@ -691,21 +760,92 @@
     function sfxGood(){ playTone(880, 0.14); setTimeout(function(){ playTone(1175, 0.16); }, 120); }
     function sfxBad(){ playTone(220, 0.20); }
 
+    // Temporary spoken audio (Dutch TTS)
+    let preferredVoice = null;
+    function pickDutchVoice(){
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+      if (!voices || voices.length === 0) return null;
+      for (let i=0;i<voices.length;i++){
+        const v = voices[i];
+        if ((v.lang || "").toLowerCase().startsWith("nl")) return v;
+      }
+      return null;
+    }
+    function ensureVoice(){
+      if (!("speechSynthesis" in window)) return;
+      if (!preferredVoice) preferredVoice = pickDutchVoice();
+    }
+    if ("speechSynthesis" in window){
+      window.speechSynthesis.onvoiceschanged = function(){ preferredVoice = pickDutchVoice(); };
+      ensureVoice();
+    }
+    function speak(text){
+      if (!("speechSynthesis" in window)) return;
+      try{ window.speechSynthesis.cancel(); }catch(e){}
+      ensureVoice();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "nl-NL";
+      if (preferredVoice) u.voice = preferredVoice;
+      u.rate = 0.95;
+      u.pitch = 1.05;
+      try{ window.speechSynthesis.speak(u); }catch(e){}
+    }
+    function sayPrompt(digit){
+      const w = NUMBER_WORDS[digit] || String(digit);
+      speak("Zoek de " + w + ".");
+    }
+    function sayGood(digit){
+      const w = NUMBER_WORDS[digit] || String(digit);
+      speak("Goed zo! Dat is " + w + "!");
+    }
+    function sayTryAgain(digit){
+      const w = NUMBER_WORDS[digit] || String(digit);
+      speak("Oeps. Zoek de " + w + ".");
+    }
+    function sayLevelUp(){ speak("Goed gedaan! Volgende level!"); }
+
+    function shuffle(arr){
+      const a = arr.slice();
+      for (let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        const t = a[i]; a[i]=a[j]; a[j]=t;
+      }
+      return a;
+    }
+
     document.addEventListener("DOMContentLoaded", function(){
+      const gameEl = document.getElementById("game");
       const scanArea = document.getElementById("scan-area");
-      const targetInner = document.getElementById("target-inner");
-      const celebrate = document.getElementById("celebrate");
+      const titleBadge = document.getElementById("title-badge");
       const levelChip = document.getElementById("level-chip");
+
+      const curtains = document.getElementById("curtains");
+      const revealDigit = document.getElementById("reveal-digit");
+      const revealMark = document.getElementById("reveal-mark");
+      const sparkle = document.getElementById("sparkle");
       const progressEl = document.getElementById("progress");
 
-      // progress dots
-      const dots = [];
-      for (let i=0;i<STREAK_TO_LEVEL_UP;i++){
-        const d = document.createElement("div");
-        d.className = "dot";
-        progressEl.appendChild(d);
-        dots.push(d);
-      }
+      // Touch/recognition
+      let currentPoints = [];
+      let hasResultForCurrentTouches = false;
+
+      // Game state
+      let started = false;
+
+      let level = 1;
+      let levelDigits = [1,2,3,4,5]; // level 1 (no 0)
+      let bag = shuffle(levelDigits);
+      let mastered = {};             // digit -> true
+      let reviewQueue = [];          // {digit, dueAt}
+      let roundCount = 0;
+
+      let targetDigit = bag.pop();
+      let mistakeThisRound = false;
+      let roundActive = true;
+
+      // progress pips
+      let pips = [];
 
       function setScanState(state){
         scanArea.classList.remove("state-neutral","state-scanning","state-correct","state-wrong");
@@ -714,95 +854,170 @@
         else if (state === "wrong") scanArea.classList.add("state-wrong");
         else scanArea.classList.add("state-neutral");
       }
-
-      function setCelebrate(on, glyph){
-        if (glyph) celebrate.textContent = glyph;
-        celebrate.classList.toggle("show", !!on);
+      function setCurtains(open){ curtains.classList.toggle("open", !!open); }
+      function showSparkle(on, glyph){
+        if (glyph) sparkle.textContent = glyph;
+        sparkle.classList.toggle("show", !!on);
       }
-
-      // game state
-      let level = 1; // 1 or 2
-      let streak = 0;
-      let roundActive = true;
-
-      let allowed = [0,1,2,3,4,5];
-      let targetDigit = 0;
-
-      // touch/recognition
-      let currentPoints = [];
-      let hasResultForCurrentTouches = false;
-
       function setLevelUI(){
+        gameEl.dataset.level = String(level);
         levelChip.textContent = (level === 1) ? "🌱" : "🚀";
       }
-
-      function updateProgress(){
-        for (let i=0;i<dots.length;i++){
-          dots[i].classList.toggle("on", i < streak);
+      function buildProgress(){
+        progressEl.innerHTML = "";
+        pips = [];
+        for (let i=0;i<levelDigits.length;i++){
+          const pip = document.createElement("div");
+          pip.className = "pip";
+          progressEl.appendChild(pip);
+          pips.push(pip);
         }
       }
+      function updateProgress(){
+        for (let i=0;i<levelDigits.length;i++){
+          const d = levelDigits[i];
+          pips[i].classList.toggle("on", !!mastered[d]);
+        }
+      }
+      function setRevealNeutral(){
+        revealDigit.style.backgroundImage = "none";
+        revealMark.textContent = "🎭";
+      }
+      function setRevealForDigit(d){
+        revealDigit.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + d + DIGIT_IMAGE_SUFFIX + "')";
+      }
 
-      function pickNewTarget(){
-        const idx = Math.floor(Math.random() * allowed.length);
-        targetDigit = allowed[idx];
-        targetInner.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + targetDigit + DIGIT_IMAGE_SUFFIX + "')";
+      function getDueReview(){
+        const due = [];
+        for (let i=0;i<reviewQueue.length;i++){
+          if (reviewQueue[i].dueAt <= roundCount) due.push({i:i, item: reviewQueue[i]});
+        }
+        if (due.length === 0) return null;
+        const pick = due[Math.floor(Math.random()*due.length)];
+        reviewQueue.splice(pick.i, 1);
+        return pick.item.digit;
+      }
+
+      function getNextTarget(){
+        const dueReview = getDueReview();
+        if (dueReview !== null){
+          if (bag.length === 0 || Math.random() < 0.35){
+            return dueReview;
+          } else {
+            reviewQueue.push({ digit: dueReview, dueAt: roundCount });
+          }
+        }
+        if (bag.length > 0) return bag.pop();
+        if (reviewQueue.length > 0){
+          reviewQueue.sort(function(a,b){ return a.dueAt - b.dueAt; });
+          return reviewQueue.shift().digit;
+        }
+        return null; // cycle complete
+      }
+
+      function maybeLevelUp(){
+        if (level !== 1) return false;
+        for (let i=0;i<levelDigits.length;i++){
+          if (!mastered[levelDigits[i]]) return false;
+        }
+        if (reviewQueue.length > 0) return false;
+        if (bag.length > 0) return false;
+
+        // Level up
+        level = 2;
+        levelDigits = [0,1,2,3,4,5,6,7,8,9];
+        bag = shuffle(levelDigits);
+        mastered = {};
+        reviewQueue = [];
+        roundCount = 0;
+
+        setLevelUI();
+        buildProgress();
+        updateProgress();
+
+        showSparkle(true, "🎉");
+        sayLevelUp();
+        setTimeout(function(){ showSparkle(false); }, 800);
+        return true;
+      }
+
+      function startRound(nextDigit){
+        targetDigit = nextDigit;
+        mistakeThisRound = false;
+        roundActive = true;
+        hasResultForCurrentTouches = false;
+
+        setScanState("neutral");
+        setCurtains(false);
+        setRevealNeutral();
+        showSparkle(false);
+
+        setTimeout(function(){ sayPrompt(targetDigit); }, 80);
       }
 
       function newRound(){
-        roundActive = true;
-        hasResultForCurrentTouches = false;
-        setCelebrate(false);
-        setScanState("neutral");
-        pickNewTarget();
-      }
-
-      function levelUp(){
-        level = 2;
-        allowed = [0,1,2,3,4,5,6,7,8,9];
-        streak = 0;
-        updateProgress();
-        setLevelUI();
-        setCelebrate(true, "🎉");
-        setTimeout(function(){
-          setCelebrate(false);
-          newRound();
-        }, 900);
-      }
-
-      function handleGood(){
-        roundActive = false;
-        setScanState("correct");
-        setCelebrate(true, "⭐");
-        sfxGood();
-
-        streak += 1;
-        updateProgress();
-
-        if (level === 1 && streak >= STREAK_TO_LEVEL_UP){
-          setTimeout(levelUp, 850);
+        const next = getNextTarget();
+        if (next === null){
+          if (maybeLevelUp()){
+            startRound(getNextTarget());
+          } else {
+            // Level 2 cycle complete -> new cycle
+            bag = shuffle(levelDigits);
+            mastered = {};
+            reviewQueue = [];
+            roundCount = 0;
+            updateProgress();
+            startRound(getNextTarget());
+          }
           return;
         }
-
-        // level 2: gewoon door
-        setTimeout(function(){
-          setCelebrate(false);
-          newRound();
-        }, 850);
+        startRound(next);
       }
 
-      function handleBad(){
-        setScanState("wrong");
-        setCelebrate(true, "🙈");
-        sfxBad();
+      function handleCorrect(){
+        roundActive = false;
+        setScanState("correct");
+        sfxGood();
 
-        streak = 0;
+        setRevealForDigit(targetDigit);
+        revealMark.textContent = "✅";
+        showSparkle(true, "⭐");
+        setTimeout(function(){ setCurtains(true); }, 40);
+
+        if (mistakeThisRound){
+          reviewQueue.push({ digit: targetDigit, dueAt: roundCount + 3 });
+        }
+
+        mastered[targetDigit] = true;
         updateProgress();
+        sayGood(targetDigit);
+
+        roundCount += 1;
 
         setTimeout(function(){
-          setCelebrate(false);
+          showSparkle(false);
+          setCurtains(false);
+          newRound();
+        }, 1200);
+      }
+
+      function handleWrong(){
+        setScanState("wrong");
+        sfxBad();
+        mistakeThisRound = true;
+
+        setRevealForDigit(targetDigit);
+        revealMark.textContent = "🙈";
+        showSparkle(true, "🔁");
+        setTimeout(function(){ setCurtains(true); }, 40);
+        setTimeout(function(){ sayTryAgain(targetDigit); }, 180);
+
+        setTimeout(function(){
+          showSparkle(false);
+          setCurtains(false);
           if (currentPoints.length === 0) setScanState("neutral");
           else setScanState("scanning");
-        }, 450);
+        }, 1200);
       }
 
       function getPointsFromTouches(touchList){
@@ -819,7 +1034,15 @@
         return points;
       }
 
+      function startIfNeeded(){
+        if (started) return;
+        started = true;
+        ensureAudio();
+        startRound(targetDigit);
+      }
+
       function handleTouchEvent(e){
+        startIfNeeded();
         ensureAudio();
 
         const touches = e.touches || [];
@@ -831,7 +1054,6 @@
           return;
         }
 
-        // we laten "scannen" zien, maar we beslissen pas bij precies expectedTouchPoints
         setScanState("scanning");
 
         if (currentPoints.length !== expectedTouchPoints){
@@ -843,8 +1065,8 @@
           const digit = recognizeDigit(currentPoints);
           if (digit !== null && typeof digit === "number"){
             hasResultForCurrentTouches = true;
-            if (digit === targetDigit) handleGood();
-            else handleBad();
+            if (digit === targetDigit) handleCorrect();
+            else handleWrong();
           }
         }
       }
@@ -853,15 +1075,33 @@
         scanArea.addEventListener(type, handleTouchEvent, {passive:true});
       });
 
-      // init
+      // Repeat prompt on title badge
+      let lastTitleTouch = 0;
+      function repeatPrompt(){
+        startIfNeeded();
+        sayPrompt(targetDigit);
+      }
+      titleBadge.addEventListener("touchstart", function(){
+        lastTitleTouch = Date.now();
+        repeatPrompt();
+      }, {passive:true});
+      titleBadge.addEventListener("click", function(){
+        if (Date.now() - lastTitleTouch < 500) return;
+        repeatPrompt();
+      });
+
+      // Init UI
       setLevelUI();
+      buildProgress();
       updateProgress();
-      newRound();
+      setRevealNeutral();
+      setCurtains(false);
+      showSparkle(false);
 
       fetch("calibration.json")
         .then(function(r){ return r.json(); })
         .then(function(data){ initCalibration(data); })
-        .catch(function(){ /* geen debug in UI */ });
+        .catch(function(){});
     });
   </script>
 </body>
