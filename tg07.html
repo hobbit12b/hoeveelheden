@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Marbotic - TG07 Luister & Leg</title>
-
-  <!-- iPad: zoom uit -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
   <style>
@@ -38,10 +36,7 @@
       display: flex;
       justify-content: center;
       align-items: stretch;
-
-      /* helpt op moderne browsers; iOS Safari blijft deels eigenwijs -> JS hooks hieronder */
       touch-action: none;
-
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
@@ -101,7 +96,6 @@
       white-space: nowrap;
     }
 
-    /* Boven: gordijn kleiner */
     .stage-wrap{
       flex: 0 0 auto;
       display:flex;
@@ -157,9 +151,8 @@
     .curtain.right{ background-position:right center; transform:translateX(0); }
     .curtains.open .curtain.left { transform:translateX(-102%); }
     .curtains.open .curtain.right{ transform:translateX(102%); }
-    .curtains.hidden{ display:none; } /* na openen: weg -> gif niet zichtbaar */
+    .curtains.hidden{ display:none; }
 
-    /* Scorebalk onder gordijn */
     .progress{
       display:flex;
       gap:8px;
@@ -185,7 +178,6 @@
       background: rgba(0,0,0,0.30);
     }
 
-    /* Groot scanvlak (TG08-achtig) */
     .game-footer{
       flex: 1 1 auto;
       display:flex;
@@ -210,8 +202,6 @@
       transition: border-color 0.18s ease-out, background 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
       position: relative;
       overflow: hidden;
-
-      /* helpt op moderne browsers */
       touch-action: none;
     }
 
@@ -245,7 +235,6 @@
 
 <body>
   <div class="game" id="game" data-level="1">
-
     <header>
       <a class="btn" href="index.html" aria-label="Terug naar start">🏠</a>
       <div class="title-badge" aria-label="Titel">Luister & leg</div>
@@ -274,25 +263,21 @@
         </div>
       </div>
     </footer>
-
   </div>
 
   <script>
     /* =====================================================
-       iPad Safari: zoom écht blokkeren (double tap + pinch)
+       iPad Safari: zoom blokkeren
        ===================================================== */
     (function(){
-      // pinch / gesture
       document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive:false });
       document.addEventListener('gesturechange', function(e){ e.preventDefault(); }, { passive:false });
       document.addEventListener('gestureend', function(e){ e.preventDefault(); }, { passive:false });
 
-      // block multi-finger default (pinch)
       document.addEventListener('touchstart', function(e){
         if (e.touches && e.touches.length > 1) e.preventDefault();
       }, { passive:false });
 
-      // double tap
       let lastEnd = 0;
       document.addEventListener('touchend', function(e){
         const now = Date.now();
@@ -306,7 +291,7 @@
        (logica ongewijzigd)
        ================================ */
 
-    const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     let calibration = null;
     let classificationStats = null;
@@ -319,12 +304,8 @@
         expectedTouchPoints = 3;
         return;
       }
-
-      if (typeof calibrationData.expectedTouchPoints === "number") {
-        expectedTouchPoints = calibrationData.expectedTouchPoints;
-      } else {
-        expectedTouchPoints = 3;
-      }
+      if (typeof calibrationData.expectedTouchPoints === "number") expectedTouchPoints = calibrationData.expectedTouchPoints;
+      else expectedTouchPoints = 3;
 
       calibration = buildCalibrationFromData(calibrationData);
       recomputeClassificationStats();
@@ -332,9 +313,7 @@
 
     function buildCalibrationFromData(data) {
       const obj = {};
-      DIGIT_ORDER.forEach(function (d) {
-        obj[String(d)] = { digit: d, samples: [] };
-      });
+      DIGIT_ORDER.forEach(function (d) { obj[String(d)] = { digit: d, samples: [] }; });
 
       DIGIT_ORDER.forEach(function (d) {
         const key = String(d);
@@ -343,11 +322,7 @@
 
         entry.samples.forEach(function (s) {
           if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
-
-          const pts = s.points.map(function (p) {
-            return { x: Number(p.x), y: Number(p.y) };
-          });
-
+          const pts = s.points.map(function (p) { return { x: Number(p.x), y: Number(p.y) }; });
           const features = computeFeatures(pts);
           obj[key].samples.push({ points: pts, features: features });
         });
@@ -358,126 +333,86 @@
 
     function computeFeatures(points) {
       if (!points || points.length !== 3) {
-        return {
-          sides: [0, 0, 0],
-          orientation: 0,
-          cosAngle: 0,
-          centroid: { x: 0, y: 0 },
-          yNorm: [0, 0, 0],
-          xPattern: [0, 0, 0],
-          aspect: 0,
-          vector: [0, 0, 0]
-        };
+        return { sides:[0,0,0], orientation:0, cosAngle:0, centroid:{x:0,y:0}, yNorm:[0,0,0], xPattern:[0,0,0], aspect:0, vector:[0,0,0] };
       }
 
-      const p0 = points[0];
-      const p1 = points[1];
-      const p2 = points[2];
+      const p0 = points[0], p1 = points[1], p2 = points[2];
 
-      const centroidRaw = {
-        x: (p0.x + p1.x + p2.x) / 3,
-        y: (p0.y + p1.y + p2.y) / 3
-      };
+      const centroidRaw = { x:(p0.x+p1.x+p2.x)/3, y:(p0.y+p1.y+p2.y)/3 };
 
-      const isoPoints = [p0, p1, p2].map(function (p) {
-        const dx = p.x - centroidRaw.x;
-        const dy = p.y - centroidRaw.y;
-        return { x: dx, y: dy };
+      const isoPoints = [p0,p1,p2].map(function(p){
+        return { x:(p.x-centroidRaw.x), y:(p.y-centroidRaw.y) };
       });
 
       let maxDist = 0;
-      for (let i = 0; i < isoPoints.length; i++) {
+      for (let i=0;i<isoPoints.length;i++){
         const q = isoPoints[i];
-        const d = Math.sqrt(q.x * q.x + q.y * q.y);
+        const d = Math.sqrt(q.x*q.x + q.y*q.y);
         if (d > maxDist) maxDist = d;
       }
       if (maxDist < 1e-6) maxDist = 1;
-
-      for (let i = 0; i < isoPoints.length; i++) {
+      for (let i=0;i<isoPoints.length;i++){
         isoPoints[i].x /= maxDist;
         isoPoints[i].y /= maxDist;
       }
 
-      function dist(a, b) {
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        return Math.sqrt(dx * dx + dy * dy);
+      function dist(a,b){
+        const dx=a.x-b.x, dy=a.y-b.y;
+        return Math.sqrt(dx*dx + dy*dy);
       }
 
       const L01 = dist(isoPoints[0], isoPoints[1]);
       const L12 = dist(isoPoints[1], isoPoints[2]);
-      const L20 = dist(isoPoints[1], isoPoints[2]); // <-- LET OP: ongewijzigd laten? in jouw originele module was dit dist(p2,p0)
-      // ↑ We MOETEN dit exact houden zoals jouw originele TG08 module.
-      // Daarom: hieronder zetten we L20 correct terug naar dist(p2,p0) zoals in je TG08.
-
-      const L20_CORRECT = dist(isoPoints[2], isoPoints[0]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
 
       const sides = [
-        { len: L01, i: 0, j: 1 },
-        { len: L12, i: 1, j: 2 },
-        { len: L20_CORRECT, i: 2, j: 0 }
+        { len: L01, i:0, j:1 },
+        { len: L12, i:1, j:2 },
+        { len: L20, i:2, j:0 }
       ];
-      const maxSideLen = Math.max(L01, L12, L20_CORRECT) || 1;
+      const maxSideLen = Math.max(L01,L12,L20) || 1;
+      const sidesNormSorted = sides.slice().sort(function(a,b){ return a.len-b.len; }).map(function(s){ return s.len/maxSideLen; });
 
-      const sidesNormSorted = sides
-        .slice()
-        .sort(function (a, b) { return a.len - b.len; })
-        .map(function (s) { return s.len / maxSideLen; });
-
-      const largest = sides
-        .slice()
-        .sort(function (a, b) { return a.len - b.len; })[2];
-
+      const largest = sides.slice().sort(function(a,b){ return a.len-b.len; })[2];
       const A = isoPoints[largest.i];
       const B = isoPoints[largest.j];
       const CIndex = 3 - largest.i - largest.j;
       const C = isoPoints[CIndex];
 
-      function orientationVal(a, b, c) {
-        const value =
-          (b.x - a.x) * (c.y - a.y) -
-          (b.y - a.y) * (c.x - a.x);
+      function orientationVal(a,b,c){
+        const value = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
         if (value > 0) return 1;
         if (value < 0) return -1;
         return 0;
       }
+      const orientation = orientationVal(A,B,C);
 
-      const orientation = orientationVal(A, B, C);
-
-      const AC = dist(A, C);
-      const BC = dist(B, C);
+      const AC = dist(A,C);
+      const BC = dist(B,C);
       const AB = largest.len;
-      const AC2 = AC * AC;
-      const BC2 = BC * BC;
-      const AB2 = AB * AB;
+      const AC2 = AC*AC, BC2 = BC*BC, AB2 = AB*AB;
       let cosAngle = 0;
-      const denom = 2 * AC * BC;
-      if (denom > 1e-6) {
-        cosAngle = (AC2 + BC2 - AB2) / denom;
-      }
+      const denom = 2*AC*BC;
+      if (denom > 1e-6) cosAngle = (AC2 + BC2 - AB2) / denom;
 
-      let minX = Math.min(p0.x, p1.x, p2.x);
-      let maxX = Math.max(p0.x, p1.x, p2.x);
-      let minY = Math.min(p0.y, p1.y, p2.y);
-      let maxY = Math.max(p0.y, p1.y, p2.y);
-      let width = maxX - minX;
-      let height = maxY - minY;
+      let minX = Math.min(p0.x,p1.x,p2.x);
+      let maxX = Math.max(p0.x,p1.x,p2.x);
+      let minY = Math.min(p0.y,p1.y,p2.y);
+      let maxY = Math.max(p0.y,p1.y,p2.y);
+      let width = maxX-minX;
+      let height = maxY-minY;
       if (width < 1e-6) width = 1;
       if (height < 1e-6) height = 1;
 
-      const yNormVals = [p0, p1, p2]
-        .map(function (p) { return (p.y - minY) / height; })
-        .sort(function (a, b) { return a - b; });
+      const yNormVals = [p0,p1,p2].map(function(p){ return (p.y-minY)/height; }).sort(function(a,b){ return a-b; });
 
       const pointsWithIndex = [
-        { p: p0, idx: 0 },
-        { p: p1, idx: 1 },
-        { p: p2, idx: 2 }
-      ].sort(function (a, b) { return a.p.y - b.p.y; });
+        {p:p0, idx:0},
+        {p:p1, idx:1},
+        {p:p2, idx:2}
+      ].sort(function(a,b){ return a.p.y - b.p.y; });
 
-      const xPattern = pointsWithIndex.map(function (item) {
-        return (item.p.x - minX) / width;
-      });
+      const xPattern = pointsWithIndex.map(function(item){ return (item.p.x-minX)/width; });
 
       const aspect = height / (width + height);
 
@@ -508,95 +443,63 @@
       };
     }
 
-    function buildFeatureVector(f) {
-      const wSides = 3.0;
-      const wCos = 4.0;
-      const wOrient = 2.0;
-      const wY = 3.0;
-      const wX = 2.0;
-      const wAspect = 2.0;
-
-      const v = [];
-      v.push(f.sides[0] * wSides);
-      v.push(f.sides[1] * wSides);
-      v.push(f.sides[2] * wSides);
-
-      v.push(f.cosAngle * wCos);
-      v.push(f.orientation * wOrient);
-
-      v.push(f.yNorm[0] * wY);
-      v.push(f.yNorm[1] * wY);
-      v.push(f.yNorm[2] * wY);
-
-      v.push(f.xPattern[0] * wX);
-      v.push(f.xPattern[1] * wX);
-      v.push(f.xPattern[2] * wX);
-
-      v.push(f.aspect * wAspect);
-
+    function buildFeatureVector(f){
+      const wSides=3.0, wCos=4.0, wOrient=2.0, wY=3.0, wX=2.0, wAspect=2.0;
+      const v=[];
+      v.push(f.sides[0]*wSides); v.push(f.sides[1]*wSides); v.push(f.sides[2]*wSides);
+      v.push(f.cosAngle*wCos);
+      v.push(f.orientation*wOrient);
+      v.push(f.yNorm[0]*wY); v.push(f.yNorm[1]*wY); v.push(f.yNorm[2]*wY);
+      v.push(f.xPattern[0]*wX); v.push(f.xPattern[1]*wX); v.push(f.xPattern[2]*wX);
+      v.push(f.aspect*wAspect);
       return v;
     }
 
-    function vectorDistance(a, b) {
+    function vectorDistance(a,b){
       if (!a || !b || a.length !== b.length) return Infinity;
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) {
-        const diff = a[i] - b[i];
-        sum += diff * diff;
+      let sum=0;
+      for (let i=0;i<a.length;i++){
+        const diff=a[i]-b[i];
+        sum += diff*diff;
       }
       return Math.sqrt(sum);
     }
 
-    function recomputeClassificationStats() {
-      if (!calibration) {
-        classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
-        return;
-      }
+    function recomputeClassificationStats(){
+      if (!calibration){ classificationStats={ thresholdBase:0.8, thresholdUnknown:1.5 }; return; }
 
-      const allSamples = [];
-      DIGIT_ORDER.forEach(function (d) {
-        const key = String(d);
-        if (!calibration[key]) return;
-        const samples = calibration[key].samples || [];
-        samples.forEach(function (s) {
-          allSamples.push({ digit: d, features: s.features });
+      const allSamples=[];
+      DIGIT_ORDER.forEach(function(d){
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        (entry.samples||[]).forEach(function(s){
+          allSamples.push({ digit:d, features:s.features });
         });
       });
 
-      if (allSamples.length < 2) {
-        classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 };
-        return;
-      }
+      if (allSamples.length < 2){ classificationStats={ thresholdBase:0.6, thresholdUnknown:1.0 }; return; }
 
-      const sameMinDistances = [];
-      const betweenMinDistances = [];
+      const sameMinDistances=[];
+      const betweenMinDistances=[];
 
-      for (let i = 0; i < allSamples.length; i++) {
-        const a = allSamples[i];
-        const vecA = a.features.vector;
-        let minSame = Infinity;
-        let minOther = Infinity;
+      for (let i=0;i<allSamples.length;i++){
+        const a=allSamples[i];
+        const vecA=a.features.vector;
+        let minSame=Infinity, minOther=Infinity;
 
-        for (let j = 0; j < allSamples.length; j++) {
-          if (i === j) continue;
-          const b = allSamples[j];
-          const vecB = b.features.vector;
-          const dist = vectorDistance(vecA, vecB);
-
-          if (a.digit === b.digit) {
-            if (dist < minSame) minSame = dist;
-          } else {
-            if (dist < minOther) minOther = dist;
-          }
+        for (let j=0;j<allSamples.length;j++){
+          if (i===j) continue;
+          const b=allSamples[j];
+          const dist=vectorDistance(vecA, b.features.vector);
+          if (a.digit===b.digit){ if (dist<minSame) minSame=dist; }
+          else { if (dist<minOther) minOther=dist; }
         }
-
-        if (minSame < Infinity) sameMinDistances.push(minSame);
-        if (minOther < Infinity) betweenMinDistances.push(minOther);
+        if (minSame<Infinity) sameMinDistances.push(minSame);
+        if (minOther<Infinity) betweenMinDistances.push(minOther);
       }
 
-      if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
-        classificationStats = { thresholdBase: 0.7, thresholdUnknown: 1.2 };
-        return;
+      if (sameMinDistances.length===0 || betweenMinDistances.length===0){
+        classificationStats={ thresholdBase:0.7, thresholdUnknown:1.2 }; return;
       }
 
       const maxSame = Math.max.apply(null, sameMinDistances);
@@ -606,50 +509,44 @@
       if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
       else thresholdBase = maxSame * 1.3;
 
-      const thresholdUnknown = thresholdBase * 1.5;
-
       classificationStats = {
         thresholdBase: thresholdBase,
-        thresholdUnknown: thresholdUnknown
+        thresholdUnknown: thresholdBase * 1.5
       };
     }
 
-    function classifyMeasurement(features) {
+    function classifyMeasurement(features){
       const vec = features.vector;
-      if (!vec || !calibration) {
-        return { digit: null, isUnknown: true };
-      }
+      if (!vec || !calibration) return { digit:null, isUnknown:true };
 
-      const bestPerDigit = {};
-      DIGIT_ORDER.forEach(function (d) { bestPerDigit[d] = Infinity; });
+      const bestPerDigit={};
+      DIGIT_ORDER.forEach(function(d){ bestPerDigit[d]=Infinity; });
 
-      let bestDigit = null;
-      let bestDist = Infinity;
+      let bestDigit=null;
+      let bestDist=Infinity;
 
-      DIGIT_ORDER.forEach(function (d) {
+      DIGIT_ORDER.forEach(function(d){
         const entry = calibration[String(d)];
         if (!entry) return;
         const samples = entry.samples || [];
-        for (let i = 0; i < samples.length; i++) {
-          const sampleVec = samples[i].features.vector;
-          const dist = vectorDistance(vec, sampleVec);
+        for (let i=0;i<samples.length;i++){
+          const dist = vectorDistance(vec, samples[i].features.vector);
           if (dist < bestPerDigit[d]) bestPerDigit[d] = dist;
-          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+          if (dist < bestDist){ bestDist=dist; bestDigit=d; }
         }
       });
 
-      if (bestDigit === null || bestDist === Infinity) return { digit: null, isUnknown: true };
+      if (bestDigit===null || bestDist===Infinity) return { digit:null, isUnknown:true };
 
-      const stats = classificationStats || { thresholdBase: 0.8, thresholdUnknown: 1.5 };
-      if (bestDist > stats.thresholdUnknown) return { digit: null, isUnknown: true };
+      const stats = classificationStats || { thresholdBase:0.8, thresholdUnknown:1.5 };
+      if (bestDist > stats.thresholdUnknown) return { digit:null, isUnknown:true };
 
-      return { digit: bestDigit, isUnknown: false };
+      return { digit:bestDigit, isUnknown:false };
     }
 
-    function recognizeDigit(points) {
+    function recognizeDigit(points){
       if (!calibration || !classificationStats) return null;
       if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
-
       const features = computeFeatures(points);
       const classification = classifyMeasurement(features);
       if (!classification || classification.isUnknown || classification.digit == null) return null;
@@ -659,18 +556,13 @@
     /* ================================
        TG07 SPEL
        ================================ */
-
-    const DIGIT_IMAGE_PREFIX = "marbotic";
-    const DIGIT_IMAGE_SUFFIX = ".png";
-
-    const NUMBER_WORDS = {
-      0:"nul", 1:"één", 2:"twee", 3:"drie", 4:"vier",
-      5:"vijf", 6:"zes", 7:"zeven", 8:"acht", 9:"negen"
-    };
+    const DIGIT_IMAGE_PREFIX="marbotic";
+    const DIGIT_IMAGE_SUFFIX=".png";
+    const NUMBER_WORDS={ 0:"nul",1:"één",2:"twee",3:"drie",4:"vier",5:"vijf",6:"zes",7:"zeven",8:"acht",9:"negen" };
     function wordFor(d){ return NUMBER_WORDS[d] || String(d); }
 
-    // piepjes (WebAudio)
-    let audioCtx = null;
+    // WebAudio (piepjes) – werkt altijd na 1x tik
+    let audioCtx=null;
     function ensureAudio(){
       if (!audioCtx){
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -682,31 +574,45 @@
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.frequency.value = freq;
-      osc.type = "sine";
+      osc.frequency.value=freq;
+      osc.type="sine";
       osc.connect(gain);
       gain.connect(audioCtx.destination);
-      const now = audioCtx.currentTime;
+      const now=audioCtx.currentTime;
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      gain.gain.exponentialRampToValueAtTime(0.22, now+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now+duration);
       osc.start(now);
-      osc.stop(now + duration + 0.05);
+      osc.stop(now+duration+0.05);
     }
-    function sfxGood(){ playTone(880, 0.14); setTimeout(function(){ playTone(1175, 0.16); }, 120); }
-    function sfxBad(){ playTone(220, 0.20); }
+    function sfxGood(){ playTone(880,0.14); setTimeout(function(){ playTone(1175,0.16); },120); }
+    function sfxBad(){ playTone(220,0.20); }
 
-    // spraak (TTS) – iOS: pas betrouwbaar na user gesture
-    let preferredVoice = null;
-    let speechBusy = false;
+    // fallback “digit-melodie” (als TTS stil blijft op iPad)
+    function playDigitCue(d){
+      // simpele toonladder: starttoon + d korte tikjes
+      playTone(523, 0.08);
+      let i=0;
+      const n = Math.max(1, Math.min(9, d)); // 0 -> 1 tikje
+      const tick = function(){
+        i++;
+        playTone(784, 0.06);
+        if (i < n) setTimeout(tick, 110);
+      };
+      setTimeout(tick, 160);
+    }
+
+    // SpeechSynthesis – met timeout + fallback
+    let preferredVoice=null;
+    let speechBusy=false;
 
     function pickDutchVoice(){
       if (!("speechSynthesis" in window)) return null;
       const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
-      if (!voices || voices.length === 0) return null;
+      if (!voices || voices.length===0) return null;
       for (let i=0;i<voices.length;i++){
-        const v = voices[i];
-        if ((v.lang || "").toLowerCase().startsWith("nl")) return v;
+        const v=voices[i];
+        if ((v.lang||"").toLowerCase().startsWith("nl")) return v;
       }
       return null;
     }
@@ -719,48 +625,78 @@
       ensureVoice();
     }
 
-    function speak(text, interrupt){
-      if (!("speechSynthesis" in window)) return Promise.resolve();
+    function speak(text, interrupt, fallbackDigit){
+      // fallbackDigit: speel een “digit cue” als iPad niets uitspreekt
+      if (!("speechSynthesis" in window)) {
+        if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
+        return Promise.resolve();
+      }
+
       if (interrupt){
         try{ window.speechSynthesis.cancel(); }catch(e){}
       } else if (speechBusy){
         return new Promise(function(resolve){
-          const t = setInterval(function(){
-            if (!speechBusy){ clearInterval(t); speak(text, false).then(resolve); }
-          }, 50);
+          const t=setInterval(function(){
+            if (!speechBusy){ clearInterval(t); speak(text,false,fallbackDigit).then(resolve); }
+          },50);
         });
       }
 
       ensureVoice();
+
       return new Promise(function(resolve){
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = "nl-NL";
+        u.lang="nl-NL";
         if (preferredVoice) u.voice = preferredVoice;
-        u.rate = 0.95;
-        u.pitch = 1.05;
+        u.rate=0.95;
+        u.pitch=1.05;
 
-        speechBusy = true;
-        u.onend = function(){ speechBusy = false; resolve(); };
-        u.onerror = function(){ speechBusy = false; resolve(); };
+        let finished=false;
+        const done=function(){
+          if (finished) return;
+          finished=true;
+          speechBusy=false;
+          resolve();
+        };
 
-        try{ window.speechSynthesis.speak(u); }
-        catch(e){ speechBusy = false; resolve(); }
+        // timeout: als iOS stil blijft, toch door + fallback cue
+        const timeout = setTimeout(function(){
+          if (!finished){
+            try{ window.speechSynthesis.cancel(); }catch(e){}
+            if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
+            done();
+          }
+        }, 1600);
+
+        speechBusy=true;
+        u.onend=function(){ clearTimeout(timeout); done(); };
+        u.onerror=function(){ clearTimeout(timeout); if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit); done(); };
+
+        // iOS soms beter met microtask
+        setTimeout(function(){
+          try{ window.speechSynthesis.speak(u); }
+          catch(e){
+            clearTimeout(timeout);
+            if (typeof fallbackDigit === "number") playDigitCue(fallbackDigit);
+            done();
+          }
+        },0);
       });
     }
 
-    function sayPrompt(d){ return speak("Zoek de " + wordFor(d) + ".", true); }
-    function sayGood(d){ return speak("Goed zo! Dat is " + wordFor(d) + "!", false); }
+    function sayPrompt(d){ return speak("Zoek de " + wordFor(d) + ".", true, d); }
+    function sayGood(d){ return speak("Goed zo! Dat is " + wordFor(d) + "!", false, d); }
+    function sayTryAgain(d){ return speak("Oeps. Zoek de " + wordFor(d) + ".", false, d); }
     function sayTeachAndRetryLater(d){
-      return speak("Dit is de " + wordFor(d) + ". Ik vraag hem straks nog een keer. Dit is dus de " + wordFor(d) + ".", false);
+      return speak("Dit is de " + wordFor(d) + ". Ik vraag hem straks nog een keer. Dit is dus de " + wordFor(d) + ".", false, d);
     }
-    function sayTryAgain(d){ return speak("Oeps. Zoek de " + wordFor(d) + ".", false); }
-    function sayLevelUp(){ return speak("Goed gedaan! Volgende level!", false); }
+    function sayLevelUp(){ return speak("Goed gedaan! Volgende level!", false, 9); }
 
     function shuffle(arr){
-      const a = arr.slice();
+      const a=arr.slice();
       for (let i=a.length-1;i>0;i--){
-        const j = Math.floor(Math.random()*(i+1));
-        const t = a[i]; a[i]=a[j]; a[j]=t;
+        const j=Math.floor(Math.random()*(i+1));
+        const t=a[i]; a[i]=a[j]; a[j]=t;
       }
       return a;
     }
@@ -768,19 +704,17 @@
     document.addEventListener("DOMContentLoaded", function(){
       const scanArea = document.getElementById("scan-area");
       const earBtn = document.getElementById("ear-btn");
-      const levelChip = document.getElementById("level-chip");
-      const revealDigit = document.getElementById("reveal-digit");
       const curtains = document.getElementById("curtains");
+      const revealDigit = document.getElementById("reveal-digit");
       const progressEl = document.getElementById("progress");
 
-      // Timing: pas aan als je gordijnen.gif langer/korter is
       const CURTAIN_HIDE_AFTER_OPEN_MS = 950;
 
       function setScanState(state){
         scanArea.classList.remove("state-neutral","state-scanning","state-correct","state-wrong");
-        if (state === "scanning") scanArea.classList.add("state-scanning");
-        else if (state === "correct") scanArea.classList.add("state-correct");
-        else if (state === "wrong") scanArea.classList.add("state-wrong");
+        if (state==="scanning") scanArea.classList.add("state-scanning");
+        else if (state==="correct") scanArea.classList.add("state-correct");
+        else if (state==="wrong") scanArea.classList.add("state-wrong");
         else scanArea.classList.add("state-neutral");
       }
 
@@ -800,8 +734,8 @@
         curtainsAnimate(true);
         requestAnimationFrame(function(){ setCurtainsOpen(true); });
         setTimeout(function(){
-          curtainsAnimate(false);  // terug naar still
-          hideCurtainsLayer();     // gif niet zichtbaar meer
+          curtainsAnimate(false);
+          hideCurtainsLayer();
         }, CURTAIN_HIDE_AFTER_OPEN_MS);
       }
 
@@ -812,82 +746,75 @@
         revealDigit.style.backgroundImage = "none";
       }
 
-      // progress pips = digits in level
-      let pips = [];
+      // score pips
+      let pips=[];
       function buildProgress(levelDigits){
-        progressEl.innerHTML = "";
-        pips = [];
+        progressEl.innerHTML="";
+        pips=[];
         for (let i=0;i<levelDigits.length;i++){
-          const pip = document.createElement("div");
-          pip.className = "pip";
+          const pip=document.createElement("div");
+          pip.className="pip";
           progressEl.appendChild(pip);
           pips.push(pip);
         }
       }
       function updateProgress(levelDigits, mastered){
         for (let i=0;i<levelDigits.length;i++){
-          const d = levelDigits[i];
+          const d=levelDigits[i];
           pips[i].classList.toggle("on", !!mastered[d]);
         }
       }
 
-      function setLevelUI(level){
-        levelChip.textContent = (level === 1) ? "🌱" : "🚀";
-      }
-
-      // ===== game state =====
-      let level = 1;
-      let levelDigits = [1,2,3,4,5]; // level 1: geen 0
-      let bag = shuffle(levelDigits);
-      let mastered = {};
-      let reviewQueue = []; // {digit, dueAt}
-      let roundCount = 0;
+      // state
+      let level=1;
+      let levelDigits=[1,2,3,4,5];      // level 1: geen 0
+      let bag=shuffle(levelDigits);
+      let mastered={};
+      let reviewQueue=[];
+      let roundCount=0;
 
       let targetDigit = bag.pop();
       let wrongCount = 0;
       let roundActive = true;
 
-      // touch/recognition
-      let currentPoints = [];
-      let hasResultForCurrentTouches = false;
+      let currentPoints=[];
+      let hasResultForCurrentTouches=false;
 
-      // iOS audio: pas goed na user gesture -> we spreken prompt zeker bij eerste aanraking
-      let audioUnlocked = false;
-      let promptEverSpoken = false;
+      let audioUnlocked=false;
+      let promptEverSpoken=false;
 
       function unlockAudioOnce(){
         if (audioUnlocked) return;
-        audioUnlocked = true;
+        audioUnlocked=true;
         ensureAudio();
-        // (speechSynthesis heeft geen echte unlock, maar user gesture helpt)
         try{ if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }catch(e){}
       }
 
       function getDueReview(){
-        const dueIdx = [];
+        const dueIdx=[];
         for (let i=0;i<reviewQueue.length;i++){
           if (reviewQueue[i].dueAt <= roundCount) dueIdx.push(i);
         }
-        if (dueIdx.length === 0) return null;
+        if (dueIdx.length===0) return null;
         const pickIndex = dueIdx[Math.floor(Math.random()*dueIdx.length)];
-        const item = reviewQueue.splice(pickIndex, 1)[0];
+        const item = reviewQueue.splice(pickIndex,1)[0];
         return item.digit;
       }
 
       function getNextTarget(){
         const dueReview = getDueReview();
         if (dueReview !== null){
-          if (bag.length === 0 || Math.random() < 0.35){
-            return dueReview;
-          } else {
-            reviewQueue.push({ digit: dueReview, dueAt: roundCount });
-          }
+          if (bag.length===0 || Math.random()<0.35) return dueReview;
+          reviewQueue.push({ digit: dueReview, dueAt: roundCount });
         }
-        if (bag.length > 0) return bag.pop();
-        if (reviewQueue.length > 0){
-          reviewQueue.sort(function(a,b){ return a.dueAt - b.dueAt; });
+
+        if (bag.length>0) return bag.pop();
+
+        if (reviewQueue.length>0){
+          reviewQueue.sort(function(a,b){ return a.dueAt-b.dueAt; });
           return reviewQueue.shift().digit;
         }
+
         return null;
       }
 
@@ -897,17 +824,16 @@
         for (let i=0;i<levelDigits.length;i++){
           if (!mastered[levelDigits[i]]) return Promise.resolve(false);
         }
-        if (reviewQueue.length > 0) return Promise.resolve(false);
-        if (bag.length > 0) return Promise.resolve(false);
+        if (reviewQueue.length>0) return Promise.resolve(false);
+        if (bag.length>0) return Promise.resolve(false);
 
-        level = 2;
-        levelDigits = [0,1,2,3,4,5,6,7,8,9];
-        bag = shuffle(levelDigits);
-        mastered = {};
-        reviewQueue = [];
-        roundCount = 0;
+        level=2;
+        levelDigits=[0,1,2,3,4,5,6,7,8,9];
+        bag=shuffle(levelDigits);
+        mastered={};
+        reviewQueue=[];
+        roundCount=0;
 
-        setLevelUI(level);
         buildProgress(levelDigits);
         updateProgress(levelDigits, mastered);
 
@@ -915,7 +841,7 @@
       }
 
       function speakPromptNow(){
-        promptEverSpoken = true;
+        promptEverSpoken=true;
         return sayPrompt(targetDigit);
       }
 
@@ -929,8 +855,7 @@
         closeCurtainsStill();
         hideDigit();
 
-        // iOS kan dit blokkeren als er nog geen user gesture was.
-        // Daarom: we proberen het, maar we herhalen zeker bij eerste aanraking.
+        // probeer (maar iOS kan blokkeren; we doen het zeker bij 1e aanraking)
         speakPromptNow();
       }
 
@@ -938,14 +863,12 @@
         const next = getNextTarget();
         if (next === null){
           return maybeLevelUp().then(function(didUp){
-            if (didUp){
-              startRound(getNextTarget());
-            } else {
-              // level 2 cyclus klaar -> opnieuw
-              bag = shuffle(levelDigits);
-              mastered = {};
-              reviewQueue = [];
-              roundCount = 0;
+            if (didUp) startRound(getNextTarget());
+            else {
+              bag=shuffle(levelDigits);
+              mastered={};
+              reviewQueue=[];
+              roundCount=0;
               updateProgress(levelDigits, mastered);
               startRound(getNextTarget());
             }
@@ -955,21 +878,15 @@
         return Promise.resolve();
       }
 
-      // Belangrijk: na feedback -> gordijnen dicht -> nieuwe opdracht hoorbaar
       function afterFeedbackGoNext(){
         closeCurtainsStill();
         hideDigit();
-        // kleine ademruimte, dan nieuwe prompt (en dus nieuwe ronde)
-        setTimeout(function(){
-          newRound().then(function(){
-            // nieuwe ronde startRound() zegt prompt (of bij eerste touch)
-          });
-        }, 180);
+        setTimeout(function(){ newRound(); }, 180);
       }
 
       function handleCorrect(){
         if (!roundActive) return;
-        roundActive = false;
+        roundActive=false;
 
         setScanState("correct");
         sfxGood();
@@ -977,13 +894,11 @@
         showDigit(targetDigit);
         openCurtainsThenHide();
 
-        mastered[targetDigit] = true;
+        mastered[targetDigit]=true;
         updateProgress(levelDigits, mastered);
         roundCount += 1;
 
-        sayGood(targetDigit).then(function(){
-          afterFeedbackGoNext();
-        });
+        sayGood(targetDigit).then(function(){ afterFeedbackGoNext(); });
       }
 
       function handleWrong(){
@@ -994,18 +909,16 @@
         sfxBad();
 
         if (wrongCount < 2){
-          // geen tekenen tonen; alleen opnieuw vragen
           sayTryAgain(targetDigit).then(function(){
             setTimeout(function(){
-              if (currentPoints.length === 0) setScanState("neutral");
+              if (currentPoints.length===0) setScanState("neutral");
               else setScanState("scanning");
             }, 250);
           });
           return;
         }
 
-        // 2x fout: laat zien + zeg jouw tekst + later terug laten komen
-        roundActive = false;
+        roundActive=false;
 
         showDigit(targetDigit);
         openCurtainsThenHide();
@@ -1013,19 +926,16 @@
         reviewQueue.push({ digit: targetDigit, dueAt: roundCount + 3 });
         roundCount += 1;
 
-        sayTeachAndRetryLater(targetDigit).then(function(){
-          afterFeedbackGoNext();
-        });
+        sayTeachAndRetryLater(targetDigit).then(function(){ afterFeedbackGoNext(); });
       }
 
       function getPointsFromTouches(touchList){
         const rect = scanArea.getBoundingClientRect();
-        const points = [];
+        const points=[];
         for (let i=0;i<touchList.length;i++){
-          const t = touchList[i];
-          const x = t.clientX;
-          const y = t.clientY;
-          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom){
+          const t=touchList[i];
+          const x=t.clientX, y=t.clientY;
+          if (x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){
             points.push({ x:x, y:y });
           }
         }
@@ -1033,13 +943,9 @@
       }
 
       function handleTouchEvent(e){
-        // Cruciaal tegen iOS zoom/scroll:
         if (e && e.cancelable) e.preventDefault();
-
         unlockAudioOnce();
 
-        // Als iOS de eerste prompt blokkeerde: spreek hem bij de eerste aanraking alsnog uit.
-        // (zonder extra knopjes/tekst)
         if (!promptEverSpoken){
           speakPromptNow();
         }
@@ -1047,8 +953,8 @@
         const touches = e.touches || [];
         currentPoints = getPointsFromTouches(touches);
 
-        if (currentPoints.length === 0){
-          hasResultForCurrentTouches = false;
+        if (currentPoints.length===0){
+          hasResultForCurrentTouches=false;
           if (roundActive) setScanState("neutral");
           return;
         }
@@ -1056,7 +962,7 @@
         if (roundActive) setScanState("scanning");
 
         if (currentPoints.length !== expectedTouchPoints){
-          hasResultForCurrentTouches = false;
+          hasResultForCurrentTouches=false;
           return;
         }
 
@@ -1070,12 +976,10 @@
         }
       }
 
-      // listeners: NIET passive, zodat preventDefault werkt
       ["touchstart","touchmove","touchend","touchcancel"].forEach(function(type){
         scanArea.addEventListener(type, handleTouchEvent, { passive:false });
       });
 
-      // Oortje: prompt opnieuw
       earBtn.addEventListener("touchstart", function(e){
         if (e && e.cancelable) e.preventDefault();
         unlockAudioOnce();
@@ -1087,21 +991,24 @@
       });
 
       // init UI
-      setLevelUI(level);
       buildProgress(levelDigits);
       updateProgress(levelDigits, mastered);
       closeCurtainsStill();
       hideDigit();
       setScanState("neutral");
+      promptEverSpoken=false;
 
-      // start
-      fetch("calibration.json")
+      // kalibratie laden (sterker pad voor GitHub Pages)
+      const calibUrl = new URL("calibration.json", location.href).toString();
+
+      fetch(calibUrl, { cache: "no-store" })
         .then(function(r){ return r.json(); })
         .then(function(data){
           initCalibration(data);
           startRound(getNextTarget());
         })
         .catch(function(){
+          // zonder calibration werkt recognizeDigit niet, maar game start wel
           startRound(getNextTarget());
         });
     });
