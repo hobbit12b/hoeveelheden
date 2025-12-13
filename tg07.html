@@ -2,10 +2,13 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Gordijnen demo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Gordijnen zonder flikker</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <style>
+  *{ box-sizing:border-box; }
+
   body{
     margin:0;
     height:100vh;
@@ -13,12 +16,12 @@
     align-items:center;
     justify-content:center;
     background:#f4f1ff;
-    font-family:system-ui,sans-serif;
+    font-family:system-ui, sans-serif;
   }
 
   .stage{
     width:360px;
-    aspect-ratio:498 / 286;
+    aspect-ratio:498 / 286;      /* originele gordijnverhouding */
     position:relative;
     border-radius:24px;
     overflow:hidden;
@@ -35,29 +38,39 @@
     justify-content:center;
     font-size:140px;
     font-weight:800;
+    color:#333;
     z-index:1;
   }
 
-  /* Still image (start) */
-  .curtain-still{
+  /* Gordijn-lagen */
+  .curtain-layer{
     position:absolute;
     inset:0;
-    z-index:5;
-  }
-
-  /* Animatie */
-  .curtain-gif{
-    position:absolute;
-    inset:0;
-    z-index:6;
-    display:none;
     pointer-events:none;
   }
 
-  img{
+  /* Still blijft ALTIJD zichtbaar */
+  .curtain-still{
+    z-index:5;
+  }
+
+  /* Animatie ligt erboven en fade-in */
+  .curtain-anim{
+    z-index:6;
+    opacity:0;
+    transition:opacity .08s linear;
+    will-change:opacity;
+  }
+
+  .curtain-anim.on{
+    opacity:1;
+  }
+
+  .curtain-layer img{
     width:100%;
     height:100%;
     object-fit:cover;
+    display:block;
   }
 
   button{
@@ -68,6 +81,7 @@
     border:none;
     background:#ff8a65;
     color:#fff;
+    cursor:pointer;
   }
 </style>
 </head>
@@ -76,45 +90,62 @@
 
 <div>
   <div class="stage">
+    <!-- cijfer -->
     <div class="digit">5</div>
 
-    <!-- still -->
-    <div class="curtain-still" id="still">
-      <img src="gordijnen_still.png">
+    <!-- STILL: altijd zichtbaar -->
+    <div class="curtain-layer curtain-still">
+      <img src="gordijnen_still.png" alt="">
     </div>
 
-    <!-- anim -->
-    <div class="curtain-gif" id="anim">
-      <img id="gif" src="">
+    <!-- ANIMATIE: fade-in boven still -->
+    <div class="curtain-layer curtain-anim" id="curtain-anim">
+      <img id="curtain-gif" src="gordijnen_openen.gif" alt="">
     </div>
   </div>
 
   <div style="text-align:center">
-    <button onclick="playCurtain()">Open gordijn</button>
+    <button id="play">Speel animatie</button>
   </div>
 </div>
 
 <script>
-  const STILL = document.getElementById("still");
-  const ANIM  = document.getElementById("anim");
-  const GIF   = document.getElementById("gif");
+  const animLayer = document.getElementById("curtain-anim");
+  const gifEl     = document.getElementById("curtain-gif");
+  const playBtn   = document.getElementById("play");
 
-  const GIF_DURATION_MS = 1400; // ← pas aan aan jouw animatie
+  // 👉 stel dit in op de echte lengte van jouw GIF
+  const GIF_DURATION_MS = 1400;
 
-  function playCurtain(){
-    // verberg still
-    STILL.style.display = "none";
-
-    // forceer GIF restart
-    GIF.src = "gordijnen_openen.gif?t=" + Date.now();
-    ANIM.style.display = "block";
-
-    // na afloop animatie
-    setTimeout(()=>{
-      ANIM.style.display = "none";
-      STILL.style.display = "block"; // of weg, afhankelijk van spel
-    }, GIF_DURATION_MS);
+  // Preload om witte flits te voorkomen
+  function preloadGif(){
+    return new Promise(resolve=>{
+      const img = new Image();
+      img.onload = ()=>resolve();
+      img.onerror = ()=>resolve();
+      img.src = "gordijnen_openen.gif";
+    });
   }
+
+  async function playCurtain(){
+    // 1. zorg dat GIF al in cache zit
+    await preloadGif();
+
+    // 2. forceer herstart van GIF
+    gifEl.src = "gordijnen_openen.gif?t=" + Date.now();
+
+    // 3. pas zichtbaar maken als browser kan tekenen
+    gifEl.onload = ()=>{
+      animLayer.classList.add("on");
+
+      // 4. na volledige animatie weer weg
+      setTimeout(()=>{
+        animLayer.classList.remove("on");
+      }, GIF_DURATION_MS);
+    };
+  }
+
+  playBtn.addEventListener("click", playCurtain);
 </script>
 
 </body>
