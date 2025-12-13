@@ -4,8 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Spel met scanvlak en feedback</title>
+
   <style>
-    :root { --topbar-h: 90px; }
+    :root{
+      --topbar-h: 150px;
+      --fade-ms: 900ms;
+    }
 
     body{
       margin:0;
@@ -29,36 +33,63 @@
       z-index:10;
     }
 
+    /* goed2.gif dubbel zo groot */
     #goodAnim{
-      height:66px;
+      height:132px;
       width:auto;
       display:none;
     }
 
-    .correctWrap{
-      position:relative;
+    /* Correcte cijferblok */
+    #correctWrap{
       display:none;
-      min-width:80px;
-      height:66px;
+      align-items:center;
+      height:132px;
+    }
+
+    .numberStage{
+      position:relative;
+      height:132px;
+      min-width:140px;
       display:flex;
       align-items:center;
       justify-content:flex-start;
     }
 
     #correctNumber{
-      font-size:56px;
-      font-weight:800;
+      font-size:76px;
+      font-weight:900;
       line-height:1;
-      padding-right:6px;
+      padding-right:10px;
     }
 
-    /* magic over het cijfer */
+    /* marbotic bovenop het cijfer, langzaam infaden */
+    #marboticImg{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:130px;
+      height:auto;
+      pointer-events:none;
+      display:none;
+
+      opacity:0;
+      transition: opacity var(--fade-ms) ease;
+    }
+
+    #marboticImg.is-on{
+      opacity:1;
+    }
+
+    /* magic bovenop alles */
     #magicAnim{
       position:absolute;
-      left:-18px;
-      top:-18px;
-      width:110px;
-      height:110px;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:170px;
+      height:170px;
       pointer-events:none;
       display:none;
     }
@@ -102,10 +133,11 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:22px;
+      font-size:20px;
       font-weight:700;
       color:rgba(0,0,0,.45);
       user-select:none;
+      transition: transform 120ms ease;
     }
 
     .side{
@@ -113,6 +145,12 @@
       border-radius:18px;
       padding:18px;
       box-shadow:0 10px 26px rgba(0,0,0,.06);
+    }
+
+    .question{
+      font-size:20px;
+      font-weight:800;
+      margin:0 0 10px;
     }
 
     .btnRow{
@@ -133,12 +171,6 @@
 
     button:active{ transform:scale(.99); }
 
-    .question{
-      font-size:20px;
-      font-weight:800;
-      margin:0 0 10px;
-    }
-
     .hint{
       margin:10px 0 0;
       color:rgba(0,0,0,.55);
@@ -152,9 +184,13 @@
   <!-- TOP FEEDBACK -->
   <div class="topbar">
     <img id="goodAnim" src="goed2.gif" alt="goed" />
-    <div class="correctWrap" id="correctWrap">
-      <span id="correctNumber">0</span>
-      <img id="magicAnim" src="magic.gif" alt="magic" />
+
+    <div id="correctWrap">
+      <div class="numberStage">
+        <span id="correctNumber">0</span>
+        <img id="marboticImg" src="marbotic5.png" alt="marbotic" />
+        <img id="magicAnim" src="magic.gif" alt="magic" />
+      </div>
     </div>
   </div>
 
@@ -162,63 +198,81 @@
     <div class="grid">
       <div class="scanvlak">
         <p class="scanTitle">Scanvlak</p>
-        <div class="scanBox" id="scanBox">Plaats hier het spel, kaarten, rotsen, wat jij gebruikt</div>
+        <div class="scanBox" id="scanBox">Plaats hier jouw spelelementen</div>
       </div>
 
       <div class="side">
         <p class="question">Kies het juiste antwoord</p>
         <div class="btnRow" id="answers"></div>
-        <p class="hint">Demo: klik expres een fout antwoord, daarna het goede, dan zie je bovenin goed2 plus cijfer plus magic.</p>
+        <p class="hint">Demo, klik een fout antwoord en daarna het goede, dan zie je bovenin goed2, het juiste cijfer, marbotic fade in en magic erbovenop.</p>
       </div>
     </div>
   </div>
 
   <script>
-    // Kleine demo data
+    // Demo instellingen, vervang dit door jouw speldata
     const rightAnswer = 7;
     const options = [2, 5, 7, 9];
 
     const goodAnim = document.getElementById("goodAnim");
     const correctWrap = document.getElementById("correctWrap");
     const correctNumber = document.getElementById("correctNumber");
+    const marboticImg = document.getElementById("marboticImg");
     const magicAnim = document.getElementById("magicAnim");
     const answers = document.getElementById("answers");
+    const scanBox = document.getElementById("scanBox");
 
-    // Preload zodat het meteen soepel voelt
-    ["goed2.gif","magic.gif"].forEach(src => { const i = new Image(); i.src = src; });
+    // Preload voor soepel afspelen
+    ["goed2.gif", "magic.gif", "marbotic5.png"].forEach(src => {
+      const i = new Image();
+      i.src = src;
+    });
 
     function playMagicOnce(){
       magicAnim.style.display = "block";
-      // gif herstarten door src te verversen
-      const base = "magic.gif";
-      magicAnim.src = base + "?v=" + Date.now();
+      magicAnim.src = "magic.gif?v=" + Date.now(); // gif herstarten
       window.setTimeout(() => {
         magicAnim.style.display = "none";
       }, 900);
     }
 
+    function showWrongFeedback(){
+      scanBox.style.transform = "translateX(-3px)";
+      window.setTimeout(() => scanBox.style.transform = "translateX(3px)", 80);
+      window.setTimeout(() => scanBox.style.transform = "translateX(0px)", 160);
+    }
+
+    // Dit is de functie die jij in jouw spel aanroept bij een goed antwoord
     function showCorrectFeedback(n){
       goodAnim.style.display = "block";
       correctWrap.style.display = "flex";
       correctNumber.textContent = String(n);
+
+      // marbotic alleen bij goed, langzaam infaden
+      marboticImg.style.display = "block";
+      marboticImg.classList.remove("is-on");
+      marboticImg.style.opacity = "0";
+
+      // Forceer een render, daarna pas class toevoegen voor de fade
+      requestAnimationFrame(() => {
+        marboticImg.classList.add("is-on");
+      });
+
+      // magic bovenop het cijfer, meteen afspelen
       playMagicOnce();
 
-      // optioneel: na even weer weg
+      // Optioneel, na een moment weer netjes verdwijnen
       window.setTimeout(() => {
-        goodAnim.style.display = "none";
-        correctWrap.style.display = "none";
-      }, 1600);
+        marboticImg.classList.remove("is-on"); // fade out
+        window.setTimeout(() => {
+          goodAnim.style.display = "none";
+          marboticImg.style.display = "none";
+          correctWrap.style.display = "none";
+        }, 450);
+      }, 1800);
     }
 
-    function showWrongFeedback(){
-      // hier kun je jouw fout feedback doen, bijvoorbeeld kort trillen of rood kader
-      const box = document.getElementById("scanBox");
-      box.style.transform = "translateX(-3px)";
-      window.setTimeout(() => box.style.transform = "translateX(3px)", 80);
-      window.setTimeout(() => box.style.transform = "translateX(0px)", 160);
-    }
-
-    // Buttons renderen
+    // Demo knoppen
     options.forEach(n => {
       const b = document.createElement("button");
       b.textContent = n;
@@ -231,6 +285,9 @@
       });
       answers.appendChild(b);
     });
+
+    // Tip voor jouw echte spel:
+    // roep showCorrectFeedback(juisteCijfer) aan zodra je controleert dat het antwoord klopt
   </script>
 </body>
 </html>
