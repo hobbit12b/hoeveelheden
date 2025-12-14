@@ -41,13 +41,13 @@
       --explosion-fade-in: 0.55s;
       --explosion-fadeout: 200ms;
 
-      /* jouw testwaarde, wordt geschaald */
-      --explosion-offset-y-base: -200px;
+      /* basis offset, portrait was hiermee goed */
+      --explosion-offset-y-base: 0px;
       --explosion-offset-mult: 0.65;
       --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
-      /* standaard wat naar rechts, portrait is nu goed */
-      --explosion-offset-x-base: 70px;
+      /* extra naar rechts, om mooi achter het cijfer te vallen */
+      --explosion-offset-x-base: 200px;
       --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
@@ -270,41 +270,45 @@
       100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
-    /* Portrait: onderkant toverfee op de onderrand van de gestippelde kaart */
+    /* Portrait: onderkant toverfee tegen de stippellijn onder */
     @media (orientation: portrait){
       #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
         width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
-        transform: translateX(-50%);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
       }
     }
 
-    /* Landscape: toverfee en cijfer wat groter, toverfee iets meer naar links,
-       en explosie precies gecentreerd op het cijfer */
+    /* Landscape: toverfee en cijfer wat groter, toverfee iets meer naar links, jurk tegen onderlijn
+       Explosie: meer achter het cijfer (meer naar rechts) en lager (y omlaag) */
     @media (orientation: landscape){
       :root{
-        --fairy-left: 25%;
-        --explosion-offset-x-base: 0px;
-        --explosion-offset-y-base: 0px;
-        --explosion-offset-mult: 1;
+        --fairy-left: 26%;
+        --explosion-offset-mult: 0.75;
+
+        /* ✅ geen 80px meer, dat zette hem te veel richting toverfee */
+        --explosion-offset-x-base: 200px;
+
+        /* ✅ lager in landscape */
+        --explosion-offset-y-base: 150px;
       }
 
       #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
-        width: clamp(260px, calc(var(--fairy-size-base) * var(--scale) * 1.28), 660px);
-        transform: translateX(-50%);
+        width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
       }
 
       #digitImg{
-        width: clamp(180px, calc(var(--digit-size-base) * var(--scale) * 1.15), 460px);
+        width: clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px);
       }
 
       #explosionWrap{
-        width: calc(clamp(180px, calc(var(--digit-size-base) * var(--scale) * 1.15), 460px) * var(--explosion-scale));
+        width: calc(clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px) * var(--explosion-scale));
       }
     }
 
@@ -483,7 +487,7 @@
       spreekknop.png
     */
 
-    // ✅ “één” met accent, zodat iOS minder snel “un” zegt
+    // ✅ één met accent
     const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
 
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
@@ -1008,9 +1012,8 @@
     let speakToken = 0;
     function speakDigit(digit){
       const word = DIGIT_WORDS_NL[digit] ?? String(digit);
-      const phrase = 'cijfer ' + word;
-
       if (!('speechSynthesis' in window)) return;
+
       const myToken = ++speakToken;
 
       const doSpeak = () => {
@@ -1018,7 +1021,7 @@
 
         try { window.speechSynthesis.resume(); } catch(e) {}
 
-        const u = new SpeechSynthesisUtterance('\u200B' + phrase);
+        const u = new SpeechSynthesisUtterance('\u200B' + word);
         u.lang = 'nl-NL';
         if (selectedVoice) u.voice = selectedVoice;
         u.rate = 0.92;
@@ -1093,3 +1096,4 @@
   </script>
 </body>
 </html>
+
