@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Testomgeving, finetunen toverfee, cijfer, explosie mp4</title>
+  <title>Testomgeving, toverfee, cijfer, explosie mp4 met zwarte achtergrond</title>
 
   <style>
     :root{
-      /* JOUW INSTELLINGEN */
       --fairy-left: 32.5%;
       --fairy-top: 51%;
       --digit-left: 68.5%;
@@ -24,10 +23,13 @@
       --explosion-fade-in: 0.55s;
       --explosion-offset-y: -22px;
       --explosion-hide-after: 5.05s;
-      --explosion-fadeout: 10ms;
+      --explosion-fadeout: 200ms;
 
       --card-w: min(980px, 92vw);
       --card-h: min(520px, 56vh);
+
+      /* optioneel, maakt explosie beter zichtbaar op wit */
+      --boom-backdrop: 0.18;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -51,14 +53,8 @@
       border-right: 1px solid rgba(0,0,0,0.06);
       overflow:auto;
     }
-
     .panel h1{ font-size: 16px; margin: 0 0 10px 0; }
-    .hint{
-      font-size: 12px;
-      color: rgba(0,0,0,0.62);
-      line-height: 1.35;
-      margin-bottom: 14px;
-    }
+    .hint{ font-size: 12px; color: rgba(0,0,0,0.62); line-height: 1.35; margin-bottom: 14px; }
 
     .group{
       border: 1px solid rgba(0,0,0,0.08);
@@ -67,7 +63,6 @@
       margin-bottom: 12px;
       background: #fff;
     }
-
     .group h2{ font-size: 13px; margin: 0 0 10px 0; }
 
     .row{
@@ -77,7 +72,6 @@
       align-items:center;
       margin: 8px 0;
     }
-
     .row label{ font-size: 12px; color: rgba(0,0,0,0.78); }
     .row output{
       font-variant-numeric: tabular-nums;
@@ -86,7 +80,6 @@
       min-width: 92px;
       text-align:right;
     }
-
     input[type="range"]{ width:100%; }
 
     select{
@@ -100,7 +93,6 @@
     }
 
     .btns{ display:flex; gap: 10px; flex-wrap:wrap; margin-top: 8px; }
-
     button{
       appearance:none;
       border:none;
@@ -112,7 +104,6 @@
       color:#fff;
       box-shadow: 0 10px 22px rgba(0,0,0,0.12);
     }
-
     button.secondary{
       background:#f2eee9;
       color:#4d4a48;
@@ -121,14 +112,7 @@
       font-weight: 900;
     }
 
-    .check{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      margin-top: 10px;
-      font-size: 12px;
-      color: rgba(0,0,0,0.75);
-    }
+    .check{ display:flex; gap: 10px; align-items:center; margin-top: 10px; font-size: 12px; color: rgba(0,0,0,0.75); }
 
     textarea{
       width: 100%;
@@ -162,9 +146,12 @@
       box-shadow: 0 14px 34px rgba(0,0,0,0.10);
       position:relative;
       overflow: visible;
+
+      /* belangrijk voor mix-blend-mode, anders blendt hij met de hele pagina */
+      isolation: isolate;
     }
 
-    /* gestippelde lijn als overlay boven alles */
+    /* gestippelde lijn boven alles */
     .gameCard::after{
       content:"";
       position:absolute;
@@ -227,10 +214,22 @@
       transform: translate(-50%, -50%);
     }
 
+    /* optioneel subtiel donker achter de explosie, helpt op wit */
+    #explosionWrap::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(circle at 50% 50%, rgba(0,0,0,var(--boom-backdrop)) 0%, rgba(0,0,0,0) 70%);
+      pointer-events:none;
+    }
+
     #explosionVid{
       width: 100%;
       height: auto;
       display:block;
+
+      /* zwart wordt onzichtbaar */
+      mix-blend-mode: screen;
     }
 
     .stage.play #digitImg{
@@ -238,7 +237,6 @@
       animation-delay: var(--digit-delay);
     }
 
-    /* fade in explosie via wrapper, stabiel op iPad */
     .stage.boom #explosionWrap{
       animation: pop var(--explosion-fade-in) ease forwards;
       animation-delay: 0s;
@@ -267,7 +265,7 @@
     <aside class="panel">
       <h1>Testomgeving, finetunen</h1>
       <div class="hint">
-        Start triggert toverfee, cijfer en explosie. De toverfee staat altijd in beeld, eerst frame bij openen, na afspelen blijft hij op het laatste beeld staan.
+        Start: toverfee speelt, cijfer verschijnt, explosie start op jouw timing en fade out werkt op de wrapper.
       </div>
 
       <div class="group">
@@ -478,7 +476,6 @@
     }
 
     function primeFirstFrame(video){
-      /* poging om op iPad zeker beeld te krijgen */
       video.muted = true;
       video.playsInline = true;
       video.loop = false;
