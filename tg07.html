@@ -20,7 +20,7 @@
       /* automatische schaal, gezet door JS op basis van de kaart */
       --scale: 1;
 
-      /* jouw geteste verhoudingen */
+      /* jouw basisposities */
       --fairy-left: 32.5%;
       --fairy-top: 51%;
       --digit-left: 68.5%;
@@ -29,7 +29,6 @@
       --fairy-size-base: 439px;
       --digit-size-base: 260px;
 
-      /* geschaalde maten */
       --digit-size: clamp(140px, calc(var(--digit-size-base) * var(--scale)), 340px);
       --fairy-size: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
 
@@ -42,12 +41,9 @@
       --explosion-scale: 1.5;
       --explosion-fade-in: 0.55s;
 
-      /* jouw testwaarde, maar op iPad vaak te heftig zodra er geclipt wordt */
+      /* jouw testwaarde, wordt geschaald */
       --explosion-offset-y-base: -200px;
-
-      /* hiermee blijft het “in verhouding”, maar zichtbaar binnen het kader */
-      --explosion-offset-mult: 0.55;
-
+      --explosion-offset-mult: 0.65;
       --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
       --explosion-hide-after: 5.05s;
@@ -174,7 +170,6 @@
       .gameCard{ height: min(420px, 34vh); }
     }
 
-    /* ✅ echte clip binnen het gestippelde vlak */
     .cardInner{
       position:absolute;
       inset: 0;
@@ -182,7 +177,7 @@
       overflow: hidden;
     }
 
-    /* ✅ spreekknop rechtsboven in de kaart */
+    /* spreekknop rechtsboven in de kaart */
     .speakBtn{
       position:absolute;
       right: 14px;
@@ -222,7 +217,7 @@
       transform: translate(-50%, -50%);
     }
 
-    /* Toverfee standaard, portrait ziet er bij jou al goed uit */
+    /* Toverfee altijd zichtbaar */
     #fairyVid{
       left: var(--fairy-left);
       top: var(--fairy-top);
@@ -231,7 +226,7 @@
       z-index: 1;
     }
 
-    /* Digit boven de toverfee */
+    /* Cijfer boven de toverfee */
     #digitImg{
       left: var(--digit-left);
       top: var(--digit-top);
@@ -240,17 +235,22 @@
       z-index: 2;
     }
 
-    /* Explosie wrapper, hierdoor werkt fade betrouwbaarder op iPad */
+    /* Explosie: nu echt absoluut gepositioneerd, anders zie je hem niet */
     #explosionWrap{
+      position:absolute;
       left: var(--digit-left);
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
       z-index: 3;
       transform: translate(-50%, -50%) translateY(var(--explosion-offset-y));
-      pointer-events: none;
+      pointer-events:none;
+
+      /* zwarte achtergrond wegwerken */
       mix-blend-mode: screen;
+      filter: brightness(1.25) contrast(1.12);
     }
+
     #explosionVid{
       width: 100%;
       height: auto;
@@ -267,19 +267,38 @@
       100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
-    /* Landscape tuning voor de toverfee */
+    /* Portrait: onderkant toverfee tegen de stippellijn onder */
+    @media (orientation: portrait){
+      #fairyVid{
+        top: auto;
+        bottom: 0;
+        left: var(--fairy-left);
+        width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+      }
+    }
+
+    /* Landscape: toverfee en cijfer groter, toverfee meer naar links, jurk tegen onderlijn */
     @media (orientation: landscape){
       :root{
-        --fairy-left: 28%;
-        --explosion-offset-mult: 0.60;
+        --fairy-left: 26%;
+        --explosion-offset-mult: 0.75;
       }
 
       #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
-        width: clamp(220px, calc(var(--fairy-size-base) * var(--scale) * 1.18), 560px);
+        width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
         transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+      }
+
+      #digitImg{
+        width: clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px);
+      }
+
+      #explosionWrap{
+        width: calc(clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px) * var(--explosion-scale));
       }
     }
 
@@ -411,7 +430,7 @@
           <img src="spreekknop.png" alt="Spreek" />
         </button>
 
-        <div class="cardInner" aria-hidden="true">
+        <div class="cardInner">
           <div class="stage" id="stage">
             <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
             <img id="digitImg" alt="" />
@@ -485,9 +504,6 @@
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
 
-    /* ================================
-       Auto scale op basis van gestippelde kaart
-       ================================ */
     function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
@@ -501,16 +517,12 @@
 
       let s = Math.min(sW, sH);
       s = Math.max(0.55, Math.min(1.05, s));
-
       document.documentElement.style.setProperty('--scale', String(s));
     }
 
     window.addEventListener('resize', setAutoScale);
-    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 80));
+    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
 
-    /* ================================
-       Helpers voor CSS variabelen
-       ================================ */
     function getVarMillis(name, fallbackMs){
       const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       if (!raw) return fallbackMs;
@@ -520,9 +532,7 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    /* ================================
-       Toverfee gedrag
-       ================================ */
+    /* Toverfee */
     function showFirstFrame(){
       fairyVid.muted = true;
       fairyVid.playsInline = true;
@@ -564,9 +574,7 @@
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
 
-    /* ================================
-       Explosie mp4, zichtbaar op iPad
-       ================================ */
+    /* Explosie */
     function prepareExplosion(){
       explosionVid.muted = true;
       explosionVid.playsInline = true;
@@ -575,7 +583,6 @@
       explosionVid.preload = 'auto';
       explosionVid.src = EXPLOSION_SRC;
       try { explosionVid.load(); } catch(e) {}
-
       explosionVid.addEventListener('error', () => {
         explosionWrap.style.opacity = '0';
       });
@@ -595,17 +602,24 @@
       explosionVid.playbackRate = EXPLOSION_SPEED;
 
       explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
-      requestAnimationFrame(() => {
-        explosionWrap.style.opacity = '1';
-      });
+      requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
 
       const p = explosionVid.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
 
-    /* ================================
-       Marbotic herkenning
-       ================================ */
+    function primeVideo(video){
+      try{
+        const p = video.play();
+        if (p && typeof p.then === "function"){
+          p.then(() => {
+            setTimeout(() => { try { video.pause(); } catch(e) {} }, 60);
+          }).catch(() => {});
+        }
+      } catch(e){}
+    }
+
+    /* Marbotic herkenning */
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     let calibration = null;
@@ -790,9 +804,7 @@
       return bestDigit;
     }
 
-    /* ================================
-       Spel
-       ================================ */
+    /* Spel */
     let started = false;
     let locked = false;
     let targetDigit = 0;
@@ -957,9 +969,7 @@
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
-    /* ================================
-       Spraak, iOS robuust
-       ================================ */
+    /* Spraak, iOS robuust */
     let selectedVoice = null;
     function pickDutchVoice(){
       if (!('speechSynthesis' in window)) return;
@@ -1018,6 +1028,10 @@
 
       pickDutchVoice();
       setTimeout(() => pickDutchVoice(), 250);
+
+      /* prime: iPad speelt mp4 daarna betrouwbaarder af */
+      primeVideo(explosionVid);
+      primeVideo(fairyVid);
 
       nextRound();
     }
