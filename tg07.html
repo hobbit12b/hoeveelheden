@@ -2,292 +2,624 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Spel met scanvlak en feedback</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pak het juiste cijfer</title>
   <style>
     :root{
-      --topbar-h: 150px;
-      --fade-ms: 900ms;
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --dash:#f5b498;
+      --text:#6f6b68;
+
+      --dash-w:4px;
+      --card-radius:28px;
+
+      --digit-size: clamp(180px, 18vw, 320px);
+      --fairy-size: clamp(260px, 24vw, 440px);
+
+      --explosion-scale: 2.1;
+      --explosion-offset-y: 8px;
+
+      --digit-fade: 900ms;
+      --explosion-pop: 350ms;
+      --fairy-pop: 250ms;
+      --explosion-hide-after: 2.2s;
+      --explosion-fadeout: 220ms;
+
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
+
+    *{ box-sizing:border-box; }
+
+    html, body{
+      height:100%;
     }
 
     body{
       margin:0;
-      font-family: system-ui, Arial, sans-serif;
-      background:#f6f7fb;
-    }
-
-    /* Bovenbalk */
-    .topbar{
-      position:fixed;
-      top:0;
-      left:0;
-      right:0;
-      height:var(--topbar-h);
       display:flex;
-      align-items:center;
-      gap:18px;
-      padding:12px 18px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
       background:#ffffff;
-      box-shadow:0 6px 18px rgba(0,0,0,.08);
-      z-index:10;
-    }
-
-    /* goed2.gif dubbel zo groot */
-    #goodAnim{
-      height:132px;
-      width:auto;
-      display:none;
-    }
-
-    /* Correcte cijferblok */
-    #correctWrap{
-      display:none;
-      align-items:center;
-      height:132px;
-    }
-
-    .numberStage{
-      position:relative;
-      height:132px;
-      min-width:140px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-    }
-
-    #correctNumber{
-      font-size:76px;
-      font-weight:900;
-      line-height:1;
-      padding-right:10px;
-    }
-
-    /* marbotic bovenop het cijfer, langzaam infaden */
-    #marboticImg{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:130px;
-      height:auto;
-      pointer-events:none;
-      display:none;
-
-      opacity:0;
-      transition: opacity var(--fade-ms) ease;
-    }
-
-    #marboticImg.is-on{
-      opacity:1;
-    }
-
-    /* magic bovenop alles */
-    #magicAnim{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:170px;
-      height:170px;
-      pointer-events:none;
-      display:none;
-    }
-
-    /* Layout met scanvlak */
-    .wrap{
-      padding-top:calc(var(--topbar-h) + 18px);
-      max-width:1100px;
-      margin:0 auto;
-      padding-left:18px;
-      padding-right:18px;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1.4fr .6fr;
-      gap:18px;
-      align-items:start;
-    }
-
-    .scanvlak{
-      background:#fff;
-      border-radius:18px;
-      padding:18px;
-      box-shadow:0 10px 26px rgba(0,0,0,.06);
-      min-height:420px;
-      position:relative;
       overflow:hidden;
     }
 
-    .scanTitle{
-      font-size:18px;
-      font-weight:700;
-      margin:0 0 10px;
+    /* Layout */
+    .left{
+      flex: 1 1 68%;
+      background: var(--bg-left);
+      padding: 28px 28px 22px 28px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
     }
 
-    .scanBox{
-      border:3px dashed rgba(0,0,0,.18);
-      border-radius:16px;
-      min-height:320px;
+    .right{
+      flex: 1 1 32%;
+      background:#ffffff;
+      border-left: 6px dashed rgba(245,180,152,0.85);
+      padding: 26px;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:20px;
-      font-weight:700;
-      color:rgba(0,0,0,.45);
-      user-select:none;
-      transition: transform 120ms ease;
+      position:relative;
+      min-width: 320px;
     }
 
-    .side{
-      background:#fff;
-      border-radius:18px;
-      padding:18px;
-      box-shadow:0 10px 26px rgba(0,0,0,.06);
-    }
-
-    .question{
-      font-size:20px;
-      font-weight:800;
-      margin:0 0 10px;
-    }
-
-    .btnRow{
+    /* Topbar */
+    .topbar{
       display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:14px;
+      align-items:center;
+      gap: 22px;
     }
 
-    button{
-      font-size:18px;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid rgba(0,0,0,.12);
-      background:#fff;
+    .homeBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
       cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    button:active{ transform:scale(.99); }
+    .homeBtn:active{ transform: scale(0.98); }
 
-    .hint{
-      margin:10px 0 0;
-      color:rgba(0,0,0,.55);
-      font-size:14px;
-      line-height:1.4;
+    .homeIcon{
+      width:36px;
+      height:36px;
+    }
+
+    .titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.2vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 64px;
+      width: min(620px, 100%);
+    }
+
+    /* Game card */
+    .content{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+    }
+
+    .gameCard{
+      width: min(920px, 100%);
+      height: min(470px, 55vh);
+      background:#ffffff;
+      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border-radius: var(--card-radius);
+      position:relative;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .earBtn{
+      position:absolute;
+      right: -36px;
+      top: -36px;
+      width: 132px;
+      height: 132px;
+      border-radius: 999px;
+      border: 4px solid rgba(245,180,152,0.95);
+      background: var(--bg-left);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      z-index: 20;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .earBtn:active{ transform: scale(0.98); }
+
+    .earBtn span{
+      font-size: 56px;
+      transform: translateY(2px);
+    }
+
+    /* Stage, effects */
+    .stage{
+      position:absolute;
+      inset: 0;
+      overflow: visible;
+    }
+
+    .stage img,
+    .stage video{
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      height:auto;
+      display:block;
+      pointer-events:none;
+    }
+
+    #fairyVid{
+      width: var(--fairy-size);
+      opacity: 0;
+      transform: translate(-50%, -50%) translate(-280px, 35px) scale(0.98);
+      z-index: 1;
+      display:none;
+    }
+
+    #digitImg{
+      width: var(--digit-size);
+      opacity: 0;
+      transform: translate(-50%, -50%) translate(140px, 18px) scale(0.98);
+      z-index: 2;
+      display:none;
+      image-rendering: auto;
+    }
+
+    #explosion{
+      width: calc(var(--digit-size) * var(--explosion-scale));
+      opacity: 0;
+      transform: translate(-50%, -50%) translate(20px, var(--explosion-offset-y)) scale(0.98);
+      z-index: 3;
+      display:none;
+    }
+
+    .stage.play #digitImg{
+      animation: appear var(--digit-fade) ease forwards;
+    }
+
+    .stage.play #explosion{
+      animation: pop var(--explosion-pop) ease forwards;
+    }
+
+    .stage.play #fairyVid{
+      animation: popFairy var(--fairy-pop) ease forwards;
+    }
+
+    @keyframes appear{
+      0%{ opacity:0; transform: translate(-50%, -50%) translate(140px, 18px) scale(0.96); }
+      100%{ opacity:1; transform: translate(-50%, -50%) translate(140px, 18px) scale(1); }
+    }
+
+    @keyframes pop{
+      0%{ opacity:0; transform: translate(-50%, -50%) translate(20px, var(--explosion-offset-y)) scale(0.98); }
+      100%{ opacity:1; transform: translate(-50%, -50%) translate(20px, var(--explosion-offset-y)) scale(1); }
+    }
+
+    @keyframes popFairy{
+      0%{ opacity:0; transform: translate(-50%, -50%) translate(-280px, 35px) scale(0.98); }
+      100%{ opacity:1; transform: translate(-50%, -50%) translate(-280px, 35px) scale(1); }
+    }
+
+    /* Right side */
+    .scanUI{
+      width: min(420px, 100%);
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 14px;
+    }
+
+    .miniTile{
+      width: 66px;
+      height: 66px;
+      border-radius: 10px;
+      background: #78abff;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      color:#fff;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      place-items:center;
+      user-select:none;
+    }
+
+    .scanTitle{
+      font-size: clamp(20px, 1.8vw, 28px);
+      font-weight: 700;
+      color: #7b7876;
+    }
+
+    .scanSub{
+      font-size: clamp(15px, 1.3vw, 20px);
+      color: rgba(123,120,118,0.75);
+    }
+
+    /* Wrong feedback */
+    .right.wrong{
+      animation: wiggle 240ms ease;
+    }
+
+    @keyframes wiggle{
+      0%{ transform: translateX(0); }
+      25%{ transform: translateX(-8px); }
+      55%{ transform: translateX(7px); }
+      100%{ transform: translateX(0); }
+    }
+
+    /* Start overlay */
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.75);
+      backdrop-filter: blur(2px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index: 999;
+      padding: 24px;
+    }
+
+    .startCard{
+      width: min(560px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align:center;
+    }
+
+    .startCard h1{
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #4d4a48;
+    }
+
+    .startCard p{
+      margin: 0 0 16px 0;
+      color: rgba(77,74,72,0.82);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .startBtn{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 800;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .startBtn:active{ transform: scale(0.99); }
+
+    /* Small screens */
+    @media (max-width: 900px){
+      body{ flex-direction:column; }
+      .right{ border-left:none; border-top: 6px dashed rgba(245,180,152,0.85); min-width: unset; }
+      #fairyVid{ transform: translate(-50%, -50%) translate(-220px, 45px) scale(0.98); }
+      #digitImg{ transform: translate(-50%, -50%) translate(120px, 10px) scale(0.98); }
     }
   </style>
 </head>
 
 <body>
-  <!-- TOP FEEDBACK -->
-  <div class="topbar">
-    <img id="goodAnim" src="goed2.gif" alt="goed" />
+  <section class="left" aria-label="Spel">
+    <div class="topbar">
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
+        <svg class="homeIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 10.6L12 3l9 7.6" stroke="#cf6d55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6.5 10.7V21h11V10.7" stroke="#cf6d55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 21v-7h6v7" stroke="#cf6d55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="titlePill">pak het juiste cijfer</div>
+    </div>
 
-    <div id="correctWrap">
-      <div class="numberStage">
-        <span id="correctNumber">0</span>
-        <img id="marboticImg" src="marbotic5.png" alt="marbotic" />
-        <img id="magicAnim" src="magic.gif" alt="magic" />
+    <div class="content">
+      <div class="gameCard" aria-label="Toverkaart">
+        <button class="earBtn" id="earBtn" aria-label="Nog een keer luisteren"><span aria-hidden="true">👂</span></button>
+
+        <div class="stage" id="stage">
+          <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
+          <img id="digitImg" alt="" />
+          <img id="explosion" src="explosie.gif" alt="Explosie" />
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="wrap">
-    <div class="grid">
-      <div class="scanvlak">
-        <p class="scanTitle">Scanvlak</p>
-        <div class="scanBox" id="scanBox">Plaats hier jouw spelelementen</div>
+  <section class="right" id="rightPane" aria-label="Scanvak">
+    <div class="scanUI">
+      <div class="miniTile" aria-hidden="true">
+        <div>1</div><div>2</div><div>3</div><div>4</div>
       </div>
+      <div class="scanTitle">Leg het houten cijfer in het vak.</div>
+      <div class="scanSub">Alle puntjes in het vak.</div>
 
-      <div class="side">
-        <p class="question">Kies het juiste antwoord</p>
-        <div class="btnRow" id="answers"></div>
-        <p class="hint">Demo, klik een fout antwoord en daarna het goede, dan zie je bovenin goed2, het juiste cijfer, marbotic fade in en magic erbovenop.</p>
-      </div>
+      <!--
+        Koppel hier eventueel je bestaande Marbotic video of canvas.
+        Bijvoorbeeld:
+        <video id="marboticVideo" autoplay playsinline></video>
+        <canvas id="marboticCanvas"></canvas>
+      -->
+      <div id="scanArea" style="width:100%; height:38vh; max-height:420px;"></div>
+    </div>
+  </section>
+
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <h1>Tik om te starten</h1>
+      <p>Je hoort straks een cijfer, leg dat cijfer in het scanvak en luister opnieuw via het oortje.</p>
+      <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
 
   <script>
-    // Demo instellingen, vervang dit door jouw speldata
-    const rightAnswer = 7;
-    const options = [2, 5, 7, 9];
+    const DIGIT_WORDS_NL = [
+      'nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen'
+    ];
 
-    const goodAnim = document.getElementById("goodAnim");
-    const correctWrap = document.getElementById("correctWrap");
-    const correctNumber = document.getElementById("correctNumber");
-    const marboticImg = document.getElementById("marboticImg");
-    const magicAnim = document.getElementById("magicAnim");
-    const answers = document.getElementById("answers");
-    const scanBox = document.getElementById("scanBox");
+    const ASSET_DIGIT = (d) => `marbotic${d}.png`;
+    const FAIRY_SRC = 'toverfee.mp4';
 
-    // Preload voor soepel afspelen
-    ["goed2.gif", "magic.gif", "marbotic5.png"].forEach(src => {
-      const i = new Image();
-      i.src = src;
-    });
+    const stage = document.getElementById('stage');
+    const digitImg = document.getElementById('digitImg');
+    const explosion = document.getElementById('explosion');
+    const fairyVid = document.getElementById('fairyVid');
+    const earBtn = document.getElementById('earBtn');
+    const homeBtn = document.getElementById('homeBtn');
+    const rightPane = document.getElementById('rightPane');
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
 
-    function playMagicOnce(){
-      magicAnim.style.display = "block";
-      magicAnim.src = "magic.gif?v=" + Date.now(); // gif herstarten
-      window.setTimeout(() => {
-        magicAnim.style.display = "none";
-      }, 900);
+    let started = false;
+    let locked = false;
+    let targetDigit = 0;
+    let lastScanAt = 0;
+
+    function getVarSeconds(name, fallbackSeconds) {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (!raw) return fallbackSeconds;
+      if (raw.endsWith('ms')) return parseFloat(raw) / 1000;
+      if (raw.endsWith('s')) return parseFloat(raw);
+      const n = parseFloat(raw);
+      return Number.isFinite(n) ? n : fallbackSeconds;
     }
 
-    function showWrongFeedback(){
-      scanBox.style.transform = "translateX(-3px)";
-      window.setTimeout(() => scanBox.style.transform = "translateX(3px)", 80);
-      window.setTimeout(() => scanBox.style.transform = "translateX(0px)", 160);
+    function getVarMillis(name, fallbackMs) {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (!raw) return fallbackMs;
+      if (raw.endsWith('ms')) return parseFloat(raw);
+      if (raw.endsWith('s')) return parseFloat(raw) * 1000;
+      const n = parseFloat(raw);
+      return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    // Dit is de functie die jij in jouw spel aanroept bij een goed antwoord
-    function showCorrectFeedback(n){
-      goodAnim.style.display = "block";
-      correctWrap.style.display = "flex";
-      correctNumber.textContent = String(n);
+    function restartGif(img) {
+      const base = img.dataset.baseSrc || img.getAttribute('src');
+      img.dataset.baseSrc = base;
+      const bust = (base.includes('?') ? '&' : '?') + 't=' + Date.now();
+      img.setAttribute('src', base + bust);
+    }
 
-      // marbotic alleen bij goed, langzaam infaden
-      marboticImg.style.display = "block";
-      marboticImg.classList.remove("is-on");
-      marboticImg.style.opacity = "0";
-
-      // Forceer een render, daarna pas class toevoegen voor de fade
-      requestAnimationFrame(() => {
-        marboticImg.classList.add("is-on");
-      });
-
-      // magic bovenop het cijfer, meteen afspelen
-      playMagicOnce();
-
-      // Optioneel, na een moment weer netjes verdwijnen
+    function fadeOutAndHide(img, delaySeconds, fadeMs) {
       window.setTimeout(() => {
-        marboticImg.classList.remove("is-on"); // fade out
+        const cs = getComputedStyle(img);
+        img.style.opacity = cs.opacity;
+        if (cs.transform && cs.transform !== 'none') img.style.transform = cs.transform;
+
+        img.style.animation = 'none';
+        void img.offsetHeight;
+
+        img.style.transition = `opacity ${fadeMs}ms ease`;
+        void img.offsetHeight;
+
+        img.style.opacity = '0';
+
         window.setTimeout(() => {
-          goodAnim.style.display = "none";
-          marboticImg.style.display = "none";
-          correctWrap.style.display = "none";
-        }, 450);
-      }, 1800);
+          img.style.display = 'none';
+          img.style.transition = '';
+        }, Math.max(0, fadeMs + 80));
+      }, Math.max(0, delaySeconds * 1000));
     }
 
-    // Demo knoppen
-    options.forEach(n => {
-      const b = document.createElement("button");
-      b.textContent = n;
-      b.addEventListener("click", () => {
-        if(n === rightAnswer){
-          showCorrectFeedback(rightAnswer);
-        } else {
-          showWrongFeedback();
-        }
-      });
-      answers.appendChild(b);
+    function freezeOnLastFrame(video) {
+      const d = Number.isFinite(video.duration) ? video.duration : 0;
+      const t = Math.max(0, d - 0.04);
+
+      const onSeeked = () => video.pause();
+      video.addEventListener('seeked', onSeeked, { once: true });
+
+      try { video.currentTime = t; } catch (e) { video.pause(); }
+    }
+
+    function preloadDigits(){
+      for (let d = 0; d <= 9; d++) {
+        const img = new Image();
+        img.src = ASSET_DIGIT(d);
+      }
+    }
+
+    function speakDigit(digit){
+      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
+
+      if (!('speechSynthesis' in window)) return;
+
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(word);
+        u.lang = 'nl-NL';
+        u.rate = 0.92;
+        u.pitch = 1.05;
+        window.speechSynthesis.speak(u);
+      } catch (e) {
+        // Stil falen
+      }
+    }
+
+    function chooseNextDigit(){
+      const prev = targetDigit;
+      let next = Math.floor(Math.random() * 10);
+      if (next === prev) next = (next + 1) % 10;
+      targetDigit = next;
+    }
+
+    function clearCard(){
+      stage.classList.remove('play');
+
+      digitImg.style.display = 'none';
+      digitImg.style.opacity = '0';
+      digitImg.removeAttribute('src');
+      digitImg.alt = '';
+
+      explosion.style.display = 'none';
+      explosion.style.opacity = '0';
+
+      fairyVid.style.display = 'none';
+      fairyVid.style.opacity = '0';
+    }
+
+    function playSuccessAnimation(digit){
+      clearCard();
+
+      digitImg.src = ASSET_DIGIT(digit);
+      digitImg.alt = String(digit);
+      digitImg.style.display = 'block';
+
+      explosion.style.display = 'block';
+      restartGif(explosion);
+
+      fairyVid.loop = false;
+      fairyVid.controls = false;
+      fairyVid.muted = true;
+      fairyVid.playsInline = true;
+      fairyVid.style.display = 'block';
+
+      if (!fairyVid.src || !fairyVid.src.includes(FAIRY_SRC)) {
+        fairyVid.src = FAIRY_SRC;
+      }
+
+      fairyVid.onended = () => freezeOnLastFrame(fairyVid);
+      fairyVid.onerror = () => { fairyVid.style.display = 'none'; };
+
+      fairyVid.addEventListener('canplay', () => {
+        try { fairyVid.currentTime = 0; } catch (e) {}
+        fairyVid.play().catch(() => {});
+      }, { once: true });
+
+      fairyVid.load();
+
+      void stage.offsetHeight;
+      stage.classList.add('play');
+
+      const hideAfter = getVarSeconds('--explosion-hide-after', 2.2);
+      fadeOutAndHide(explosion, hideAfter, getVarMillis('--explosion-fadeout', 220));
+    }
+
+    function nextRound(){
+      locked = false;
+      clearCard();
+      chooseNextDigit();
+      speakDigit(targetDigit);
+    }
+
+    function startGame(){
+      if (started) return;
+      started = true;
+      startOverlay.style.display = 'none';
+      preloadDigits();
+      nextRound();
+    }
+
+    function wrongFeedback(){
+      rightPane.classList.remove('wrong');
+      void rightPane.offsetHeight;
+      rightPane.classList.add('wrong');
+    }
+
+    function handleScannedDigit(rawDigit){
+      if (!started || locked) return;
+
+      const digit = Number.parseInt(String(rawDigit), 10);
+      if (!Number.isFinite(digit) || digit < 0 || digit > 9) return;
+
+      const now = Date.now();
+      if (now - lastScanAt < 450) return;
+      lastScanAt = now;
+
+      if (digit === targetDigit){
+        locked = true;
+        playSuccessAnimation(digit);
+
+        // Nieuwe ronde na de toveractie
+        window.setTimeout(() => {
+          nextRound();
+        }, 1800);
+      } else {
+        wrongFeedback();
+      }
+    }
+
+    // Dit is de haak waar jij je bestaande Marbotic scan event op kunt aansluiten
+    window.onMarboticDigit = handleScannedDigit;
+
+    // Test op laptop, druk op 0 tot en met 9
+    window.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (k >= '0' && k <= '9') handleScannedDigit(k);
     });
 
-    // Tip voor jouw echte spel:
-    // roep showCorrectFeedback(juisteCijfer) aan zodra je controleert dat het antwoord klopt
+    earBtn.addEventListener('click', () => {
+      if (!started) startGame();
+      else speakDigit(targetDigit);
+    });
+
+    startBtn.addEventListener('click', startGame);
+    startOverlay.addEventListener('click', (e) => {
+      if (e.target === startOverlay) startGame();
+    });
+
+    homeBtn.addEventListener('click', () => {
+      // Pas dit aan naar jouw menu
+      try { window.location.href = 'index.html'; } catch (e) {}
+    });
+
+    window.addEventListener('load', () => {
+      // Zorg dat iOS een user gesture krijgt via de startknop
+      clearCard();
+    });
   </script>
 </body>
 </html>
