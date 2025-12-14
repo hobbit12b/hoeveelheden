@@ -2,8 +2,11 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Pak het juiste cijfer</title>
+
   <style>
     :root{
       --bg-left:#fdeeea;
@@ -14,17 +17,26 @@
       --dash-w:4px;
       --card-radius:28px;
 
-      --digit-size: clamp(180px, 18vw, 320px);
-      --fairy-size: clamp(260px, 24vw, 440px);
+      --digit-size: clamp(190px, 20vw, 340px);
+      --fairy-size: clamp(240px, 22vw, 420px);
 
       --explosion-scale: 2.1;
-      --explosion-offset-y: 8px;
+      --explosion-hide-after: 2.2s;
+      --explosion-fadeout: 220ms;
 
       --digit-fade: 900ms;
       --explosion-pop: 350ms;
       --fairy-pop: 250ms;
-      --explosion-hide-after: 2.2s;
-      --explosion-fadeout: 220ms;
+
+      /* Posities binnen de kaart */
+      --fairy-left: 22%;
+      --fairy-top: 74%;
+
+      --digit-left: 63%;
+      --digit-top: 60%;
+
+      --explosion-left: 48%;
+      --explosion-top: 58%;
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
@@ -33,18 +45,21 @@
 
     html, body{
       height:100%;
-    }
-
-    body{
       margin:0;
-      display:flex;
+      padding:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
       background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
       overflow:hidden;
     }
 
-    /* Layout */
+    body{
+      display:flex;
+    }
+
     .left{
       flex: 1 1 68%;
       background: var(--bg-left);
@@ -66,7 +81,6 @@
       min-width: 320px;
     }
 
-    /* Topbar */
     .topbar{
       display:flex;
       align-items:center;
@@ -88,10 +102,7 @@
 
     .homeBtn:active{ transform: scale(0.98); }
 
-    .homeIcon{
-      width:36px;
-      height:36px;
-    }
+    .homeIcon{ width:36px; height:36px; }
 
     .titlePill{
       padding: 18px 44px;
@@ -110,7 +121,6 @@
       width: min(620px, 100%);
     }
 
-    /* Game card */
     .content{
       flex:1;
       display:flex;
@@ -122,12 +132,11 @@
     .gameCard{
       width: min(920px, 100%);
       height: min(470px, 55vh);
-      background:#ffffff;
+      background: transparent;
       border: var(--dash-w) dashed rgba(245,180,152,0.85);
       border-radius: var(--card-radius);
       position:relative;
-      box-shadow: var(--shadow);
-      overflow:hidden;
+      overflow: visible;
     }
 
     .earBtn{
@@ -143,7 +152,7 @@
       display:grid;
       place-items:center;
       cursor:pointer;
-      z-index: 20;
+      z-index: 30;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -154,7 +163,6 @@
       transform: translateY(2px);
     }
 
-    /* Stage, effects */
     .stage{
       position:absolute;
       inset: 0;
@@ -164,36 +172,34 @@
     .stage img,
     .stage video{
       position:absolute;
-      left: 50%;
-      top: 50%;
       height:auto;
       display:block;
       pointer-events:none;
+      transform: translate(-50%, -50%);
     }
 
     #fairyVid{
+      left: var(--fairy-left);
+      top: var(--fairy-top);
       width: var(--fairy-size);
       opacity: 0;
-      transform: translate(-50%, -50%) translate(-280px, 35px) scale(0.98);
       z-index: 1;
-      display:none;
     }
 
     #digitImg{
+      left: var(--digit-left);
+      top: var(--digit-top);
       width: var(--digit-size);
       opacity: 0;
-      transform: translate(-50%, -50%) translate(140px, 18px) scale(0.98);
       z-index: 2;
-      display:none;
-      image-rendering: auto;
     }
 
     #explosion{
+      left: var(--explosion-left);
+      top: var(--explosion-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
-      transform: translate(-50%, -50%) translate(20px, var(--explosion-offset-y)) scale(0.98);
       z-index: 3;
-      display:none;
     }
 
     .stage.play #digitImg{
@@ -209,21 +215,20 @@
     }
 
     @keyframes appear{
-      0%{ opacity:0; transform: translate(-50%, -50%) translate(140px, 18px) scale(0.96); }
-      100%{ opacity:1; transform: translate(-50%, -50%) translate(140px, 18px) scale(1); }
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
     @keyframes pop{
-      0%{ opacity:0; transform: translate(-50%, -50%) translate(20px, var(--explosion-offset-y)) scale(0.98); }
-      100%{ opacity:1; transform: translate(-50%, -50%) translate(20px, var(--explosion-offset-y)) scale(1); }
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.98); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
     @keyframes popFairy{
-      0%{ opacity:0; transform: translate(-50%, -50%) translate(-280px, 35px) scale(0.98); }
-      100%{ opacity:1; transform: translate(-50%, -50%) translate(-280px, 35px) scale(1); }
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.98); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
-    /* Right side */
     .scanUI{
       width: min(420px, 100%);
       text-align:center;
@@ -261,7 +266,52 @@
       color: rgba(123,120,118,0.75);
     }
 
-    /* Wrong feedback */
+    .scanBox{
+      width: 100%;
+      height: 52vh;
+      max-height: 520px;
+      border-radius: 22px;
+      border: 4px solid rgba(0,0,0,0.06);
+      background: #ffffff;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.08);
+      position: relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      touch-action: none;
+    }
+
+    .scanStatusPill{
+      position:absolute;
+      top: 10px;
+      right: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      background: rgba(0,0,0,0.04);
+      backdrop-filter: blur(8px);
+    }
+
+    .scanVisual{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 10px;
+      opacity: 0.9;
+      pointer-events:none;
+    }
+
+    .scanIconMain{ font-size: 42px; }
+    .scanLabel{ font-size: 16px; color: rgba(0,0,0,0.58); }
+
+    .scanBox[data-state="idle"] { border-color: rgba(0,0,0,0.10); }
+    .scanBox[data-state="scanning"] { border-color: #42a5f5; box-shadow: 0 0 0 4px rgba(66,165,245,0.16), 0 12px 26px rgba(0,0,0,0.10); }
+    .scanBox[data-state="success"] { border-color: #66bb6a; box-shadow: 0 0 0 4px rgba(102,187,106,0.18), 0 12px 26px rgba(0,0,0,0.10); }
+
     .right.wrong{
       animation: wiggle 240ms ease;
     }
@@ -273,11 +323,10 @@
       100%{ transform: translateX(0); }
     }
 
-    /* Start overlay */
     .startOverlay{
       position:fixed;
       inset:0;
-      background: rgba(253,238,234,0.75);
+      background: rgba(253,238,234,0.78);
       backdrop-filter: blur(2px);
       display:flex;
       align-items:center;
@@ -324,12 +373,34 @@
 
     .startBtn:active{ transform: scale(0.99); }
 
-    /* Small screens */
+    .calibration-warning{
+      position: fixed;
+      left: 50%;
+      bottom: 0.9rem;
+      transform: translateX(-50%);
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .calibration-warning.visible{
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     @media (max-width: 900px){
       body{ flex-direction:column; }
       .right{ border-left:none; border-top: 6px dashed rgba(245,180,152,0.85); min-width: unset; }
-      #fairyVid{ transform: translate(-50%, -50%) translate(-220px, 45px) scale(0.98); }
-      #digitImg{ transform: translate(-50%, -50%) translate(120px, 10px) scale(0.98); }
+      .scanBox{ height: 40vh; }
     }
   </style>
 </head>
@@ -344,6 +415,7 @@
           <path d="M9 21v-7h6v7" stroke="#cf6d55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+
       <div class="titlePill">pak het juiste cijfer</div>
     </div>
 
@@ -365,32 +437,51 @@
       <div class="miniTile" aria-hidden="true">
         <div>1</div><div>2</div><div>3</div><div>4</div>
       </div>
+
       <div class="scanTitle">Leg het houten cijfer in het vak.</div>
       <div class="scanSub">Alle puntjes in het vak.</div>
 
-      <!--
-        Koppel hier eventueel je bestaande Marbotic video of canvas.
-        Bijvoorbeeld:
-        <video id="marboticVideo" autoplay playsinline></video>
-        <canvas id="marboticCanvas"></canvas>
-      -->
-      <div id="scanArea" style="width:100%; height:38vh; max-height:420px;"></div>
+      <div class="scanBox" id="scan-box" data-state="idle" aria-label="Scanvak">
+        <div class="scanStatusPill">
+          <span id="scan-status-icon">⬚</span>
+          <span id="scan-status-text" style="font-weight:700; letter-spacing:0.08em; font-size:11px; text-transform:uppercase;">Rustig</span>
+        </div>
+
+        <div class="scanVisual" id="scan-visual">
+          <div class="scanIconMain" id="scan-icon-main">👉🔢</div>
+          <div class="scanLabel" id="scan-label">Leg het cijfer hier</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px; color:rgba(0,0,0,0.55);">
+        📱 Blokje stil laten liggen in het vak
+      </div>
     </div>
   </section>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>Tik om te starten</h1>
-      <p>Je hoort straks een cijfer, leg dat cijfer in het scanvak en luister opnieuw via het oortje.</p>
+      <p>Je hoort een cijfer, leg dat cijfer in het scanvak, met het oortje hoor je het nog eens.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
 
-  <script>
-    const DIGIT_WORDS_NL = [
-      'nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen'
-    ];
+  <div class="calibration-warning" id="calibration-warning">
+    <span>⚠️</span>
+    <span>Kalibratie nodig, vraag de leerkracht om hulp</span>
+  </div>
 
+  <script>
+    /*
+      Benodigde bestanden in dezelfde map:
+      calibration.json
+      marbotic0.png tot en met marbotic9.png
+      explosie.gif
+      toverfee.mp4
+    */
+
+    const DIGIT_WORDS_NL = ['nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen'];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
     const FAIRY_SRC = 'toverfee.mp4';
 
@@ -398,16 +489,44 @@
     const digitImg = document.getElementById('digitImg');
     const explosion = document.getElementById('explosion');
     const fairyVid = document.getElementById('fairyVid');
+
     const earBtn = document.getElementById('earBtn');
     const homeBtn = document.getElementById('homeBtn');
+
     const rightPane = document.getElementById('rightPane');
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
 
+    const scanBoxEl = document.getElementById("scan-box");
+    const scanStatusIconEl = document.getElementById("scan-status-icon");
+    const scanStatusTextEl = document.getElementById("scan-status-text");
+    const scanIconMainEl = document.getElementById("scan-icon-main");
+    const scanLabelEl = document.getElementById("scan-label");
+    const calibrationWarningEl = document.getElementById("calibration-warning");
+
+    // Globale scanvariabelen (uit jouw werkende spel)
+    let calibrationData = null;
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    let currentPoints = [];
+    let scanState = "idle";
+    let measurementLock = false;
+
+    // Spelvariabelen
     let started = false;
     let locked = false;
     let targetDigit = 0;
     let lastScanAt = 0;
+
+    // ---------- Kleine helpers ----------
+    function restartGif(img) {
+      const base = img.dataset.baseSrc || img.getAttribute('src');
+      img.dataset.baseSrc = base;
+      const bust = (base.includes('?') ? '&' : '?') + 't=' + Date.now();
+      img.setAttribute('src', base + bust);
+    }
 
     function getVarSeconds(name, fallbackSeconds) {
       const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -427,18 +546,10 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    function restartGif(img) {
-      const base = img.dataset.baseSrc || img.getAttribute('src');
-      img.dataset.baseSrc = base;
-      const bust = (base.includes('?') ? '&' : '?') + 't=' + Date.now();
-      img.setAttribute('src', base + bust);
-    }
-
     function fadeOutAndHide(img, delaySeconds, fadeMs) {
       window.setTimeout(() => {
         const cs = getComputedStyle(img);
         img.style.opacity = cs.opacity;
-        if (cs.transform && cs.transform !== 'none') img.style.transform = cs.transform;
 
         img.style.animation = 'none';
         void img.offsetHeight;
@@ -449,7 +560,6 @@
         img.style.opacity = '0';
 
         window.setTimeout(() => {
-          img.style.display = 'none';
           img.style.transition = '';
         }, Math.max(0, fadeMs + 80));
       }, Math.max(0, delaySeconds * 1000));
@@ -474,7 +584,6 @@
 
     function speakDigit(digit){
       const word = DIGIT_WORDS_NL[digit] ?? String(digit);
-
       if (!('speechSynthesis' in window)) return;
 
       try {
@@ -484,9 +593,7 @@
         u.rate = 0.92;
         u.pitch = 1.05;
         window.speechSynthesis.speak(u);
-      } catch (e) {
-        // Stil falen
-      }
+      } catch (e) {}
     }
 
     function chooseNextDigit(){
@@ -496,18 +603,44 @@
       targetDigit = next;
     }
 
+    function updateScanState(newState) {
+      scanState = newState;
+      scanBoxEl.dataset.state = newState;
+
+      if (newState === "idle") {
+        scanStatusIconEl.textContent = "⬚";
+        scanStatusTextEl.textContent = "Rustig";
+        scanIconMainEl.textContent = "👉🔢";
+        scanLabelEl.textContent = "Leg het cijfer hier";
+      } else if (newState === "scanning") {
+        scanStatusIconEl.textContent = "👆";
+        scanStatusTextEl.textContent = "Scannen";
+        scanIconMainEl.textContent = "✋🔢";
+        scanLabelEl.textContent = "Blokje even stil laten liggen";
+      } else if (newState === "success") {
+        scanStatusIconEl.textContent = "✅";
+        scanStatusTextEl.textContent = "Goed";
+        scanIconMainEl.textContent = "🎉";
+        scanLabelEl.textContent = "Knap gedaan";
+      }
+    }
+
+    function wrongFeedback(){
+      rightPane.classList.remove('wrong');
+      void rightPane.offsetHeight;
+      rightPane.classList.add('wrong');
+    }
+
+    // ---------- Animatie bij goed ----------
     function clearCard(){
       stage.classList.remove('play');
 
-      digitImg.style.display = 'none';
       digitImg.style.opacity = '0';
       digitImg.removeAttribute('src');
       digitImg.alt = '';
 
-      explosion.style.display = 'none';
       explosion.style.opacity = '0';
 
-      fairyVid.style.display = 'none';
       fairyVid.style.opacity = '0';
     }
 
@@ -516,30 +649,18 @@
 
       digitImg.src = ASSET_DIGIT(digit);
       digitImg.alt = String(digit);
-      digitImg.style.display = 'block';
 
-      explosion.style.display = 'block';
       restartGif(explosion);
 
+      // Video klaarzetten en afspelen
+      try { fairyVid.currentTime = 0; } catch (e) {}
       fairyVid.loop = false;
       fairyVid.controls = false;
-      fairyVid.muted = true;
-      fairyVid.playsInline = true;
-      fairyVid.style.display = 'block';
-
-      if (!fairyVid.src || !fairyVid.src.includes(FAIRY_SRC)) {
-        fairyVid.src = FAIRY_SRC;
-      }
 
       fairyVid.onended = () => freezeOnLastFrame(fairyVid);
-      fairyVid.onerror = () => { fairyVid.style.display = 'none'; };
+      fairyVid.onerror = () => { fairyVid.style.opacity = '0'; };
 
-      fairyVid.addEventListener('canplay', () => {
-        try { fairyVid.currentTime = 0; } catch (e) {}
-        fairyVid.play().catch(() => {});
-      }, { once: true });
-
-      fairyVid.load();
+      fairyVid.play().catch(() => {});
 
       void stage.offsetHeight;
       stage.classList.add('play');
@@ -551,39 +672,93 @@
     function nextRound(){
       locked = false;
       clearCard();
+      updateScanState("idle");
       chooseNextDigit();
       speakDigit(targetDigit);
     }
 
+    // ---------- Start ----------
     function startGame(){
       if (started) return;
       started = true;
       startOverlay.style.display = 'none';
+
       preloadDigits();
+
+      // Video vooraf laden, door de starttik lukt dit op iPad beter
+      fairyVid.src = FAIRY_SRC;
+      fairyVid.load();
+
+      // Probeer even te spelen en te pauzeren, zodat de eerste frames “klaar” zijn
+      fairyVid.play()
+        .then(() => {
+          fairyVid.pause();
+          try { fairyVid.currentTime = 0; } catch (e) {}
+        })
+        .catch(() => {});
+
       nextRound();
     }
 
-    function wrongFeedback(){
-      rightPane.classList.remove('wrong');
-      void rightPane.offsetHeight;
-      rightPane.classList.add('wrong');
+    // ---------- KALIBRATIE LADEN ----------
+    function loadCalibration() {
+      fetch("calibration.json", { cache: "no-store" })
+        .then(response => {
+          if (!response.ok) throw new Error("Kon calibration.json niet laden");
+          return response.json();
+        })
+        .then(data => {
+          calibrationData = data;
+          expectedTouchPoints = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
+          calibration = buildCalibrationFromData(data);
+          classificationStats = calibration.classificationStats;
+          hideCalibrationWarning();
+        })
+        .catch(error => {
+          console.error(error);
+          showCalibrationWarning();
+        });
     }
 
-    function handleScannedDigit(rawDigit){
-      if (!started || locked) return;
+    function showCalibrationWarning() {
+      calibrationWarningEl.classList.add("visible");
+    }
 
-      const digit = Number.parseInt(String(rawDigit), 10);
-      if (!Number.isFinite(digit) || digit < 0 || digit > 9) return;
+    function hideCalibrationWarning() {
+      calibrationWarningEl.classList.remove("visible");
+    }
+
+    // ---------- TOUCHAFHANDELING (scan) ----------
+    function getTouchesInScanBox(touchEvent) {
+      const rect = scanBoxEl.getBoundingClientRect();
+      const touches = [];
+
+      for (let i = 0; i < touchEvent.touches.length; i += 1) {
+        const t = touchEvent.touches[i];
+        const x = t.clientX - rect.left;
+        const y = t.clientY - rect.top;
+
+        if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
+          touches.push({ x, y });
+        }
+      }
+
+      return { rect, touches };
+    }
+
+    function handleRecognitionResult(recognizedDigit) {
+      if (recognizedDigit == null) return;
+      if (!started || locked) return;
 
       const now = Date.now();
       if (now - lastScanAt < 450) return;
       lastScanAt = now;
 
-      if (digit === targetDigit){
+      if (recognizedDigit === targetDigit) {
         locked = true;
-        playSuccessAnimation(digit);
+        updateScanState("success");
+        playSuccessAnimation(recognizedDigit);
 
-        // Nieuwe ronde na de toveractie
         window.setTimeout(() => {
           nextRound();
         }, 1800);
@@ -592,15 +767,245 @@
       }
     }
 
-    // Dit is de haak waar jij je bestaande Marbotic scan event op kunt aansluiten
-    window.onMarboticDigit = handleScannedDigit;
+    function handleTouch(event) {
+      if (!calibration || !classificationStats) return;
 
-    // Test op laptop, druk op 0 tot en met 9
-    window.addEventListener('keydown', (e) => {
-      const k = e.key;
-      if (k >= '0' && k <= '9') handleScannedDigit(k);
-    });
+      event.preventDefault();
+      const result = getTouchesInScanBox(event);
+      const touches = result.touches;
 
+      if (touches.length === 0) {
+        currentPoints = [];
+        updateScanState("idle");
+        measurementLock = false;
+        return;
+      }
+
+      if (touches.length === expectedTouchPoints) {
+        currentPoints = touches.map(p => ({ x: p.x, y: p.y }));
+
+        if (!measurementLock) {
+          measurementLock = true;
+          updateScanState("scanning");
+
+          setTimeout(() => {
+            const digit = recognizeDigit(currentPoints);
+            handleRecognitionResult(digit);
+            measurementLock = false;
+          }, 160);
+        }
+      } else {
+        currentPoints = [];
+        updateScanState("scanning");
+        measurementLock = false;
+      }
+    }
+
+    scanBoxEl.addEventListener("touchstart", handleTouch, { passive: false });
+    scanBoxEl.addEventListener("touchmove", handleTouch, { passive: false });
+    scanBoxEl.addEventListener("touchend", handleTouch, { passive: false });
+    scanBoxEl.addEventListener("touchcancel", handleTouch, { passive: false });
+
+    // ---------- HERKENNINGSMODULE (ongewijzigd uit jouw werkende spel) ----------
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return null;
+
+      const p0 = points[0];
+      const p1 = points[1];
+      const p2 = points[2];
+
+      const dx01 = p1.x - p0.x;
+      const dy01 = p1.y - p0.y;
+      const dx12 = p2.x - p1.x;
+      const dy12 = p2.y - p1.y;
+
+      const d01 = Math.hypot(dx01, dy01);
+      const d12 = Math.hypot(dx12, dy12);
+      const d20 = Math.hypot(p0.x - p2.x, p0.y - p2.y);
+
+      const distances = [d01, d12, d20].sort((a, b) => a - b);
+      const longest = distances[2] || 1e-6;
+      const ratioSmall = distances[0] / longest;
+      const ratioMid = distances[1] / longest;
+
+      const dot = dx01 * dx12 + dy01 * dy12;
+      const len01 = d01 || 1e-6;
+      const len12 = d12 || 1e-6;
+      let cosAngle = dot / (len01 * len12);
+      if (cosAngle > 1) cosAngle = 1;
+      if (cosAngle < -1) cosAngle = -1;
+
+      const cross = dx01 * dy12 - dy01 * dx12;
+      const orientation = cross >= 0 ? 1 : -1;
+
+      const cx = (p0.x + p1.x + p2.x) / 3;
+      const cy = (p0.y + p1.y + p2.y) / 3;
+
+      const minX = Math.min(p0.x, p1.x, p2.x);
+      const maxX = Math.max(p0.x, p1.x, p2.x);
+      const minY = Math.min(p0.y, p1.y, p2.y);
+      const maxY = Math.max(p0.y, p1.y, p2.y);
+      const width = maxX - minX || 1e-6;
+      const height = maxY - minY || 1e-6;
+      const aspect = width / height;
+
+      return { ratioSmall, ratioMid, cosAngle, orientation, centroidX: cx, centroidY: cy, aspect };
+    }
+
+    function buildFeatureVector(features) {
+      if (!features) return null;
+
+      const weights = {
+        ratioSmall: 2.0,
+        ratioMid: 2.0,
+        cosAngle: 1.2,
+        orientation: 0.5,
+        centroidX: 0.25,
+        centroidY: 0.25,
+        aspect: 1.0
+      };
+
+      return [
+        features.ratioSmall * weights.ratioSmall,
+        features.ratioMid * weights.ratioMid,
+        features.cosAngle * weights.cosAngle,
+        features.orientation * weights.orientation,
+        features.centroidX * weights.centroidX * 0.01,
+        features.centroidY * weights.centroidY * 0.01,
+        features.aspect * weights.aspect
+      ];
+    }
+
+    function vectorDistance(a, b) {
+      let sum = 0;
+      const len = Math.min(a.length, b.length);
+      for (let i = 0; i < len; i += 1) {
+        const d = a[i] - b[i];
+        sum += d * d;
+      }
+      return Math.sqrt(sum);
+    }
+
+    function buildCalibrationFromData(data) {
+      const calibration = { digits: {}, allSamples: [], classificationStats: null };
+      const expected = typeof data.expectedTouchPoints === "number" ? data.expectedTouchPoints : 3;
+
+      for (const key in data) {
+        if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
+        if (!/^[0-9]$/.test(key)) continue;
+
+        const entry = data[key];
+        if (!entry || !Array.isArray(entry.samples)) continue;
+
+        const digit = Number(key);
+        const digitBucket = { digit, samples: [] };
+
+        entry.samples.forEach(sample => {
+          if (!sample || !Array.isArray(sample.points)) return;
+          if (sample.points.length !== expected) return;
+
+          const pts = sample.points.map(p => ({ x: p.x, y: p.y }));
+          const features = computeFeatures(pts);
+          const vector = buildFeatureVector(features);
+          if (!features || !vector) return;
+
+          const sampleObj = { digit, points: pts, features, vector };
+          digitBucket.samples.push(sampleObj);
+          calibration.allSamples.push(sampleObj);
+        });
+
+        if (digitBucket.samples.length > 0) {
+          calibration.digits[key] = digitBucket;
+        }
+      }
+
+      calibration.classificationStats = recomputeClassificationStats(calibration);
+      return calibration;
+    }
+
+    function recomputeClassificationStats(calibration) {
+      const samples = calibration.allSamples || [];
+      const sameDistances = [];
+      const diffDistances = [];
+
+      for (let i = 0; i < samples.length; i += 1) {
+        for (let j = i + 1; j < samples.length; j += 1) {
+          const sa = samples[i];
+          const sb = samples[j];
+          const dist = vectorDistance(sa.vector, sb.vector);
+          if (sa.digit === sb.digit) sameDistances.push(dist);
+          else diffDistances.push(dist);
+        }
+      }
+
+      function stats(arr) {
+        if (!arr.length) return { mean: 0, std: 0, min: 0, max: 0 };
+        const sum = arr.reduce((a, b) => a + b, 0);
+        const mean = sum / arr.length;
+        const variance = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length;
+        const std = Math.sqrt(variance);
+        const min = Math.min.apply(null, arr);
+        const max = Math.max.apply(null, arr);
+        return { mean, std, min, max };
+      }
+
+      const sameStats = stats(sameDistances);
+      const diffStats = stats(diffDistances);
+
+      let thresholdBase;
+      let thresholdUnknown;
+
+      if (sameDistances.length > 0) thresholdBase = sameStats.mean + sameStats.std * 1.5;
+      else thresholdBase = 0.18;
+
+      if (diffDistances.length > 0) thresholdUnknown = (sameStats.mean + diffStats.mean) / 2;
+      else thresholdUnknown = thresholdBase * 1.8;
+
+      if (thresholdUnknown < thresholdBase) thresholdUnknown = thresholdBase * 1.6;
+
+      return { thresholdBase, thresholdUnknown, sameStats, diffStats };
+    }
+
+    function classifyMeasurement(measurementVector, calibration, stats) {
+      const allSamples = calibration.allSamples || [];
+      let bestDigit = null;
+      let bestDistance = Infinity;
+
+      for (let i = 0; i < allSamples.length; i += 1) {
+        const sample = allSamples[i];
+        const dist = vectorDistance(measurementVector, sample.vector);
+        if (dist < bestDistance) {
+          bestDistance = dist;
+          bestDigit = sample.digit;
+        }
+      }
+
+      if (bestDigit == null) return { digit: null, distance: bestDistance, certainty: "unknown" };
+
+      let certainty = "unknown";
+      if (bestDistance <= stats.thresholdBase) certainty = "certain";
+      else if (bestDistance <= stats.thresholdUnknown) certainty = "uncertain";
+      else certainty = "unknown";
+
+      return { digit: bestDigit, distance: bestDistance, certainty };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!points || points.length !== expectedTouchPoints) return null;
+
+      const features = computeFeatures(points);
+      const vector = buildFeatureVector(features);
+      if (!features || !vector) return null;
+
+      const result = classifyMeasurement(vector, calibration, classificationStats);
+      if (!result || result.digit == null) return null;
+      if (result.certainty !== "certain") return null;
+
+      return result.digit;
+    }
+
+    // ---------- UI knoppen ----------
     earBtn.addEventListener('click', () => {
       if (!started) startGame();
       else speakDigit(targetDigit);
@@ -612,13 +1017,14 @@
     });
 
     homeBtn.addEventListener('click', () => {
-      // Pas dit aan naar jouw menu
       try { window.location.href = 'index.html'; } catch (e) {}
     });
 
-    window.addEventListener('load', () => {
-      // Zorg dat iOS een user gesture krijgt via de startknop
+    // ---------- INIT ----------
+    window.addEventListener("load", () => {
+      loadCalibration();
       clearCard();
+      updateScanState("idle");
     });
   </script>
 </body>
