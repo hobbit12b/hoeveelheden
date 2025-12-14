@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="nl">
 <head>
@@ -18,30 +17,38 @@
       --dash-w:4px;
       --card-radius:28px;
 
-      --digit-size: clamp(190px, 20vw, 340px);
-      --fairy-size: clamp(260px, 23vw, 460px);
-
+      /* ✅ automatische schaal, wordt door JS gezet op basis van het gestippelde vlak */
       --scale: 1;
 
+      /* ✅ jouw geteste verhoudingen, als basis */
+      --fairy-left: 32.5%;
+      --fairy-top: 51%;
+      --digit-left: 68.5%;
+      --digit-top: 58%;
+
+      --fairy-size-base: 439px;
+      --digit-size-base: 260px;
+
+      /* geschaalde maten, met begrenzing zodat het nooit vreemd wordt */
+      --digit-size: clamp(140px, calc(var(--digit-size-base) * var(--scale)), 340px);
+      --fairy-size: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
+
       /* Cijfer tonen */
-      --fade-duration: 1.8s;
-      --cijfertoon-delay: 1.2s;
+      --fade-duration: 1.45s;
+      --cijfertoon-delay: 1.05s;
 
       /* Explosie */
-      --explosion-scale: 2;
-      --explosion-fade-in: 0.35s;
-      --explosion-offset-y: calc(10px * var(--scale));
-      --explosion-hide-after: 2.8s;
+      --explosion-start-delay: 0s;
+      --explosion-scale: 1.5;
+      --explosion-fade-in: 0.55s;
+
+      --explosion-offset-y-base: -200px;
+      --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale));
+
+      --explosion-hide-after: 5.05s;
       --explosion-fadeout: 200ms;
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
-
-      /* Posities binnen de kaart */
-      --fairy-left: 34%;
-      --fairy-top: 62%;
-
-      --digit-left: 66%;
-      --digit-top: 58%;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -59,14 +66,14 @@
       overflow:hidden;
     }
 
-    /* Landscape: links en rechts, rechts is scan, links iets groter */
+    /* Landscape: links en rechts, rechts is scan */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
     }
 
-    /* Portrait: boven en onder, onder is scan, 1/5 kleiner dan eerder */
+    /* Portrait: boven en onder, onder is scan */
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -85,7 +92,6 @@
       min-height: 0;
     }
 
-    /* Hele witte vlak is scanvak */
     .scan-surface{
       background:#ffffff;
       position: relative;
@@ -158,11 +164,18 @@
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
-      overflow: visible;
+      overflow: visible; /* spreekknop mag buiten de kaart */
     }
 
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
+    }
+
+    .cardInner{
+      position:absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      overflow: hidden; /* ✅ toverfee, cijfer, explosie blijven binnen het gestippelde vlak */
     }
 
     .speakBtn{
@@ -188,7 +201,7 @@
     .stage{
       position:absolute;
       inset: 0;
-      overflow: visible;
+      overflow: hidden;
     }
 
     .stage img,
@@ -217,14 +230,16 @@
       z-index: 2;
     }
 
-    /* Explosie overlay over cijfer */
-    #explosion{
+    /* Explosie als mp4, overlay boven cijfer */
+    #explosionVid{
       left: var(--digit-left);
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
       z-index: 3;
       display:block;
+      transform: translate(-50%, -50%) translateY(var(--explosion-offset-y));
+      mix-blend-mode: screen; /* handig bij zwarte achtergrond */
     }
 
     .stage.play #digitImg{
@@ -232,9 +247,9 @@
       animation-delay: var(--cijfertoon-delay);
     }
 
-    .stage.play #explosion{
+    .stage.play #explosionVid{
       animation: pop var(--explosion-fade-in) ease forwards;
-      animation-delay: var(--cijfertoon-delay);
+      animation-delay: calc(var(--cijfertoon-delay) + var(--explosion-start-delay));
     }
 
     @keyframes appear{
@@ -370,15 +385,17 @@
     </div>
 
     <div class="content">
-      <div class="gameCard" aria-label="Toverkaart">
+      <div class="gameCard" id="gameCard" aria-label="Toverkaart">
         <button class="speakBtn" id="speakBtn" aria-label="Nog een keer luisteren">
           <img src="spreekknop.png" alt="Spreek" />
         </button>
 
-        <div class="stage" id="stage">
-          <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
-          <img id="digitImg" alt="" />
-          <img id="explosion" src="explosie.gif" alt="Explosie" />
+        <div class="cardInner" aria-hidden="true">
+          <div class="stage" id="stage">
+            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
+            <img id="digitImg" alt="" />
+            <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
+          </div>
         </div>
       </div>
     </div>
@@ -411,20 +428,26 @@
       Bestanden in dezelfde map:
       calibration.json
       marbotic0.png tot en met marbotic9.png
-      explosie.gif
       toverfee.mp4
+      explosie.mp4
       home.png
       spreekknop.png
     */
 
     const DIGIT_WORDS_NL = ['nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen'];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
-    const FAIRY_SRC = 'toverfee.mp4';
 
+    const FAIRY_SRC = 'toverfee.mp4';
+    const EXPLOSION_SRC = 'explosie.mp4';
+
+    const FAIRY_SPEED = 1.00;
+    const EXPLOSION_SPEED = 1.00;
+
+    const gameCard = document.getElementById('gameCard');
     const stage = document.getElementById('stage');
     const digitImg = document.getElementById('digitImg');
-    const explosion = document.getElementById('explosion');
     const fairyVid = document.getElementById('fairyVid');
+    const explosionVid = document.getElementById('explosionVid');
 
     const speakBtn = document.getElementById('speakBtn');
     const homeBtn = document.getElementById('homeBtn');
@@ -436,6 +459,29 @@
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
+
+    /* ================================
+       Auto scale op basis van gestippelde vlak (gameCard)
+       ================================ */
+    function setAutoScale(){
+      if (!gameCard) return;
+      const r = gameCard.getBoundingClientRect();
+
+      const baseW = 980;
+      const baseH = 520;
+      const pad = 18;
+
+      const sW = Math.max(0.1, (r.width  - pad) / baseW);
+      const sH = Math.max(0.1, (r.height - pad) / baseH);
+
+      let s = Math.min(sW, sH);
+      s = Math.max(0.55, Math.min(1.05, s));
+
+      document.documentElement.style.setProperty('--scale', String(s));
+    }
+
+    window.addEventListener('resize', setAutoScale);
+    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 80));
 
     /* ================================
        Toverfee gedrag
@@ -472,6 +518,7 @@
 
     function playFairyOnce(){
       fairyVid.loop = false;
+      fairyVid.playbackRate = FAIRY_SPEED;
 
       fairyVid.onended = () => {
         freezeOnLastFrame(fairyVid);
@@ -481,9 +528,27 @@
       try { fairyVid.currentTime = 0; } catch(e) {}
 
       const p = fairyVid.play();
-      if (p && typeof p.catch === "function") {
-        p.catch(() => { });
-      }
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+
+    /* ================================
+       Explosie mp4
+       ================================ */
+    function prepareExplosion(){
+      explosionVid.muted = true;
+      explosionVid.playsInline = true;
+      explosionVid.loop = false;
+      explosionVid.controls = false;
+      explosionVid.preload = 'auto';
+      explosionVid.src = EXPLOSION_SRC;
+      try { explosionVid.load(); } catch(e) {}
+    }
+
+    function resetExplosion(){
+      try { explosionVid.pause(); } catch(e) {}
+      try { explosionVid.currentTime = 0; } catch(e) {}
+      explosionVid.style.transition = '';
+      explosionVid.style.opacity = '0';
     }
 
     /* ================================
@@ -689,17 +754,12 @@
 
     let explosionTimerA = null;
     let explosionTimerB = null;
+    let explosionTimerPlay = null;
 
     function clearExplosionTimers(){
       if (explosionTimerA) { clearTimeout(explosionTimerA); explosionTimerA = null; }
       if (explosionTimerB) { clearTimeout(explosionTimerB); explosionTimerB = null; }
-    }
-
-    function restartGif(img){
-      const base = img.dataset.baseSrc || img.getAttribute('src');
-      img.dataset.baseSrc = base;
-      const bust = (base.includes('?') ? '&' : '?') + 't=' + Date.now();
-      img.setAttribute('src', base + bust);
+      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
     }
 
     function getVarMillis(name, fallbackMs){
@@ -733,28 +793,38 @@
       digitImg.removeAttribute('src');
       digitImg.alt = '';
 
-      explosion.style.transition = '';
-      explosion.style.opacity = '0';
+      resetExplosion();
     }
 
     function scheduleExplosionFade(){
       clearExplosionTimers();
 
-      const delayMs = getVarMillis('--cijfertoon-delay', 1200);
-      const hideAfterMs = getVarMillis('--explosion-hide-after', 2800);
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+
+      const hideAfterMs = getVarMillis('--explosion-hide-after', 5050);
       const fadeMs = getVarMillis('--explosion-fadeout', 200);
 
-      explosionTimerA = setTimeout(() => {
-        explosion.style.animation = 'none';
-        void explosion.offsetHeight;
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
 
-        explosion.style.transition = `opacity ${fadeMs}ms ease`;
-        explosion.style.opacity = '0';
+      explosionTimerA = setTimeout(() => {
+        explosionVid.style.transition = `opacity ${fadeMs}ms ease`;
+        explosionVid.style.opacity = '0';
 
         explosionTimerB = setTimeout(() => {
-          explosion.style.transition = '';
+          explosionVid.style.transition = '';
         }, Math.max(0, fadeMs + 80));
-      }, Math.max(0, delayMs + hideAfterMs));
+      }, Math.max(0, startMs + hideAfterMs));
+    }
+
+    function playExplosionMp4(){
+      try { explosionVid.pause(); } catch(e) {}
+      try { explosionVid.currentTime = 0; } catch(e) {}
+
+      explosionVid.playbackRate = EXPLOSION_SPEED;
+
+      const p = explosionVid.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
     }
 
     function playSuccessAnimation(digit){
@@ -763,14 +833,22 @@
       digitImg.src = ASSET_DIGIT(digit);
       digitImg.alt = String(digit);
 
-      explosion.style.transition = '';
-      explosion.style.opacity = '0';
-      restartGif(explosion);
+      resetExplosion();
 
       void stage.offsetHeight;
       stage.classList.add('play');
 
       playFairyOnce();
+
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      explosionTimerPlay = setTimeout(() => {
+        explosionVid.style.opacity = '1';
+        playExplosionMp4();
+      }, startMs);
+
       scheduleExplosionFade();
     }
 
@@ -799,10 +877,12 @@
 
         playSuccessAnimation(recognizedDigit);
 
-        const delayMs = getVarMillis('--cijfertoon-delay', 1200);
-        const hideAfterMs = getVarMillis('--explosion-hide-after', 2800);
+        const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+        const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+        const hideAfterMs = getVarMillis('--explosion-hide-after', 5050);
         const fadeMs = getVarMillis('--explosion-fadeout', 200);
-        const minRoundMs = Math.max(1800, delayMs + hideAfterMs + fadeMs + 120);
+
+        const minRoundMs = Math.max(1800, digitDelayMs + startDelayMs + hideAfterMs + fadeMs + 140);
 
         setTimeout(() => { nextRound(); }, minRoundMs);
       } else {
@@ -945,8 +1025,10 @@
     });
 
     window.addEventListener('load', () => {
-      showFirstFrame();
+      setAutoScale();
 
+      showFirstFrame();
+      prepareExplosion();
       clearDigitAndExplosion();
 
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
@@ -961,3 +1043,4 @@
   </script>
 </body>
 </html>
+
