@@ -9,14 +9,17 @@
 
   <style>
     :root{
-      /* ✅ jouw werkende waarden */
+      /* automatische schaal, wordt door JS gezet */
+      --scale: 1;
+
+      /* ✅ jouw werkende waarden als BASIS */
       --fairy-left: 32.5%;
       --fairy-top: 51%;
       --digit-left: 68.5%;
       --digit-top: 58%;
 
-      --fairy-size: 439px;
-      --digit-size: 235px;
+      --fairy-size-base: 439px;
+      --digit-size-base: 235px;
 
       --fade-duration: 3.3s;
       --digit-delay: 0.2s;
@@ -24,14 +27,13 @@
       --explosion-start-delay: 0s;
       --explosion-scale: 1.5;
       --explosion-fade-in: 0.55s;
-      --explosion-offset-y: -237px;
+      --explosion-offset-y-base: -237px;
       --explosion-hide-after: 1.9s;
       --explosion-fadeout: 450ms;
 
       /* layout */
       --left-bg: #f4f1ff;
       --right-bg: #ffffff;
-      --divider: rgba(0,0,0,0.08);
 
       /* state tint scanvlak */
       --scan-neutral: rgba(0,0,0,0.00);
@@ -51,25 +53,28 @@
       user-select:none;
     }
 
-    /* container schakelt tussen landscape en portrait */
+    /* landscape: links iets groter dan eerder */
     .app{
       height:100%;
       width:100%;
       display:grid;
-      grid-template-columns: 42% 58%;
+      grid-template-columns: 45% 55%;
       grid-template-rows: 1fr;
     }
 
+    /* portrait: boven animatie, onder scan, scan is iets kleiner */
     @media (orientation: portrait){
       .app{
         grid-template-columns: 1fr;
-        grid-template-rows: 55% 45%;  /* scanvak iets kleiner */
+        grid-template-rows: 58% 42%;
       }
     }
 
     .left{
       position:relative;
-      background: radial-gradient(circle at 30% 20%, #ffffff 0%, var(--left-bg) 45%, #efeaff 100%);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 22%),
+        radial-gradient(circle at 30% 20%, #ffffff 0%, var(--left-bg) 45%, #efeaff 100%);
       overflow:hidden;
     }
 
@@ -77,12 +82,12 @@
       position:relative;
       background: var(--right-bg);
       overflow:hidden;
-
-      /* hele witte kant is scanvlak */
       touch-action:none;
+      -webkit-user-select:none;
+      user-select:none;
     }
 
-    /* divider */
+    /* gestreepte scheiding */
     .divider{
       position:absolute;
       z-index:30;
@@ -121,23 +126,29 @@
     .btn{
       position:absolute;
       top: calc(env(safe-area-inset-top) + 12px);
-      width: 56px;
-      height: 56px;
-      border-radius: 18px;
+      width: calc(56px * var(--scale));
+      height: calc(56px * var(--scale));
+      border-radius: calc(18px * var(--scale));
       background: rgba(255,255,255,0.75);
       box-shadow: 0 10px 22px rgba(0,0,0,0.10);
       display:flex;
       align-items:center;
       justify-content:center;
       z-index:40;
+      border: 0;
+      padding: 0;
     }
     .btn:active{ transform: scale(0.98); }
-    .btn img{ width: 30px; height: 30px; display:block; }
+    .btn img{
+      width: calc(30px * var(--scale));
+      height: calc(30px * var(--scale));
+      display:block;
+    }
 
     .homeBtn{ left: 12px; }
     .speakBtn{ right: 12px; }
 
-    /* hint tekst links */
+    /* hint links */
     .prompt{
       position:absolute;
       left: 18px;
@@ -151,17 +162,31 @@
       color: rgba(0,0,0,0.72);
       font-weight: 800;
       letter-spacing: 0.01em;
-      font-size: 14px;
+      font-size: calc(14px * var(--scale));
       line-height: 1.25;
     }
 
-    /* scan states, geen kader, wel subtiele tint */
+    /* scan states */
     .right.state-neutral{ background: linear-gradient(var(--scan-neutral), var(--scan-neutral)), var(--right-bg); }
     .right.state-scanning{ background: linear-gradient(var(--scan-scanning), var(--scan-scanning)), var(--right-bg); }
     .right.state-correct{ background: linear-gradient(var(--scan-good), var(--scan-good)), var(--right-bg); }
     .right.state-wrong{ background: linear-gradient(var(--scan-bad), var(--scan-bad)), var(--right-bg); }
 
-    /* stage links met layering */
+    .scanHint{
+      position:absolute;
+      left: 18px;
+      right: 18px;
+      top: calc(env(safe-area-inset-top) + 18px);
+      z-index:10;
+      color: rgba(0,0,0,0.40);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      font-size: calc(12px * var(--scale));
+      text-align:center;
+      pointer-events:none;
+    }
+
+    /* stage links */
     .stage{
       position:absolute;
       inset:0;
@@ -176,6 +201,13 @@
       display:block;
     }
 
+    /* afgeleide maten, geschaald */
+    .left{
+      --fairy-size: calc(var(--fairy-size-base) * var(--scale));
+      --digit-size: calc(var(--digit-size-base) * var(--scale));
+      --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale));
+    }
+
     /* explosie achter toverfee en cijfer */
     #explosionWrap{
       left: var(--digit-left);
@@ -186,8 +218,6 @@
       opacity: 0;
       z-index: 1;
       pointer-events:none;
-
-      /* mp4 met zwarte achtergrond, zwart “verdwijnt” */
       mix-blend-mode: screen;
     }
     #explosionVid{
@@ -234,21 +264,6 @@
       0%{ opacity:0; }
       100%{ opacity:1; }
     }
-
-    /* mini hulptekst rechts */
-    .scanHint{
-      position:absolute;
-      left: 18px;
-      right: 18px;
-      top: calc(env(safe-area-inset-top) + 18px);
-      z-index:10;
-      color: rgba(0,0,0,0.40);
-      font-weight: 900;
-      letter-spacing: 0.02em;
-      font-size: 12px;
-      text-align:center;
-      pointer-events:none;
-    }
   </style>
 </head>
 
@@ -258,13 +273,13 @@
     home.png
     spreekknop.png
     toverfee.mp4
-    explosie.mp4   (zwarte achtergrond)
+    explosie.mp4
     marbotic0.png t/m marbotic9.png
     calibration.json
   -->
 
   <div class="app">
-    <section class="left">
+    <section class="left" id="leftPane">
       <a class="btn homeBtn" href="index.html" aria-label="Home">
         <img src="home.png" alt="" />
       </a>
@@ -280,7 +295,6 @@
       </div>
 
       <div class="divider" aria-hidden="true"></div>
-
       <div class="prompt" id="promptText">Luister naar het cijfer, scan het houten blokje in het witte vlak</div>
     </section>
 
@@ -290,11 +304,32 @@
   </div>
 
   <script>
-    /* ===============================
-       1) Marbotic herkenning
-       (gebaseerd op jouw werkende module)
-       =============================== */
+    /* 0) Auto schaal voor het gestreepte vlak */
+    const leftPane = document.getElementById("leftPane");
 
+    function setAutoScale(){
+      const r = leftPane.getBoundingClientRect();
+
+      /* referentie, dit is de “ontwerpmaat” waarop jouw px waarden kloppen */
+      const baseW = 900;
+      const baseH = 520;
+
+      const pad = 24;
+      const sW = Math.max(0.1, (r.width  - pad) / baseW);
+      const sH = Math.max(0.1, (r.height - pad) / baseH);
+
+      let s = Math.min(sW, sH);
+
+      /* nette grenzen, zodat het niet te klein of absurd groot wordt */
+      s = Math.max(0.45, Math.min(1.10, s));
+
+      document.documentElement.style.setProperty("--scale", String(s));
+    }
+
+    window.addEventListener("resize", setAutoScale);
+    window.addEventListener("orientationchange", () => setTimeout(setAutoScale, 80));
+
+    /* 1) Marbotic herkenning */
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     let calibration = null;
@@ -339,7 +374,6 @@
       }
 
       const [p0,p1,p2] = points;
-
       const centroidRaw = { x:(p0.x+p1.x+p2.x)/3, y:(p0.y+p1.y+p2.y)/3 };
       const isoPoints = [p0,p1,p2].map(p => ({ x:p.x-centroidRaw.x, y:p.y-centroidRaw.y }));
 
@@ -393,21 +427,11 @@
       let height = maxY - minY; if (height < 1e-6) height = 1;
 
       const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
-
       const pointsWithIndex = [{p:p0,idx:0},{p:p1,idx:1},{p:p2,idx:2}].sort((a,b)=>a.p.y-b.p.y);
       const xPattern = pointsWithIndex.map(item => (item.p.x - minX)/width);
-
       const aspect = height / (width + height);
 
-      const vector = buildFeatureVector({
-        sides: sidesNormSorted,
-        cosAngle,
-        orientation,
-        yNorm,
-        xPattern,
-        aspect
-      });
-
+      const vector = buildFeatureVector({ sides: sidesNormSorted, cosAngle, orientation, yNorm, xPattern, aspect });
       return { vector };
     }
 
@@ -486,18 +510,14 @@
       if (minBetween > maxSame) thresholdBase = (maxSame + minBetween)/2;
       else thresholdBase = maxSame * 1.3;
 
-      classificationStats = {
-        thresholdBase,
-        thresholdUnknown: thresholdBase * 1.5
-      };
+      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
     }
 
     function recognizeDigit(points){
       if (!calibration || !classificationStats) return null;
       if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
 
-      const features = computeFeatures(points);
-      const vec = features.vector;
+      const vec = computeFeatures(points).vector;
       if (!vec) return null;
 
       let bestDigit = null;
@@ -521,10 +541,7 @@
       return bestDigit;
     }
 
-    /* ===============================
-       2) Spel, spreken, animaties
-       =============================== */
-
+    /* 2) Spel, spreken, animaties */
     const scanArea = document.getElementById("scanArea");
     const promptText = document.getElementById("promptText");
     const speakBtn = document.getElementById("speakBtn");
@@ -537,12 +554,13 @@
     const FAIRY_SRC = "toverfee.mp4";
     const EXPLOSION_SRC = "explosie.mp4";
 
-    const FAIRY_SPEED = 1.00;   /* ✅ jouw waarde */
-    const EXPLOSION_SPEED = 1.65; /* ✅ jouw waarde */
+    const FAIRY_SPEED = 1.00;
+    const EXPLOSION_SPEED = 1.65;
 
     let targetDigit = 0;
     let roundActive = true;
     let hasResultForCurrentTouches = false;
+    let currentPoints = [];
 
     let audioUnlocked = false;
     let pendingSpeak = false;
@@ -560,26 +578,20 @@
     }
 
     function speakDigit(d){
-      const text = String(d);
-
       if (!audioUnlocked){
         pendingSpeak = true;
         return;
       }
 
-      try{
-        window.speechSynthesis.cancel();
-      }catch(e){}
+      try{ window.speechSynthesis.cancel(); }catch(e){}
 
-      const utter = new SpeechSynthesisUtterance(text);
+      const utter = new SpeechSynthesisUtterance(String(d));
       utter.lang = "nl-NL";
       utter.rate = 0.9;
       utter.pitch = 1.05;
       utter.volume = 1;
 
-      try{
-        window.speechSynthesis.speak(utter);
-      }catch(e){}
+      try{ window.speechSynthesis.speak(utter); }catch(e){}
     }
 
     function unlockAudioNow(){
@@ -687,11 +699,13 @@
       const p = explosionVid.play();
       if (p && typeof p.catch === "function") p.catch(()=>{});
 
-      const hideAfter = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--explosion-hide-after")) || 1.9;
-      const fadeOutRaw = getComputedStyle(document.documentElement).getPropertyValue("--explosion-fadeout").trim();
+      const cs = getComputedStyle(document.documentElement);
+      const hideAfter = parseFloat(cs.getPropertyValue("--explosion-hide-after")) || 1.9;
+
+      const fadeOutRaw = cs.getPropertyValue("--explosion-fadeout").trim();
       let fadeMs = 450;
       if (fadeOutRaw.endsWith("ms")) fadeMs = parseFloat(fadeOutRaw) || 450;
-      if (fadeOutRaw.endsWith("s")) fadeMs = (parseFloat(fadeOutRaw) || 0) * 1000;
+      else if (fadeOutRaw.endsWith("s")) fadeMs = (parseFloat(fadeOutRaw) || 0) * 1000;
 
       window.setTimeout(() => {
         explosionWrap.style.transition = "opacity " + Math.max(0, fadeMs) + "ms ease";
@@ -712,7 +726,9 @@
 
       playFairyOnce();
 
-      const explStart = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--explosion-start-delay")) || 0;
+      const cs = getComputedStyle(document.documentElement);
+      const explStart = parseFloat(cs.getPropertyValue("--explosion-start-delay")) || 0;
+
       window.setTimeout(() => {
         playExplosion();
       }, Math.max(0, explStart * 1000));
@@ -726,9 +742,7 @@
         setScanState("correct");
         showDigitAndCelebrate(targetDigit);
 
-        window.setTimeout(() => {
-          startRound();
-        }, 1400);
+        window.setTimeout(() => startRound(), 1400);
       } else {
         setScanState("wrong");
         window.setTimeout(() => {
@@ -750,8 +764,6 @@
       }
       return pts;
     }
-
-    let currentPoints = [];
 
     function onTouch(e){
       unlockAudioNow();
@@ -793,13 +805,15 @@
 
     /* init */
     window.addEventListener("load", () => {
+      setAutoScale();
+
       showFairyFirstFrame();
       loadExplosion();
 
       fetch("calibration.json", { cache:"no-store" })
         .then(r => r.json())
         .then(data => initCalibration(data))
-        .catch(() => { /* stil blijven */ });
+        .catch(() => {});
 
       startRound();
     });
