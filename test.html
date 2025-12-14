@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Testomgeving, toverfee, cijfer, explosie mp4</title>
+  <title>Testomgeving, finetunen toverfee, cijfer, explosie mp4</title>
 
   <style>
     :root{
-      /* jouw waarden */
+      /* JOUW INSTELLINGEN */
       --fairy-left: 32.5%;
       --fairy-top: 51%;
       --digit-left: 68.5%;
@@ -24,7 +24,7 @@
       --explosion-fade-in: 0.55s;
       --explosion-offset-y: -22px;
       --explosion-hide-after: 5.05s;
-      --explosion-fadeout: 200ms;
+      --explosion-fadeout: 10ms;
 
       --card-w: min(980px, 92vw);
       --card-h: min(520px, 56vh);
@@ -40,7 +40,7 @@
       overflow:hidden;
     }
 
-    .app{ height:100%; display:grid; grid-template-columns: 390px 1fr; }
+    .app{ height:100%; display:grid; grid-template-columns: 380px 1fr; }
     @media (max-width: 920px){
       .app{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     }
@@ -51,8 +51,14 @@
       border-right: 1px solid rgba(0,0,0,0.06);
       overflow:auto;
     }
+
     .panel h1{ font-size: 16px; margin: 0 0 10px 0; }
-    .hint{ font-size: 12px; color: rgba(0,0,0,0.62); line-height: 1.35; margin-bottom: 14px; }
+    .hint{
+      font-size: 12px;
+      color: rgba(0,0,0,0.62);
+      line-height: 1.35;
+      margin-bottom: 14px;
+    }
 
     .group{
       border: 1px solid rgba(0,0,0,0.08);
@@ -61,6 +67,7 @@
       margin-bottom: 12px;
       background: #fff;
     }
+
     .group h2{ font-size: 13px; margin: 0 0 10px 0; }
 
     .row{
@@ -70,6 +77,7 @@
       align-items:center;
       margin: 8px 0;
     }
+
     .row label{ font-size: 12px; color: rgba(0,0,0,0.78); }
     .row output{
       font-variant-numeric: tabular-nums;
@@ -78,6 +86,7 @@
       min-width: 92px;
       text-align:right;
     }
+
     input[type="range"]{ width:100%; }
 
     select{
@@ -91,6 +100,7 @@
     }
 
     .btns{ display:flex; gap: 10px; flex-wrap:wrap; margin-top: 8px; }
+
     button{
       appearance:none;
       border:none;
@@ -102,12 +112,22 @@
       color:#fff;
       box-shadow: 0 10px 22px rgba(0,0,0,0.12);
     }
+
     button.secondary{
       background:#f2eee9;
       color:#4d4a48;
       box-shadow:none;
       border: 1px solid rgba(0,0,0,0.08);
       font-weight: 900;
+    }
+
+    .check{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.75);
     }
 
     textarea{
@@ -138,15 +158,13 @@
       width: 100%;
       height: 100%;
       background: #ffffff;
-      border: none;
       border-radius: 28px;
       box-shadow: 0 14px 34px rgba(0,0,0,0.10);
       position:relative;
       overflow: visible;
     }
 
-    /* gestippelde lijn als overlay boven alles,
-       zo kan de toverfee erachter lijken te zitten */
+    /* gestippelde lijn als overlay boven alles */
     .gameCard::after{
       content:"";
       position:absolute;
@@ -156,6 +174,20 @@
       pointer-events:none;
       z-index: 50;
     }
+
+    .gridOverlay{
+      position:absolute;
+      inset: 0;
+      border-radius: 28px;
+      pointer-events:none;
+      opacity: 0;
+      background:
+        linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px) 0 0 / 10% 100%,
+        linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px) 0 0 / 100% 10%;
+      mix-blend-mode: multiply;
+      z-index: 40;
+    }
+    .gridOn .gridOverlay{ opacity: 0.55; }
 
     .stage{ position:absolute; inset:0; overflow: visible; }
     .stage img, .stage video{
@@ -172,7 +204,7 @@
       top: var(--fairy-top);
       width: var(--fairy-size);
       opacity: 1;
-      z-index: 2;
+      z-index: 10;
     }
 
     /* cijfer boven toverfee */
@@ -181,7 +213,7 @@
       top: var(--digit-top);
       width: var(--digit-size);
       opacity: 0;
-      z-index: 3;
+      z-index: 20;
     }
 
     /* explosie wrapper boven cijfer */
@@ -190,7 +222,7 @@
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
-      z-index: 4;
+      z-index: 30;
       position:absolute;
       transform: translate(-50%, -50%);
     }
@@ -206,6 +238,7 @@
       animation-delay: var(--digit-delay);
     }
 
+    /* fade in explosie via wrapper, stabiel op iPad */
     .stage.boom #explosionWrap{
       animation: pop var(--explosion-fade-in) ease forwards;
       animation-delay: 0s;
@@ -232,9 +265,9 @@
 <body>
   <div class="app">
     <aside class="panel">
-      <h1>Testomgeving, explosie mp4</h1>
+      <h1>Testomgeving, finetunen</h1>
       <div class="hint">
-        Tip, zet je fade out niet op 10ms als je hem wilt zien, 200ms voelt al veel natuurlijker.
+        Start triggert toverfee, cijfer en explosie. De toverfee staat altijd in beeld, eerst frame bij openen, na afspelen blijft hij op het laatste beeld staan.
       </div>
 
       <div class="group">
@@ -256,16 +289,75 @@
           <button class="secondary" id="resetBtn">Reset</button>
           <button class="secondary" id="firstFrameBtn">Eerste beeld</button>
         </div>
+
+        <div class="check">
+          <input type="checkbox" id="gridToggle" />
+          <label for="gridToggle">Raster over het vak</label>
+        </div>
       </div>
 
       <div class="group">
         <h2>Snelheid</h2>
 
-        <div class="row"><label>Explosie snelheid</label><output id="explSpeedOut"></output></div>
-        <input id="explSpeed" type="range" min="0.25" max="3.0" step="0.05" />
-
         <div class="row"><label>Toverfee snelheid</label><output id="fairySpeedOut"></output></div>
         <input id="fairySpeed" type="range" min="0.25" max="2.5" step="0.05" />
+
+        <div class="row"><label>Explosie snelheid</label><output id="explSpeedOut"></output></div>
+        <input id="explSpeed" type="range" min="0.25" max="3.0" step="0.05" />
+      </div>
+
+      <div class="group">
+        <h2>Plaatsing</h2>
+
+        <div class="row"><label>Cijfer links</label><output id="digitLeftOut"></output></div>
+        <input id="digitLeft" type="range" min="0" max="100" step="0.5" />
+
+        <div class="row"><label>Cijfer boven</label><output id="digitTopOut"></output></div>
+        <input id="digitTop" type="range" min="0" max="100" step="0.5" />
+
+        <div class="row"><label>Toverfee links</label><output id="fairyLeftOut"></output></div>
+        <input id="fairyLeft" type="range" min="0" max="100" step="0.5" />
+
+        <div class="row"><label>Toverfee boven</label><output id="fairyTopOut"></output></div>
+        <input id="fairyTop" type="range" min="0" max="100" step="0.5" />
+      </div>
+
+      <div class="group">
+        <h2>Grootte</h2>
+
+        <div class="row"><label>Cijfer grootte</label><output id="digitSizeOut"></output></div>
+        <input id="digitSize" type="range" min="120" max="460" step="1" />
+
+        <div class="row"><label>Toverfee grootte</label><output id="fairySizeOut"></output></div>
+        <input id="fairySize" type="range" min="180" max="700" step="1" />
+
+        <div class="row"><label>Explosie schaal</label><output id="explScaleOut"></output></div>
+        <input id="explScale" type="range" min="1" max="3" step="0.05" />
+
+        <div class="row"><label>Explosie offset Y</label><output id="explOffsetOut"></output></div>
+        <input id="explOffset" type="range" min="-80" max="80" step="1" />
+      </div>
+
+      <div class="group">
+        <h2>Timing</h2>
+
+        <div class="row"><label>Delay cijfer</label><output id="digitDelayOut"></output></div>
+        <input id="digitDelay" type="range" min="0" max="3.0" step="0.05" />
+
+        <div class="row"><label>Fade duur cijfer</label><output id="fadeDurOut"></output></div>
+        <input id="fadeDur" type="range" min="0.1" max="3.5" step="0.05" />
+
+        <div class="row"><label>Start explosie</label><output id="explStartOut"></output></div>
+        <input id="explStart" type="range" min="0" max="3.5" step="0.05" />
+
+        <div class="row"><label>Fade in explosie</label><output id="explFadeInOut"></output></div>
+        <input id="explFadeIn" type="range" min="0.01" max="1.2" step="0.01" />
+
+        <div class="row"><label>Explosie zichtbaar</label><output id="explHideAfterOut"></output></div>
+        <input id="explHideAfter" type="range" min="0.1" max="8.0" step="0.05" />
+
+        <div class="row"><label>Fade out explosie</label><output id="explFadeOutOut"></output></div>
+        <input id="explFadeOut" type="range" min="0" max="1400" step="10" />
       </div>
 
       <div class="group">
@@ -277,6 +369,8 @@
     <main class="preview">
       <div class="cardWrap">
         <div class="gameCard" id="card">
+          <div class="gridOverlay"></div>
+
           <div class="stage" id="stage">
             <video id="fairyVid" muted playsinline preload="auto"></video>
             <img id="digitImg" alt="" />
@@ -294,9 +388,10 @@
     const EXPLOSION_SRC = 'explosie.mp4';
 
     const stage = document.getElementById('stage');
+    const card = document.getElementById('card');
+
     const fairyVid = document.getElementById('fairyVid');
     const digitImg = document.getElementById('digitImg');
-
     const explosionWrap = document.getElementById('explosionWrap');
     const explosionVid = document.getElementById('explosionVid');
 
@@ -307,11 +402,45 @@
       startBtn: document.getElementById('startBtn'),
       resetBtn: document.getElementById('resetBtn'),
       firstFrameBtn: document.getElementById('firstFrameBtn'),
+      gridToggle: document.getElementById('gridToggle'),
 
-      explSpeed: document.getElementById('explSpeed'),
       fairySpeed: document.getElementById('fairySpeed'),
-      explSpeedOut: document.getElementById('explSpeedOut'),
+      explSpeed: document.getElementById('explSpeed'),
       fairySpeedOut: document.getElementById('fairySpeedOut'),
+      explSpeedOut: document.getElementById('explSpeedOut'),
+
+      digitLeft: document.getElementById('digitLeft'),
+      digitTop: document.getElementById('digitTop'),
+      fairyLeft: document.getElementById('fairyLeft'),
+      fairyTop: document.getElementById('fairyTop'),
+
+      digitSize: document.getElementById('digitSize'),
+      fairySize: document.getElementById('fairySize'),
+      explScale: document.getElementById('explScale'),
+      explOffset: document.getElementById('explOffset'),
+
+      digitDelay: document.getElementById('digitDelay'),
+      fadeDur: document.getElementById('fadeDur'),
+      explStart: document.getElementById('explStart'),
+      explFadeIn: document.getElementById('explFadeIn'),
+      explHideAfter: document.getElementById('explHideAfter'),
+      explFadeOut: document.getElementById('explFadeOut'),
+
+      digitLeftOut: document.getElementById('digitLeftOut'),
+      digitTopOut: document.getElementById('digitTopOut'),
+      fairyLeftOut: document.getElementById('fairyLeftOut'),
+      fairyTopOut: document.getElementById('fairyTopOut'),
+      digitSizeOut: document.getElementById('digitSizeOut'),
+      fairySizeOut: document.getElementById('fairySizeOut'),
+      explScaleOut: document.getElementById('explScaleOut'),
+      explOffsetOut: document.getElementById('explOffsetOut'),
+
+      digitDelayOut: document.getElementById('digitDelayOut'),
+      fadeDurOut: document.getElementById('fadeDurOut'),
+      explStartOut: document.getElementById('explStartOut'),
+      explFadeInOut: document.getElementById('explFadeInOut'),
+      explHideAfterOut: document.getElementById('explHideAfterOut'),
+      explFadeOutOut: document.getElementById('explFadeOutOut'),
 
       exportBox: document.getElementById('exportBox')
     };
@@ -322,6 +451,10 @@
     function clearTimers(){
       if (tBoom){ clearTimeout(tBoom); tBoom = null; }
       if (tFade){ clearTimeout(tFade); tFade = null; }
+    }
+
+    function setVar(name, value){
+      document.documentElement.style.setProperty(name, value);
     }
 
     function getVar(name){
@@ -344,23 +477,42 @@
       try { video.currentTime = t; } catch(e) { video.pause(); }
     }
 
-    function loadFairyFirstFrame(){
-      fairyVid.muted = true;
-      fairyVid.playsInline = true;
-      fairyVid.loop = false;
-      fairyVid.controls = false;
-      fairyVid.preload = 'auto';
-      fairyVid.src = FAIRY_SRC;
+    function primeFirstFrame(video){
+      /* poging om op iPad zeker beeld te krijgen */
+      video.muted = true;
+      video.playsInline = true;
+      video.loop = false;
+      video.controls = false;
 
-      const onReady = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-        try { fairyVid.pause(); } catch(e) {}
+      const tryPrime = () => {
+        try { video.currentTime = 0; } catch(e) {}
+        const p = video.play();
+        if (p && typeof p.then === 'function'){
+          p.then(() => {
+            setTimeout(() => {
+              try { video.pause(); } catch(e) {}
+              try { video.currentTime = 0; } catch(e) {}
+              try { video.pause(); } catch(e) {}
+            }, 60);
+          }).catch(() => {
+            try { video.pause(); } catch(e) {}
+            try { video.currentTime = 0; } catch(e) {}
+          });
+        } else {
+          try { video.pause(); } catch(e) {}
+          try { video.currentTime = 0; } catch(e) {}
+        }
       };
 
-      fairyVid.addEventListener('loadeddata', onReady, { once:true });
-      fairyVid.addEventListener('canplay', onReady, { once:true });
+      video.addEventListener('loadeddata', tryPrime, { once:true });
+      video.addEventListener('canplay', tryPrime, { once:true });
+    }
+
+    function loadFairyFirstFrame(){
+      fairyVid.preload = 'auto';
+      fairyVid.src = FAIRY_SRC;
       try { fairyVid.load(); } catch(e) {}
+      primeFirstFrame(fairyVid);
     }
 
     function playFairyOnce(){
@@ -481,6 +633,17 @@ Explosie snelheid: ${(Number(els.explSpeed.value)||1).toFixed(2)}
 `;
     }
 
+    function bindRange(rangeEl, outEl, fmt, apply){
+      const handler = () => {
+        const v = Number(rangeEl.value);
+        outEl.textContent = fmt(v);
+        apply(v);
+        exportBlock();
+      };
+      rangeEl.addEventListener('input', handler);
+      handler();
+    }
+
     function bindSpeed(rangeEl, outEl){
       const handler = () => {
         const v = Number(rangeEl.value) || 1;
@@ -491,22 +654,75 @@ Explosie snelheid: ${(Number(els.explSpeed.value)||1).toFixed(2)}
       handler();
     }
 
-    window.addEventListener('load', () => {
-      els.explSpeed.value = 1.00;
-      els.fairySpeed.value = 1.00;
+    function initUI(){
+      const parsePct = (s) => parseFloat(String(s).replace('%','')) || 0;
+      const parsePx = (s) => parseFloat(String(s).replace('px','')) || 0;
+      const parseSec = (s) => parseFloat(String(s).replace('s','')) || 0;
+
+      els.digitLeft.value = parsePct(getVar('--digit-left'));
+      els.digitTop.value = parsePct(getVar('--digit-top'));
+      els.fairyLeft.value = parsePct(getVar('--fairy-left'));
+      els.fairyTop.value = parsePct(getVar('--fairy-top'));
+
+      els.digitSize.value = parsePx(getVar('--digit-size'));
+      els.fairySize.value = parsePx(getVar('--fairy-size'));
+
+      els.explScale.value = parseFloat(getVar('--explosion-scale')) || 1.5;
+      els.explOffset.value = parsePx(getVar('--explosion-offset-y'));
+
+      els.digitDelay.value = parseSec(getVar('--digit-delay'));
+      els.fadeDur.value = parseSec(getVar('--fade-duration'));
+
+      els.explStart.value = parseSec(getVar('--explosion-start-delay'));
+      els.explFadeIn.value = parseSec(getVar('--explosion-fade-in'));
+      els.explHideAfter.value = parseSec(getVar('--explosion-hide-after'));
+      els.explFadeOut.value = parseMs(getVar('--explosion-fadeout'), 200);
+
+      els.fairySpeed.value = 1;
+      els.explSpeed.value = 1;
 
       els.digitOut.textContent = els.digitSelect.value === 'random' ? 'Willekeurig' : els.digitSelect.value;
+    }
+
+    function wire(){
+      bindSpeed(els.fairySpeed, els.fairySpeedOut);
+      bindSpeed(els.explSpeed, els.explSpeedOut);
+
+      bindRange(els.digitLeft, els.digitLeftOut, v => `${v.toFixed(1)}%`, v => setVar('--digit-left', `${v}%`));
+      bindRange(els.digitTop, els.digitTopOut, v => `${v.toFixed(1)}%`, v => setVar('--digit-top', `${v}%`));
+      bindRange(els.fairyLeft, els.fairyLeftOut, v => `${v.toFixed(1)}%`, v => setVar('--fairy-left', `${v}%`));
+      bindRange(els.fairyTop, els.fairyTopOut, v => `${v.toFixed(1)}%`, v => setVar('--fairy-top', `${v}%`));
+
+      bindRange(els.digitSize, els.digitSizeOut, v => `${Math.round(v)}px`, v => setVar('--digit-size', `${Math.round(v)}px`));
+      bindRange(els.fairySize, els.fairySizeOut, v => `${Math.round(v)}px`, v => setVar('--fairy-size', `${Math.round(v)}px`));
+
+      bindRange(els.explScale, els.explScaleOut, v => `${v.toFixed(2)}`, v => setVar('--explosion-scale', `${v}`));
+      bindRange(els.explOffset, els.explOffsetOut, v => `${Math.round(v)}px`, v => setVar('--explosion-offset-y', `${Math.round(v)}px`));
+
+      bindRange(els.digitDelay, els.digitDelayOut, v => `${v.toFixed(2)}s`, v => setVar('--digit-delay', `${v}s`));
+      bindRange(els.fadeDur, els.fadeDurOut, v => `${v.toFixed(2)}s`, v => setVar('--fade-duration', `${v}s`));
+
+      bindRange(els.explStart, els.explStartOut, v => `${v.toFixed(2)}s`, v => setVar('--explosion-start-delay', `${v}s`));
+      bindRange(els.explFadeIn, els.explFadeInOut, v => `${v.toFixed(2)}s`, v => setVar('--explosion-fade-in', `${v}s`));
+      bindRange(els.explHideAfter, els.explHideAfterOut, v => `${v.toFixed(2)}s`, v => setVar('--explosion-hide-after', `${v}s`));
+      bindRange(els.explFadeOut, els.explFadeOutOut, v => `${Math.round(v)}ms`, v => setVar('--explosion-fadeout', `${Math.round(v)}ms`));
+
       els.digitSelect.addEventListener('change', () => {
         els.digitOut.textContent = els.digitSelect.value === 'random' ? 'Willekeurig' : els.digitSelect.value;
       });
-
-      bindSpeed(els.explSpeed, els.explSpeedOut);
-      bindSpeed(els.fairySpeed, els.fairySpeedOut);
 
       els.startBtn.addEventListener('click', startSequence);
       els.resetBtn.addEventListener('click', () => { resetStage(); loadFairyFirstFrame(); });
       els.firstFrameBtn.addEventListener('click', loadFairyFirstFrame);
 
+      els.gridToggle.addEventListener('change', () => {
+        card.classList.toggle('gridOn', els.gridToggle.checked);
+      });
+    }
+
+    window.addEventListener('load', () => {
+      initUI();
+      wire();
       loadFairyFirstFrame();
       loadExplosion();
       exportBlock();
