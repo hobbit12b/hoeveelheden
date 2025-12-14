@@ -33,17 +33,14 @@
       --explosion-hide-after: 2.8s;
       --explosion-fadeout: 200ms;
 
-      /* Toverfee */
-      --fairy-fade-in: 0.25s;
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
       /* Posities binnen de kaart */
-      --fairy-left: 30%; /* iets naar rechts */
+      --fairy-left: 34%;
       --fairy-top: 62%;
 
       --digit-left: 66%;
       --digit-top: 58%;
-
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -61,18 +58,18 @@
       overflow:hidden;
     }
 
-    /* Landscape: links en rechts, rechts is scan */
+    /* Landscape: links en rechts, rechts is scan, links iets groter */
     body{
       display:grid;
-      grid-template-columns: 56fr 44fr; /* zoals eerst, wit net geen helft */
+      grid-template-columns: 58fr 42fr;
       height: 100%;
     }
 
-    /* Portrait: boven en onder, onder is scan */
+    /* Portrait: boven en onder, onder is scan, 1/5 kleiner dan eerder */
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
-        grid-template-rows: 42fr 58fr; /* onder groter, scan wordt lekker ruim */
+        grid-template-rows: 54fr 46fr;
       }
     }
 
@@ -84,25 +81,22 @@
       gap: 22px;
       position: relative;
       overflow:hidden;
+      min-height: 0;
     }
 
-    /* De héle witte kant is scanvak */
+    /* Hele witte vlak is scanvak */
     .scan-surface{
       background:#ffffff;
       position: relative;
       overflow:hidden;
+      min-height: 0;
     }
 
-    /* Scheidslijn */
     @media (orientation: landscape){
-      .scan-surface{
-        border-left: 6px dashed rgba(245,180,152,0.85);
-      }
+      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
     }
     @media (orientation: portrait){
-      .scan-surface{
-        border-top: 6px dashed rgba(245,180,152,0.85);
-      }
+      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -110,9 +104,9 @@
       display:flex;
       align-items:center;
       gap: 18px;
+      flex: 0 0 auto;
     }
 
-    /* Homeknop met afbeelding */
     .homeBtn{
       width:72px;
       height:72px;
@@ -147,7 +141,7 @@
     }
 
     .content{
-      flex:1;
+      flex:1 1 auto;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -167,12 +161,9 @@
     }
 
     @media (orientation: portrait){
-      .gameCard{
-        height: min(420px, 34vh);
-      }
+      .gameCard{ height: min(420px, 34vh); }
     }
 
-    /* Spreekknop met afbeelding */
     .speakBtn{
       position:absolute;
       right: -28px;
@@ -208,11 +199,12 @@
       transform: translate(-50%, -50%);
     }
 
+    /* Toverfee staat altijd in beeld */
     #fairyVid{
       left: var(--fairy-left);
       top: var(--fairy-top);
       width: var(--fairy-size);
-      opacity: 0;
+      opacity: 1;
       z-index: 1;
     }
 
@@ -231,7 +223,7 @@
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
       z-index: 3;
-      display: block;
+      display:block;
     }
 
     .stage.play #digitImg{
@@ -244,10 +236,6 @@
       animation-delay: var(--cijfertoon-delay);
     }
 
-    .stage.play #fairyVid{
-      animation: popFairy var(--fairy-fade-in) ease forwards;
-    }
-
     @keyframes appear{
       0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
       100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
@@ -258,12 +246,6 @@
       100%{ opacity:1; transform: translate(-50%, -50%) translateY(var(--explosion-offset-y)) scale(1); }
     }
 
-    @keyframes popFairy{
-      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.98); }
-      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
-    }
-
-    /* Scan overlay tekst, witte vlak blijft scanbaar */
     .scanOverlay{
       position:absolute;
       inset: 0;
@@ -327,11 +309,10 @@
       100%{ transform: translateX(0); }
     }
 
-    /* Start overlay */
     .startOverlay{
       position:fixed;
       inset:0;
-      background: rgba(253,238,234,0.78);
+      background: rgba(253,238,234,0.55);
       backdrop-filter: blur(2px);
       display:flex;
       align-items:center;
@@ -456,6 +437,55 @@
     const startBtn = document.getElementById('startBtn');
 
     /* ================================
+       Toverfee gedrag
+       Eerst frame zichtbaar bij openen
+       Speelt pas bij goed antwoord
+       Stopt op laatste frame
+       ================================ */
+
+    function showFirstFrame(){
+      fairyVid.muted = true;
+      fairyVid.playsInline = true;
+      fairyVid.loop = false;
+      fairyVid.controls = false;
+      fairyVid.preload = "auto";
+      fairyVid.src = FAIRY_SRC;
+
+      const onReady = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+      };
+
+      fairyVid.addEventListener('loadeddata', onReady, { once:true });
+      fairyVid.addEventListener('canplay', onReady, { once:true });
+      try { fairyVid.load(); } catch(e) {}
+    }
+
+    function freezeOnLastFrame(video){
+      const d = Number.isFinite(video.duration) ? video.duration : 0;
+      const t = Math.max(0, d - 0.04);
+      video.addEventListener('seeked', () => video.pause(), { once:true });
+      try { video.currentTime = t; } catch (e) { video.pause(); }
+    }
+
+    function playFairyOnce(){
+      fairyVid.loop = false;
+
+      fairyVid.onended = () => {
+        freezeOnLastFrame(fairyVid);
+      };
+
+      try { fairyVid.pause(); } catch(e) {}
+      try { fairyVid.currentTime = 0; } catch(e) {}
+
+      const p = fairyVid.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => { });
+      }
+    }
+
+    /* ================================
        Marbotic herkenning
        ================================ */
 
@@ -504,7 +534,6 @@
       if (!points || points.length !== 3) return { vector: [0,0,0] };
 
       const p0 = points[0], p1 = points[1], p2 = points[2];
-
       const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
 
       const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
@@ -672,15 +701,6 @@
       img.setAttribute('src', base + bust);
     }
 
-    function getVarSeconds(name, fallbackSeconds){
-      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      if (!raw) return fallbackSeconds;
-      if (raw.endsWith('ms')) return parseFloat(raw) / 1000;
-      if (raw.endsWith('s')) return parseFloat(raw);
-      const n = parseFloat(raw);
-      return Number.isFinite(n) ? n : fallbackSeconds;
-    }
-
     function getVarMillis(name, fallbackMs){
       const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       if (!raw) return fallbackMs;
@@ -704,14 +724,7 @@
       targetDigit = next;
     }
 
-    function freezeOnLastFrame(video){
-      const d = Number.isFinite(video.duration) ? video.duration : 0;
-      const t = Math.max(0, d - 0.04);
-      video.addEventListener('seeked', () => video.pause(), { once:true });
-      try{ video.currentTime = t; }catch(e){ video.pause(); }
-    }
-
-    function clearCard(){
+    function clearDigitAndExplosion(){
       clearExplosionTimers();
       stage.classList.remove('play');
 
@@ -721,8 +734,6 @@
 
       explosion.style.transition = '';
       explosion.style.opacity = '0';
-
-      fairyVid.style.opacity = '0';
     }
 
     function scheduleExplosionFade(){
@@ -746,7 +757,7 @@
     }
 
     function playSuccessAnimation(digit){
-      clearCard();
+      clearDigitAndExplosion();
 
       digitImg.src = ASSET_DIGIT(digit);
       digitImg.alt = String(digit);
@@ -755,19 +766,17 @@
       explosion.style.opacity = '0';
       restartGif(explosion);
 
-      fairyVid.onended = () => freezeOnLastFrame(fairyVid);
-      try { fairyVid.currentTime = 0; } catch(e) {}
-      fairyVid.play().catch(() => {});
-
       void stage.offsetHeight;
       stage.classList.add('play');
 
+      playFairyOnce();
       scheduleExplosionFade();
     }
 
     function nextRound(){
       locked = false;
-      clearCard();
+      clearDigitAndExplosion();
+
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
       scanHint.textContent = '📱 Blokje stil laten liggen';
@@ -908,24 +917,7 @@
       }
     }
 
-    /* Video unlock */
-    function unlockFairyVideo(){
-      fairyVid.muted = true;
-      fairyVid.playsInline = true;
-      fairyVid.loop = false;
-      fairyVid.controls = false;
-      fairyVid.src = FAIRY_SRC;
-      fairyVid.load();
-
-      const p = fairyVid.play();
-      if (p && typeof p.then === "function"){
-        p.then(() => {
-          fairyVid.pause();
-          try { fairyVid.currentTime = 0; } catch(e) {}
-        }).catch(() => {});
-      }
-    }
-
+    /* Start flow */
     function startGame(){
       if (started) return;
       started = true;
@@ -934,7 +926,6 @@
       pickDutchVoice();
       setTimeout(() => pickDutchVoice(), 250);
 
-      unlockFairyVideo();
       nextRound();
     }
 
@@ -953,7 +944,10 @@
     });
 
     window.addEventListener('load', () => {
-      clearCard();
+      showFirstFrame();
+
+      clearDigitAndExplosion();
+
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
       scanHint.textContent = '📱 Blokje stil laten liggen';
