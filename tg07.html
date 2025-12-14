@@ -29,25 +29,14 @@
       --fairy-pop: 250ms;
 
       /* Posities binnen de kaart */
-      --fairy-left: 28%;
-      --fairy-top: 70%;
-
+      --fairy-left: 22%;
+      --fairy-top: 62%;
       --digit-left: 63%;
       --digit-top: 58%;
-
       --explosion-left: 50%;
       --explosion-top: 58%;
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
-
-      /* Scanvak stijl */
-      --scan-border-neutral: rgba(255,255,255,0.85);
-      --scan-border-scan: rgba(255,255,255,0.95);
-      --scan-border-good: #4caf50;
-
-      --scan-bg-neutral: rgba(255,255,255,0.12);
-      --scan-bg-scan: rgba(255,255,255,0.22);
-      --scan-bg-good: rgba(76,175,80,0.18);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -65,35 +54,37 @@
       overflow:hidden;
     }
 
-    body{ display:flex; }
+    /* Links kleiner, rechts groter, wit net niet de helft */
+    body{
+      display:grid;
+      grid-template-columns: 56fr 44fr;
+      height: 100%;
+    }
 
     .left{
-      flex: 1 1 68%;
       background: var(--bg-left);
-      padding: 28px 28px 22px 28px;
+      padding: 28px 26px 22px 26px;
       display:flex;
       flex-direction:column;
       gap: 22px;
+      position: relative;
     }
 
-    .right{
-      flex: 1 1 32%;
+    /* De héle witte kant is het scanvak */
+    .scan-surface{
       background:#ffffff;
       border-left: 6px dashed rgba(245,180,152,0.85);
-      padding: 26px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      min-width: 320px;
+      position: relative;
+      overflow:hidden;
     }
 
     .topbar{
       display:flex;
       align-items:center;
-      gap: 22px;
+      gap: 18px;
     }
 
+    /* Homeknop linksboven zoals in je ontwerp */
     .homeBtn{
       width:72px;
       height:72px;
@@ -106,7 +97,7 @@
       cursor:pointer;
     }
     .homeBtn:active{ transform: scale(0.98); }
-    .homeIcon{ width:36px; height:36px; }
+    .homeIcon{ width:38px; height:38px; }
 
     .titlePill{
       padding: 18px 44px;
@@ -114,7 +105,7 @@
       background: var(--brand);
       color: #ffffff;
       font-weight: 800;
-      font-size: clamp(22px, 2.2vw, 34px);
+      font-size: clamp(22px, 2.1vw, 34px);
       letter-spacing: 0.3px;
       box-shadow: var(--shadow);
       line-height: 1;
@@ -122,7 +113,7 @@
       align-items:center;
       justify-content:center;
       min-height: 64px;
-      width: min(620px, 100%);
+      width: min(660px, 100%);
     }
 
     .content{
@@ -133,20 +124,23 @@
       padding: 10px 6px;
     }
 
+    /* Linker kaart, wit vlak met streepjes zoals je voorbeeld */
     .gameCard{
-      width: min(920px, 100%);
-      height: min(470px, 55vh);
-      background: transparent;
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
       border: var(--dash-w) dashed rgba(245,180,152,0.85);
       border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: visible;
     }
 
+    /* Spreekknop, op de hoek van de kaart */
     .earBtn{
       position:absolute;
-      right: -36px;
-      top: -36px;
+      right: -28px;
+      top: -28px;
       width: 132px;
       height: 132px;
       border-radius: 999px;
@@ -217,14 +211,25 @@
       100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
-    /* Rechterkant: geen extra binnenvak, alleen het grote scanvak */
+    /* Rechterkant overlay, geen kader meer, alleen tekst en pictogrammen */
+    .scanOverlay{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+      pointer-events:none; /* belangrijk, hele witte vlak blijft scanbaar */
+    }
+
     .scanUI{
-      width: min(520px, 100%);
+      width: min(520px, 92%);
       display:flex;
       flex-direction:column;
       align-items:center;
       gap: 14px;
       text-align:center;
+      transform: translateY(-8px);
     }
 
     .miniTile{
@@ -257,74 +262,28 @@
       margin-top: -4px;
     }
 
-    .scan-area{
-      width: 100%;
-      border-radius: 28px;
-      border-width: 4px;
-      border-style: dashed;
-      border-color: var(--scan-border-neutral);
-      background: var(--scan-bg-neutral);
-      min-height: 62vh;
-      max-height: 74vh;
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-      transition: border-color 0.18s ease-out, background 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
-      position: relative;
-      overflow: hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+    .scanHint{
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 10px;
     }
 
-    .scan-area-inner{
-      pointer-events:none;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 10px;
-      opacity: 0.92;
+    /* Subtiele feedback op de hele witte kant */
+    .scan-surface.state-neutral{ }
+    .scan-surface.state-scanning{ }
+    .scan-surface.state-correct{ }
+
+    .scan-surface.wrong{
+      animation: wiggle 220ms ease;
     }
-
-    .scan-icon{ font-size: 2.4rem; }
-    .scan-text{ font-size: 1.05rem; color: rgba(0,0,0,0.62); font-weight: 650; }
-    .scan-hint{ font-size: 0.9rem; color: rgba(0,0,0,0.48); }
-
-    .scan-area.state-neutral{
-      border-style:dashed;
-      border-color:var(--scan-border-neutral);
-      background:var(--scan-bg-neutral);
-      transform:translateY(0);
-    }
-
-    .scan-area.state-scanning{
-      border-style:solid;
-      border-color:var(--scan-border-scan);
-      background:var(--scan-bg-scan);
-      box-shadow:0 12px 26px rgba(0,0,0,0.16);
-      transform:translateY(-2px);
-    }
-
-    .scan-area.state-correct{
-      border-style:solid;
-      border-color:var(--scan-border-good);
-      background:var(--scan-bg-good);
-      box-shadow:0 12px 30px rgba(76,175,80,0.35);
-      transform:translateY(-2px);
-    }
-
-    .right.wrong{ animation: wiggle 240ms ease; }
     @keyframes wiggle{
       0%{ transform: translateX(0); }
-      25%{ transform: translateX(-8px); }
-      55%{ transform: translateX(7px); }
+      28%{ transform: translateX(-6px); }
+      58%{ transform: translateX(5px); }
       100%{ transform: translateX(0); }
     }
 
-    .scan-footnote{
-      font-size: 13px;
-      color: rgba(0,0,0,0.55);
-      margin-top: 6px;
-    }
-
+    /* Start overlay */
     .startOverlay{
       position:fixed;
       inset:0;
@@ -374,13 +333,9 @@
     .startBtn:active{ transform: scale(0.99); }
 
     @media (max-width: 900px){
-      body{ flex-direction:column; }
-      .right{
-        border-left:none;
-        border-top: 6px dashed rgba(245,180,152,0.85);
-        min-width: unset;
-      }
-      .scan-area{ min-height: 46vh; }
+      body{ display:flex; flex-direction:column; }
+      .scan-surface{ border-left:none; border-top: 6px dashed rgba(245,180,152,0.85); }
+      .gameCard{ height: min(520px, 46vh); }
     }
   </style>
 </head>
@@ -400,7 +355,9 @@
 
     <div class="content">
       <div class="gameCard" aria-label="Toverkaart">
-        <button class="earBtn" id="earBtn" aria-label="Nog een keer luisteren"><span aria-hidden="true">👂</span></button>
+        <button class="earBtn" id="earBtn" aria-label="Nog een keer luisteren">
+          <span aria-hidden="true">👂</span>
+        </button>
 
         <div class="stage" id="stage">
           <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
@@ -411,31 +368,26 @@
     </div>
   </section>
 
-  <section class="right" id="rightPane" aria-label="Scanvak">
-    <div class="scanUI">
-      <div class="miniTile" aria-hidden="true">
-        <div>1</div><div>2</div><div>3</div><div>4</div>
-      </div>
-
-      <div class="scanTitle">Leg het houten cijfer in het vak.</div>
-      <div class="scanSub">Alle puntjes in het vak.</div>
-
-      <div class="scan-area state-neutral" id="scan-area" aria-label="Scanvak">
-        <div class="scan-area-inner">
-          <div class="scan-icon">👉🔢</div>
-          <div class="scan-text" id="scan-text">Leg het cijfer hier</div>
-          <div class="scan-hint" id="scan-hint">Blokje even stil laten liggen</div>
+  <!-- De héle witte kant is scan-area -->
+  <section class="scan-surface state-neutral" id="scan-area" aria-label="Scanvak">
+    <div class="scanOverlay">
+      <div class="scanUI">
+        <div class="miniTile" aria-hidden="true">
+          <div>1</div><div>2</div><div>3</div><div>4</div>
         </div>
-      </div>
 
-      <div class="scan-footnote">📱 Blokje stil laten liggen in het vak</div>
+        <div class="scanTitle" id="scan-title">Leg het houten cijfer in het vak.</div>
+        <div class="scanSub" id="scan-sub">Alle puntjes in het vak.</div>
+
+        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
+      </div>
     </div>
   </section>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>Tik om te starten</h1>
-      <p>Je hoort een cijfer, leg dat cijfer in het scanvak, met het oortje hoor je het nog eens.</p>
+      <p>Je hoort een cijfer, leg dat cijfer in het witte vlak. Met het oortje hoor je het nog eens.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
@@ -461,17 +413,17 @@
     const earBtn = document.getElementById('earBtn');
     const homeBtn = document.getElementById('homeBtn');
 
-    const rightPane = document.getElementById('rightPane');
+    const scanArea = document.getElementById('scan-area');
+    const scanTitle = document.getElementById('scan-title');
+    const scanSub = document.getElementById('scan-sub');
+    const scanHint = document.getElementById('scan-hint');
+
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
 
-    const scanArea = document.getElementById('scan-area');
-    const scanText = document.getElementById('scan-text');
-    const scanHint = document.getElementById('scan-hint');
-
     /* ================================
        MARBOTIC HERKENNINGSMODULE
-       gebaseerd op jouw werkende Levels code
+       (jouw werkende aanpak)
        ================================ */
 
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
@@ -524,16 +476,7 @@
 
     function computeFeatures(points) {
       if (!points || points.length !== 3) {
-        return {
-          sides: [0, 0, 0],
-          orientation: 0,
-          cosAngle: 0,
-          centroid: { x: 0, y: 0 },
-          yNorm: [0, 0, 0],
-          xPattern: [0, 0, 0],
-          aspect: 0,
-          vector: [0, 0, 0]
-        };
+        return { vector: [0,0,0] };
       }
 
       const p0 = points[0];
@@ -655,16 +598,7 @@
         aspect: aspect
       });
 
-      return {
-        sides: sidesNormSorted,
-        orientation: orientation,
-        cosAngle: cosAngle,
-        centroid: centroidBox,
-        yNorm: yNormVals,
-        xPattern: xPattern,
-        aspect: aspect,
-        vector: vector
-      };
+      return { vector: vector };
     }
 
     function buildFeatureVector(f) {
@@ -679,18 +613,14 @@
       v.push(f.sides[0] * wSides);
       v.push(f.sides[1] * wSides);
       v.push(f.sides[2] * wSides);
-
       v.push(f.cosAngle * wCos);
       v.push(f.orientation * wOrient);
-
       v.push(f.yNorm[0] * wY);
       v.push(f.yNorm[1] * wY);
       v.push(f.yNorm[2] * wY);
-
       v.push(f.xPattern[0] * wX);
       v.push(f.xPattern[1] * wX);
       v.push(f.xPattern[2] * wX);
-
       v.push(f.aspect * wAspect);
       return v;
     }
@@ -717,7 +647,7 @@
         if (!calibration[key]) return;
         const samples = calibration[key].samples || [];
         samples.forEach(function (s) {
-          allSamples.push({ digit: d, features: s.features });
+          allSamples.push({ digit: d, vector: s.features.vector });
         });
       });
 
@@ -731,15 +661,13 @@
 
       for (let i = 0; i < allSamples.length; i++) {
         const a = allSamples[i];
-        const vecA = a.features.vector;
         let minSame = Infinity;
         let minOther = Infinity;
 
         for (let j = 0; j < allSamples.length; j++) {
           if (i === j) continue;
           const b = allSamples[j];
-          const vecB = b.features.vector;
-          const dist = vectorDistance(vecA, vecB);
+          const dist = vectorDistance(a.vector, b.vector);
 
           if (a.digit === b.digit) {
             if (dist < minSame) minSame = dist;
@@ -764,17 +692,19 @@
       if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
       else thresholdBase = maxSame * 1.3;
 
-      const thresholdUnknown = thresholdBase * 1.5;
-
       classificationStats = {
         thresholdBase: thresholdBase,
-        thresholdUnknown: thresholdUnknown
+        thresholdUnknown: thresholdBase * 1.5
       };
     }
 
-    function classifyMeasurement(features) {
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const features = computeFeatures(points);
       const vec = features.vector;
-      if (!vec || !calibration) return { digit: null, isUnknown: true };
+      if (!vec) return null;
 
       let bestDigit = null;
       let bestDist = Infinity;
@@ -789,24 +719,15 @@
         }
       });
 
-      if (bestDigit === null || bestDist === Infinity) return { digit: null, isUnknown: true };
+      if (bestDigit === null) return null;
 
-      const stats = classificationStats || { thresholdBase: 0.8, thresholdUnknown: 1.5 };
-      if (bestDist > stats.thresholdUnknown) return { digit: null, isUnknown: true };
-      if (bestDist > stats.thresholdBase) return { digit: null, isUnknown: true };
+      const base = classificationStats.thresholdBase;
+      const unknownT = classificationStats.thresholdUnknown;
 
-      return { digit: bestDigit, isUnknown: false };
-    }
+      if (bestDist > unknownT) return null;
+      if (bestDist > base) return null;
 
-    function recognizeDigit(points) {
-      if (!calibration || !classificationStats) return null;
-      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
-
-      const features = computeFeatures(points);
-      const classification = classifyMeasurement(features);
-
-      if (!classification || classification.isUnknown || classification.digit == null) return null;
-      return classification.digit;
+      return bestDigit;
     }
 
     /* ================================
@@ -827,34 +748,25 @@
       else scanArea.classList.add('state-neutral');
 
       if (state === 'neutral'){
-        scanText.textContent = 'Leg het cijfer hier';
-        scanHint.textContent = 'Blokje even stil laten liggen';
+        scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+        scanSub.textContent = 'Alle puntjes in het vak.';
+        scanHint.textContent = '📱 Blokje stil laten liggen';
       } else if (state === 'scanning'){
-        scanText.textContent = 'Even stil houden';
-        scanHint.textContent = 'We lezen de puntjes';
+        scanTitle.textContent = 'Even stil houden.';
+        scanSub.textContent = 'We lezen de puntjes.';
+        scanHint.textContent = '';
       } else if (state === 'correct'){
-        scanText.textContent = 'Goed gedaan';
+        scanTitle.textContent = 'Goed gedaan.';
+        scanSub.textContent = '';
         scanHint.textContent = '';
       }
     }
 
     function wrongFeedback(){
-      rightPane.classList.remove('wrong');
-      void rightPane.offsetHeight;
-      rightPane.classList.add('wrong');
-    }
-
-    function speakDigit(digit){
-      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
-      if (!('speechSynthesis' in window)) return;
-      try{
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(word);
-        u.lang = 'nl-NL';
-        u.rate = 0.92;
-        u.pitch = 1.05;
-        window.speechSynthesis.speak(u);
-      }catch(e){}
+      scanArea.classList.remove('wrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('wrong');
+      setTimeout(() => scanArea.classList.remove('wrong'), 260);
     }
 
     function chooseNextDigit(){
@@ -924,7 +836,6 @@
 
       restartGif(explosion);
 
-      // Toverfee direct spelen, video is al “unlocked” bij Start
       fairyVid.onended = () => freezeOnLastFrame(fairyVid);
       try { fairyVid.currentTime = 0; } catch(e) {}
       fairyVid.play().catch(() => {});
@@ -1005,6 +916,70 @@
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
+    /* ================================
+       Spraak, iOS bestendig
+       ================================ */
+
+    let selectedVoice = null;
+    let speakToken = 0;
+    let lastSpeakAt = 0;
+
+    function pickDutchVoice(){
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const nl = voices.filter(v => (v.lang || '').toLowerCase().startsWith('nl'));
+      selectedVoice = nl.find(v => (v.lang || '').toLowerCase() === 'nl-nl') || nl[0] || null;
+    }
+
+    if ('speechSynthesis' in window){
+      pickDutchVoice();
+      window.speechSynthesis.onvoiceschanged = () => pickDutchVoice();
+    }
+
+    function speakDigit(digit){
+      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
+      if (!('speechSynthesis' in window)) return;
+
+      const now = Date.now();
+      const wait = (now - lastSpeakAt < 220) ? 220 : 90;
+      lastSpeakAt = now;
+
+      const myToken = ++speakToken;
+
+      try { window.speechSynthesis.cancel(); } catch(e) {}
+
+      setTimeout(() => {
+        if (myToken !== speakToken) return;
+
+        const u = new SpeechSynthesisUtterance(word);
+        u.lang = 'nl-NL';
+        if (selectedVoice) u.voice = selectedVoice;
+        u.rate = 0.92;
+        u.pitch = 1.05;
+        u.volume = 1;
+
+        try { window.speechSynthesis.speak(u); } catch(e) {}
+
+        setTimeout(() => {
+          try { window.speechSynthesis.resume(); } catch(e) {}
+        }, 120);
+
+        setTimeout(() => {
+          if (myToken !== speakToken) return;
+          if (!window.speechSynthesis.speaking){
+            const u2 = new SpeechSynthesisUtterance(word);
+            u2.lang = 'nl-NL';
+            if (selectedVoice) u2.voice = selectedVoice;
+            u2.rate = 0.92;
+            u2.pitch = 1.05;
+            u2.volume = 1;
+            try { window.speechSynthesis.speak(u2); } catch(e) {}
+          }
+        }, 320);
+
+      }, wait);
+    }
+
     function unlockFairyVideo(){
       fairyVid.muted = true;
       fairyVid.playsInline = true;
@@ -1052,7 +1027,7 @@
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => {
-          // geen melding in beeld, net als je Levels code
+          /* geen melding */
         });
     });
   </script>
