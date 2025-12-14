@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Testomgeving, finetunen toverfee, cijfer, explosie</title>
+  <title>Testomgeving, toverfee, cijfer, explosie mp4</title>
 
   <style>
     :root{
@@ -40,7 +40,7 @@
       overflow:hidden;
     }
 
-    .app{ height:100%; display:grid; grid-template-columns: 380px 1fr; }
+    .app{ height:100%; display:grid; grid-template-columns: 390px 1fr; }
     @media (max-width: 920px){
       .app{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     }
@@ -75,7 +75,7 @@
       font-variant-numeric: tabular-nums;
       font-size: 12px;
       color: rgba(0,0,0,0.75);
-      min-width: 82px;
+      min-width: 92px;
       text-align:right;
     }
     input[type="range"]{ width:100%; }
@@ -178,8 +178,8 @@
       z-index: 2;
     }
 
-    /* Explosie onder de toverfee, boven het cijfer */
-    #explosion{
+    /* Explosie mp4, boven cijfer, onder toverfee */
+    #explosionVid{
       left: var(--digit-left);
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
@@ -187,7 +187,7 @@
       z-index: 3;
     }
 
-    /* Toverfee BOVEN alles */
+    /* Toverfee boven alles */
     #fairyVid{
       left: var(--fairy-left);
       top: var(--fairy-top);
@@ -201,8 +201,8 @@
       animation-delay: var(--digit-delay);
     }
 
-    /* explosie animatie start pas als JS boom class zet */
-    .stage.boom #explosion{
+    /* Explosie fade in via class */
+    .stage.boom #explosionVid{
       animation: pop var(--explosion-fade-in) ease forwards;
       animation-delay: 0s;
     }
@@ -222,10 +222,10 @@
 <body>
   <div class="app">
     <aside class="panel">
-      <h1>Testomgeving, explosie gif herstart altijd</h1>
+      <h1>Testomgeving, explosie mp4</h1>
       <div class="hint">
-        Start speelt alles af, nogmaals Start begint opnieuw vanaf nul.
-        De explosie gif wordt elke keer hard opnieuw geladen, zodat hij opnieuw afspeelt op iPad.
+        Start: toverfee speelt, cijfer verschijnt, explosie start op jouw delay, daarna verdwijnt hij weer.
+        Nogmaals Start: opnieuw vanaf het begin.
       </div>
 
       <div class="group">
@@ -252,6 +252,16 @@
           <input type="checkbox" id="gridToggle" />
           <label for="gridToggle">Raster over het vak</label>
         </div>
+      </div>
+
+      <div class="group">
+        <h2>Snelheid</h2>
+
+        <div class="row"><label>Toverfee snelheid</label><output id="fairySpeedOut"></output></div>
+        <input id="fairySpeed" type="range" min="0.3" max="2.5" step="0.05" />
+
+        <div class="row"><label>Explosie snelheid</label><output id="explSpeedOut"></output></div>
+        <input id="explSpeed" type="range" min="0.3" max="3.0" step="0.05" />
       </div>
 
       <div class="group">
@@ -322,7 +332,7 @@
           <div class="stage" id="stage">
             <video id="fairyVid" muted playsinline preload="auto"></video>
             <img id="digitImg" alt="" />
-            <img id="explosion" src="explosie.gif" alt="Explosie" />
+            <video id="explosionVid" muted playsinline preload="auto"></video>
           </div>
         </div>
       </div>
@@ -330,12 +340,15 @@
   </div>
 
   <script>
+    const FAIRY_SRC = 'toverfee.mp4';
+    const EXPLOSION_SRC = 'explosie.mp4';
+
     const stage = document.getElementById('stage');
     const card = document.getElementById('card');
 
     const fairyVid = document.getElementById('fairyVid');
     const digitImg = document.getElementById('digitImg');
-    let explosionEl = document.getElementById('explosion');
+    const explosionVid = document.getElementById('explosionVid');
 
     const els = {
       digitSelect: document.getElementById('digitSelect'),
@@ -345,6 +358,11 @@
       resetBtn: document.getElementById('resetBtn'),
       firstFrameBtn: document.getElementById('firstFrameBtn'),
       gridToggle: document.getElementById('gridToggle'),
+
+      fairySpeed: document.getElementById('fairySpeed'),
+      explSpeed: document.getElementById('explSpeed'),
+      fairySpeedOut: document.getElementById('fairySpeedOut'),
+      explSpeedOut: document.getElementById('explSpeedOut'),
 
       digitLeft: document.getElementById('digitLeft'),
       digitTop: document.getElementById('digitTop'),
@@ -414,13 +432,13 @@
       try { video.currentTime = t; } catch(e) { video.pause(); }
     }
 
-    function showFirstFrame(){
+    function loadFairy(){
       fairyVid.muted = true;
       fairyVid.playsInline = true;
       fairyVid.loop = false;
       fairyVid.controls = false;
       fairyVid.preload = 'auto';
-      fairyVid.src = 'toverfee.mp4';
+      fairyVid.src = FAIRY_SRC;
 
       const onReady = () => {
         try { fairyVid.pause(); } catch(e) {}
@@ -434,6 +452,9 @@
     }
 
     function playFairyOnce(){
+      const speed = Number(els.fairySpeed.value) || 1;
+      fairyVid.playbackRate = speed;
+
       fairyVid.loop = false;
       fairyVid.onended = () => freezeOnLastFrame(fairyVid);
 
@@ -444,25 +465,14 @@
       if (p && typeof p.catch === 'function') p.catch(() => {});
     }
 
-    function hardRestartExplosionGif(){
-      const old = explosionEl;
-      const parent = old.parentNode;
-
-      const rawSrc = old.dataset.baseSrc || old.getAttribute('src') || 'explosie.gif';
-      const baseSrc = rawSrc.split('?')[0];
-
-      const fresh = old.cloneNode(false);
-      fresh.id = old.id;
-      fresh.alt = old.alt || 'Explosie';
-      fresh.dataset.baseSrc = baseSrc;
-
-      fresh.style.opacity = '0';
-      fresh.style.transition = '';
-
-      fresh.src = baseSrc + (baseSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
-
-      parent.replaceChild(fresh, old);
-      explosionEl = fresh;
+    function loadExplosion(){
+      explosionVid.muted = true;
+      explosionVid.playsInline = true;
+      explosionVid.loop = false;
+      explosionVid.controls = false;
+      explosionVid.preload = 'auto';
+      explosionVid.src = EXPLOSION_SRC;
+      try { explosionVid.load(); } catch(e) {}
     }
 
     function resetStage(){
@@ -474,10 +484,10 @@
       digitImg.removeAttribute('src');
       digitImg.alt = '';
 
-      if (explosionEl){
-        explosionEl.style.opacity = '0';
-        explosionEl.style.transition = '';
-      }
+      explosionVid.style.opacity = '0';
+      explosionVid.style.transition = '';
+      try { explosionVid.pause(); } catch(e) {}
+      try { explosionVid.currentTime = 0; } catch(e) {}
     }
 
     function pickDigit(){
@@ -506,17 +516,26 @@
         stage.classList.remove('boom');
         void stage.offsetHeight;
 
-        hardRestartExplosionGif();
+        const speed = Number(els.explSpeed.value) || 1;
+        explosionVid.playbackRate = speed;
+
+        try { explosionVid.pause(); } catch(e) {}
+        try { explosionVid.currentTime = 0; } catch(e) {}
+        explosionVid.style.opacity = '0';
+        explosionVid.style.transition = '';
 
         stage.classList.add('boom');
+
+        const p = explosionVid.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
       }, Math.max(0, explStart * 1000));
 
       tFade = setTimeout(() => {
-        if (!explosionEl) return;
-        explosionEl.style.transition = `opacity ${Math.max(0, fadeMs)}ms ease`;
-        explosionEl.style.opacity = '0';
+        explosionVid.style.transition = `opacity ${Math.max(0, fadeMs)}ms ease`;
+        explosionVid.style.opacity = '0';
         setTimeout(() => {
           stage.classList.remove('boom');
+          try { explosionVid.pause(); } catch(e) {}
         }, Math.max(0, fadeMs + 60));
       }, Math.max(0, (explStart + hideAfter) * 1000));
     }
@@ -541,7 +560,11 @@
   --explosion-offset-y: ${getVar('--explosion-offset-y')};
   --explosion-hide-after: ${getVar('--explosion-hide-after')};
   --explosion-fadeout: ${getVar('--explosion-fadeout')};
-}`;
+}
+
+Toverfee snelheid: ${(Number(els.fairySpeed.value)||1).toFixed(2)}
+Explosie snelheid: ${(Number(els.explSpeed.value)||1).toFixed(2)}
+`;
     }
 
     function bindRange(rangeEl, outEl, fmt, apply){
@@ -579,10 +602,16 @@
       els.explHideAfter.value = parseSec(getVar('--explosion-hide-after'));
       els.explFadeOut.value = parseMs(getVar('--explosion-fadeout'), 200);
 
+      els.fairySpeed.value = 1;
+      els.explSpeed.value = 1;
+
       els.digitOut.textContent = els.digitSelect.value === 'random' ? 'Willekeurig' : els.digitSelect.value;
     }
 
     function wire(){
+      bindRange(els.fairySpeed, els.fairySpeedOut, v => `${v.toFixed(2)}×`, () => exportBlock());
+      bindRange(els.explSpeed, els.explSpeedOut, v => `${v.toFixed(2)}×`, () => exportBlock());
+
       bindRange(els.digitLeft, els.digitLeftOut, v => `${v.toFixed(1)}%`, v => setVar('--digit-left', `${v}%`));
       bindRange(els.digitTop, els.digitTopOut, v => `${v.toFixed(1)}%`, v => setVar('--digit-top', `${v}%`));
       bindRange(els.fairyLeft, els.fairyLeftOut, v => `${v.toFixed(1)}%`, v => setVar('--fairy-left', `${v}%`));
@@ -607,8 +636,8 @@
       });
 
       els.startBtn.addEventListener('click', startSequence);
-      els.resetBtn.addEventListener('click', () => { resetStage(); showFirstFrame(); });
-      els.firstFrameBtn.addEventListener('click', showFirstFrame);
+      els.resetBtn.addEventListener('click', () => { resetStage(); loadFairy(); });
+      els.firstFrameBtn.addEventListener('click', loadFairy);
 
       els.gridToggle.addEventListener('change', () => {
         card.classList.toggle('gridOn', els.gridToggle.checked);
@@ -618,8 +647,9 @@
     window.addEventListener('load', () => {
       initUI();
       wire();
+      loadFairy();
+      loadExplosion();
       exportBlock();
-      showFirstFrame();
       resetStage();
     });
   </script>
