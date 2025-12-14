@@ -46,7 +46,6 @@
       --explosion-offset-mult: 0.65;
       --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
-      --explosion-hide-after: 5.05s;
       --explosion-fadeout: 200ms;
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
@@ -67,12 +66,14 @@
       overflow:hidden;
     }
 
+    /* Landscape: links en rechts, rechts is scan, links iets groter */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
     }
 
+    /* Portrait: boven en onder, onder is scan */
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -91,6 +92,7 @@
       min-height: 0;
     }
 
+    /* Hele witte vlak is scanvak */
     .scan-surface{
       background:#ffffff;
       position: relative;
@@ -177,7 +179,7 @@
       overflow: hidden;
     }
 
-    /* spreekknop rechtsboven in de kaart */
+    /* Spreekknop rechtsboven in de gestippelde kaart */
     .speakBtn{
       position:absolute;
       right: 14px;
@@ -226,23 +228,14 @@
       z-index: 1;
     }
 
-    /* Cijfer boven de toverfee */
-    #digitImg{
-      left: var(--digit-left);
-      top: var(--digit-top);
-      width: var(--digit-size);
-      opacity: 0;
-      z-index: 2;
-    }
-
-    /* Explosie: nu echt absoluut gepositioneerd, anders zie je hem niet */
+    /* Explosie achter het cijfer */
     #explosionWrap{
       position:absolute;
       left: var(--digit-left);
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
-      z-index: 3;
+      z-index: 2;
       transform: translate(-50%, -50%) translateY(var(--explosion-offset-y));
       pointer-events:none;
 
@@ -255,6 +248,15 @@
       width: 100%;
       height: auto;
       display:block;
+    }
+
+    /* Cijfer boven alles */
+    #digitImg{
+      left: var(--digit-left);
+      top: var(--digit-top);
+      width: var(--digit-size);
+      opacity: 0;
+      z-index: 3;
     }
 
     .stage.play #digitImg{
@@ -278,7 +280,7 @@
       }
     }
 
-    /* Landscape: toverfee en cijfer groter, toverfee meer naar links, jurk tegen onderlijn */
+    /* Landscape: toverfee en cijfer wat groter, toverfee iets meer naar links, jurk tegen onderlijn */
     @media (orientation: landscape){
       :root{
         --fairy-left: 26%;
@@ -433,10 +435,10 @@
         <div class="cardInner">
           <div class="stage" id="stage">
             <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
-            <img id="digitImg" alt="" />
             <div id="explosionWrap" aria-hidden="true">
               <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
             </div>
+            <img id="digitImg" alt="" />
           </div>
         </div>
       </div>
@@ -582,7 +584,11 @@
       explosionVid.controls = false;
       explosionVid.preload = 'auto';
       explosionVid.src = EXPLOSION_SRC;
+
+      explosionWrap.style.opacity = '0';
+
       try { explosionVid.load(); } catch(e) {}
+
       explosionVid.addEventListener('error', () => {
         explosionWrap.style.opacity = '0';
       });
@@ -591,21 +597,35 @@
     function resetExplosion(){
       try { explosionVid.pause(); } catch(e) {}
       try { explosionVid.currentTime = 0; } catch(e) {}
+      explosionVid.onended = null;
       explosionWrap.style.transition = '';
       explosionWrap.style.opacity = '0';
     }
 
     function playExplosionNow(){
       const fadeInMs = getVarMillis('--explosion-fade-in', 550);
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
 
       resetExplosion();
+
       explosionVid.playbackRate = EXPLOSION_SPEED;
 
       explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
       requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
 
-      const p = explosionVid.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      explosionVid.onended = () => {
+        explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
+        explosionWrap.style.opacity = '0';
+      };
+
+      const start = () => {
+        try { explosionVid.currentTime = 0; } catch(e) {}
+        const p = explosionVid.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      };
+
+      if (explosionVid.readyState >= 2) start();
+      else explosionVid.addEventListener('canplay', start, { once: true });
     }
 
     function primeVideo(video){
@@ -813,11 +833,9 @@
     let hasResultForCurrentTouches = false;
 
     let explosionTimerPlay = null;
-    let explosionTimerFade = null;
 
     function clearExplosionTimers(){
       if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
-      if (explosionTimerFade) { clearTimeout(explosionTimerFade); explosionTimerFade = null; }
     }
 
     function wrongFeedback(){
@@ -850,20 +868,24 @@
 
       const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
       const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-
-      const hideAfterMs = getVarMillis('--explosion-hide-after', 5050);
-      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
-
       const startMs = Math.max(0, digitDelayMs + startDelayMs);
 
       explosionTimerPlay = setTimeout(() => {
         playExplosionNow();
       }, startMs);
+    }
 
-      explosionTimerFade = setTimeout(() => {
-        explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
-        explosionWrap.style.opacity = '0';
-      }, Math.max(0, startMs + hideAfterMs));
+    function estimateExplosionTotalMs(){
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
+
+      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
+      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
+
+      return startMs + playMs + fadeOutMs + 180;
     }
 
     function playSuccessAnimation(digit){
@@ -904,13 +926,8 @@
 
         playSuccessAnimation(recognizedDigit);
 
-        const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-        const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-        const hideAfterMs = getVarMillis('--explosion-hide-after', 5050);
-        const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
-
-        const minRoundMs = Math.max(1800, digitDelayMs + startDelayMs + hideAfterMs + fadeOutMs + 160);
-        setTimeout(() => { nextRound(); }, minRoundMs);
+        const waitMs = Math.max(1800, estimateExplosionTotalMs());
+        setTimeout(() => { nextRound(); }, waitMs);
       } else {
         wrongFeedback();
       }
@@ -1029,7 +1046,6 @@
       pickDutchVoice();
       setTimeout(() => pickDutchVoice(), 250);
 
-      /* prime: iPad speelt mp4 daarna betrouwbaarder af */
       primeVideo(explosionVid);
       primeVideo(fairyVid);
 
