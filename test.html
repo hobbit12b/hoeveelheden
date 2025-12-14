@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Testomgeving, toverfee, cijfer, explosie mp4 met zwarte achtergrond</title>
+  <title>Testomgeving, finetunen toverfee, cijfer, explosie mp4</title>
 
   <style>
     :root{
@@ -28,7 +28,7 @@
       --card-w: min(980px, 92vw);
       --card-h: min(520px, 56vh);
 
-      /* optioneel, maakt explosie beter zichtbaar op wit */
+      /* subtiele “glow hulp” achter explosie, alleen voor zichtbaarheid */
       --boom-backdrop: 0.18;
     }
 
@@ -112,7 +112,14 @@
       font-weight: 900;
     }
 
-    .check{ display:flex; gap: 10px; align-items:center; margin-top: 10px; font-size: 12px; color: rgba(0,0,0,0.75); }
+    .check{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.75);
+    }
 
     textarea{
       width: 100%;
@@ -147,7 +154,7 @@
       position:relative;
       overflow: visible;
 
-      /* belangrijk voor mix-blend-mode, anders blendt hij met de hele pagina */
+      /* nodig voor mix blend mode, anders blendt hij met de hele pagina */
       isolation: isolate;
     }
 
@@ -185,36 +192,19 @@
       transform: translate(-50%, -50%);
     }
 
-    /* toverfee onder cijfer */
-    #fairyVid{
-      left: var(--fairy-left);
-      top: var(--fairy-top);
-      width: var(--fairy-size);
-      opacity: 1;
-      z-index: 10;
-    }
-
-    /* cijfer boven toverfee */
-    #digitImg{
-      left: var(--digit-left);
-      top: var(--digit-top);
-      width: var(--digit-size);
-      opacity: 0;
-      z-index: 20;
-    }
-
-    /* explosie wrapper boven cijfer */
+    /* explosie achter toverfee en cijfer */
     #explosionWrap{
       left: var(--digit-left);
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
-      z-index: 30;
+      z-index: 5;
       position:absolute;
       transform: translate(-50%, -50%);
+      pointer-events: none;
     }
 
-    /* optioneel subtiel donker achter de explosie, helpt op wit */
+    /* optioneel subtiel donker achter explosie, helpt op wit */
     #explosionWrap::before{
       content:"";
       position:absolute;
@@ -228,8 +218,30 @@
       height: auto;
       display:block;
 
-      /* zwart wordt onzichtbaar */
+      /* mp4 met zwarte achtergrond, zwart “verdwijnt” */
       mix-blend-mode: screen;
+
+      /* helpt soms op Windows browsers */
+      transform: translateZ(0);
+      will-change: transform;
+    }
+
+    /* toverfee erboven */
+    #fairyVid{
+      left: var(--fairy-left);
+      top: var(--fairy-top);
+      width: var(--fairy-size);
+      opacity: 1;
+      z-index: 10;
+    }
+
+    /* cijfer boven de toverfee */
+    #digitImg{
+      left: var(--digit-left);
+      top: var(--digit-top);
+      width: var(--digit-size);
+      opacity: 0;
+      z-index: 20;
     }
 
     .stage.play #digitImg{
@@ -263,9 +275,9 @@
 <body>
   <div class="app">
     <aside class="panel">
-      <h1>Testomgeving, finetunen</h1>
+      <h1>Testomgeving</h1>
       <div class="hint">
-        Start: toverfee speelt, cijfer verschijnt, explosie start op jouw timing en fade out werkt op de wrapper.
+        Bestanden in dezelfde map: toverfee.mp4, explosie.mp4, marbotic0.png tot en met marbotic9.png
       </div>
 
       <div class="group">
@@ -370,11 +382,12 @@
           <div class="gridOverlay"></div>
 
           <div class="stage" id="stage">
-            <video id="fairyVid" muted playsinline preload="auto"></video>
-            <img id="digitImg" alt="" />
             <div id="explosionWrap">
               <video id="explosionVid" muted playsinline preload="auto"></video>
             </div>
+
+            <video id="fairyVid" muted playsinline preload="auto"></video>
+            <img id="digitImg" alt="" />
           </div>
         </div>
       </div>
