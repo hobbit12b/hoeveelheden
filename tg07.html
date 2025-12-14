@@ -11,7 +11,6 @@
     :root{
       --bg-left:#fdeeea;
       --brand:#e58c74;
-      --dash:#f5b498;
       --text:#6f6b68;
 
       --dash-w:4px;
@@ -20,7 +19,7 @@
       /* automatische schaal, gezet door JS op basis van de kaart */
       --scale: 1;
 
-      /* jouw basisposities */
+      /* Posities binnen de kaart */
       --fairy-left: 32.5%;
       --fairy-top: 51%;
       --digit-left: 68.5%;
@@ -36,17 +35,20 @@
       --fade-duration: 1.45s;
       --cijfertoon-delay: 1.05s;
 
-      /* Explosie */
+      /* Explosie timing en plaats */
       --explosion-start-delay: 0s;
       --explosion-scale: 1.5;
       --explosion-fade-in: 0.55s;
+      --explosion-fadeout: 200ms;
 
       /* jouw testwaarde, wordt geschaald */
       --explosion-offset-y-base: -200px;
       --explosion-offset-mult: 0.65;
       --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
-      --explosion-fadeout: 200ms;
+      /* extra naar rechts, om mooi “achter de 2” te vallen */
+      --explosion-offset-x-base: 70px;
+      --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
@@ -219,44 +221,43 @@
       transform: translate(-50%, -50%);
     }
 
+    /* Laagvolgorde: explosie achter de toverfee, cijfer boven alles */
+    #explosionWrap{ z-index: 0; }
+    #fairyVid{ z-index: 1; }
+    #digitImg{ z-index: 2; }
+
     /* Toverfee altijd zichtbaar */
     #fairyVid{
       left: var(--fairy-left);
       top: var(--fairy-top);
       width: var(--fairy-size);
       opacity: 1;
-      z-index: 1;
     }
 
-    /* Explosie achter het cijfer */
+    /* Explosie achter de toverfee, achter het cijfer, iets naar rechts */
     #explosionWrap{
       position:absolute;
       left: var(--digit-left);
       top: var(--digit-top);
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
-      z-index: 2;
-      transform: translate(-50%, -50%) translateY(var(--explosion-offset-y));
       pointer-events:none;
-
-      /* zwarte achtergrond wegwerken */
-      mix-blend-mode: screen;
-      filter: brightness(1.25) contrast(1.12);
+      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y));
     }
 
     #explosionVid{
       width: 100%;
       height: auto;
       display:block;
+      background: transparent;
     }
 
-    /* Cijfer boven alles */
+    /* Cijfer boven */
     #digitImg{
       left: var(--digit-left);
       top: var(--digit-top);
       width: var(--digit-size);
       opacity: 0;
-      z-index: 3;
     }
 
     .stage.play #digitImg{
@@ -285,6 +286,7 @@
       :root{
         --fairy-left: 26%;
         --explosion-offset-mult: 0.75;
+        --explosion-offset-x-base: 80px;
       }
 
       #fairyVid{
@@ -434,10 +436,11 @@
 
         <div class="cardInner">
           <div class="stage" id="stage">
-            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
             <div id="explosionWrap" aria-hidden="true">
               <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
             </div>
+
+            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
             <img id="digitImg" alt="" />
           </div>
         </div>
@@ -602,23 +605,26 @@
       explosionWrap.style.opacity = '0';
     }
 
+    /* Speelt gegarandeerd van frame 1 tot laatste frame
+       en pas daarna fade out
+       en geen “wit vlak” meer omdat we pas tonen als canplay klaar is
+    */
     function playExplosionNow(){
       const fadeInMs = getVarMillis('--explosion-fade-in', 550);
       const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
 
       resetExplosion();
-
       explosionVid.playbackRate = EXPLOSION_SPEED;
 
-      explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
-      requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
-
-      explosionVid.onended = () => {
-        explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
-        explosionWrap.style.opacity = '0';
-      };
-
       const start = () => {
+        explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
+        requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
+
+        explosionVid.onended = () => {
+          explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
+          explosionWrap.style.opacity = '0';
+        };
+
         try { explosionVid.currentTime = 0; } catch(e) {}
         const p = explosionVid.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
@@ -885,7 +891,7 @@
       const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
       const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
 
-      return startMs + playMs + fadeOutMs + 180;
+      return startMs + playMs + fadeOutMs + 200;
     }
 
     function playSuccessAnimation(digit){
@@ -1038,6 +1044,7 @@
       }
     }
 
+    /* Start */
     function startGame(){
       if (started) return;
       started = true;
