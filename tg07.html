@@ -42,12 +42,12 @@
       --explosion-fadeout: 200ms;
 
       /* jouw testwaarde, wordt geschaald */
-      --explosion-offset-y-base: -0px;
+      --explosion-offset-y-base: -200px;
       --explosion-offset-mult: 0.65;
       --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
-      /* extra naar rechts, om mooi “achter de 2” te vallen */
-      --explosion-offset-x-base: 200px;
+      /* standaard wat naar rechts, portrait is nu goed */
+      --explosion-offset-x-base: 70px;
       --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
@@ -234,7 +234,7 @@
       opacity: 1;
     }
 
-    /* Explosie achter de toverfee, achter het cijfer, iets naar rechts */
+    /* Explosie achter de toverfee, achter het cijfer */
     #explosionWrap{
       position:absolute;
       left: var(--digit-left);
@@ -270,39 +270,41 @@
       100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
-    /* Portrait: onderkant toverfee tegen de stippellijn onder */
+    /* Portrait: onderkant toverfee op de onderrand van de gestippelde kaart */
     @media (orientation: portrait){
       #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
         width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+        transform: translateX(-50%);
       }
     }
 
-    /* Landscape: toverfee en cijfer wat groter, toverfee iets meer naar links, jurk tegen onderlijn */
+    /* Landscape: toverfee en cijfer wat groter, toverfee iets meer naar links,
+       en explosie precies gecentreerd op het cijfer */
     @media (orientation: landscape){
       :root{
-        --fairy-left: 26%;
-        --explosion-offset-mult: 0.75;
-        --explosion-offset-x-base: 80px;
+        --fairy-left: 25%;
+        --explosion-offset-x-base: 0px;
+        --explosion-offset-y-base: 0px;
+        --explosion-offset-mult: 1;
       }
 
       #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
-        width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+        width: clamp(260px, calc(var(--fairy-size-base) * var(--scale) * 1.28), 660px);
+        transform: translateX(-50%);
       }
 
       #digitImg{
-        width: clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px);
+        width: clamp(180px, calc(var(--digit-size-base) * var(--scale) * 1.15), 460px);
       }
 
       #explosionWrap{
-        width: calc(clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px) * var(--explosion-scale));
+        width: calc(clamp(180px, calc(var(--digit-size-base) * var(--scale) * 1.15), 460px) * var(--explosion-scale));
       }
     }
 
@@ -481,7 +483,9 @@
       spreekknop.png
     */
 
-    const DIGIT_WORDS_NL = ['nul','een','twee','drie','vier','vijf','zes','zeven','acht','negen'];
+    // ✅ “één” met accent, zodat iOS minder snel “un” zegt
+    const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
+
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
     const FAIRY_SRC = 'toverfee.mp4';
@@ -605,10 +609,6 @@
       explosionWrap.style.opacity = '0';
     }
 
-    /* Speelt gegarandeerd van frame 1 tot laatste frame
-       en pas daarna fade out
-       en geen “wit vlak” meer omdat we pas tonen als canplay klaar is
-    */
     function playExplosionNow(){
       const fadeInMs = getVarMillis('--explosion-fade-in', 550);
       const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
@@ -1008,8 +1008,9 @@
     let speakToken = 0;
     function speakDigit(digit){
       const word = DIGIT_WORDS_NL[digit] ?? String(digit);
-      if (!('speechSynthesis' in window)) return;
+      const phrase = 'cijfer ' + word;
 
+      if (!('speechSynthesis' in window)) return;
       const myToken = ++speakToken;
 
       const doSpeak = () => {
@@ -1017,7 +1018,7 @@
 
         try { window.speechSynthesis.resume(); } catch(e) {}
 
-        const u = new SpeechSynthesisUtterance('\u200B' + word);
+        const u = new SpeechSynthesisUtterance('\u200B' + phrase);
         u.lang = 'nl-NL';
         if (selectedVoice) u.voice = selectedVoice;
         u.rate = 0.92;
