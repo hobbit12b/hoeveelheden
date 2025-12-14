@@ -40,17 +40,9 @@
       overflow:hidden;
     }
 
-    .app{
-      height:100%;
-      display:grid;
-      grid-template-columns: 380px 1fr;
-    }
-
+    .app{ height:100%; display:grid; grid-template-columns: 380px 1fr; }
     @media (max-width: 920px){
-      .app{
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-      }
+      .app{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     }
 
     .panel{
@@ -59,18 +51,8 @@
       border-right: 1px solid rgba(0,0,0,0.06);
       overflow:auto;
     }
-
-    .panel h1{
-      font-size: 16px;
-      margin: 0 0 10px 0;
-    }
-
-    .hint{
-      font-size: 12px;
-      color: rgba(0,0,0,0.62);
-      line-height: 1.35;
-      margin-bottom: 14px;
-    }
+    .panel h1{ font-size: 16px; margin: 0 0 10px 0; }
+    .hint{ font-size: 12px; color: rgba(0,0,0,0.62); line-height: 1.35; margin-bottom: 14px; }
 
     .group{
       border: 1px solid rgba(0,0,0,0.08);
@@ -79,11 +61,7 @@
       margin-bottom: 12px;
       background: #fff;
     }
-
-    .group h2{
-      font-size: 13px;
-      margin: 0 0 10px 0;
-    }
+    .group h2{ font-size: 13px; margin: 0 0 10px 0; }
 
     .row{
       display:grid;
@@ -92,12 +70,7 @@
       align-items:center;
       margin: 8px 0;
     }
-
-    .row label{
-      font-size: 12px;
-      color: rgba(0,0,0,0.78);
-    }
-
+    .row label{ font-size: 12px; color: rgba(0,0,0,0.78); }
     .row output{
       font-variant-numeric: tabular-nums;
       font-size: 12px;
@@ -105,7 +78,6 @@
       min-width: 82px;
       text-align:right;
     }
-
     input[type="range"]{ width:100%; }
 
     select{
@@ -118,13 +90,7 @@
       color:#4d4a48;
     }
 
-    .btns{
-      display:flex;
-      gap: 10px;
-      flex-wrap:wrap;
-      margin-top: 8px;
-    }
-
+    .btns{ display:flex; gap: 10px; flex-wrap:wrap; margin-top: 8px; }
     button{
       appearance:none;
       border:none;
@@ -136,7 +102,6 @@
       color:#fff;
       box-shadow: 0 10px 22px rgba(0,0,0,0.12);
     }
-
     button.secondary{
       background:#f2eee9;
       color:#4d4a48;
@@ -145,20 +110,7 @@
       font-weight: 900;
     }
 
-    .small{
-      font-size: 12px;
-      padding: 8px 10px;
-      border-radius: 12px;
-    }
-
-    .check{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      margin-top: 10px;
-      font-size: 12px;
-      color: rgba(0,0,0,0.75);
-    }
+    .check{ display:flex; gap: 10px; align-items:center; margin-top: 10px; font-size: 12px; color: rgba(0,0,0,0.75); }
 
     textarea{
       width: 100%;
@@ -182,11 +134,7 @@
       overflow:hidden;
     }
 
-    .cardWrap{
-      position: relative;
-      width: var(--card-w);
-      height: var(--card-h);
-    }
+    .cardWrap{ position: relative; width: var(--card-w); height: var(--card-h); }
 
     .gameCard{
       width: 100%;
@@ -212,14 +160,8 @@
     }
     .gridOn .gridOverlay{ opacity: 0.55; }
 
-    .stage{
-      position:absolute;
-      inset:0;
-      overflow: visible;
-    }
-
-    .stage img,
-    .stage video{
+    .stage{ position:absolute; inset:0; overflow: visible; }
+    .stage img, .stage video{
       position:absolute;
       height:auto;
       display:block;
@@ -236,7 +178,7 @@
       z-index: 2;
     }
 
-    /* Explosie (boven cijfer, maar onder toverfee) */
+    /* Explosie onder de toverfee, boven het cijfer */
     #explosion{
       left: var(--digit-left);
       top: var(--digit-top);
@@ -259,9 +201,10 @@
       animation-delay: var(--digit-delay);
     }
 
-    .stage.play #explosion{
+    /* explosie animatie start pas als JS boom class zet */
+    .stage.boom #explosion{
       animation: pop var(--explosion-fade-in) ease forwards;
-      animation-delay: var(--explosion-start-delay);
+      animation-delay: 0s;
     }
 
     @keyframes appear{
@@ -273,30 +216,16 @@
       0%{ opacity:0; transform: translate(-50%, -50%) translateY(var(--explosion-offset-y)) scale(0.98); }
       100%{ opacity:1; transform: translate(-50%, -50%) translateY(var(--explosion-offset-y)) scale(1); }
     }
-
-    .badge{
-      position:absolute;
-      left: 18px;
-      bottom: 14px;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 12px;
-      color: rgba(0,0,0,0.7);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-      pointer-events:none;
-    }
   </style>
 </head>
 
 <body>
   <div class="app">
     <aside class="panel">
-      <h1>Testomgeving, explosie gif zichtbaar</h1>
+      <h1>Testomgeving, explosie gif herstart altijd</h1>
       <div class="hint">
-        Dit is puur finetunen. Start: toverfee speelt, cijfer verschijnt, explosie start en verdwijnt.
-        Toverfee stopt op het laatste beeld. Nogmaals Start: opnieuw vanaf het begin.
+        Start speelt alles af, nogmaals Start begint opnieuw vanaf nul.
+        De explosie gif wordt elke keer hard opnieuw geladen, zodat hij opnieuw afspeelt op iPad.
       </div>
 
       <div class="group">
@@ -328,91 +257,60 @@
       <div class="group">
         <h2>Plaatsing</h2>
 
-        <div class="row">
-          <label>Cijfer links</label><output id="digitLeftOut"></output>
-        </div>
+        <div class="row"><label>Cijfer links</label><output id="digitLeftOut"></output></div>
         <input id="digitLeft" type="range" min="0" max="100" step="0.5" />
 
-        <div class="row">
-          <label>Cijfer boven</label><output id="digitTopOut"></output>
-        </div>
+        <div class="row"><label>Cijfer boven</label><output id="digitTopOut"></output></div>
         <input id="digitTop" type="range" min="0" max="100" step="0.5" />
 
-        <div class="row">
-          <label>Toverfee links</label><output id="fairyLeftOut"></output>
-        </div>
+        <div class="row"><label>Toverfee links</label><output id="fairyLeftOut"></output></div>
         <input id="fairyLeft" type="range" min="0" max="100" step="0.5" />
 
-        <div class="row">
-          <label>Toverfee boven</label><output id="fairyTopOut"></output>
-        </div>
+        <div class="row"><label>Toverfee boven</label><output id="fairyTopOut"></output></div>
         <input id="fairyTop" type="range" min="0" max="100" step="0.5" />
       </div>
 
       <div class="group">
         <h2>Grootte</h2>
 
-        <div class="row">
-          <label>Cijfer grootte</label><output id="digitSizeOut"></output>
-        </div>
+        <div class="row"><label>Cijfer grootte</label><output id="digitSizeOut"></output></div>
         <input id="digitSize" type="range" min="120" max="460" step="1" />
 
-        <div class="row">
-          <label>Toverfee grootte</label><output id="fairySizeOut"></output>
-        </div>
+        <div class="row"><label>Toverfee grootte</label><output id="fairySizeOut"></output></div>
         <input id="fairySize" type="range" min="180" max="700" step="1" />
 
-        <div class="row">
-          <label>Explosie schaal</label><output id="explScaleOut"></output>
-        </div>
+        <div class="row"><label>Explosie schaal</label><output id="explScaleOut"></output></div>
         <input id="explScale" type="range" min="1" max="3" step="0.05" />
 
-        <div class="row">
-          <label>Explosie offset Y</label><output id="explOffsetOut"></output>
-        </div>
+        <div class="row"><label>Explosie offset Y</label><output id="explOffsetOut"></output></div>
         <input id="explOffset" type="range" min="-60" max="80" step="1" />
       </div>
 
       <div class="group">
         <h2>Timing</h2>
 
-        <div class="row">
-          <label>Delay cijfer</label><output id="digitDelayOut"></output>
-        </div>
+        <div class="row"><label>Delay cijfer</label><output id="digitDelayOut"></output></div>
         <input id="digitDelay" type="range" min="0" max="3.0" step="0.05" />
 
-        <div class="row">
-          <label>Fade duur cijfer</label><output id="fadeDurOut"></output>
-        </div>
+        <div class="row"><label>Fade duur cijfer</label><output id="fadeDurOut"></output></div>
         <input id="fadeDur" type="range" min="0.1" max="3.5" step="0.05" />
 
-        <div class="row">
-          <label>Start explosie</label><output id="explStartOut"></output>
-        </div>
+        <div class="row"><label>Start explosie</label><output id="explStartOut"></output></div>
         <input id="explStart" type="range" min="0" max="3.5" step="0.05" />
 
-        <div class="row">
-          <label>Fade in explosie</label><output id="explFadeInOut"></output>
-        </div>
+        <div class="row"><label>Fade in explosie</label><output id="explFadeInOut"></output></div>
         <input id="explFadeIn" type="range" min="0.01" max="1.2" step="0.01" />
 
-        <div class="row">
-          <label>Explosie zichtbaar</label><output id="explHideAfterOut"></output>
-        </div>
+        <div class="row"><label>Explosie zichtbaar</label><output id="explHideAfterOut"></output></div>
         <input id="explHideAfter" type="range" min="0.1" max="6.0" step="0.05" />
 
-        <div class="row">
-          <label>Fade out explosie</label><output id="explFadeOutOut"></output>
-        </div>
+        <div class="row"><label>Fade out explosie</label><output id="explFadeOutOut"></output></div>
         <input id="explFadeOut" type="range" min="0" max="1400" step="10" />
       </div>
 
       <div class="group">
         <h2>Copy paste blok</h2>
         <textarea id="exportBox" spellcheck="false" readonly></textarea>
-        <div class="btns">
-          <button class="secondary small" id="copyBtn">Kopieer</button>
-        </div>
       </div>
     </aside>
 
@@ -426,8 +324,6 @@
             <img id="digitImg" alt="" />
             <img id="explosion" src="explosie.gif" alt="Explosie" />
           </div>
-
-          <div class="badge" id="sizeBadge"></div>
         </div>
       </div>
     </main>
@@ -436,11 +332,10 @@
   <script>
     const stage = document.getElementById('stage');
     const card = document.getElementById('card');
-    const sizeBadge = document.getElementById('sizeBadge');
 
     const fairyVid = document.getElementById('fairyVid');
     const digitImg = document.getElementById('digitImg');
-    const explosion = document.getElementById('explosion');
+    let explosionEl = document.getElementById('explosion');
 
     const els = {
       digitSelect: document.getElementById('digitSelect'),
@@ -484,18 +379,15 @@
       explHideAfterOut: document.getElementById('explHideAfterOut'),
       explFadeOutOut: document.getElementById('explFadeOutOut'),
 
-      exportBox: document.getElementById('exportBox'),
-      copyBtn: document.getElementById('copyBtn')
+      exportBox: document.getElementById('exportBox')
     };
 
-    let tA = null;
-    let tB = null;
-    let tRestartGif = null;
+    let tBoom = null;
+    let tFade = null;
 
     function clearTimers(){
-      if (tA){ clearTimeout(tA); tA = null; }
-      if (tB){ clearTimeout(tB); tB = null; }
-      if (tRestartGif){ clearTimeout(tRestartGif); tRestartGif = null; }
+      if (tBoom){ clearTimeout(tBoom); tBoom = null; }
+      if (tFade){ clearTimeout(tFade); tFade = null; }
     }
 
     function setVar(name, value){
@@ -513,13 +405,6 @@
       if (s.endsWith('s')) return (parseFloat(s) || 0) * 1000;
       const n = parseFloat(s);
       return Number.isFinite(n) ? n : fallback;
-    }
-
-    function restartGif(img){
-      const base = img.dataset.baseSrc || img.getAttribute('src');
-      img.dataset.baseSrc = base;
-      const bust = (base.includes('?') ? '&' : '?') + 't=' + Date.now();
-      img.setAttribute('src', base + bust);
     }
 
     function freezeOnLastFrame(video){
@@ -559,38 +444,40 @@
       if (p && typeof p.catch === 'function') p.catch(() => {});
     }
 
+    function hardRestartExplosionGif(){
+      const old = explosionEl;
+      const parent = old.parentNode;
+
+      const rawSrc = old.dataset.baseSrc || old.getAttribute('src') || 'explosie.gif';
+      const baseSrc = rawSrc.split('?')[0];
+
+      const fresh = old.cloneNode(false);
+      fresh.id = old.id;
+      fresh.alt = old.alt || 'Explosie';
+      fresh.dataset.baseSrc = baseSrc;
+
+      fresh.style.opacity = '0';
+      fresh.style.transition = '';
+
+      fresh.src = baseSrc + (baseSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
+
+      parent.replaceChild(fresh, old);
+      explosionEl = fresh;
+    }
+
     function resetStage(){
       clearTimers();
       stage.classList.remove('play');
+      stage.classList.remove('boom');
 
       digitImg.style.opacity = '0';
       digitImg.removeAttribute('src');
       digitImg.alt = '';
 
-      explosion.style.transition = '';
-      explosion.style.opacity = '0';
-    }
-
-    function scheduleExplosionFade(){
-      clearTimers();
-
-      const startDelay = parseFloat(getVar('--explosion-start-delay')) || 0;
-      const hideAfter = parseFloat(getVar('--explosion-hide-after')) || 0;
-      const fadeMs = parseMs(getVar('--explosion-fadeout'), 200);
-
-      const totalMs = Math.max(0, (startDelay + hideAfter) * 1000);
-
-      tA = setTimeout(() => {
-        explosion.style.animation = 'none';
-        void explosion.offsetHeight;
-
-        explosion.style.transition = `opacity ${Math.max(0, fadeMs)}ms ease`;
-        explosion.style.opacity = '0';
-
-        tB = setTimeout(() => {
-          explosion.style.transition = '';
-        }, Math.max(0, fadeMs + 80));
-      }, totalMs);
+      if (explosionEl){
+        explosionEl.style.opacity = '0';
+        explosionEl.style.transition = '';
+      }
     }
 
     function pickDigit(){
@@ -601,55 +488,60 @@
 
     function startSequence(){
       const d = pickDigit();
-
       resetStage();
 
       digitImg.src = `marbotic${d}.png`;
       digitImg.alt = String(d);
 
-      const explStart = parseFloat(getVar('--explosion-start-delay')) || 0;
-
-      /* Cruciaal: explosie gif opnieuw starten op het ingestelde startmoment */
-      tRestartGif = setTimeout(() => {
-        explosion.style.opacity = '0';
-        restartGif(explosion);
-      }, Math.max(0, explStart * 1000));
-
       void stage.offsetHeight;
       stage.classList.add('play');
 
       playFairyOnce();
-      scheduleExplosionFade();
-    }
 
-    function updateBadge(){
-      const r = card.getBoundingClientRect();
-      sizeBadge.textContent = `Vak: ${Math.round(r.width)} × ${Math.round(r.height)} px`;
+      const explStart = parseFloat(getVar('--explosion-start-delay')) || 0;
+      const hideAfter = parseFloat(getVar('--explosion-hide-after')) || 0;
+      const fadeMs = parseMs(getVar('--explosion-fadeout'), 200);
+
+      tBoom = setTimeout(() => {
+        stage.classList.remove('boom');
+        void stage.offsetHeight;
+
+        hardRestartExplosionGif();
+
+        stage.classList.add('boom');
+      }, Math.max(0, explStart * 1000));
+
+      tFade = setTimeout(() => {
+        if (!explosionEl) return;
+        explosionEl.style.transition = `opacity ${Math.max(0, fadeMs)}ms ease`;
+        explosionEl.style.opacity = '0';
+        setTimeout(() => {
+          stage.classList.remove('boom');
+        }, Math.max(0, fadeMs + 60));
+      }, Math.max(0, (explStart + hideAfter) * 1000));
     }
 
     function exportBlock(){
-      const lines = [
-        ':root{',
-        `  --fairy-left: ${getVar('--fairy-left')};`,
-        `  --fairy-top: ${getVar('--fairy-top')};`,
-        `  --digit-left: ${getVar('--digit-left')};`,
-        `  --digit-top: ${getVar('--digit-top')};`,
-        '',
-        `  --fairy-size: ${getVar('--fairy-size')};`,
-        `  --digit-size: ${getVar('--digit-size')};`,
-        '',
-        `  --fade-duration: ${getVar('--fade-duration')};`,
-        `  --digit-delay: ${getVar('--digit-delay')};`,
-        '',
-        `  --explosion-start-delay: ${getVar('--explosion-start-delay')};`,
-        `  --explosion-scale: ${getVar('--explosion-scale')};`,
-        `  --explosion-fade-in: ${getVar('--explosion-fade-in')};`,
-        `  --explosion-offset-y: ${getVar('--explosion-offset-y')};`,
-        `  --explosion-hide-after: ${getVar('--explosion-hide-after')};`,
-        `  --explosion-fadeout: ${getVar('--explosion-fadeout')};`,
-        '}'
-      ];
-      els.exportBox.value = lines.join('\n');
+      els.exportBox.value =
+`:root{
+  --fairy-left: ${getVar('--fairy-left')};
+  --fairy-top: ${getVar('--fairy-top')};
+  --digit-left: ${getVar('--digit-left')};
+  --digit-top: ${getVar('--digit-top')};
+
+  --fairy-size: ${getVar('--fairy-size')};
+  --digit-size: ${getVar('--digit-size')};
+
+  --fade-duration: ${getVar('--fade-duration')};
+  --digit-delay: ${getVar('--digit-delay')};
+
+  --explosion-start-delay: ${getVar('--explosion-start-delay')};
+  --explosion-scale: ${getVar('--explosion-scale')};
+  --explosion-fade-in: ${getVar('--explosion-fade-in')};
+  --explosion-offset-y: ${getVar('--explosion-offset-y')};
+  --explosion-hide-after: ${getVar('--explosion-hide-after')};
+  --explosion-fadeout: ${getVar('--explosion-fadeout')};
+}`;
     }
 
     function bindRange(rangeEl, outEl, fmt, apply){
@@ -658,7 +550,6 @@
         outEl.textContent = fmt(v);
         apply(v);
         exportBlock();
-        updateBadge();
       };
       rangeEl.addEventListener('input', handler);
       handler();
@@ -716,40 +607,18 @@
       });
 
       els.startBtn.addEventListener('click', startSequence);
-
-      els.resetBtn.addEventListener('click', () => {
-        resetStage();
-        showFirstFrame();
-      });
-
+      els.resetBtn.addEventListener('click', () => { resetStage(); showFirstFrame(); });
       els.firstFrameBtn.addEventListener('click', showFirstFrame);
 
       els.gridToggle.addEventListener('change', () => {
         card.classList.toggle('gridOn', els.gridToggle.checked);
       });
-
-      els.copyBtn.addEventListener('click', async () => {
-        try{
-          await navigator.clipboard.writeText(els.exportBox.value);
-          els.copyBtn.textContent = 'Gekopieerd';
-          setTimeout(() => els.copyBtn.textContent = 'Kopieer', 900);
-        } catch(e){
-          els.copyBtn.textContent = 'Kopieer handmatig';
-          setTimeout(() => els.copyBtn.textContent = 'Kopieer', 900);
-        }
-      });
-
-      const ro = new ResizeObserver(() => updateBadge());
-      ro.observe(card);
-      window.addEventListener('orientationchange', () => setTimeout(updateBadge, 250));
     }
 
     window.addEventListener('load', () => {
       initUI();
       wire();
       exportBlock();
-      updateBadge();
-
       showFirstFrame();
       resetStage();
     });
