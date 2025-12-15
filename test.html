@@ -16,16 +16,13 @@
       --dash-w:4px;
       --card-radius:28px;
 
-      /* automatische schaal, gezet door JS op basis van de kaart */
       --scale: 1;
 
-      /* Posities binnen de kaart */
       --fairy-left: 32.5%;
       --fairy-top: 51%;
       --digit-left: 68.5%;
       --digit-top: 58%;
 
-      /* Explosie eigen anker, standaard gelijk aan digit */
       --explosion-left: 68.5%;
       --explosion-top: 58%;
 
@@ -35,22 +32,18 @@
       --digit-size: clamp(140px, calc(var(--digit-size-base) * var(--scale)), 340px);
       --fairy-size: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
 
-      /* Cijfer tonen */
       --fade-duration: 1.45s;
       --cijfertoon-delay: 1.05s;
 
-      /* Explosie timing en plaats */
       --explosion-start-delay: 0s;
       --explosion-scale: 1.5;
       --explosion-fade-in: 0.55s;
       --explosion-fadeout: 200ms;
 
-      /* basis offset, portrait was hiermee goed */
       --explosion-offset-y-base: 0px;
       --explosion-offset-mult: 0.65;
       --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
-      /* extra naar rechts, om mooi achter het cijfer te vallen */
       --explosion-offset-x-base: 200px;
       --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
@@ -412,7 +405,7 @@
     }
     .startBtn:active{ transform: scale(0.99); }
 
-    /* Tune panel, alleen zichtbaar in tune modus */
+    /* Tune panel */
     .tuner{
       position:absolute;
       inset: 10px;
@@ -434,6 +427,7 @@
       align-items:center;
       justify-content:space-between;
       gap: 10px;
+      flex-wrap:wrap;
     }
 
     .tunerTitle{
@@ -492,7 +486,7 @@
 
     .tunerRow{
       display:grid;
-      grid-template-columns: 106px 1fr 70px;
+      grid-template-columns: 106px 1fr 78px;
       gap: 8px;
       align-items:center;
     }
@@ -532,7 +526,7 @@
 
     .tunerOut{
       width:100%;
-      min-height: 120px;
+      min-height: 140px;
       border-radius: 14px;
       border: 1px solid rgba(0,0,0,0.14);
       padding: 10px;
@@ -588,6 +582,8 @@
       <div class="tunerHeader">
         <div class="tunerTitle">Afstellen, open met ?tune=1</div>
         <div class="tunerBtns">
+          <button class="tunerBtn" id="tunerStartBtn">Start</button>
+          <button class="tunerBtn" id="tunerTestBtn">Test</button>
           <button class="tunerBtn" id="copyCssBtn">Kopieer CSS</button>
           <button class="tunerBtn" id="copyJsonBtn">Kopieer JSON</button>
         </div>
@@ -719,6 +715,45 @@
       try { video.currentTime = t; } catch (e) { video.pause(); }
     }
 
+    /* Warm up tegen hapering */
+    function warmUpVideo(video){
+      return new Promise((resolve) => {
+        if (!video) return resolve();
+
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline','');
+        video.setAttribute('webkit-playsinline','');
+
+        const doWarm = () => {
+          try{
+            video.playbackRate = 1;
+            const p = video.play();
+            if (p && typeof p.then === "function"){
+              p.then(() => {
+                setTimeout(() => {
+                  try { video.pause(); } catch(e) {}
+                  try { video.currentTime = 0; } catch(e) {}
+                  resolve();
+                }, 120);
+              }).catch(() => resolve());
+            } else {
+              setTimeout(() => {
+                try { video.pause(); } catch(e) {}
+                try { video.currentTime = 0; } catch(e) {}
+                resolve();
+              }, 160);
+            }
+          } catch(e){
+            resolve();
+          }
+        };
+
+        if (video.readyState >= 2) doWarm();
+        else video.addEventListener('canplay', doWarm, { once:true });
+      });
+    }
+
     function playFairyOnce(){
       fairyVid.loop = false;
       fairyVid.playbackRate = tuning.toverfee.speed || 1.0;
@@ -783,17 +818,6 @@
 
       if (explosionVid.readyState >= 2) start();
       else explosionVid.addEventListener('canplay', start, { once: true });
-    }
-
-    function primeVideo(video){
-      try{
-        const p = video.play();
-        if (p && typeof p.then === "function"){
-          p.then(() => {
-            setTimeout(() => { try { video.pause(); } catch(e) {} }, 60);
-          }).catch(() => {});
-        }
-      } catch(e){}
     }
 
     /* Marbotic herkenning */
@@ -981,7 +1005,7 @@
       return bestDigit;
     }
 
-    /* Tuning data, dit is wat je straks kopieert en plakt */
+    /* Tuning data */
     const tuning = {
       toverfee: { xPct: 32.5, yPct: 51.0, start: 0.0, fadeIn: 0.0, speed: 1.0 },
       explosie: { xPct: 68.5, yPct: 58.0, start: 0.0, fadeIn: 0.55, speed: 1.0 },
@@ -1146,28 +1170,24 @@
     }
 
     function buildCssBlock(){
-      const m = tuning.marbotic.presets[tuning.marbotic.digit];
-
       const lines = [];
       lines.push('/* Plak dit in :root en vervang de bestaande waarden */');
       lines.push(`--fairy-left: ${tuning.toverfee.xPct}%;`);
       lines.push(`--fairy-top: ${tuning.toverfee.yPct}%;`);
-      lines.push(`--digit-left: ${m.xPct}%;`);
-      lines.push(`--digit-top: ${m.yPct}%;`);
-      lines.push(`--fade-duration: ${m.fadeIn}s;`);
-      lines.push(`--cijfertoon-delay: ${m.start}s;`);
       lines.push(`--explosion-left: ${tuning.explosie.xPct}%;`);
       lines.push(`--explosion-top: ${tuning.explosie.yPct}%;`);
       lines.push(`--explosion-start-delay: ${tuning.explosie.start}s;`);
       lines.push(`--explosion-fade-in: ${tuning.explosie.fadeIn}s;`);
       lines.push('');
-      lines.push('/* Plak dit in je script, vervang jouw speeds */');
-      lines.push(`/* toverfee speed */`);
-      lines.push(`/* ${tuning.toverfee.speed} */`);
-      lines.push(`/* explosie speed */`);
-      lines.push(`/* ${tuning.explosie.speed} */`);
+      lines.push('/* Marbotic per cijfer, plak waar jij het wilt bewaren */');
+      for (let d = 0; d < 10; d++){
+        const m = tuning.marbotic.presets[d];
+        lines.push(`/* marbotic${d} */ left ${m.xPct}%, top ${m.yPct}%, delay ${m.start}s, fade ${m.fadeIn}s, speed ${m.speed}`);
+      }
       lines.push('');
-      lines.push('/* Marbotic presets staan in JSON, kopieer indien je per cijfer verschillende values wilt bewaren */');
+      lines.push('/* Speeds, neem deze over in je vaste versie */');
+      lines.push(`/* toverfee speed: ${tuning.toverfee.speed} */`);
+      lines.push(`/* explosie speed: ${tuning.explosie.speed} */`);
       return lines.join('\n');
     }
 
@@ -1246,6 +1266,13 @@
 
     function playSuccessAnimation(digit){
       clearDigitAndExplosion();
+
+      const m = tuning.marbotic.presets[digit] || tuning.marbotic.presets[0];
+
+      document.documentElement.style.setProperty('--digit-left', m.xPct + '%');
+      document.documentElement.style.setProperty('--digit-top', m.yPct + '%');
+      document.documentElement.style.setProperty('--cijfertoon-delay', m.start + 's');
+      document.documentElement.style.setProperty('--fade-duration', m.fadeIn + 's');
 
       digitImg.src = ASSET_DIGIT(digit);
       digitImg.alt = String(digit);
@@ -1354,7 +1381,7 @@
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
-    /* Spraak, iOS robuust */
+    /* Spraak */
     let selectedVoice = null;
     function pickDutchVoice(){
       if (!('speechSynthesis' in window)) return;
@@ -1415,8 +1442,8 @@
       pickDutchVoice();
       setTimeout(() => pickDutchVoice(), 250);
 
-      primeVideo(explosionVid);
-      primeVideo(fairyVid);
+      warmUpVideo(explosionVid);
+      warmUpVideo(fairyVid);
 
       nextRound();
     }
@@ -1456,6 +1483,16 @@
         buildPanels();
         applyTuningToCss();
         renderTuningOut();
+
+        document.getElementById('tunerStartBtn').addEventListener('click', () => {
+          startGame();
+        });
+
+        document.getElementById('tunerTestBtn').addEventListener('click', () => {
+          if (!started) startGame();
+          const d = Number.isFinite(tuning.marbotic.digit) ? tuning.marbotic.digit : 0;
+          playSuccessAnimation(d);
+        });
 
         document.getElementById('copyJsonBtn').addEventListener('click', async () => {
           renderTuningOut();
