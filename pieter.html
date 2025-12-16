@@ -146,6 +146,23 @@
     }
     .musicBtn:active{ transform: scale(0.98); }
 
+    .tuneBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+      font-size: 30px;
+      line-height: 1;
+    }
+    .tuneBtn:active{ transform: scale(0.98); }
+
     .titlePill{
       padding: 18px 44px;
       border-radius: 22px;
@@ -433,6 +450,107 @@
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
     }
     .startBtn:active{ transform: scale(0.99); }
+
+    /* Timing paneel */
+    .tunePanel{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(520px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 1200;
+      color: #4d4a48;
+    }
+
+    .tunePanel.hidden{ display:none; }
+
+    .tuneHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tuneTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+
+    .tuneClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .tuneClose:active{ transform: scale(0.99); }
+
+    .tuneRow{
+      display:grid;
+      grid-template-columns: 140px 1fr 84px;
+      gap: 10px;
+      align-items:center;
+      margin: 8px 0;
+    }
+
+    .tuneLabel{
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+    }
+
+    .tuneValue{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 13px;
+      text-align:right;
+      color: rgba(77,74,72,0.86);
+    }
+
+    .tuneRow input[type="range"]{
+      width: 100%;
+    }
+
+    .tuneButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tuneBtnSmall{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      font-size: 14px;
+    }
+    .tuneBtnSmall.secondary{
+      background:#f8c3b0;
+      color:#4d4a48;
+    }
+    .tuneBtnSmall:active{ transform: scale(0.99); }
+
+    .tuneHint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(77,74,72,0.68);
+      line-height: 1.35;
+    }
   </style>
 </head>
 
@@ -444,6 +562,7 @@
       </button>
 
       <button class="musicBtn" id="musicBtn" aria-label="Muziek uit">🔊</button>
+      <button class="tuneBtn" id="tuneBtn" aria-label="Timing instellen">⚙️</button>
 
       <div class="titlePill">pak het juiste cijfer</div>
     </div>
@@ -490,6 +609,58 @@
     </div>
   </div>
 
+  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Timing instellen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">toverfee timing</div>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten">Sluit</button>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">Video tijd</div>
+      <input type="range" id="scrubRange" min="0" max="10" step="0.01" value="0" />
+      <div class="tuneValue" id="scrubValue">0.00s</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">Fout start</div>
+      <input type="range" id="noStartRange" min="0" max="10" step="0.01" value="0.10" />
+      <div class="tuneValue" id="noStartValue">0.10s</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">Fout einde</div>
+      <input type="range" id="noEndRange" min="0" max="10" step="0.01" value="1.28" />
+      <div class="tuneValue" id="noEndValue">1.28s</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">Goed start</div>
+      <input type="range" id="yesStartRange" min="0" max="10" step="0.01" value="1.45" />
+      <div class="tuneValue" id="yesStartValue">1.45s</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">Goed einde</div>
+      <input type="range" id="yesEndRange" min="0" max="10" step="0.01" value="5.83" />
+      <div class="tuneValue" id="yesEndValue">5.83s</div>
+    </div>
+
+    <div class="tuneButtons">
+      <button class="tuneBtnSmall secondary" id="setNoStartHereBtn">Zet fout start op huidige tijd</button>
+      <button class="tuneBtnSmall secondary" id="setNoEndHereBtn">Zet fout einde op huidige tijd</button>
+      <button class="tuneBtnSmall secondary" id="setYesStartHereBtn">Zet goed start op huidige tijd</button>
+      <button class="tuneBtnSmall secondary" id="setYesEndHereBtn">Zet goed einde op huidige tijd</button>
+      <button class="tuneBtnSmall" id="testWrongBtn">Test fout</button>
+      <button class="tuneBtnSmall" id="testGoodBtn">Test goed</button>
+      <button class="tuneBtnSmall secondary" id="toIdleBtn">Still</button>
+    </div>
+
+    <div class="tuneHint">
+      Tip, zet de video tijd slider op het moment dat je de juiste beweging ziet, tik dan op zet start of zet einde.
+      Deze waarden worden automatisch bewaard op dit apparaat.
+    </div>
+  </div>
+
   <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
 
   <script>
@@ -521,12 +692,14 @@
     const FAIRY_NO_SPEED = 1.00;
     const EXPLOSION_SPEED = 2.65;
 
-    // Segmenten in de samengestelde mp4, format m:ss:cs
-    const FAIRY_IDLE_TC      = '0:00:00';
-    const FAIRY_NO_START_TC  = '0:00:10';
-    const FAIRY_NO_END_TC    = '0:01:28';
-    const FAIRY_YES_START_TC = '0:01:45';
-    const FAIRY_YES_END_TC   = '0:05:83';
+    // Standaard timings (in seconden), worden overschreven door lokale opslag als je schuift
+    const DEFAULT_TIMING = {
+      idle: 0.00,
+      noStart: 0.10,
+      noEnd: 1.28,
+      yesStart: 1.45,
+      yesEnd: 5.83
+    };
 
     const MARBOTIC_PRESETS = {
       0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
@@ -559,6 +732,33 @@
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
+
+    /* Timing paneel UI */
+    const tuneBtn = document.getElementById('tuneBtn');
+    const tunePanel = document.getElementById('tunePanel');
+    const tuneClose = document.getElementById('tuneClose');
+
+    const scrubRange = document.getElementById('scrubRange');
+    const scrubValue = document.getElementById('scrubValue');
+
+    const noStartRange = document.getElementById('noStartRange');
+    const noEndRange = document.getElementById('noEndRange');
+    const yesStartRange = document.getElementById('yesStartRange');
+    const yesEndRange = document.getElementById('yesEndRange');
+
+    const noStartValue = document.getElementById('noStartValue');
+    const noEndValue = document.getElementById('noEndValue');
+    const yesStartValue = document.getElementById('yesStartValue');
+    const yesEndValue = document.getElementById('yesEndValue');
+
+    const setNoStartHereBtn = document.getElementById('setNoStartHereBtn');
+    const setNoEndHereBtn = document.getElementById('setNoEndHereBtn');
+    const setYesStartHereBtn = document.getElementById('setYesStartHereBtn');
+    const setYesEndHereBtn = document.getElementById('setYesEndHereBtn');
+
+    const testWrongBtn = document.getElementById('testWrongBtn');
+    const testGoodBtn = document.getElementById('testGoodBtn');
+    const toIdleBtn = document.getElementById('toIdleBtn');
 
     function setAutoScale(){
       if (!gameCard) return;
@@ -644,27 +844,43 @@
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
     updateMusicBtn();
 
-    /* Toverfee, 1 mp4 met segmenten */
-    function tcToSeconds(tc){
-      const parts = String(tc).trim().split(':').map(Number);
-      if (parts.some(n => !Number.isFinite(n))) return 0;
+    /* Toverfee, 1 mp4 met instelbare segmenten */
+    const TIMING_KEY = 'fairyTimingV1';
 
-      if (parts.length === 3){
-        const [m, s, cs] = parts;
-        return (m * 60) + s + (cs / 100);
+    function loadTiming(){
+      try{
+        const raw = localStorage.getItem(TIMING_KEY);
+        if (!raw) return { ...DEFAULT_TIMING };
+        const obj = JSON.parse(raw);
+        return {
+          idle: Number(obj.idle ?? DEFAULT_TIMING.idle),
+          noStart: Number(obj.noStart ?? DEFAULT_TIMING.noStart),
+          noEnd: Number(obj.noEnd ?? DEFAULT_TIMING.noEnd),
+          yesStart: Number(obj.yesStart ?? DEFAULT_TIMING.yesStart),
+          yesEnd: Number(obj.yesEnd ?? DEFAULT_TIMING.yesEnd)
+        };
+      } catch(e){
+        return { ...DEFAULT_TIMING };
       }
-      if (parts.length === 2){
-        const [m, s] = parts;
-        return (m * 60) + s;
-      }
-      return parts[0] || 0;
     }
 
-    const FAIRY_SEG = {
-      idle: tcToSeconds(FAIRY_IDLE_TC),
-      no:  { start: tcToSeconds(FAIRY_NO_START_TC),  end: tcToSeconds(FAIRY_NO_END_TC) },
-      yes: { start: tcToSeconds(FAIRY_YES_START_TC), end: tcToSeconds(FAIRY_YES_END_TC) }
-    };
+    function saveTiming(t){
+      try { localStorage.setItem(TIMING_KEY, JSON.stringify(t)); } catch(e) {}
+    }
+
+    let fairyTiming = loadTiming();
+
+    function clamp(n, a, b){
+      n = Number(n);
+      if (!Number.isFinite(n)) return a;
+      return Math.max(a, Math.min(b, n));
+    }
+
+    function fmtSec(s){
+      const v = Number(s);
+      if (!Number.isFinite(v)) return '0.00s';
+      return v.toFixed(2) + 's';
+    }
 
     function setFairySourceOnce(){
       try{
@@ -678,7 +894,7 @@
       setFairySourceOnce();
       const snap = () => {
         try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = FAIRY_SEG.idle; } catch(e) {}
+        try { fairyVid.currentTime = Math.max(0, fairyTiming.idle || 0); } catch(e) {}
         try { fairyVid.pause(); } catch(e) {}
       };
       if (fairyVid.readyState >= 2) snap();
@@ -686,7 +902,6 @@
     }
 
     let segRAF = null;
-
     function stopSegmentWatcher(){
       if (segRAF){ cancelAnimationFrame(segRAF); segRAF = null; }
     }
@@ -695,8 +910,8 @@
       setFairySourceOnce();
       stopSegmentWatcher();
 
-      const start = Math.max(0, startSec || 0);
-      const end = Math.max(start, endSec || start);
+      const start = Math.max(0, Number(startSec) || 0);
+      const end = Math.max(start, Number(endSec) || start);
 
       fairyVid.loop = false;
       fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
@@ -704,10 +919,9 @@
       const beginPlay = () => {
         const p = fairyVid.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
-        const cutoff = end - 0.03;
 
         const watch = () => {
-          if (fairyVid.currentTime >= cutoff){
+          if (fairyVid.currentTime >= end){
             stopSegmentWatcher();
             try { fairyVid.pause(); } catch(e) {}
             snapToIdle();
@@ -1115,13 +1329,13 @@
       void stage.offsetHeight;
       stage.classList.add('play');
 
-      playSegment(FAIRY_SEG.yes.start, FAIRY_SEG.yes.end, FAIRY_SPEED);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED);
       scheduleExplosionFlow();
     }
 
     function playWrongAnimation(){
       clearDigitAndExplosion();
-      playSegment(FAIRY_SEG.no.start, FAIRY_SEG.no.end, FAIRY_NO_SPEED);
+      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED);
     }
 
     function nextRound(){
@@ -1264,6 +1478,114 @@
       }
     }
 
+    /* Timing paneel logica */
+    let tuneRAF = null;
+
+    function stopTuneLoop(){
+      if (tuneRAF){ cancelAnimationFrame(tuneRAF); tuneRAF = null; }
+    }
+
+    function setTuneRangesMax(maxSec){
+      const maxV = Math.max(1, Number(maxSec) || 10);
+      [scrubRange, noStartRange, noEndRange, yesStartRange, yesEndRange].forEach(el => {
+        if (!el) return;
+        el.max = String(maxV);
+      });
+    }
+
+    function syncTimingUI(){
+      noStartRange.value = String(fairyTiming.noStart);
+      noEndRange.value = String(fairyTiming.noEnd);
+      yesStartRange.value = String(fairyTiming.yesStart);
+      yesEndRange.value = String(fairyTiming.yesEnd);
+
+      noStartValue.textContent = fmtSec(fairyTiming.noStart);
+      noEndValue.textContent = fmtSec(fairyTiming.noEnd);
+      yesStartValue.textContent = fmtSec(fairyTiming.yesStart);
+      yesEndValue.textContent = fmtSec(fairyTiming.yesEnd);
+    }
+
+    function openTunePanel(){
+      tunePanel.classList.remove('hidden');
+      syncTimingUI();
+
+      const loop = () => {
+        const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
+        scrubRange.value = String(t);
+        scrubValue.textContent = fmtSec(t);
+        tuneRAF = requestAnimationFrame(loop);
+      };
+      stopTuneLoop();
+      loop();
+    }
+
+    function closeTunePanel(){
+      tunePanel.classList.add('hidden');
+      stopTuneLoop();
+    }
+
+    function applyTimingChange(){
+      const dur = Number.isFinite(fairyVid.duration) ? fairyVid.duration : 9999;
+
+      fairyTiming.noStart = clamp(noStartRange.value, 0, dur);
+      fairyTiming.noEnd = clamp(noEndRange.value, 0, dur);
+      fairyTiming.yesStart = clamp(yesStartRange.value, 0, dur);
+      fairyTiming.yesEnd = clamp(yesEndRange.value, 0, dur);
+
+      // simpele veiligheid, einde mag niet voor start
+      if (fairyTiming.noEnd < fairyTiming.noStart) fairyTiming.noEnd = fairyTiming.noStart;
+      if (fairyTiming.yesEnd < fairyTiming.yesStart) fairyTiming.yesEnd = fairyTiming.yesStart;
+
+      saveTiming(fairyTiming);
+      syncTimingUI();
+    }
+
+    if (tuneBtn) tuneBtn.addEventListener('click', () => {
+      if (tunePanel.classList.contains('hidden')) openTunePanel();
+      else closeTunePanel();
+    });
+    if (tuneClose) tuneClose.addEventListener('click', closeTunePanel);
+
+    if (scrubRange) scrubRange.addEventListener('input', () => {
+      try { fairyVid.currentTime = Number(scrubRange.value) || 0; } catch(e) {}
+    });
+
+    [noStartRange, noEndRange, yesStartRange, yesEndRange].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', applyTimingChange);
+    });
+
+    function setFieldToCurrent(which){
+      const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
+      if (which === 'noStart') noStartRange.value = String(t);
+      if (which === 'noEnd') noEndRange.value = String(t);
+      if (which === 'yesStart') yesStartRange.value = String(t);
+      if (which === 'yesEnd') yesEndRange.value = String(t);
+      applyTimingChange();
+    }
+
+    if (setNoStartHereBtn) setNoStartHereBtn.addEventListener('click', () => setFieldToCurrent('noStart'));
+    if (setNoEndHereBtn) setNoEndHereBtn.addEventListener('click', () => setFieldToCurrent('noEnd'));
+    if (setYesStartHereBtn) setYesStartHereBtn.addEventListener('click', () => setFieldToCurrent('yesStart'));
+    if (setYesEndHereBtn) setYesEndHereBtn.addEventListener('click', () => setFieldToCurrent('yesEnd'));
+
+    if (testWrongBtn) testWrongBtn.addEventListener('click', () => playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED));
+    if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED));
+    if (toIdleBtn) toIdleBtn.addEventListener('click', () => { stopSegmentWatcher(); backToIdleFairy(); });
+
+    fairyVid.addEventListener('loadedmetadata', () => {
+      const dur = Number.isFinite(fairyVid.duration) ? fairyVid.duration : 10;
+      setTuneRangesMax(dur);
+
+      // als je oude waarden buiten de duration vallen, even netjes begrenzen
+      fairyTiming.noStart = clamp(fairyTiming.noStart, 0, dur);
+      fairyTiming.noEnd = clamp(fairyTiming.noEnd, 0, dur);
+      fairyTiming.yesStart = clamp(fairyTiming.yesStart, 0, dur);
+      fairyTiming.yesEnd = clamp(fairyTiming.yesEnd, 0, dur);
+      saveTiming(fairyTiming);
+      syncTimingUI();
+    });
+
     /* Start */
     function startGame(){
       if (started) return;
@@ -1275,10 +1597,10 @@
 
       startBackgroundMusic();
 
-      warmUpVideo(explosionVid);
-
       setFairySourceOnce();
       warmUpVideo(fairyVid).then(() => backToIdleFairy());
+
+      warmUpVideo(explosionVid);
 
       try{
         goodAudio.load();
