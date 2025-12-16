@@ -517,23 +517,6 @@
   </div>
 
   <script>
-    /*
-      Bestanden in dezelfde map:
-      calibration.json
-      marbotic0.png tot en met marbotic9.png
-      toverfee.mp4
-      toverfee_nee.mp4
-      explosie.mp4
-      home.png
-      spreekknop.png
-
-      Geluiden in map audio:
-      tovermuziek.mp3
-      watisde00.mp3 tot en met watisde09.mp3
-      hocuspocus00.mp3 tot en met hocuspocus09.mp3
-      neegeluid.mp3
-    */
-
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
     const FAIRY_SRC = 'toverfee.mp4';
@@ -548,7 +531,7 @@
 
     const pad2 = (n) => String(n).padStart(2,'0');
 
-    const MUSIC_FILE = 'audio/tovermuziek.mp3';
+    const MUSIC_FILE = 'audio/backgroundmuziek.mp3';
     const PROMPT_FILE = (d) => `audio/watisde${pad2(d)}.mp3`;
     const SUCCESS_FILE = (d) => `audio/hocuspocus${pad2(d)}.mp3`;
     const WRONG_FILE = 'audio/neegeluid.mp3';
@@ -616,7 +599,7 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    /* Achtergrondmuziek, mute alleen deze */
+    /* Achtergrondmuziek */
     const bgMusic = new Audio(MUSIC_FILE);
     bgMusic.loop = true;
     bgMusic.preload = 'auto';
@@ -641,7 +624,7 @@
       toggleBgMute();
     });
 
-    /* Sfx, nooit meer automatisch afkappen, behalve bij spreekknop */
+    /* Sfx */
     const promptAudios = Array.from({length:10}, (_,d)=> new Audio(PROMPT_FILE(d)));
     const successAudios = Array.from({length:10}, (_,d)=> new Audio(SUCCESS_FILE(d)));
     const wrongAudio = new Audio(WRONG_FILE);
@@ -693,7 +676,7 @@
       playSfx(wrongAudio, { restart:true });
     }
 
-    /* Video warm up tegen hapering */
+    /* Video warm up */
     function warmUpVideo(video){
       return new Promise((resolve) => {
         if (!video) return resolve();
@@ -728,7 +711,7 @@
         };
 
         if (video.readyState >= 2) doWarm();
-        else video.addEventListener('canplay', doWarm, { once:true });
+        else video.addEventListener('loadeddata', doWarm, { once:true });
       });
     }
 
@@ -748,21 +731,27 @@
       fairyNoVid.preload = "auto";
       fairyNoVid.src = FAIRY_NO_SRC;
 
+      fairyVid.dataset.playing = "0";
+      fairyNoVid.dataset.playing = "0";
+
       try { fairyVid.load(); } catch(e) {}
       try { fairyNoVid.load(); } catch(e) {}
 
       showIdleFairy();
-      freezeFirstFrame(fairyVid);
+      primeFirstFrameWhenReady(fairyVid);
+      primeFirstFrameWhenReady(fairyNoVid);
     }
 
-    function freezeFirstFrame(video){
+    function primeFirstFrameWhenReady(video){
       const snap = () => {
+        if (video.dataset.playing === "1") return;
         try { video.pause(); } catch(e) {}
         try { video.currentTime = 0; } catch(e) {}
         try { video.pause(); } catch(e) {}
       };
+
       if (video.readyState >= 2) snap();
-      else video.addEventListener('canplay', snap, { once:true });
+      else video.addEventListener('loadeddata', snap, { once:true });
     }
 
     function showIdleFairy(){
@@ -781,11 +770,13 @@
 
       video.loop = false;
       video.playbackRate = speed;
+      video.dataset.playing = "1";
 
       let doneCalled = false;
       const done = () => {
         if (doneCalled) return;
         doneCalled = true;
+        video.dataset.playing = "0";
         if (onDone) onDone();
       };
 
@@ -821,12 +812,12 @@
       };
 
       if (video.readyState >= 2) start();
-      else video.addEventListener('canplay', start, { once:true });
+      else video.addEventListener('loadeddata', start, { once:true });
     }
 
     function backToIdle(){
       showIdleFairy();
-      freezeFirstFrame(fairyVid);
+      primeFirstFrameWhenReady(fairyVid);
     }
 
     /* Explosie */
@@ -839,9 +830,7 @@
       explosionVid.src = EXPLOSION_SRC;
 
       explosionWrap.style.opacity = '0';
-
       try { explosionVid.load(); } catch(e) {}
-
       explosionVid.addEventListener('error', () => {
         explosionWrap.style.opacity = '0';
       });
@@ -877,7 +866,7 @@
       };
 
       if (explosionVid.readyState >= 2) start();
-      else explosionVid.addEventListener('canplay', start, { once: true });
+      else explosionVid.addEventListener('loadeddata', start, { once: true });
     }
 
     /* Herkenning */
@@ -1269,8 +1258,8 @@
       startBgMusic();
 
       warmUpVideo(explosionVid);
-      warmUpVideo(fairyVid).then(() => freezeFirstFrame(fairyVid));
-      warmUpVideo(fairyNoVid).then(() => freezeFirstFrame(fairyNoVid));
+      warmUpVideo(fairyVid);
+      warmUpVideo(fairyNoVid);
 
       nextRound();
     }
