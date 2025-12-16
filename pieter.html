@@ -203,6 +203,28 @@
       display:block;
     }
 
+    .musicBtn{
+      position:absolute;
+      right: 14px;
+      top: calc(14px + (108px * var(--scale)) + 12px);
+      width: calc(108px * var(--scale));
+      height: calc(108px * var(--scale));
+      border-radius: 999px;
+      border: 4px solid rgba(245,180,152,0.95);
+      background: var(--bg-left);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      z-index: 60;
+      padding: 0;
+      font-size: calc(44px * var(--scale));
+      line-height: 1;
+      color: #6f6b68;
+    }
+    .musicBtn:active{ transform: scale(0.98); }
+    .musicBtn[aria-pressed="true"]{ opacity: 0.72; }
+
     .stage{
       position:absolute;
       inset: 0;
@@ -215,7 +237,9 @@
       height:auto;
       display:block;
       pointer-events:none;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     #explosionWrap{ z-index: 0; }
@@ -233,7 +257,7 @@
     #fairyVid{ opacity: 1; }
 
     #fairyNoVid{
-      transform: translate(-50%, -50%) translateX(calc(var(--fairy-no-x) * var(--scale)));
+      transform: translate(-50%, -50%) translateX(calc(var(--fairy-no-x) * var(--scale))) translateZ(0);
     }
 
     #explosionWrap{
@@ -243,7 +267,7 @@
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
       pointer-events:none;
-      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y));
+      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y)) translateZ(0);
     }
 
     #explosionVid{
@@ -266,8 +290,8 @@
     }
 
     @keyframes appear{
-      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
-      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96) translateZ(0); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1) translateZ(0); }
     }
 
     @media (orientation: portrait){
@@ -276,10 +300,10 @@
         bottom: 0;
         left: var(--fairy-left);
         width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateZ(0);
       }
       #fairyNoVid{
-        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateX(calc(var(--fairy-no-x) * var(--scale)));
+        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateX(calc(var(--fairy-no-x) * var(--scale))) translateZ(0);
       }
     }
 
@@ -296,10 +320,10 @@
         bottom: 0;
         left: var(--fairy-left);
         width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateZ(0);
       }
       #fairyNoVid{
-        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateX(calc(var(--fairy-no-x) * var(--scale)));
+        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateX(calc(var(--fairy-no-x) * var(--scale))) translateZ(0);
       }
 
       #digitImg{
@@ -452,14 +476,16 @@
           <img src="spreekknop.png" alt="Spreek" />
         </button>
 
+        <button class="musicBtn" id="musicBtn" aria-label="Achtergrondmuziek dempen" aria-pressed="false" title="Muziek aan of uit">🎵</button>
+
         <div class="cardInner">
           <div class="stage" id="stage">
             <div id="explosionWrap" aria-hidden="true">
-              <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
+              <video id="explosionVid" muted playsinline webkit-playsinline preload="auto" aria-label="Explosie"></video>
             </div>
 
-            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
-            <video id="fairyNoVid" muted playsinline preload="auto" aria-label="Toverfee nee video"></video>
+            <video id="fairyVid" muted playsinline webkit-playsinline preload="auto" aria-label="Toverfee video" disablepictureinpicture></video>
+            <video id="fairyNoVid" muted playsinline webkit-playsinline preload="auto" aria-label="Toverfee nee video" disablepictureinpicture></video>
 
             <img id="digitImg" alt="" />
           </div>
@@ -502,6 +528,7 @@
       spreekknop.png
 
       Geluiden in map audio:
+      tovermuziek.mp3
       watisde00.mp3 tot en met watisde09.mp3
       hocuspocus00.mp3 tot en met hocuspocus09.mp3
       neegeluid.mp3
@@ -520,6 +547,8 @@
     const SAFE_END_OFFSET_NO = 0.12;
 
     const pad2 = (n) => String(n).padStart(2,'0');
+
+    const MUSIC_FILE = 'audio/tovermuziek.mp3';
     const PROMPT_FILE = (d) => `audio/watisde${pad2(d)}.mp3`;
     const SUCCESS_FILE = (d) => `audio/hocuspocus${pad2(d)}.mp3`;
     const WRONG_FILE = 'audio/neegeluid.mp3';
@@ -550,6 +579,8 @@
     const speakBtn = document.getElementById('speakBtn');
     const homeBtn = document.getElementById('homeBtn');
 
+    const musicBtn = document.getElementById('musicBtn');
+
     const scanArea = document.getElementById('scan-area');
     const scanTitle = document.getElementById('scan-title');
     const scanSub = document.getElementById('scan-sub');
@@ -561,7 +592,6 @@
     function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
-
       const baseW = 980;
       const baseH = 520;
       const pad = 18;
@@ -586,12 +616,38 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    /* Audio */
+    /* Achtergrondmuziek, mute alleen deze */
+    const bgMusic = new Audio(MUSIC_FILE);
+    bgMusic.loop = true;
+    bgMusic.preload = 'auto';
+    bgMusic.volume = 0.22;
+    bgMusic.muted = false;
+
+    function startBgMusic(){
+      try{
+        const p = bgMusic.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function toggleBgMute(){
+      bgMusic.muted = !bgMusic.muted;
+      musicBtn.setAttribute('aria-pressed', bgMusic.muted ? 'true' : 'false');
+      musicBtn.textContent = bgMusic.muted ? '🔇' : '🎵';
+    }
+
+    musicBtn.addEventListener('pointerdown', (e) => {
+      try{ e.preventDefault(); }catch(err){}
+      toggleBgMute();
+    });
+
+    /* Sfx, nooit meer automatisch afkappen, behalve bij spreekknop */
     const promptAudios = Array.from({length:10}, (_,d)=> new Audio(PROMPT_FILE(d)));
     const successAudios = Array.from({length:10}, (_,d)=> new Audio(SUCCESS_FILE(d)));
     const wrongAudio = new Audio(WRONG_FILE);
 
     function preloadAudios(){
+      try { bgMusic.load(); } catch(e){}
       try { wrongAudio.preload = 'auto'; wrongAudio.load(); } catch(e) {}
       for (let i = 0; i < 10; i++){
         try { promptAudios[i].preload = 'auto'; promptAudios[i].load(); } catch(e) {}
@@ -599,7 +655,7 @@
       }
     }
 
-    function stopAllAudio(){
+    function stopSfxOnly(){
       const all = [...promptAudios, ...successAudios, wrongAudio];
       for (const a of all){
         try { a.pause(); } catch(e) {}
@@ -607,19 +663,35 @@
       }
     }
 
-    function playSfx(audio){
+    function playSfx(audio, { restart = false } = {}){
       if (!audio) return;
       try{
-        audio.pause();
-        audio.currentTime = 0;
+        if (restart){
+          try { audio.pause(); } catch(e) {}
+          try { audio.currentTime = 0; } catch(e) {}
+        }
         const p = audio.play();
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e) {}
     }
 
-    function playPrompt(d){ stopAllAudio(); playSfx(promptAudios[d]); }
-    function playSuccess(d){ stopAllAudio(); playSfx(successAudios[d]); }
-    function playWrong(){ stopAllAudio(); playSfx(wrongAudio); }
+    function playPrompt(d, restart=false){ playSfx(promptAudios[d], { restart }); }
+    function playSuccess(d){ playSfx(successAudios[d], { restart:false }); }
+
+    function playWrongThenPromptAgain(digit){
+      try{
+        wrongAudio.onended = null;
+        wrongAudio.pause();
+        wrongAudio.currentTime = 0;
+      } catch(e){}
+
+      wrongAudio.onended = () => {
+        wrongAudio.onended = null;
+        playPrompt(digit, true);
+      };
+
+      playSfx(wrongAudio, { restart:true });
+    }
 
     /* Video warm up tegen hapering */
     function warmUpVideo(video){
@@ -808,7 +880,7 @@
       else explosionVid.addEventListener('canplay', start, { once: true });
     }
 
-    /* Marbotic herkenning */
+    /* Herkenning */
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     let calibration = null;
@@ -1109,7 +1181,7 @@
       scanHint.textContent = '📱 Blokje stil laten liggen';
 
       chooseNextDigit();
-      playPrompt(targetDigit);
+      playPrompt(targetDigit, true);
     }
 
     function handleRecognitionResult(recognizedDigit){
@@ -1130,7 +1202,7 @@
         setTimeout(() => { nextRound(); }, waitMs);
       } else {
         wrongFeedback();
-        playWrong();
+        playWrongThenPromptAgain(targetDigit);
         playWrongAnimation();
       }
     }
@@ -1194,6 +1266,7 @@
       startOverlay.style.display = 'none';
 
       preloadAudios();
+      startBgMusic();
 
       warmUpVideo(explosionVid);
       warmUpVideo(fairyVid).then(() => freezeFirstFrame(fairyVid));
@@ -1212,7 +1285,10 @@
 
     speakBtn.addEventListener('click', () => {
       if (!started) startGame();
-      else playPrompt(targetDigit);
+      else {
+        stopSfxOnly();
+        playPrompt(targetDigit, true);
+      }
     });
 
     homeBtn.addEventListener('click', () => {
