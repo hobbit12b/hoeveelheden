@@ -217,15 +217,18 @@
     }
 
     #explosionWrap{ z-index: 0; }
-    #fairyVid{ z-index: 1; }
     #digitImg{ z-index: 2; }
 
-    #fairyVid{
+    /* Beide toverfee videos identiek, geen src wissel, dus geen witte flits */
+    #fairyVid, #fairyNoVid{
+      z-index: 1;
       left: var(--fairy-left);
       top: var(--fairy-top);
       width: var(--fairy-size);
-      opacity: 1;
+      opacity: 0;
+      transition: opacity 90ms ease;
     }
+    #fairyVid{ opacity: 1; }
 
     #explosionWrap{
       position:absolute;
@@ -262,7 +265,7 @@
     }
 
     @media (orientation: portrait){
-      #fairyVid{
+      #fairyVid, #fairyNoVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
@@ -279,7 +282,7 @@
         --explosion-offset-y-base: 150px;
       }
 
-      #fairyVid{
+      #fairyVid, #fairyNoVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
@@ -352,22 +355,18 @@
     }
 
     .scan-surface.wrong{ animation: wiggle 220ms ease; }
-
-    /* Extra fout flits, pastel lichtrood */
-    .scan-surface.flashWrong{
-      animation: flashWrong 260ms ease;
-    }
-    @keyframes flashWrong{
-      0%{ background:#ffffff; }
-      40%{ background:#fde1e1; }
-      100%{ background:#ffffff; }
-    }
-
     @keyframes wiggle{
       0%{ transform: translateX(0); }
       28%{ transform: translateX(-6px); }
       58%{ transform: translateX(5px); }
       100%{ transform: translateX(0); }
+    }
+
+    .scan-surface.flashWrong{ animation: flashWrong 260ms ease; }
+    @keyframes flashWrong{
+      0%{ background:#ffffff; }
+      40%{ background:#fde1e1; }
+      100%{ background:#ffffff; }
     }
 
     .startOverlay{
@@ -442,6 +441,8 @@
             </div>
 
             <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
+            <video id="fairyNoVid" muted playsinline preload="auto" aria-label="Toverfee nee video"></video>
+
             <img id="digitImg" alt="" />
           </div>
         </div>
@@ -466,25 +467,12 @@
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>Tik om te starten</h1>
-      <p>Je hoort een cijfer, leg dat cijfer in het scanvlak. Met de spreekknop hoor je het nog eens.</p>
+      <p>Je hoort een cijfer, leg dat cijfer in het scanvak. Met de spreekknop hoor je het nog eens.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
 
   <script>
-    /*
-      Bestanden in dezelfde map:
-      calibration.json
-      marbotic0.png tot en met marbotic9.png
-      toverfee.mp4
-      toverfee_nee.mp4
-      explosie.mp4
-      goed.mp3
-      fout.mp3
-      home.png
-      spreekknop.png
-    */
-
     const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
@@ -515,7 +503,9 @@
     const gameCard = document.getElementById('gameCard');
     const stage = document.getElementById('stage');
     const digitImg = document.getElementById('digitImg');
+
     const fairyVid = document.getElementById('fairyVid');
+    const fairyNoVid = document.getElementById('fairyNoVid');
 
     const explosionWrap = document.getElementById('explosionWrap');
     const explosionVid = document.getElementById('explosionVid');
@@ -574,48 +564,7 @@
       } catch(e){}
     }
 
-    /* Toverfee */
-    function setFairySource(src){
-      try{
-        if (fairyVid.src && fairyVid.src.includes(src)) return;
-      } catch(e){}
-      fairyVid.src = src;
-      try { fairyVid.load(); } catch(e) {}
-    }
-
-    function showFirstFrame(){
-      fairyVid.muted = true;
-      fairyVid.playsInline = true;
-      fairyVid.loop = false;
-      fairyVid.controls = false;
-      fairyVid.preload = "auto";
-
-      setFairySource(FAIRY_SRC);
-
-      const onReady = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-        try { fairyVid.pause(); } catch(e) {}
-      };
-
-      fairyVid.addEventListener('loadeddata', onReady, { once:true });
-      fairyVid.addEventListener('canplay', onReady, { once:true });
-      try { fairyVid.load(); } catch(e) {}
-    }
-
-    function backToIdleFairy(){
-      setFairySource(FAIRY_SRC);
-
-      const snap = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-        try { fairyVid.pause(); } catch(e) {}
-      };
-
-      if (fairyVid.readyState >= 2) snap();
-      else fairyVid.addEventListener('canplay', snap, { once:true });
-    }
-
+    /* Video warm up */
     function warmUpVideo(video){
       return new Promise((resolve) => {
         if (!video) return resolve();
@@ -654,27 +603,56 @@
       });
     }
 
-    function playFairyOnce(src, speed){
-      fairyVid.loop = false;
-      fairyVid.playbackRate = speed;
+    /* Toverfee dual video, geen src wissel */
+    function prepFairyVideo(video, src){
+      video.muted = true;
+      video.playsInline = true;
+      video.loop = false;
+      video.controls = false;
+      video.preload = "auto";
+      video.src = src;
+      try { video.load(); } catch(e) {}
+    }
 
-      setFairySource(src);
+    function freezeFirstFrame(video){
+      const snap = () => {
+        try { video.pause(); } catch(e) {}
+        try { video.currentTime = 0; } catch(e) {}
+        try { video.pause(); } catch(e) {}
+      };
+      if (video.readyState >= 2) snap();
+      else video.addEventListener('canplay', snap, { once:true });
+    }
 
-      fairyVid.onended = () => {
-        fairyVid.onended = null;
-        backToIdleFairy();
+    function showIdleFairy(){
+      fairyVid.style.opacity = '1';
+      fairyNoVid.style.opacity = '0';
+      freezeFirstFrame(fairyVid);
+    }
+
+    function showNoFairy(){
+      fairyVid.style.opacity = '0';
+      fairyNoVid.style.opacity = '1';
+    }
+
+    function playFairyOnce(video, speed, onDone){
+      video.loop = false;
+      video.playbackRate = speed;
+
+      video.onended = () => {
+        video.onended = null;
+        if (typeof onDone === 'function') onDone();
       };
 
       const start = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-
-        const p = fairyVid.play();
+        try { video.pause(); } catch(e) {}
+        try { video.currentTime = 0; } catch(e) {}
+        const p = video.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
       };
 
-      if (fairyVid.readyState >= 2) start();
-      else fairyVid.addEventListener('canplay', start, { once:true });
+      if (video.readyState >= 2) start();
+      else video.addEventListener('canplay', start, { once:true });
     }
 
     /* Explosie */
@@ -1002,13 +980,17 @@
       void stage.offsetHeight;
       stage.classList.add('play');
 
-      playFairyOnce(FAIRY_SRC, FAIRY_SPEED);
+      showIdleFairy();
+      playFairyOnce(fairyVid, FAIRY_SPEED, () => showIdleFairy());
+
       scheduleExplosionFlow();
     }
 
     function playWrongAnimation(){
       clearDigitAndExplosion();
-      playFairyOnce(FAIRY_NO_SRC, FAIRY_NO_SPEED);
+
+      showNoFairy();
+      playFairyOnce(fairyNoVid, FAIRY_NO_SPEED, () => showIdleFairy());
     }
 
     function nextRound(){
@@ -1160,16 +1142,17 @@
       pickDutchVoice();
       setTimeout(() => pickDutchVoice(), 250);
 
-      warmUpVideo(explosionVid);
-
-      setFairySource(FAIRY_SRC);
-      warmUpVideo(fairyVid).then(() => backToIdleFairy());
-
       try{
         goodAudio.load();
         wrongAudio.load();
       } catch(e){}
 
+      warmUpVideo(explosionVid);
+
+      warmUpVideo(fairyVid).then(() => freezeFirstFrame(fairyVid));
+      warmUpVideo(fairyNoVid).then(() => freezeFirstFrame(fairyNoVid));
+
+      showIdleFairy();
       nextRound();
     }
 
@@ -1190,10 +1173,12 @@
     window.addEventListener('load', () => {
       setAutoScale();
 
-      showFirstFrame();
+      prepFairyVideo(fairyVid, FAIRY_SRC);
+      prepFairyVideo(fairyNoVid, FAIRY_NO_SRC);
+      showIdleFairy();
+
       prepareExplosion();
       clearDigitAndExplosion();
-      backToIdleFairy();
 
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
