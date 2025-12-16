@@ -498,9 +498,11 @@
     const SAFE_END_OFFSET_NO = 0.12;
 
     const pad2 = (n) => String(n).padStart(2,'0');
-    const PROMPT_FILE = (d) => `watisde${pad2(d)}.mp3`;
-    const SUCCESS_FILE = (d) => `hocuspocus${pad2(d)}.mp3`;
-    const WRONG_FILE = 'neegeluid.mp3';
+
+    /* audio zit in map audio */
+    const PROMPT_FILE = (d) => `audio/watisde${pad2(d)}.mp3`;
+    const SUCCESS_FILE = (d) => `audio/hocuspocus${pad2(d)}.mp3`;
+    const WRONG_FILE = 'audio/neegeluid.mp3';
 
     const MARBOTIC_PRESETS = {
       0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
@@ -563,7 +565,7 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    /* Audio, vooraf klaarzetten */
+    /* Audio */
     const promptAudios = Array.from({length:10}, (_,d)=> new Audio(PROMPT_FILE(d)));
     const successAudios = Array.from({length:10}, (_,d)=> new Audio(SUCCESS_FILE(d)));
     const wrongAudio = new Audio(WRONG_FILE);
@@ -785,7 +787,7 @@
       else explosionVid.addEventListener('canplay', start, { once: true });
     }
 
-    /* Herkenning */
+    /* Herkenning, onveranderd */
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     let calibration = null;
@@ -954,265 +956,4 @@
       let bestDigit = null;
       let bestDist = Infinity;
 
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        const samples = entry.samples || [];
-        for (let i = 0; i < samples.length; i++) {
-          const dist = vectorDistance(vec, samples[i].features.vector);
-          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
-        }
-      });
-
-      if (bestDigit === null) return null;
-      if (bestDist > classificationStats.thresholdUnknown) return null;
-      if (bestDist > classificationStats.thresholdBase) return null;
-      return bestDigit;
-    }
-
-    /* Spel */
-    let started = false;
-    let locked = false;
-    let targetDigit = 0;
-
-    let currentPoints = [];
-    let hasResultForCurrentTouches = false;
-
-    let explosionTimerPlay = null;
-
-    function clearExplosionTimers(){
-      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
-    }
-
-    function wrongFeedback(){
-      scanArea.classList.remove('wrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('wrong');
-      setTimeout(() => scanArea.classList.remove('wrong'), 260);
-
-      scanArea.classList.remove('flashWrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('flashWrong');
-      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
-    }
-
-    function chooseNextDigit(){
-      const prev = targetDigit;
-      let next = Math.floor(Math.random() * 10);
-      if (next === prev) next = (next + 1) % 10;
-      targetDigit = next;
-    }
-
-    function clearDigitAndExplosion(){
-      clearExplosionTimers();
-      stage.classList.remove('play');
-
-      digitImg.style.opacity = '0';
-      digitImg.removeAttribute('src');
-      digitImg.alt = '';
-
-      resetExplosion();
-    }
-
-    function scheduleExplosionFlow(){
-      clearExplosionTimers();
-
-      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-      const startMs = Math.max(0, digitDelayMs + startDelayMs);
-
-      explosionTimerPlay = setTimeout(() => {
-        playExplosionNow();
-      }, startMs);
-    }
-
-    function estimateExplosionTotalMs(){
-      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-      const startMs = Math.max(0, digitDelayMs + startDelayMs);
-
-      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
-
-      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
-      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
-
-      return startMs + playMs + fadeOutMs + 200;
-    }
-
-    function applyPresetForDigit(digit){
-      const p = MARBOTIC_PRESETS[digit] || MARBOTIC_PRESETS[0];
-
-      document.documentElement.style.setProperty('--digit-left', p.xPct + '%');
-      document.documentElement.style.setProperty('--digit-top', p.yPct + '%');
-      document.documentElement.style.setProperty('--cijfertoon-delay', p.start + 's');
-      document.documentElement.style.setProperty('--fade-duration', p.fadeIn + 's');
-    }
-
-    function playSuccessAnimation(digit){
-      clearDigitAndExplosion();
-      applyPresetForDigit(digit);
-
-      digitImg.src = ASSET_DIGIT(digit);
-      digitImg.alt = String(digit);
-
-      void stage.offsetHeight;
-      stage.classList.add('play');
-
-      showIdleFairy();
-      playVideoOnce(fairyVid, FAIRY_SPEED, { onDone: backToIdle });
-
-      scheduleExplosionFlow();
-    }
-
-    function playWrongAnimation(){
-      clearDigitAndExplosion();
-
-      showNoFairy();
-      requestAnimationFrame(() => {
-        playVideoOnce(fairyNoVid, FAIRY_NO_SPEED, {
-          stopBeforeEndSec: SAFE_END_OFFSET_NO,
-          onDone: backToIdle
-        });
-      });
-    }
-
-    function nextRound(){
-      locked = false;
-      clearDigitAndExplosion();
-      backToIdle();
-
-      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-      scanSub.textContent = 'Alle puntjes in het vak.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-
-      chooseNextDigit();
-      playPrompt(targetDigit);
-    }
-
-    function handleRecognitionResult(recognizedDigit){
-      if (recognizedDigit == null) return;
-      if (!started || locked) return;
-
-      if (recognizedDigit === targetDigit){
-        locked = true;
-
-        scanTitle.textContent = 'Goed gedaan.';
-        scanSub.textContent = '';
-        scanHint.textContent = '';
-
-        playSuccess(targetDigit);
-        playSuccessAnimation(recognizedDigit);
-
-        const waitMs = Math.max(1800, estimateExplosionTotalMs());
-        setTimeout(() => { nextRound(); }, waitMs);
-      } else {
-        /* Alleen bij echt herkend fout cijfer */
-        wrongFeedback();
-        playWrong();
-        playWrongAnimation();
-
-        /* Niet locken, kind mag opnieuw proberen met hetzelfde doelcijfer */
-      }
-    }
-
-    function getPointsFromTouches(touchList) {
-      const rect = scanArea.getBoundingClientRect();
-      const points = [];
-      for (let i = 0; i < touchList.length; i++) {
-        const t = touchList[i];
-        const x = t.clientX;
-        const y = t.clientY;
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-          points.push({ x, y });
-        }
-      }
-      return points;
-    }
-
-    function handleTouchEvent(e){
-      if (!calibration || !classificationStats) return;
-
-      const touches = e.touches || [];
-      currentPoints = getPointsFromTouches(touches);
-
-      if (currentPoints.length === 0){
-        hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-        scanSub.textContent = 'Alle puntjes in het vak.';
-        scanHint.textContent = '📱 Blokje stil laten liggen';
-        return;
-      }
-
-      if (currentPoints.length !== expectedTouchPoints){
-        hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Even stil houden.';
-        scanSub.textContent = 'We lezen de puntjes.';
-        scanHint.textContent = '';
-        return;
-      }
-
-      scanTitle.textContent = 'Even stil houden.';
-      scanSub.textContent = 'We lezen de puntjes.';
-      scanHint.textContent = '';
-
-      if (!hasResultForCurrentTouches && !locked){
-        const digit = recognizeDigit(currentPoints);
-        if (digit !== null && typeof digit === "number"){
-          hasResultForCurrentTouches = true;
-          handleRecognitionResult(digit);
-        }
-      }
-    }
-
-    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
-      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
-    });
-
-    function startGame(){
-      if (started) return;
-      started = true;
-      startOverlay.style.display = 'none';
-
-      preloadAudios();
-
-      warmUpVideo(explosionVid);
-      warmUpVideo(fairyVid).then(() => freezeFirstFrame(fairyVid));
-      warmUpVideo(fairyNoVid).then(() => freezeFirstFrame(fairyNoVid));
-
-      nextRound();
-    }
-
-    speakBtn.addEventListener('click', () => {
-      if (!started) startGame();
-      else playPrompt(targetDigit);
-    });
-
-    startBtn.addEventListener('click', startGame);
-    startOverlay.addEventListener('click', (e) => {
-      if (e.target === startOverlay) startGame();
-    });
-
-    homeBtn.addEventListener('click', () => {
-      try { window.location.href = 'index.html'; } catch (e) {}
-    });
-
-    window.addEventListener('load', () => {
-      setAutoScale();
-
-      prepareFairies();
-      prepareExplosion();
-      clearDigitAndExplosion();
-      backToIdle();
-
-      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-      scanSub.textContent = 'Alle puntjes in het vak.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-
-      fetch('calibration.json', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => initCalibration(data))
-        .catch(() => { });
-    });
-  </script>
-</body>
-</html>
+      DIGIT_ORDER.forEach(function (d
