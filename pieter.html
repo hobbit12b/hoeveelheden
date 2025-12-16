@@ -48,8 +48,6 @@
       --explosion-offset-x-base: 200px;
       --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
-      --fairy-no-x: 8px;
-
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
 
@@ -203,28 +201,6 @@
       display:block;
     }
 
-    .musicBtn{
-      position:absolute;
-      right: 14px;
-      top: calc(14px + (108px * var(--scale)) + 12px);
-      width: calc(108px * var(--scale));
-      height: calc(108px * var(--scale));
-      border-radius: 999px;
-      border: 4px solid rgba(245,180,152,0.95);
-      background: var(--bg-left);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      z-index: 60;
-      padding: 0;
-      font-size: calc(44px * var(--scale));
-      line-height: 1;
-      color: #6f6b68;
-    }
-    .musicBtn:active{ transform: scale(0.98); }
-    .musicBtn[aria-pressed="true"]{ opacity: 0.72; }
-
     .stage{
       position:absolute;
       inset: 0;
@@ -237,27 +213,18 @@
       height:auto;
       display:block;
       pointer-events:none;
-      transform: translate(-50%, -50%) translateZ(0);
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
+      transform: translate(-50%, -50%);
     }
 
     #explosionWrap{ z-index: 0; }
-    #fairyVid, #fairyNoVid{ z-index: 1; }
+    #fairyVid{ z-index: 1; }
     #digitImg{ z-index: 2; }
 
-    #fairyVid, #fairyNoVid{
+    #fairyVid{
       left: var(--fairy-left);
       top: var(--fairy-top);
       width: var(--fairy-size);
-      opacity: 0;
-      transition: opacity 90ms ease;
-      will-change: opacity, transform;
-    }
-    #fairyVid{ opacity: 1; }
-
-    #fairyNoVid{
-      transform: translate(-50%, -50%) translateX(calc(var(--fairy-no-x) * var(--scale))) translateZ(0);
+      opacity: 1;
     }
 
     #explosionWrap{
@@ -267,7 +234,7 @@
       width: calc(var(--digit-size) * var(--explosion-scale));
       opacity: 0;
       pointer-events:none;
-      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y)) translateZ(0);
+      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y));
     }
 
     #explosionVid{
@@ -290,20 +257,17 @@
     }
 
     @keyframes appear{
-      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96) translateZ(0); }
-      100%{ opacity:1; transform: translate(-50%, -50%) scale(1) translateZ(0); }
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
     }
 
     @media (orientation: portrait){
-      #fairyVid, #fairyNoVid{
+      #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
         width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateZ(0);
-      }
-      #fairyNoVid{
-        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateX(calc(var(--fairy-no-x) * var(--scale))) translateZ(0);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
       }
     }
 
@@ -315,15 +279,12 @@
         --explosion-offset-y-base: 150px;
       }
 
-      #fairyVid, #fairyNoVid{
+      #fairyVid{
         top: auto;
         bottom: 0;
         left: var(--fairy-left);
         width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateZ(0);
-      }
-      #fairyNoVid{
-        transform: translateX(-50%) translateY(calc(6px * var(--scale))) translateX(calc(var(--fairy-no-x) * var(--scale))) translateZ(0);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
       }
 
       #digitImg{
@@ -391,18 +352,22 @@
     }
 
     .scan-surface.wrong{ animation: wiggle 220ms ease; }
+
+    /* Extra fout flits, pastel lichtrood */
+    .scan-surface.flashWrong{
+      animation: flashWrong 260ms ease;
+    }
+    @keyframes flashWrong{
+      0%{ background:#ffffff; }
+      40%{ background:#fde1e1; }
+      100%{ background:#ffffff; }
+    }
+
     @keyframes wiggle{
       0%{ transform: translateX(0); }
       28%{ transform: translateX(-6px); }
       58%{ transform: translateX(5px); }
       100%{ transform: translateX(0); }
-    }
-
-    .scan-surface.flashWrong{ animation: flashWrong 260ms ease; }
-    @keyframes flashWrong{
-      0%{ background:#ffffff; }
-      40%{ background:#fde1e1; }
-      100%{ background:#ffffff; }
     }
 
     .startOverlay{
@@ -415,12 +380,6 @@
       justify-content:center;
       z-index: 999;
       padding: 24px;
-      touch-action: manipulation;
-    }
-
-    .startOverlay,
-    .startOverlay *{
-      pointer-events: auto;
     }
 
     .startCard{
@@ -476,17 +435,13 @@
           <img src="spreekknop.png" alt="Spreek" />
         </button>
 
-        <button class="musicBtn" id="musicBtn" aria-label="Achtergrondmuziek dempen" aria-pressed="false" title="Muziek aan of uit">🎵</button>
-
         <div class="cardInner">
           <div class="stage" id="stage">
             <div id="explosionWrap" aria-hidden="true">
-              <video id="explosionVid" muted playsinline webkit-playsinline preload="auto" aria-label="Explosie"></video>
+              <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
             </div>
 
-            <video id="fairyVid" muted playsinline webkit-playsinline preload="auto" aria-label="Toverfee video" disablepictureinpicture></video>
-            <video id="fairyNoVid" muted playsinline webkit-playsinline preload="auto" aria-label="Toverfee nee video" disablepictureinpicture></video>
-
+            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
             <img id="digitImg" alt="" />
           </div>
         </div>
@@ -511,30 +466,38 @@
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>Tik om te starten</h1>
-      <p>Je hoort een opdracht, leg dat cijfer in het scanvak. Met de spreekknop hoor je het nog eens.</p>
+      <p>Je hoort een cijfer, leg dat cijfer in het scanvlak. Met de spreekknop hoor je het nog eens.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
 
   <script>
+    /*
+      Bestanden in dezelfde map:
+      calibration.json
+      marbotic0.png tot en met marbotic9.png
+      toverfee.mp4
+      toverfee_nee.mp4
+      explosie.mp4
+      goed.mp3
+      fout.mp3
+      home.png
+      spreekknop.png
+    */
+
+    const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
     const FAIRY_SRC = 'toverfee.mp4';
     const FAIRY_NO_SRC = 'toverfee_nee.mp4';
     const EXPLOSION_SRC = 'explosie.mp4';
 
+    const GOOD_SOUND_SRC = 'goed.mp3';
+    const WRONG_SOUND_SRC = 'fout.mp3';
+
     const FAIRY_SPEED = 1.00;
     const FAIRY_NO_SPEED = 1.00;
     const EXPLOSION_SPEED = 2.65;
-
-    const SAFE_END_OFFSET_NO = 0.12;
-
-    const pad2 = (n) => String(n).padStart(2,'0');
-
-    const MUSIC_FILE = 'audio/backgroundmuziek.mp3';
-    const PROMPT_FILE = (d) => `audio/watisde${pad2(d)}.mp3`;
-    const SUCCESS_FILE = (d) => `audio/hocuspocus${pad2(d)}.mp3`;
-    const WRONG_FILE = 'audio/neegeluid.mp3';
 
     const MARBOTIC_PRESETS = {
       0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
@@ -552,17 +515,13 @@
     const gameCard = document.getElementById('gameCard');
     const stage = document.getElementById('stage');
     const digitImg = document.getElementById('digitImg');
-
     const fairyVid = document.getElementById('fairyVid');
-    const fairyNoVid = document.getElementById('fairyNoVid');
 
     const explosionWrap = document.getElementById('explosionWrap');
     const explosionVid = document.getElementById('explosionVid');
 
     const speakBtn = document.getElementById('speakBtn');
     const homeBtn = document.getElementById('homeBtn');
-
-    const musicBtn = document.getElementById('musicBtn');
 
     const scanArea = document.getElementById('scan-area');
     const scanTitle = document.getElementById('scan-title');
@@ -575,6 +534,7 @@
     function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
+
       const baseW = 980;
       const baseH = 520;
       const pad = 18;
@@ -599,84 +559,63 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    /* Achtergrondmuziek */
-    const bgMusic = new Audio(MUSIC_FILE);
-    bgMusic.loop = true;
-    bgMusic.preload = 'auto';
-    bgMusic.volume = 0.22;
-    bgMusic.muted = false;
+    /* Audio */
+    const goodAudio = new Audio(GOOD_SOUND_SRC);
+    const wrongAudio = new Audio(WRONG_SOUND_SRC);
+    goodAudio.preload = 'auto';
+    wrongAudio.preload = 'auto';
 
-    function startBgMusic(){
-      try{
-        const p = bgMusic.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    function toggleBgMute(){
-      bgMusic.muted = !bgMusic.muted;
-      musicBtn.setAttribute('aria-pressed', bgMusic.muted ? 'true' : 'false');
-      musicBtn.textContent = bgMusic.muted ? '🔇' : '🎵';
-    }
-
-    musicBtn.addEventListener('pointerdown', (e) => {
-      try{ e.preventDefault(); }catch(err){}
-      toggleBgMute();
-    });
-
-    /* Sfx */
-    const promptAudios = Array.from({length:10}, (_,d)=> new Audio(PROMPT_FILE(d)));
-    const successAudios = Array.from({length:10}, (_,d)=> new Audio(SUCCESS_FILE(d)));
-    const wrongAudio = new Audio(WRONG_FILE);
-
-    function preloadAudios(){
-      try { bgMusic.load(); } catch(e){}
-      try { wrongAudio.preload = 'auto'; wrongAudio.load(); } catch(e) {}
-      for (let i = 0; i < 10; i++){
-        try { promptAudios[i].preload = 'auto'; promptAudios[i].load(); } catch(e) {}
-        try { successAudios[i].preload = 'auto'; successAudios[i].load(); } catch(e) {}
-      }
-    }
-
-    function stopSfxOnly(){
-      const all = [...promptAudios, ...successAudios, wrongAudio];
-      for (const a of all){
-        try { a.pause(); } catch(e) {}
-        try { a.currentTime = 0; } catch(e) {}
-      }
-    }
-
-    function playSfx(audio, { restart = false } = {}){
+    function playSfx(audio){
       if (!audio) return;
       try{
-        if (restart){
-          try { audio.pause(); } catch(e) {}
-          try { audio.currentTime = 0; } catch(e) {}
-        }
+        audio.currentTime = 0;
         const p = audio.play();
         if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e) {}
+      } catch(e){}
     }
 
-    function playPrompt(d, restart=false){ playSfx(promptAudios[d], { restart }); }
-    function playSuccess(d){ playSfx(successAudios[d], { restart:false }); }
-
-    function playWrongThenPromptAgain(digit){
+    /* Toverfee */
+    function setFairySource(src){
       try{
-        wrongAudio.onended = null;
-        wrongAudio.pause();
-        wrongAudio.currentTime = 0;
+        if (fairyVid.src && fairyVid.src.includes(src)) return;
       } catch(e){}
+      fairyVid.src = src;
+      try { fairyVid.load(); } catch(e) {}
+    }
 
-      wrongAudio.onended = () => {
-        wrongAudio.onended = null;
-        playPrompt(digit, true);
+    function showFirstFrame(){
+      fairyVid.muted = true;
+      fairyVid.playsInline = true;
+      fairyVid.loop = false;
+      fairyVid.controls = false;
+      fairyVid.preload = "auto";
+
+      setFairySource(FAIRY_SRC);
+
+      const onReady = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
       };
 
-      playSfx(wrongAudio, { restart:true });
+      fairyVid.addEventListener('loadeddata', onReady, { once:true });
+      fairyVid.addEventListener('canplay', onReady, { once:true });
+      try { fairyVid.load(); } catch(e) {}
     }
 
-    /* Video warm up */
+    function backToIdleFairy(){
+      setFairySource(FAIRY_SRC);
+
+      const snap = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+      };
+
+      if (fairyVid.readyState >= 2) snap();
+      else fairyVid.addEventListener('canplay', snap, { once:true });
+    }
+
     function warmUpVideo(video){
       return new Promise((resolve) => {
         if (!video) return resolve();
@@ -694,16 +633,16 @@
               p.then(() => {
                 setTimeout(() => {
                   try { video.pause(); } catch(e) {}
-                  try { video.currentTime = 0.01; } catch(e) {}
-                  setTimeout(() => {
-                    try { video.pause(); } catch(e) {}
-                    try { video.currentTime = 0; } catch(e) {}
-                    resolve();
-                  }, 80);
+                  try { video.currentTime = 0; } catch(e) {}
+                  resolve();
                 }, 120);
               }).catch(() => resolve());
             } else {
-              setTimeout(() => resolve(), 160);
+              setTimeout(() => {
+                try { video.pause(); } catch(e) {}
+                try { video.currentTime = 0; } catch(e) {}
+                resolve();
+              }, 160);
             }
           } catch(e){
             resolve();
@@ -711,113 +650,31 @@
         };
 
         if (video.readyState >= 2) doWarm();
-        else video.addEventListener('loadeddata', doWarm, { once:true });
+        else video.addEventListener('canplay', doWarm, { once:true });
       });
     }
 
-    /* Toverfee dual video */
-    function prepareFairies(){
-      fairyVid.muted = true;
-      fairyVid.playsInline = true;
+    function playFairyOnce(src, speed){
       fairyVid.loop = false;
-      fairyVid.controls = false;
-      fairyVid.preload = "auto";
-      fairyVid.src = FAIRY_SRC;
+      fairyVid.playbackRate = speed;
 
-      fairyNoVid.muted = true;
-      fairyNoVid.playsInline = true;
-      fairyNoVid.loop = false;
-      fairyNoVid.controls = false;
-      fairyNoVid.preload = "auto";
-      fairyNoVid.src = FAIRY_NO_SRC;
+      setFairySource(src);
 
-      fairyVid.dataset.playing = "0";
-      fairyNoVid.dataset.playing = "0";
-
-      try { fairyVid.load(); } catch(e) {}
-      try { fairyNoVid.load(); } catch(e) {}
-
-      showIdleFairy();
-      primeFirstFrameWhenReady(fairyVid);
-      primeFirstFrameWhenReady(fairyNoVid);
-    }
-
-    function primeFirstFrameWhenReady(video){
-      const snap = () => {
-        if (video.dataset.playing === "1") return;
-        try { video.pause(); } catch(e) {}
-        try { video.currentTime = 0; } catch(e) {}
-        try { video.pause(); } catch(e) {}
-      };
-
-      if (video.readyState >= 2) snap();
-      else video.addEventListener('loadeddata', snap, { once:true });
-    }
-
-    function showIdleFairy(){
-      fairyVid.style.opacity = '1';
-      fairyNoVid.style.opacity = '0';
-    }
-
-    function showNoFairy(){
-      fairyVid.style.opacity = '0';
-      fairyNoVid.style.opacity = '1';
-    }
-
-    function playVideoOnce(video, speed, opts){
-      const stopBeforeEndSec = (opts && typeof opts.stopBeforeEndSec === "number") ? opts.stopBeforeEndSec : 0;
-      const onDone = (opts && typeof opts.onDone === "function") ? opts.onDone : null;
-
-      video.loop = false;
-      video.playbackRate = speed;
-      video.dataset.playing = "1";
-
-      let doneCalled = false;
-      const done = () => {
-        if (doneCalled) return;
-        doneCalled = true;
-        video.dataset.playing = "0";
-        if (onDone) onDone();
+      fairyVid.onended = () => {
+        fairyVid.onended = null;
+        backToIdleFairy();
       };
 
       const start = () => {
-        try { video.pause(); } catch(e) {}
-        try { video.currentTime = 0.01; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
 
-        const p = video.play();
+        const p = fairyVid.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
-
-        if (stopBeforeEndSec > 0){
-          const d = Number.isFinite(video.duration) ? video.duration : 0;
-          if (d > stopBeforeEndSec){
-            const ms = Math.max(90, ((d - stopBeforeEndSec) * 1000) / Math.max(0.05, speed));
-            setTimeout(() => {
-              try{
-                const d2 = Number.isFinite(video.duration) ? video.duration : d;
-                if (d2 > stopBeforeEndSec){
-                  video.currentTime = d2 - stopBeforeEndSec;
-                }
-                video.pause();
-              } catch(e){}
-              done();
-            }, ms);
-            return;
-          }
-        }
-
-        video.onended = () => {
-          video.onended = null;
-          done();
-        };
       };
 
-      if (video.readyState >= 2) start();
-      else video.addEventListener('loadeddata', start, { once:true });
-    }
-
-    function backToIdle(){
-      showIdleFairy();
-      primeFirstFrameWhenReady(fairyVid);
+      if (fairyVid.readyState >= 2) start();
+      else fairyVid.addEventListener('canplay', start, { once:true });
     }
 
     /* Explosie */
@@ -830,7 +687,9 @@
       explosionVid.src = EXPLOSION_SRC;
 
       explosionWrap.style.opacity = '0';
+
       try { explosionVid.load(); } catch(e) {}
+
       explosionVid.addEventListener('error', () => {
         explosionWrap.style.opacity = '0';
       });
@@ -866,10 +725,10 @@
       };
 
       if (explosionVid.readyState >= 2) start();
-      else explosionVid.addEventListener('loadeddata', start, { once: true });
+      else explosionVid.addEventListener('canplay', start, { once: true });
     }
 
-    /* Herkenning */
+    /* Marbotic herkenning */
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     let calibration = null;
@@ -1134,6 +993,7 @@
 
     function playSuccessAnimation(digit){
       clearDigitAndExplosion();
+
       applyPresetForDigit(digit);
 
       digitImg.src = ASSET_DIGIT(digit);
@@ -1142,35 +1002,25 @@
       void stage.offsetHeight;
       stage.classList.add('play');
 
-      showIdleFairy();
-      playVideoOnce(fairyVid, FAIRY_SPEED, { onDone: backToIdle });
-
+      playFairyOnce(FAIRY_SRC, FAIRY_SPEED);
       scheduleExplosionFlow();
     }
 
     function playWrongAnimation(){
       clearDigitAndExplosion();
-
-      showNoFairy();
-      requestAnimationFrame(() => {
-        playVideoOnce(fairyNoVid, FAIRY_NO_SPEED, {
-          stopBeforeEndSec: SAFE_END_OFFSET_NO,
-          onDone: backToIdle
-        });
-      });
+      playFairyOnce(FAIRY_NO_SRC, FAIRY_NO_SPEED);
     }
 
     function nextRound(){
       locked = false;
       clearDigitAndExplosion();
-      backToIdle();
 
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
       scanHint.textContent = '📱 Blokje stil laten liggen';
 
       chooseNextDigit();
-      playPrompt(targetDigit, true);
+      speakDigit(targetDigit);
     }
 
     function handleRecognitionResult(recognizedDigit){
@@ -1184,14 +1034,14 @@
         scanSub.textContent = '';
         scanHint.textContent = '';
 
-        playSuccess(targetDigit);
+        playSfx(goodAudio);
         playSuccessAnimation(recognizedDigit);
 
         const waitMs = Math.max(1800, estimateExplosionTotalMs());
         setTimeout(() => { nextRound(); }, waitMs);
       } else {
         wrongFeedback();
-        playWrongThenPromptAgain(targetDigit);
+        playSfx(wrongAudio);
         playWrongAnimation();
       }
     }
@@ -1249,35 +1099,88 @@
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
+    /* Spraak, iOS robuust */
+    let selectedVoice = null;
+    function pickDutchVoice(){
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const nl = voices.filter(v => (v.lang || '').toLowerCase().startsWith('nl'));
+      selectedVoice = nl.find(v => (v.lang || '').toLowerCase() === 'nl-nl') || nl[0] || null;
+    }
+    if ('speechSynthesis' in window){
+      pickDutchVoice();
+      window.speechSynthesis.onvoiceschanged = () => pickDutchVoice();
+    }
+
+    let speakToken = 0;
+    function speakDigit(digit){
+      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
+      if (!('speechSynthesis' in window)) return;
+
+      const myToken = ++speakToken;
+
+      const doSpeak = () => {
+        if (myToken !== speakToken) return;
+
+        try { window.speechSynthesis.resume(); } catch(e) {}
+
+        const u = new SpeechSynthesisUtterance('\u200B' + word);
+        u.lang = 'nl-NL';
+        if (selectedVoice) u.voice = selectedVoice;
+        u.rate = 0.92;
+        u.pitch = 1.05;
+        u.volume = 1;
+
+        try { window.speechSynthesis.speak(u); } catch(e) {}
+
+        setTimeout(() => {
+          if (myToken !== speakToken) return;
+          try { window.speechSynthesis.resume(); } catch(e) {}
+        }, 140);
+      };
+
+      try{
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending){
+          window.speechSynthesis.cancel();
+          setTimeout(doSpeak, 260);
+        } else {
+          setTimeout(doSpeak, 90);
+        }
+      } catch(e){
+        setTimeout(doSpeak, 220);
+      }
+    }
+
+    /* Start */
     function startGame(){
       if (started) return;
       started = true;
       startOverlay.style.display = 'none';
 
-      preloadAudios();
-      startBgMusic();
+      pickDutchVoice();
+      setTimeout(() => pickDutchVoice(), 250);
 
       warmUpVideo(explosionVid);
-      warmUpVideo(fairyVid);
-      warmUpVideo(fairyNoVid);
+
+      setFairySource(FAIRY_SRC);
+      warmUpVideo(fairyVid).then(() => backToIdleFairy());
+
+      try{
+        goodAudio.load();
+        wrongAudio.load();
+      } catch(e){}
 
       nextRound();
     }
 
-    function handleStartInteraction(e){
-      try { e.preventDefault(); } catch(err) {}
-      startGame();
-    }
-
-    startBtn.addEventListener('pointerdown', handleStartInteraction);
-    startOverlay.addEventListener('pointerdown', handleStartInteraction);
-
     speakBtn.addEventListener('click', () => {
       if (!started) startGame();
-      else {
-        stopSfxOnly();
-        playPrompt(targetDigit, true);
-      }
+      else speakDigit(targetDigit);
+    });
+
+    startBtn.addEventListener('click', startGame);
+    startOverlay.addEventListener('click', (e) => {
+      if (e.target === startOverlay) startGame();
     });
 
     homeBtn.addEventListener('click', () => {
@@ -1287,10 +1190,10 @@
     window.addEventListener('load', () => {
       setAutoScale();
 
-      prepareFairies();
+      showFirstFrame();
       prepareExplosion();
       clearDigitAndExplosion();
-      backToIdle();
+      backToIdleFairy();
 
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
