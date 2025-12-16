@@ -1,1194 +1,205 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Pak het juiste cijfer</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Pak het juiste cijfer</title>
 
-  <style>
-    :root{
-      --bg-left:#fdeeea;
-      --brand:#e58c74;
-      --text:#6f6b68;
+<style>
+:root{
+  --bg-left:#fdeeea;
+  --brand:#e58c74;
+  --text:#6f6b68;
+  --scale:1;
+  --fairy-left:33%;
+  --fairy-size-base:439px;
+  --fairy-size:clamp(180px, calc(var(--fairy-size-base)*var(--scale)), 460px);
+}
 
-      --dash-w:4px;
-      --card-radius:28px;
+*{box-sizing:border-box;}
 
-      --scale: 1;
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  font-family:system-ui, sans-serif;
+}
 
-      --fairy-left: 33%;
-      --fairy-top: 51%;
+body{
+  display:grid;
+  grid-template-columns:58fr 42fr;
+}
 
-      --digit-left: 68.5%;
-      --digit-top: 58%;
+.left{
+  background:var(--bg-left);
+  padding:24px;
+}
 
-      --explosion-left: 71%;
-      --explosion-top: 43%;
+.scan-surface{
+  background:#fff;
+  position:relative;
+  transition:background 120ms ease;
+}
 
-      --fairy-size-base: 439px;
-      --digit-size-base: 260px;
+.scan-surface.flashWrong{
+  animation:flashWrong 260ms ease;
+}
 
-      --digit-size: clamp(140px, calc(var(--digit-size-base) * var(--scale)), 340px);
-      --fairy-size: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
+@keyframes flashWrong{
+  0%{background:#fff;}
+  40%{background:#fde1e1;}
+  100%{background:#fff;}
+}
 
-      --fade-duration: 1.45s;
-      --cijfertoon-delay: 1.05s;
+.stage{
+  position:relative;
+  width:100%;
+  height:100%;
+}
 
-      --explosion-start-delay: 0s;
-      --explosion-scale: 1.5;
-      --explosion-fade-in: 0.55s;
-      --explosion-fadeout: 200ms;
+.stage video,
+.stage img{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
 
-      --explosion-offset-y-base: 0px;
-      --explosion-offset-mult: 0.65;
-      --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
+#fairyVid,
+#fairyNoVid{
+  left:var(--fairy-left);
+  bottom:0;
+  width:var(--fairy-size);
+  transform:translateX(-50%) translateY(6px);
+  opacity:0;
+  transition:opacity 90ms ease;
+}
 
-      --explosion-offset-x-base: 200px;
-      --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
+#fairyVid{opacity:1;}
 
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
-    }
+#fairyNoVid{
+  transform:translateX(-50%) translateY(6px) translateX(calc(8px * var(--scale)));
+}
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+.startOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(253,238,234,0.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-    html, body{
-      height:100%;
-      margin:0;
-      padding:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#ffffff;
-      color: var(--text);
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: none;
-      overflow:hidden;
-    }
-
-    body{
-      display:grid;
-      grid-template-columns: 58fr 42fr;
-      height: 100%;
-    }
-
-    @media (orientation: portrait){
-      body{
-        grid-template-columns: 1fr;
-        grid-template-rows: 54fr 46fr;
-      }
-    }
-
-    .left{
-      background: var(--bg-left);
-      padding: 28px 26px 22px 26px;
-      display:flex;
-      flex-direction:column;
-      gap: 22px;
-      position: relative;
-      overflow:hidden;
-      min-height: 0;
-    }
-
-    .scan-surface{
-      background:#ffffff;
-      position: relative;
-      overflow:hidden;
-      min-height: 0;
-      transition: background 120ms ease;
-    }
-
-    @media (orientation: landscape){
-      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
-    }
-    @media (orientation: portrait){
-      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
-      .left{ padding: 22px; gap: 16px; }
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      gap: 18px;
-      flex: 0 0 auto;
-    }
-
-    .homeBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-    }
-    .homeBtn:active{ transform: scale(0.98); }
-    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
-
-    .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 64px;
-      width: min(660px, 100%);
-    }
-
-    .content{
-      flex:1 1 auto;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 10px 6px;
-      min-height: 0;
-    }
-
-    .gameCard{
-      width: min(980px, 100%);
-      height: min(520px, 58vh);
-      background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
-      border-radius: var(--card-radius);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-      position:relative;
-      overflow: visible;
-    }
-
-    @media (orientation: portrait){
-      .gameCard{ height: min(420px, 34vh); }
-    }
-
-    .cardInner{
-      position:absolute;
-      inset: 0;
-      border-radius: var(--card-radius);
-      overflow: hidden;
-    }
-
-    .speakBtn{
-      position:absolute;
-      right: 14px;
-      top: 14px;
-      width: calc(108px * var(--scale));
-      height: calc(108px * var(--scale));
-      border-radius: 999px;
-      border: 4px solid rgba(245,180,152,0.95);
-      background: var(--bg-left);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      z-index: 60;
-      padding: 0;
-    }
-    .speakBtn:active{ transform: scale(0.98); }
-    .speakBtn img{
-      width: calc(62px * var(--scale));
-      height: calc(62px * var(--scale));
-      object-fit: contain;
-      display:block;
-    }
-
-    .stage{
-      position:absolute;
-      inset: 0;
-      overflow: hidden;
-    }
-
-    .stage img,
-    .stage video{
-      position:absolute;
-      height:auto;
-      display:block;
-      pointer-events:none;
-      transform: translate(-50%, -50%);
-    }
-
-    #explosionWrap{ z-index: 0; }
-    #digitImg{ z-index: 2; }
-
-    /* Beide toverfee videos identiek, geen src wissel, dus geen witte flits */
-    #fairyVid, #fairyNoVid{
-      z-index: 1;
-      left: var(--fairy-left);
-      top: var(--fairy-top);
-      width: var(--fairy-size);
-      opacity: 0;
-      transition: opacity 90ms ease;
-    }
-    #fairyVid{ opacity: 1; }
-
-    #explosionWrap{
-      position:absolute;
-      left: var(--explosion-left);
-      top: var(--explosion-top);
-      width: calc(var(--digit-size) * var(--explosion-scale));
-      opacity: 0;
-      pointer-events:none;
-      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y));
-    }
-
-    #explosionVid{
-      width: 100%;
-      height: auto;
-      display:block;
-      background: transparent;
-    }
-
-    #digitImg{
-      left: var(--digit-left);
-      top: var(--digit-top);
-      width: var(--digit-size);
-      opacity: 0;
-    }
-
-    .stage.play #digitImg{
-      animation: appear var(--fade-duration) ease forwards;
-      animation-delay: var(--cijfertoon-delay);
-    }
-
-    @keyframes appear{
-      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
-      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
-    }
-
-    @media (orientation: portrait){
-      #fairyVid, #fairyNoVid{
-        top: auto;
-        bottom: 0;
-        left: var(--fairy-left);
-        width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
-      }
-    }
-
-    @media (orientation: landscape){
-      :root{
-        --fairy-left: 26%;
-        --explosion-offset-mult: 0.75;
-        --explosion-offset-x-base: 200px;
-        --explosion-offset-y-base: 150px;
-      }
-
-      #fairyVid, #fairyNoVid{
-        top: auto;
-        bottom: 0;
-        left: var(--fairy-left);
-        width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
-        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
-      }
-
-      #digitImg{
-        width: clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px);
-      }
-
-      #explosionWrap{
-        width: calc(clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px) * var(--explosion-scale));
-      }
-    }
-
-    .scanOverlay{
-      position:absolute;
-      inset: 0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 28px;
-      pointer-events:none;
-    }
-
-    .scanUI{
-      width: min(520px, 92%);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 14px;
-      text-align:center;
-      transform: translateY(-8px);
-    }
-
-    .miniTile{
-      width: 66px;
-      height: 66px;
-      border-radius: 10px;
-      background: #78abff;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      color:#fff;
-      font-weight: 900;
-      font-size: 20px;
-      line-height: 1;
-      place-items:center;
-    }
-
-    .scanTitle{
-      font-size: clamp(22px, 2vw, 34px);
-      font-weight: 800;
-      color: #7b7876;
-      margin-top: 6px;
-    }
-
-    .scanSub{
-      font-size: clamp(16px, 1.3vw, 20px);
-      color: rgba(123,120,118,0.75);
-      margin-top: -4px;
-    }
-
-    .scanHint{
-      font-size: 13px;
-      color: rgba(0,0,0,0.55);
-      margin-top: 10px;
-    }
-
-    .scan-surface.wrong{ animation: wiggle 220ms ease; }
-    @keyframes wiggle{
-      0%{ transform: translateX(0); }
-      28%{ transform: translateX(-6px); }
-      58%{ transform: translateX(5px); }
-      100%{ transform: translateX(0); }
-    }
-
-    .scan-surface.flashWrong{ animation: flashWrong 260ms ease; }
-    @keyframes flashWrong{
-      0%{ background:#ffffff; }
-      40%{ background:#fde1e1; }
-      100%{ background:#ffffff; }
-    }
-
-    .startOverlay{
-      position:fixed;
-      inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
-
-    .startCard{
-      width: min(560px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
-
-    .startCard h1{
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      color: #4d4a48;
-    }
-
-    .startCard p{
-      margin: 0 0 16px 0;
-      color: rgba(77,74,72,0.82);
-      font-size: 18px;
-      line-height: 1.35;
-    }
-
-    .startBtn{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 800;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 18px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-    }
-    .startBtn:active{ transform: scale(0.99); }
-  </style>
+.startBtn{
+  padding:16px 24px;
+  border-radius:18px;
+  border:none;
+  background:var(--brand);
+  color:#fff;
+  font-size:18px;
+}
+</style>
 </head>
 
 <body>
-  <section class="left" aria-label="Spel">
-    <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
-        <img src="home.png" alt="Home" />
-      </button>
-      <div class="titlePill">pak het juiste cijfer</div>
-    </div>
 
-    <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Toverkaart">
-        <button class="speakBtn" id="speakBtn" aria-label="Nog een keer luisteren">
-          <img src="spreekknop.png" alt="Spreek" />
-        </button>
-
-        <div class="cardInner">
-          <div class="stage" id="stage">
-            <div id="explosionWrap" aria-hidden="true">
-              <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
-            </div>
-
-            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
-            <video id="fairyNoVid" muted playsinline preload="auto" aria-label="Toverfee nee video"></video>
-
-            <img id="digitImg" alt="" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
-    <div class="scanOverlay">
-      <div class="scanUI">
-        <div class="miniTile" aria-hidden="true">
-          <div>1</div><div>2</div><div>3</div><div>4</div>
-        </div>
-
-        <div class="scanTitle" id="scan-title">Leg het houten cijfer in het vak.</div>
-        <div class="scanSub" id="scan-sub">Alle puntjes in het vak.</div>
-        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <h1>Tik om te starten</h1>
-      <p>Je hoort een cijfer, leg dat cijfer in het scanvak. Met de spreekknop hoor je het nog eens.</p>
-      <button class="startBtn" id="startBtn">Start</button>
-    </div>
+<section class="left">
+  <div class="stage">
+    <video id="fairyVid" muted playsinline preload="auto"></video>
+    <video id="fairyNoVid" muted playsinline preload="auto"></video>
   </div>
+</section>
 
-  <script>
-    const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
-    const ASSET_DIGIT = (d) => `marbotic${d}.png`;
+<section class="scan-surface" id="scanArea"></section>
 
-    const FAIRY_SRC = 'toverfee.mp4';
-    const FAIRY_NO_SRC = 'toverfee_nee.mp4';
-    const EXPLOSION_SRC = 'explosie.mp4';
+<div class="startOverlay" id="startOverlay">
+  <button class="startBtn" id="startBtn">Start</button>
+</div>
 
-    const GOOD_SOUND_SRC = 'goed.mp3';
-    const WRONG_SOUND_SRC = 'fout.mp3';
+<script>
+const FAIRY_SRC = 'toverfee.mp4';
+const FAIRY_NO_SRC = 'toverfee_nee.mp4';
 
-    const FAIRY_SPEED = 1.00;
-    const FAIRY_NO_SPEED = 1.00;
-    const EXPLOSION_SPEED = 2.65;
+const GOOD_SOUND = new Audio('goed.mp3');
+const WRONG_SOUND = new Audio('fout.mp3');
 
-    const MARBOTIC_PRESETS = {
-      0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
-      1: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      2: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      3: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      4: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      5: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      6: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      7: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      8: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
-      9: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 }
-    };
+const fairyVid = document.getElementById('fairyVid');
+const fairyNoVid = document.getElementById('fairyNoVid');
+const scanArea = document.getElementById('scanArea');
+const startBtn = document.getElementById('startBtn');
+const startOverlay = document.getElementById('startOverlay');
 
-    const gameCard = document.getElementById('gameCard');
-    const stage = document.getElementById('stage');
-    const digitImg = document.getElementById('digitImg');
+function prepVideo(video, src){
+  video.src = src;
+  video.muted = true;
+  video.playsInline = true;
+  video.loop = false;
+  video.preload = 'auto';
+  video.load();
+}
 
-    const fairyVid = document.getElementById('fairyVid');
-    const fairyNoVid = document.getElementById('fairyNoVid');
+function freezeFirstFrame(video){
+  if(video.readyState >= 2){
+    video.pause();
+    video.currentTime = 0;
+  } else {
+    video.addEventListener('canplay', ()=>freezeFirstFrame(video), {once:true});
+  }
+}
 
-    const explosionWrap = document.getElementById('explosionWrap');
-    const explosionVid = document.getElementById('explosionVid');
+function showIdleFairy(){
+  fairyVid.style.opacity = '1';
+  fairyNoVid.style.opacity = '0';
+  freezeFirstFrame(fairyVid);
+}
 
-    const speakBtn = document.getElementById('speakBtn');
-    const homeBtn = document.getElementById('homeBtn');
+function playFairyOnce(video, onDone){
+  const SAFE_END = 0.12;
 
-    const scanArea = document.getElementById('scan-area');
-    const scanTitle = document.getElementById('scan-title');
-    const scanSub = document.getElementById('scan-sub');
-    const scanHint = document.getElementById('scan-hint');
-
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
-
-    function setAutoScale(){
-      if (!gameCard) return;
-      const r = gameCard.getBoundingClientRect();
-
-      const baseW = 980;
-      const baseH = 520;
-      const pad = 18;
-
-      const sW = Math.max(0.1, (r.width  - pad) / baseW);
-      const sH = Math.max(0.1, (r.height - pad) / baseH);
-
-      let s = Math.min(sW, sH);
-      s = Math.max(0.55, Math.min(1.05, s));
-      document.documentElement.style.setProperty('--scale', String(s));
+  const stopEarly = () => {
+    const d = video.duration;
+    if(d && d > SAFE_END){
+      video.currentTime = d - SAFE_END;
+      video.pause();
     }
+    if(onDone) onDone();
+  };
+
+  video.currentTime = 0;
+  video.play();
+  setTimeout(stopEarly, (video.duration - SAFE_END) * 1000);
+}
+
+function wrongFeedback(){
+  scanArea.classList.remove('flashWrong');
+  void scanArea.offsetHeight;
+  scanArea.classList.add('flashWrong');
+  WRONG_SOUND.currentTime = 0;
+  WRONG_SOUND.play();
+  fairyVid.style.opacity = '0';
+  fairyNoVid.style.opacity = '1';
+  playFairyOnce(fairyNoVid, showIdleFairy);
+}
+
+function goodFeedback(){
+  GOOD_SOUND.currentTime = 0;
+  GOOD_SOUND.play();
+  showIdleFairy();
+  playFairyOnce(fairyVid, showIdleFairy);
+}
+
+startBtn.onclick = () => {
+  startOverlay.style.display = 'none';
+  prepVideo(fairyVid, FAIRY_SRC);
+  prepVideo(fairyNoVid, FAIRY_NO_SRC);
+  freezeFirstFrame(fairyVid);
+};
+
+scanArea.onclick = () => {
+  Math.random() > 0.5 ? goodFeedback() : wrongFeedback();
+};
+</script>
 
-    window.addEventListener('resize', setAutoScale);
-    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
-
-    function getVarMillis(name, fallbackMs){
-      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      if (!raw) return fallbackMs;
-      if (raw.endsWith('ms')) return parseFloat(raw);
-      if (raw.endsWith('s')) return parseFloat(raw) * 1000;
-      const n = parseFloat(raw);
-      return Number.isFinite(n) ? n : fallbackMs;
-    }
-
-    /* Audio */
-    const goodAudio = new Audio(GOOD_SOUND_SRC);
-    const wrongAudio = new Audio(WRONG_SOUND_SRC);
-    goodAudio.preload = 'auto';
-    wrongAudio.preload = 'auto';
-
-    function playSfx(audio){
-      if (!audio) return;
-      try{
-        audio.currentTime = 0;
-        const p = audio.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    /* Video warm up */
-    function warmUpVideo(video){
-      return new Promise((resolve) => {
-        if (!video) return resolve();
-
-        video.muted = true;
-        video.playsInline = true;
-        video.setAttribute('playsinline','');
-        video.setAttribute('webkit-playsinline','');
-
-        const doWarm = () => {
-          try{
-            video.playbackRate = 1;
-            const p = video.play();
-            if (p && typeof p.then === "function"){
-              p.then(() => {
-                setTimeout(() => {
-                  try { video.pause(); } catch(e) {}
-                  try { video.currentTime = 0; } catch(e) {}
-                  resolve();
-                }, 120);
-              }).catch(() => resolve());
-            } else {
-              setTimeout(() => {
-                try { video.pause(); } catch(e) {}
-                try { video.currentTime = 0; } catch(e) {}
-                resolve();
-              }, 160);
-            }
-          } catch(e){
-            resolve();
-          }
-        };
-
-        if (video.readyState >= 2) doWarm();
-        else video.addEventListener('canplay', doWarm, { once:true });
-      });
-    }
-
-    /* Toverfee dual video, geen src wissel */
-    function prepFairyVideo(video, src){
-      video.muted = true;
-      video.playsInline = true;
-      video.loop = false;
-      video.controls = false;
-      video.preload = "auto";
-      video.src = src;
-      try { video.load(); } catch(e) {}
-    }
-
-    function freezeFirstFrame(video){
-      const snap = () => {
-        try { video.pause(); } catch(e) {}
-        try { video.currentTime = 0; } catch(e) {}
-        try { video.pause(); } catch(e) {}
-      };
-      if (video.readyState >= 2) snap();
-      else video.addEventListener('canplay', snap, { once:true });
-    }
-
-    function showIdleFairy(){
-      fairyVid.style.opacity = '1';
-      fairyNoVid.style.opacity = '0';
-      freezeFirstFrame(fairyVid);
-    }
-
-    function showNoFairy(){
-      fairyVid.style.opacity = '0';
-      fairyNoVid.style.opacity = '1';
-    }
-
-    function playFairyOnce(video, speed, onDone){
-      video.loop = false;
-      video.playbackRate = speed;
-
-      video.onended = () => {
-        video.onended = null;
-        if (typeof onDone === 'function') onDone();
-      };
-
-      const start = () => {
-        try { video.pause(); } catch(e) {}
-        try { video.currentTime = 0; } catch(e) {}
-        const p = video.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      };
-
-      if (video.readyState >= 2) start();
-      else video.addEventListener('canplay', start, { once:true });
-    }
-
-    /* Explosie */
-    function prepareExplosion(){
-      explosionVid.muted = true;
-      explosionVid.playsInline = true;
-      explosionVid.loop = false;
-      explosionVid.controls = false;
-      explosionVid.preload = 'auto';
-      explosionVid.src = EXPLOSION_SRC;
-
-      explosionWrap.style.opacity = '0';
-
-      try { explosionVid.load(); } catch(e) {}
-
-      explosionVid.addEventListener('error', () => {
-        explosionWrap.style.opacity = '0';
-      });
-    }
-
-    function resetExplosion(){
-      try { explosionVid.pause(); } catch(e) {}
-      try { explosionVid.currentTime = 0; } catch(e) {}
-      explosionVid.onended = null;
-      explosionWrap.style.transition = '';
-      explosionWrap.style.opacity = '0';
-    }
-
-    function playExplosionNow(){
-      const fadeInMs = getVarMillis('--explosion-fade-in', 550);
-      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
-
-      resetExplosion();
-      explosionVid.playbackRate = EXPLOSION_SPEED;
-
-      const start = () => {
-        explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
-        requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
-
-        explosionVid.onended = () => {
-          explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
-          explosionWrap.style.opacity = '0';
-        };
-
-        try { explosionVid.currentTime = 0; } catch(e) {}
-        const p = explosionVid.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      };
-
-      if (explosionVid.readyState >= 2) start();
-      else explosionVid.addEventListener('canplay', start, { once: true });
-    }
-
-    /* Marbotic herkenning */
-    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
-
-    let calibration = null;
-    let classificationStats = null;
-    let expectedTouchPoints = 3;
-
-    function initCalibration(calibrationData) {
-      if (!calibrationData || typeof calibrationData !== "object") {
-        calibration = null;
-        classificationStats = null;
-        expectedTouchPoints = 3;
-        return;
-      }
-
-      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
-        ? calibrationData.expectedTouchPoints
-        : 3;
-
-      calibration = buildCalibrationFromData(calibrationData);
-      recomputeClassificationStats();
-    }
-
-    function buildCalibrationFromData(data) {
-      const obj = {};
-      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
-
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = data[String(d)];
-        if (!entry || !Array.isArray(entry.samples)) return;
-
-        entry.samples.forEach(function (s) {
-          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
-          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
-          const features = computeFeatures(pts);
-          obj[String(d)].samples.push({ points: pts, features });
-        });
-      });
-
-      return obj;
-    }
-
-    function computeFeatures(points) {
-      if (!points || points.length !== 3) return { vector: [0,0,0] };
-
-      const p0 = points[0], p1 = points[1], p2 = points[2];
-      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
-
-      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
-
-      let maxDist = 0;
-      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
-      if (maxDist < 1e-6) maxDist = 1;
-
-      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
-
-      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
-
-      const L01 = dist(isoPoints[0], isoPoints[1]);
-      const L12 = dist(isoPoints[1], isoPoints[2]);
-      const L20 = dist(isoPoints[2], isoPoints[0]);
-
-      const sides = [
-        { len: L01, i: 0, j: 1 },
-        { len: L12, i: 1, j: 2 },
-        { len: L20, i: 2, j: 0 }
-      ];
-      const maxSideLen = Math.max(L01, L12, L20) || 1;
-      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
-
-      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
-      const A = isoPoints[largest.i];
-      const B = isoPoints[largest.j];
-      const CIndex = 3 - largest.i - largest.j;
-      const C = isoPoints[CIndex];
-
-      const orientationVal = (a,b,c) => {
-        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
-        return v > 0 ? 1 : v < 0 ? -1 : 0;
-      };
-      const orientation = orientationVal(A,B,C);
-
-      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
-      const denom = 2 * AC * BC;
-      let cosAngle = 0;
-      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
-
-      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
-      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
-      let width = maxX-minX, height = maxY-minY;
-      if (width < 1e-6) width = 1;
-      if (height < 1e-6) height = 1;
-
-      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
-      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
-      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
-      const aspect = height / (width + height);
-
-      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
-      return { vector };
-    }
-
-    function buildFeatureVector(f) {
-      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
-      return [
-        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
-        f.cosAngle*wCos, f.orientation*wOrient,
-        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
-        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
-        f.aspect*wAspect
-      ];
-    }
-
-    function vectorDistance(a, b) {
-      if (!a || !b || a.length !== b.length) return Infinity;
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
-      return Math.sqrt(sum);
-    }
-
-    function recomputeClassificationStats() {
-      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
-
-      const allSamples = [];
-      DIGIT_ORDER.forEach(d => {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
-      });
-
-      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
-
-      const sameMin = [];
-      const betweenMin = [];
-
-      for (let i = 0; i < allSamples.length; i++) {
-        const a = allSamples[i];
-        let minSame = Infinity, minOther = Infinity;
-        for (let j = 0; j < allSamples.length; j++) {
-          if (i === j) continue;
-          const b = allSamples[j];
-          const dist = vectorDistance(a.vector, b.vector);
-          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
-          else minOther = Math.min(minOther, dist);
-        }
-        if (minSame < Infinity) sameMin.push(minSame);
-        if (minOther < Infinity) betweenMin.push(minOther);
-      }
-
-      const maxSame = Math.max.apply(null, sameMin);
-      const minBetween = Math.min.apply(null, betweenMin);
-
-      let thresholdBase;
-      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
-      else thresholdBase = maxSame * 1.3;
-
-      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
-    }
-
-    function recognizeDigit(points) {
-      if (!calibration || !classificationStats) return null;
-      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
-
-      const vec = computeFeatures(points).vector;
-      if (!vec) return null;
-
-      let bestDigit = null;
-      let bestDist = Infinity;
-
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        const samples = entry.samples || [];
-        for (let i = 0; i < samples.length; i++) {
-          const dist = vectorDistance(vec, samples[i].features.vector);
-          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
-        }
-      });
-
-      if (bestDigit === null) return null;
-      if (bestDist > classificationStats.thresholdUnknown) return null;
-      if (bestDist > classificationStats.thresholdBase) return null;
-      return bestDigit;
-    }
-
-    /* Spel */
-    let started = false;
-    let locked = false;
-    let targetDigit = 0;
-
-    let currentPoints = [];
-    let hasResultForCurrentTouches = false;
-
-    let explosionTimerPlay = null;
-
-    function clearExplosionTimers(){
-      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
-    }
-
-    function wrongFeedback(){
-      scanArea.classList.remove('wrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('wrong');
-      setTimeout(() => scanArea.classList.remove('wrong'), 260);
-
-      scanArea.classList.remove('flashWrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('flashWrong');
-      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
-    }
-
-    function chooseNextDigit(){
-      const prev = targetDigit;
-      let next = Math.floor(Math.random() * 10);
-      if (next === prev) next = (next + 1) % 10;
-      targetDigit = next;
-    }
-
-    function clearDigitAndExplosion(){
-      clearExplosionTimers();
-      stage.classList.remove('play');
-
-      digitImg.style.opacity = '0';
-      digitImg.removeAttribute('src');
-      digitImg.alt = '';
-
-      resetExplosion();
-    }
-
-    function scheduleExplosionFlow(){
-      clearExplosionTimers();
-
-      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-      const startMs = Math.max(0, digitDelayMs + startDelayMs);
-
-      explosionTimerPlay = setTimeout(() => {
-        playExplosionNow();
-      }, startMs);
-    }
-
-    function estimateExplosionTotalMs(){
-      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-      const startMs = Math.max(0, digitDelayMs + startDelayMs);
-
-      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
-
-      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
-      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
-
-      return startMs + playMs + fadeOutMs + 200;
-    }
-
-    function applyPresetForDigit(digit){
-      const p = MARBOTIC_PRESETS[digit] || MARBOTIC_PRESETS[0];
-
-      document.documentElement.style.setProperty('--digit-left', p.xPct + '%');
-      document.documentElement.style.setProperty('--digit-top', p.yPct + '%');
-      document.documentElement.style.setProperty('--cijfertoon-delay', p.start + 's');
-      document.documentElement.style.setProperty('--fade-duration', p.fadeIn + 's');
-    }
-
-    function playSuccessAnimation(digit){
-      clearDigitAndExplosion();
-
-      applyPresetForDigit(digit);
-
-      digitImg.src = ASSET_DIGIT(digit);
-      digitImg.alt = String(digit);
-
-      void stage.offsetHeight;
-      stage.classList.add('play');
-
-      showIdleFairy();
-      playFairyOnce(fairyVid, FAIRY_SPEED, () => showIdleFairy());
-
-      scheduleExplosionFlow();
-    }
-
-    function playWrongAnimation(){
-      clearDigitAndExplosion();
-
-      showNoFairy();
-      playFairyOnce(fairyNoVid, FAIRY_NO_SPEED, () => showIdleFairy());
-    }
-
-    function nextRound(){
-      locked = false;
-      clearDigitAndExplosion();
-
-      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-      scanSub.textContent = 'Alle puntjes in het vak.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-
-      chooseNextDigit();
-      speakDigit(targetDigit);
-    }
-
-    function handleRecognitionResult(recognizedDigit){
-      if (recognizedDigit == null) return;
-      if (!started || locked) return;
-
-      if (recognizedDigit === targetDigit){
-        locked = true;
-
-        scanTitle.textContent = 'Goed gedaan.';
-        scanSub.textContent = '';
-        scanHint.textContent = '';
-
-        playSfx(goodAudio);
-        playSuccessAnimation(recognizedDigit);
-
-        const waitMs = Math.max(1800, estimateExplosionTotalMs());
-        setTimeout(() => { nextRound(); }, waitMs);
-      } else {
-        wrongFeedback();
-        playSfx(wrongAudio);
-        playWrongAnimation();
-      }
-    }
-
-    function getPointsFromTouches(touchList) {
-      const rect = scanArea.getBoundingClientRect();
-      const points = [];
-      for (let i = 0; i < touchList.length; i++) {
-        const t = touchList[i];
-        const x = t.clientX;
-        const y = t.clientY;
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-          points.push({ x, y });
-        }
-      }
-      return points;
-    }
-
-    function handleTouchEvent(e){
-      if (!calibration || !classificationStats) return;
-
-      const touches = e.touches || [];
-      currentPoints = getPointsFromTouches(touches);
-
-      if (currentPoints.length === 0){
-        hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-        scanSub.textContent = 'Alle puntjes in het vak.';
-        scanHint.textContent = '📱 Blokje stil laten liggen';
-        return;
-      }
-
-      if (currentPoints.length !== expectedTouchPoints){
-        hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Even stil houden.';
-        scanSub.textContent = 'We lezen de puntjes.';
-        scanHint.textContent = '';
-        return;
-      }
-
-      scanTitle.textContent = 'Even stil houden.';
-      scanSub.textContent = 'We lezen de puntjes.';
-      scanHint.textContent = '';
-
-      if (!hasResultForCurrentTouches && !locked){
-        const digit = recognizeDigit(currentPoints);
-        if (digit !== null && typeof digit === "number"){
-          hasResultForCurrentTouches = true;
-          handleRecognitionResult(digit);
-        }
-      }
-    }
-
-    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
-      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
-    });
-
-    /* Spraak, iOS robuust */
-    let selectedVoice = null;
-    function pickDutchVoice(){
-      if (!('speechSynthesis' in window)) return;
-      const voices = window.speechSynthesis.getVoices() || [];
-      const nl = voices.filter(v => (v.lang || '').toLowerCase().startsWith('nl'));
-      selectedVoice = nl.find(v => (v.lang || '').toLowerCase() === 'nl-nl') || nl[0] || null;
-    }
-    if ('speechSynthesis' in window){
-      pickDutchVoice();
-      window.speechSynthesis.onvoiceschanged = () => pickDutchVoice();
-    }
-
-    let speakToken = 0;
-    function speakDigit(digit){
-      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
-      if (!('speechSynthesis' in window)) return;
-
-      const myToken = ++speakToken;
-
-      const doSpeak = () => {
-        if (myToken !== speakToken) return;
-
-        try { window.speechSynthesis.resume(); } catch(e) {}
-
-        const u = new SpeechSynthesisUtterance('\u200B' + word);
-        u.lang = 'nl-NL';
-        if (selectedVoice) u.voice = selectedVoice;
-        u.rate = 0.92;
-        u.pitch = 1.05;
-        u.volume = 1;
-
-        try { window.speechSynthesis.speak(u); } catch(e) {}
-
-        setTimeout(() => {
-          if (myToken !== speakToken) return;
-          try { window.speechSynthesis.resume(); } catch(e) {}
-        }, 140);
-      };
-
-      try{
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending){
-          window.speechSynthesis.cancel();
-          setTimeout(doSpeak, 260);
-        } else {
-          setTimeout(doSpeak, 90);
-        }
-      } catch(e){
-        setTimeout(doSpeak, 220);
-      }
-    }
-
-    /* Start */
-    function startGame(){
-      if (started) return;
-      started = true;
-      startOverlay.style.display = 'none';
-
-      pickDutchVoice();
-      setTimeout(() => pickDutchVoice(), 250);
-
-      try{
-        goodAudio.load();
-        wrongAudio.load();
-      } catch(e){}
-
-      warmUpVideo(explosionVid);
-
-      warmUpVideo(fairyVid).then(() => freezeFirstFrame(fairyVid));
-      warmUpVideo(fairyNoVid).then(() => freezeFirstFrame(fairyNoVid));
-
-      showIdleFairy();
-      nextRound();
-    }
-
-    speakBtn.addEventListener('click', () => {
-      if (!started) startGame();
-      else speakDigit(targetDigit);
-    });
-
-    startBtn.addEventListener('click', startGame);
-    startOverlay.addEventListener('click', (e) => {
-      if (e.target === startOverlay) startGame();
-    });
-
-    homeBtn.addEventListener('click', () => {
-      try { window.location.href = 'index.html'; } catch (e) {}
-    });
-
-    window.addEventListener('load', () => {
-      setAutoScale();
-
-      prepFairyVideo(fairyVid, FAIRY_SRC);
-      prepFairyVideo(fairyNoVid, FAIRY_NO_SRC);
-      showIdleFairy();
-
-      prepareExplosion();
-      clearDigitAndExplosion();
-
-      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-      scanSub.textContent = 'Alle puntjes in het vak.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-
-      fetch('calibration.json', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => initCalibration(data))
-        .catch(() => { });
-    });
-  </script>
 </body>
 </html>
