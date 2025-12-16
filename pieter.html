@@ -1,1280 +1,1209 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Spring naar het volgende getal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Pak het juiste cijfer</title>
+
   <style>
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+    :root{
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --text:#6f6b68;
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #8ec5fc;
-  -webkit-font-smoothing: antialiased;
-}
+      --dash-w:4px;
+      --card-radius:28px;
 
-body {
-  touch-action: none;
-}
+      --scale: 1;
 
-.game-wrapper {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(180deg, #8ec5fc 0%, #e0c3fc 40%, #fdfbfb 100%);
-}
+      --fairy-left: 33%;
+      --fairy-top: 51%;
 
-.game-header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.7rem 1rem 0.4rem;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
-}
+      --digit-left: 68.5%;
+      --digit-top: 58%;
 
-.game-header .title {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
+      --explosion-left: 71%;
+      --explosion-top: 43%;
 
-.game-header .score {
-  font-size: 1rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.18);
-}
+      --fairy-size-base: 439px;
+      --digit-size-base: 260px;
 
-.game-main {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  padding: 0 0.6rem 0.8rem;
-  gap: 0.4rem;
-}
+      --digit-size: clamp(140px, calc(var(--digit-size-base) * var(--scale)), 340px);
+      --fairy-size: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
 
-#gameArea {
-  flex: 1 1 auto;
-  border-radius: 1.2rem;
-  overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-  background: transparent;
-}
+      --fade-duration: 1.45s;
+      --cijfertoon-delay: 1.05s;
 
-#gameCanvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  touch-action: none;
-}
+      --explosion-start-delay: 0s;
+      --explosion-scale: 1.5;
+      --explosion-fade-in: 0.55s;
+      --explosion-fadeout: 200ms;
 
-#uiArea {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding-top: 0.2rem;
-}
+      --explosion-offset-y-base: 0px;
+      --explosion-offset-mult: 0.65;
+      --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
 
-.question-panel {
-  background: rgba(255,255,255,0.92);
-  border-radius: 1.1rem;
-  padding: 0.4rem 0.7rem 0.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
+      --explosion-offset-x-base: 200px;
+      --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
-.question-panel.hidden {
-  display: none;
-}
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
 
-.question-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-}
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
 
-.question-label {
-  font-size: 0.75rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #888;
-}
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overflow:hidden;
+    }
 
-.question-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
+    body{
+      display:grid;
+      grid-template-columns: 58fr 42fr;
+      height: 100%;
+    }
 
-.big-number {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #333;
-}
+    @media (orientation: portrait){
+      body{
+        grid-template-columns: 1fr;
+        grid-template-rows: 54fr 46fr;
+      }
+    }
 
-.big-question {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ff6b6b;
-}
+    .left{
+      background: var(--bg-left);
+      padding: 28px 26px 22px 26px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+    }
 
-.question-row .arrow {
-  font-size: 1.4rem;
-}
+    .scan-surface{
+      background:#ffffff;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+      transition: background 120ms ease;
+    }
 
-.question-hint {
-  font-size: 0.75rem;
-  color: #888;
-}
+    @media (orientation: landscape){
+      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
+    }
+    @media (orientation: portrait){
+      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
+      .left{ padding: 22px; gap: 16px; }
+    }
 
-.scan-zone {
-  position: relative;
-  border-radius: 1.3rem;
-  border: 3px solid rgba(255,255,255,0.7);
-  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-  padding: 0.35rem 0.6rem;
-  touch-action: none;
-}
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap: 18px;
+      flex: 0 0 auto;
+    }
 
-.scan-inner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
+    .homeBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+    .homeBtn:active{ transform: scale(0.98); }
+    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
 
-.scan-icon {
-  font-size: 1.4rem;
-}
+    .titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.1vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 64px;
+      width: min(660px, 100%);
+    }
 
-.scan-message {
-  font-size: 0.85rem;
-  color: #555;
-}
+    .content{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+      min-height: 0;
+    }
 
-/* Scan status kleuren */
-.scan-zone.status-neutral {
-  border-color: rgba(255,255,255,0.85);
-}
+    .gameCard{
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
+      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      position:relative;
+      overflow: visible;
+    }
 
-.scan-zone.status-scanning {
-  border-color: #f2c14f;
-  box-shadow: 0 0 12px rgba(242,193,79,0.9);
-}
+    @media (orientation: portrait){
+      .gameCard{ height: min(420px, 34vh); }
+    }
 
-.scan-zone.status-correct {
-  border-color: #35c27c;
-  box-shadow: 0 0 14px rgba(53,194,124,0.9);
-}
+    .cardInner{
+      position:absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+    }
 
-.scan-zone.status-wrong {
-  border-color: #ff6b6b;
-  box-shadow: 0 0 14px rgba(255,107,107,0.9);
-}
+    .speakBtn{
+      position:absolute;
+      right: 14px;
+      top: 14px;
+      width: calc(108px * var(--scale));
+      height: calc(108px * var(--scale));
+      border-radius: 999px;
+      border: 4px solid rgba(245,180,152,0.95);
+      background: var(--bg-left);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      z-index: 60;
+      padding: 0;
+    }
+    .speakBtn:active{ transform: scale(0.98); }
+    .speakBtn img{
+      width: calc(62px * var(--scale));
+      height: calc(62px * var(--scale));
+      object-fit: contain;
+      display:block;
+    }
 
-.controls-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1.2rem;
-}
+    .stage{
+      position:absolute;
+      inset: 0;
+      overflow: hidden;
+    }
 
-.control-btn {
-  flex: 1 1 0;
-  padding: 0.55rem 0;
-  border-radius: 999px;
-  border: none;
-  font-size: 1.6rem;
-  background: rgba(255,255,255,0.96);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: manipulation;
-}
+    .stage img,
+    .stage video{
+      position:absolute;
+      height:auto;
+      display:block;
+      pointer-events:none;
+      transform: translate(-50%, -50%);
+    }
 
-.control-btn:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-}
+    #explosionWrap{ z-index: 0; }
+    #fairyVid{ z-index: 1; }
+    #digitImg{ z-index: 2; }
 
-.fullscreen-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.9), rgba(233,248,255,0.9));
-}
+    #fairyVid{
+      left: var(--fairy-left);
+      top: var(--fairy-top);
+      width: var(--fairy-size);
+      opacity: 1;
+    }
 
-.overlay-card {
-  background: rgba(255,255,255,0.97);
-  padding: 1rem 1.4rem;
-  border-radius: 1.4rem;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-}
+    #explosionWrap{
+      position:absolute;
+      left: var(--explosion-left);
+      top: var(--explosion-top);
+      width: calc(var(--digit-size) * var(--explosion-scale));
+      opacity: 0;
+      pointer-events:none;
+      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y));
+    }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: 3px solid rgba(0,0,0,0.08);
-  border-top-color: #4facfe;
-  animation: spin 1s linear infinite;
-}
+    #explosionVid{
+      width: 100%;
+      height: auto;
+      display:block;
+      background: transparent;
+    }
 
-.overlay-text {
-  font-size: 0.9rem;
-  color: #555;
-}
+    #digitImg{
+      left: var(--digit-left);
+      top: var(--digit-top);
+      width: var(--digit-size);
+      opacity: 0;
+    }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+    .stage.play #digitImg{
+      animation: appear var(--fade-duration) ease forwards;
+      animation-delay: var(--cijfertoon-delay);
+    }
 
-/* Klein scherm-finetuning */
-@media (max-width: 768px) {
-  .game-header .title {
-    font-size: 1rem;
-  }
-  .question-hint {
-    font-size: 0.7rem;
-  }
-  .scan-message {
-    font-size: 0.8rem;
-  }
-}
+    @keyframes appear{
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @media (orientation: portrait){
+      #fairyVid{
+        top: auto;
+        bottom: 0;
+        left: var(--fairy-left);
+        width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+      }
+    }
+
+    @media (orientation: landscape){
+      :root{
+        --fairy-left: 26%;
+        --explosion-offset-mult: 0.75;
+        --explosion-offset-x-base: 200px;
+        --explosion-offset-y-base: 150px;
+      }
+
+      #fairyVid{
+        top: auto;
+        bottom: 0;
+        left: var(--fairy-left);
+        width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+      }
+
+      #digitImg{
+        width: clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px);
+      }
+
+      #explosionWrap{
+        width: calc(clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px) * var(--explosion-scale));
+      }
+    }
+
+    .scanOverlay{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+      pointer-events:none;
+    }
+
+    .scanUI{
+      width: min(520px, 92%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 14px;
+      text-align:center;
+      transform: translateY(-8px);
+    }
+
+    .miniTile{
+      width: 66px;
+      height: 66px;
+      border-radius: 10px;
+      background: #78abff;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      color:#fff;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      place-items:center;
+    }
+
+    .scanTitle{
+      font-size: clamp(22px, 2vw, 34px);
+      font-weight: 800;
+      color: #7b7876;
+      margin-top: 6px;
+    }
+
+    .scanSub{
+      font-size: clamp(16px, 1.3vw, 20px);
+      color: rgba(123,120,118,0.75);
+      margin-top: -4px;
+    }
+
+    .scanHint{
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 10px;
+    }
+
+    .scan-surface.wrong{ animation: wiggle 220ms ease; }
+
+    /* Extra fout flits, pastel lichtrood */
+    .scan-surface.flashWrong{
+      animation: flashWrong 260ms ease;
+    }
+    @keyframes flashWrong{
+      0%{ background:#ffffff; }
+      40%{ background:#fde1e1; }
+      100%{ background:#ffffff; }
+    }
+
+    @keyframes wiggle{
+      0%{ transform: translateX(0); }
+      28%{ transform: translateX(-6px); }
+      58%{ transform: translateX(5px); }
+      100%{ transform: translateX(0); }
+    }
+
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.55);
+      backdrop-filter: blur(2px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index: 999;
+      padding: 24px;
+    }
+
+    .startCard{
+      width: min(560px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align:center;
+    }
+
+    .startCard h1{
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #4d4a48;
+    }
+
+    .startCard p{
+      margin: 0 0 16px 0;
+      color: rgba(77,74,72,0.82);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .startBtn{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 800;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+    }
+    .startBtn:active{ transform: scale(0.99); }
   </style>
 </head>
+
 <body>
-  <div class="game-wrapper">
-    <div id="loadingOverlay" class="fullscreen-overlay">
-      <div class="overlay-card">
-        <div class="spinner"></div>
-        <div class="overlay-text">Scanvak klaarzetten...</div>
-      </div>
+  <section class="left" aria-label="Spel">
+    <div class="topbar">
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
+        <img src="home.png" alt="Home" />
+      </button>
+      <div class="titlePill">pak het juiste cijfer</div>
     </div>
 
-    <header class="game-header">
-      <div class="title">Spring naar het volgende getal</div>
-      <div class="score">⭐ <span id="scoreValue">0</span></div>
-    </header>
+    <div class="content">
+      <div class="gameCard" id="gameCard" aria-label="Toverkaart">
+        <button class="speakBtn" id="speakBtn" aria-label="Nog een keer luisteren">
+          <img src="spreekknop.png" alt="Spreek" />
+        </button>
 
-    <main class="game-main">
-      <div id="gameArea">
-        <canvas id="gameCanvas"></canvas>
-      </div>
-
-      <div id="uiArea">
-        <div id="questionPanel" class="question-panel hidden">
-          <div class="question-main">
-            <span class="question-label">Volgende cijfer</span>
-            <div class="question-row">
-              <span id="questionDigit" class="big-number">6</span>
-              <span class="arrow">➜</span>
-              <span class="big-question">?</span>
+        <div class="cardInner">
+          <div class="stage" id="stage">
+            <div id="explosionWrap" aria-hidden="true">
+              <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
             </div>
-          </div>
-          <div class="question-hint">Leg het volgende cijfer in het scanvak.</div>
-        </div>
 
-        <div id="scanZone" class="scan-zone status-neutral">
-          <div class="scan-inner">
-            <div class="scan-icon">🔢</div>
-            <div id="scanMessage" class="scan-message">Leg je cijfer hier</div>
+            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
+            <img id="digitImg" alt="" />
           </div>
-        </div>
-
-        <div class="controls-row">
-          <button id="leftBtn" class="control-btn">◀</button>
-          <button id="rightBtn" class="control-btn">▶</button>
         </div>
       </div>
-    </main>
+    </div>
+  </section>
+
+  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+    <div class="scanOverlay">
+      <div class="scanUI">
+        <div class="miniTile" aria-hidden="true">
+          <div>1</div><div>2</div><div>3</div><div>4</div>
+        </div>
+
+        <div class="scanTitle" id="scan-title">Leg het houten cijfer in het vak.</div>
+        <div class="scanSub" id="scan-sub">Alle puntjes in het vak.</div>
+        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <h1>Tik om te starten</h1>
+      <p>Je hoort een cijfer, leg dat cijfer in het scanvlak. Met de spreekknop hoor je het nog eens.</p>
+      <button class="startBtn" id="startBtn">Start</button>
+    </div>
   </div>
 
   <script>
-const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    /*
+      Bestanden in dezelfde map:
+      calibration.json
+      marbotic0.png tot en met marbotic9.png
+      toverfee.mp4
+      toverfee_nee.mp4
+      explosie.mp4
+      goed.mp3
+      fout.mp3
+      home.png
+      spreekknop.png
+    */
 
-let calibration = null;            // gevulde kalibratie op basis van calibration.json
-let classificationStats = null;    // drempelwaarden voor herkenning
-let expectedTouchPoints = 3;       // standaard drie contactpunten
+    const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
+    const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
-/**
- * Aanroep na het laden van calibration.json
- * 
- * Voorbeeld:
- * fetch("calibration.json")
- *   .then(r => r.json())
- *   .then(data => initCalibration(data));
- */
-function initCalibration(calibrationData) {
-  if (!calibrationData || typeof calibrationData !== "object") {
-    calibration = null;
-    classificationStats = null;
-    expectedTouchPoints = 3;
-    return;
-  }
+    const FAIRY_SRC = 'toverfee.mp4';
+    const FAIRY_NO_SRC = 'toverfee_nee.mp4';
+    const EXPLOSION_SRC = 'explosie.mp4';
 
-  if (typeof calibrationData.expectedTouchPoints === "number") {
-    expectedTouchPoints = calibrationData.expectedTouchPoints;
-  } else {
-    expectedTouchPoints = 3;
-  }
+    const GOOD_SOUND_SRC = 'goed.mp3';
+    const WRONG_SOUND_SRC = 'fout.mp3';
 
-  calibration = buildCalibrationFromData(calibrationData);
-  recomputeClassificationStats();
-}
+    const FAIRY_SPEED = 1.00;
+    const FAIRY_NO_SPEED = 1.00;
+    const EXPLOSION_SPEED = 2.65;
 
-/**
- * Zet de ruwe JSON structuur om in een intern calibration object
- * met per sample vooraf berekende features.
- *
- * Verwachte JSON vorm:
- * {
- *   "expectedTouchPoints": 3,
- *   "0": { "digit": 0, "samples": [ { "points": [ {x,y}, {x,y}, {x,y} ] }, ... ] },
- *   "1": { ... },
- *   ...
- *   "9": { ... }
- * }
- */
-function buildCalibrationFromData(data) {
-  const obj = {};
-
-  // basisstructuur
-  DIGIT_ORDER.forEach(function (d) {
-    obj[String(d)] = {
-      digit: d,
-      samples: []
+    const MARBOTIC_PRESETS = {
+      0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
+      1: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      2: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      3: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      4: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      5: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      6: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      7: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      8: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      9: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 }
     };
-  });
 
-  // samples per cijfer inlezen
-  DIGIT_ORDER.forEach(function (d) {
-    const key = String(d);
-    const entry = data[key];
-    if (!entry || !Array.isArray(entry.samples)) return;
+    const gameCard = document.getElementById('gameCard');
+    const stage = document.getElementById('stage');
+    const digitImg = document.getElementById('digitImg');
+    const fairyVid = document.getElementById('fairyVid');
 
-    entry.samples.forEach(function (s) {
-      if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+    const explosionWrap = document.getElementById('explosionWrap');
+    const explosionVid = document.getElementById('explosionVid');
 
-      const pts = s.points.map(function (p) {
-        return { x: Number(p.x), y: Number(p.y) };
-      });
+    const speakBtn = document.getElementById('speakBtn');
+    const homeBtn = document.getElementById('homeBtn');
 
-      const features = computeFeatures(pts);
-      obj[key].samples.push({
-        points: pts,
-        features: features
-      });
-    });
-  });
+    const scanArea = document.getElementById('scan-area');
+    const scanTitle = document.getElementById('scan-title');
+    const scanSub = document.getElementById('scan-sub');
+    const scanHint = document.getElementById('scan-hint');
 
-  return obj;
-}
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
 
-/**
- * Berekent kenmerken uit drie punten:
- * driehoeksverhoudingen, oriëntatie, hoek, genormeerde posities en aspect ratio.
- * Levert ook een gewogen featurevector op voor afstandsvergelijking.
- */
-function computeFeatures(points) {
-  if (!points || points.length !== 3) {
-    return {
-      sides: [0, 0, 0],
-      orientation: 0,
-      cosAngle: 0,
-      centroid: { x: 0, y: 0 },
-      yNorm: [0, 0, 0],
-      xPattern: [0, 0, 0],
-      aspect: 0,
-      vector: [0, 0, 0]
-    };
-  }
+    function setAutoScale(){
+      if (!gameCard) return;
+      const r = gameCard.getBoundingClientRect();
 
-  const p0 = points[0];
-  const p1 = points[1];
-  const p2 = points[2];
+      const baseW = 980;
+      const baseH = 520;
+      const pad = 18;
 
-  const centroidRaw = {
-    x: (p0.x + p1.x + p2.x) / 3,
-    y: (p0.y + p1.y + p2.y) / 3
-  };
+      const sW = Math.max(0.1, (r.width  - pad) / baseW);
+      const sH = Math.max(0.1, (r.height - pad) / baseH);
 
-  // isoPoints zijn punten rond de oorsprong, geschaald op max afstand
-  const isoPoints = [p0, p1, p2].map(function (p) {
-    const dx = p.x - centroidRaw.x;
-    const dy = p.y - centroidRaw.y;
-    return { x: dx, y: dy };
-  });
-
-  let maxDist = 0;
-  for (let i = 0; i < isoPoints.length; i++) {
-    const q = isoPoints[i];
-    const d = Math.sqrt(q.x * q.x + q.y * q.y);
-    if (d > maxDist) maxDist = d;
-  }
-  if (maxDist < 1e-6) maxDist = 1;
-
-  for (let i = 0; i < isoPoints.length; i++) {
-    isoPoints[i].x /= maxDist;
-    isoPoints[i].y /= maxDist;
-  }
-
-  function dist(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-
-  const L01 = dist(isoPoints[0], isoPoints[1]);
-  const L12 = dist(isoPoints[1], isoPoints[2]);
-  const L20 = dist(isoPoints[2], isoPoints[0]);
-
-  // zijden, klein naar groot, genormeerd op de langste zijde
-  const sides = [
-    { len: L01, i: 0, j: 1 },
-    { len: L12, i: 1, j: 2 },
-    { len: L20, i: 2, j: 0 }
-  ];
-  const maxSideLen = Math.max(L01, L12, L20) || 1;
-  const sidesNormSorted = sides
-    .slice()
-    .sort(function (a, b) {
-      return a.len - b.len;
-    })
-    .map(function (s) {
-      return s.len / maxSideLen;
-    });
-
-  // grootste zijde vinden om oriëntatie en hoek te bepalen
-  const largest = sides
-    .slice()
-    .sort(function (a, b) {
-      return a.len - b.len;
-    })[2];
-
-  const A = isoPoints[largest.i];
-  const B = isoPoints[largest.j];
-  const CIndex = 3 - largest.i - largest.j;
-  const C = isoPoints[CIndex];
-
-  function orientationVal(a, b, c) {
-    const value =
-      (b.x - a.x) * (c.y - a.y) -
-      (b.y - a.y) * (c.x - a.x);
-    if (value > 0) return 1;
-    if (value < 0) return -1;
-    return 0;
-  }
-
-  const orientation = orientationVal(A, B, C);
-
-  // hoek bij punt C via cosinusregel
-  const AC = dist(A, C);
-  const BC = dist(B, C);
-  const AB = largest.len;
-  const AC2 = AC * AC;
-  const BC2 = BC * BC;
-  const AB2 = AB * AB;
-  let cosAngle = 0;
-  const denom = 2 * AC * BC;
-  if (denom > 1e-6) {
-    cosAngle = (AC2 + BC2 - AB2) / denom;
-  }
-
-  // bounding box van de drie punten in het echte scherm
-  let minX = Math.min(p0.x, p1.x, p2.x);
-  let maxX = Math.max(p0.x, p1.x, p2.x);
-  let minY = Math.min(p0.y, p1.y, p2.y);
-  let maxY = Math.max(p0.y, p1.y, p2.y);
-  let width = maxX - minX;
-  let height = maxY - minY;
-  if (width < 1e-6) width = 1;
-  if (height < 1e-6) height = 1;
-
-  // genormeerde y posities, gesorteerd
-  const yNormVals = [p0, p1, p2]
-    .map(function (p) {
-      return (p.y - minY) / height;
-    })
-    .sort(function (a, b) {
-      return a - b;
-    });
-
-  // x patroon, gesorteerd op y van boven naar beneden
-  const pointsWithIndex = [
-    { p: p0, idx: 0 },
-    { p: p1, idx: 1 },
-    { p: p2, idx: 2 }
-  ].sort(function (a, b) {
-    return a.p.y - b.p.y;
-  });
-
-  const xPattern = pointsWithIndex.map(function (item) {
-    return (item.p.x - minX) / width;
-  });
-
-  const aspect = height / (width + height);
-
-  const centroidBox = {
-    x: (centroidRaw.x - minX) / width,
-    y: (centroidRaw.y - minY) / height
-  };
-
-  const vector = buildFeatureVector({
-    sides: sidesNormSorted,
-    orientation: orientation,
-    cosAngle: cosAngle,
-    centroid: centroidBox,
-    yNorm: yNormVals,
-    xPattern: xPattern,
-    aspect: aspect
-  });
-
-  return {
-    sides: sidesNormSorted,
-    orientation: orientation,
-    cosAngle: cosAngle,
-    centroid: centroidBox,
-    yNorm: yNormVals,
-    xPattern: xPattern,
-    aspect: aspect,
-    vector: vector
-  };
-}
-
-/**
- * Bouwt een gewogen featurevector op
- * door verschillende aspecten van het patroon te schalen.
- */
-function buildFeatureVector(f) {
-  const wSides = 3.0;
-  const wCos = 4.0;
-  const wOrient = 2.0;
-  const wY = 3.0;
-  const wX = 2.0;
-  const wAspect = 2.0;
-
-  const v = [];
-  v.push(f.sides[0] * wSides);
-  v.push(f.sides[1] * wSides);
-  v.push(f.sides[2] * wSides);
-
-  v.push(f.cosAngle * wCos);
-  v.push(f.orientation * wOrient);
-
-  v.push(f.yNorm[0] * wY);
-  v.push(f.yNorm[1] * wY);
-  v.push(f.yNorm[2] * wY);
-
-  v.push(f.xPattern[0] * wX);
-  v.push(f.xPattern[1] * wX);
-  v.push(f.xPattern[2] * wX);
-
-  v.push(f.aspect * wAspect);
-
-  return v;
-}
-
-/**
- * Euclidische afstand tussen twee featurevectoren.
- */
-function vectorDistance(a, b) {
-  if (!a || !b || a.length !== b.length) return Infinity;
-  let sum = 0;
-  for (let i = 0; i < a.length; i++) {
-    const diff = a[i] - b[i];
-    sum += diff * diff;
-  }
-  return Math.sqrt(sum);
-}
-
-/**
- * Berekent drempels op basis van de kalibratiesamples.
- * thresholdBase: grens tussen zeker en twijfelachtig
- * thresholdUnknown: grens waarboven een meting als onbekend geldt
- */
-function recomputeClassificationStats() {
-  if (!calibration) {
-    classificationStats = {
-      thresholdBase: 0.8,
-      thresholdUnknown: 1.5
-    };
-    return;
-  }
-
-  const allSamples = [];
-  DIGIT_ORDER.forEach(function (d) {
-    const key = String(d);
-    if (!calibration[key]) return;
-    const samples = calibration[key].samples || [];
-    samples.forEach(function (s) {
-      allSamples.push({ digit: d, features: s.features });
-    });
-  });
-
-  if (allSamples.length < 2) {
-    classificationStats = {
-      thresholdBase: 0.6,
-      thresholdUnknown: 1.0
-    };
-    return;
-  }
-
-  const sameMinDistances = [];
-  const betweenMinDistances = [];
-
-  for (let i = 0; i < allSamples.length; i++) {
-    const a = allSamples[i];
-    const vecA = a.features.vector;
-    let minSame = Infinity;
-    let minOther = Infinity;
-
-    for (let j = 0; j < allSamples.length; j++) {
-      if (i === j) continue;
-      const b = allSamples[j];
-      const vecB = b.features.vector;
-      const dist = vectorDistance(vecA, vecB);
-
-      if (a.digit === b.digit) {
-        if (dist < minSame) minSame = dist;
-      } else {
-        if (dist < minOther) minOther = dist;
-      }
+      let s = Math.min(sW, sH);
+      s = Math.max(0.55, Math.min(1.05, s));
+      document.documentElement.style.setProperty('--scale', String(s));
     }
 
-    if (minSame < Infinity) sameMinDistances.push(minSame);
-    if (minOther < Infinity) betweenMinDistances.push(minOther);
-  }
+    window.addEventListener('resize', setAutoScale);
+    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
 
-  if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
-    classificationStats = {
-      thresholdBase: 0.7,
-      thresholdUnknown: 1.2
-    };
-    return;
-  }
-
-  const maxSame = Math.max.apply(null, sameMinDistances);
-  const minBetween = Math.min.apply(null, betweenMinDistances);
-
-  let thresholdBase;
-  if (minBetween > maxSame) {
-    thresholdBase = (maxSame + minBetween) / 2;
-  } else {
-    thresholdBase = maxSame * 1.3;
-  }
-  const thresholdUnknown = thresholdBase * 1.5;
-
-  classificationStats = {
-    thresholdBase: thresholdBase,
-    thresholdUnknown: thresholdUnknown,
-    maxSame: maxSame,
-    minBetween: minBetween
-  };
-}
-
-/**
- * Classificeert een meting op basis van de featurevector
- * en de kalibratiegegevens.
- */
-function classifyMeasurement(features) {
-  const vec = features.vector;
-  if (!vec || !calibration) {
-    return {
-      digit: null,
-      bestDist: null,
-      certainty: "onbekend",
-      isUnknown: true,
-      topMatches: []
-    };
-  }
-
-  const bestPerDigit = {};
-  DIGIT_ORDER.forEach(function (d) {
-    bestPerDigit[d] = Infinity;
-  });
-
-  let bestDigit = null;
-  let bestDist = Infinity;
-
-  DIGIT_ORDER.forEach(function (d) {
-    const key = String(d);
-    const entry = calibration[key];
-    if (!entry) return;
-    const samples = entry.samples || [];
-    for (let i = 0; i < samples.length; i++) {
-      const sampleVec = samples[i].features.vector;
-      const dist = vectorDistance(vec, sampleVec);
-      if (dist < bestPerDigit[d]) {
-        bestPerDigit[d] = dist;
-      }
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestDigit = d;
-      }
+    function getVarMillis(name, fallbackMs){
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (!raw) return fallbackMs;
+      if (raw.endsWith('ms')) return parseFloat(raw);
+      if (raw.endsWith('s')) return parseFloat(raw) * 1000;
+      const n = parseFloat(raw);
+      return Number.isFinite(n) ? n : fallbackMs;
     }
-  });
 
-  const perDigitArray = [];
-  DIGIT_ORDER.forEach(function (d) {
-    const val = bestPerDigit[d];
-    if (val < Infinity) {
-      perDigitArray.push({ digit: d, distance: val });
+    /* Audio */
+    const goodAudio = new Audio(GOOD_SOUND_SRC);
+    const wrongAudio = new Audio(WRONG_SOUND_SRC);
+    goodAudio.preload = 'auto';
+    wrongAudio.preload = 'auto';
+
+    function playSfx(audio){
+      if (!audio) return;
+      try{
+        audio.currentTime = 0;
+        const p = audio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
     }
-  });
-  perDigitArray.sort(function (a, b) {
-    return a.distance - b.distance;
-  });
-  const topMatches = perDigitArray.slice(0, 3);
 
-  if (bestDigit === null || bestDist === Infinity) {
-    return {
-      digit: null,
-      bestDist: null,
-      certainty: "onbekend",
-      isUnknown: true,
-      topMatches: topMatches
-    };
-  }
-
-  let stats = classificationStats;
-  if (!stats) {
-    stats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
-  }
-
-  const base = stats.thresholdBase;
-  const unknownThresh = stats.thresholdUnknown;
-
-  let isUnknown = false;
-  let certainty = "zeker";
-
-  if (bestDist > unknownThresh) {
-    isUnknown = true;
-  } else if (bestDist > base) {
-    certainty = "twijfelachtig";
-  }
-
-  if (!isUnknown && topMatches.length > 1) {
-    const second = topMatches[1].distance;
-    if (second > 0) {
-      const ratio = bestDist / second;
-      if (ratio > 0.9 && certainty === "zeker") {
-        certainty = "twijfelachtig";
-      }
+    /* Toverfee */
+    function setFairySource(src){
+      try{
+        if (fairyVid.src && fairyVid.src.includes(src)) return;
+      } catch(e){}
+      fairyVid.src = src;
+      try { fairyVid.load(); } catch(e) {}
     }
-  }
 
-  return {
-    digit: isUnknown ? null : bestDigit,
-    bestDist: bestDist,
-    certainty: certainty,
-    isUnknown: isUnknown,
-    topMatches: topMatches
-  };
-}
+    function showFirstFrame(){
+      fairyVid.muted = true;
+      fairyVid.playsInline = true;
+      fairyVid.loop = false;
+      fairyVid.controls = false;
+      fairyVid.preload = "auto";
 
-/**
- * Publieke functie voor de rest van je spel.
- * 
- * Parameters:
- *   points: array met drie punten binnen de scanzone, elk {x, y}
- *
- * Retourneert:
- *   een cijfer 0 t/m 9 als er een betrouwbare herkenning is,
- *   of null als de meting onbekend is.
- */
-function recognizeDigit(points) {
-  if (!calibration || !classificationStats) {
-    return null;
-  }
+      setFairySource(FAIRY_SRC);
 
-  if (!Array.isArray(points) || points.length !== expectedTouchPoints) {
-    return null;
-  }
+      const onReady = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+      };
 
-  const features = computeFeatures(points);
-  const classification = classifyMeasurement(features);
+      fairyVid.addEventListener('loadeddata', onReady, { once:true });
+      fairyVid.addEventListener('canplay', onReady, { once:true });
+      try { fairyVid.load(); } catch(e) {}
+    }
 
-  if (!classification || classification.isUnknown || classification.digit == null) {
-    return null;
-  }
+    function backToIdleFairy(){
+      setFairySource(FAIRY_SRC);
 
-  return classification.digit;
-}
+      const snap = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+      };
 
-document.addEventListener("DOMContentLoaded", function () {
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
+      if (fairyVid.readyState >= 2) snap();
+      else fairyVid.addEventListener('canplay', snap, { once:true });
+    }
 
-  const gameArea = document.getElementById("gameArea");
-  const scoreValue = document.getElementById("scoreValue");
-  const questionPanel = document.getElementById("questionPanel");
-  const questionDigitSpan = document.getElementById("questionDigit");
-  const scanZone = document.getElementById("scanZone");
-  const scanMessage = document.getElementById("scanMessage");
-  const loadingOverlay = document.getElementById("loadingOverlay");
-  const leftBtn = document.getElementById("leftBtn");
-  const rightBtn = document.getElementById("rightBtn");
+    function warmUpVideo(video){
+      return new Promise((resolve) => {
+        if (!video) return resolve();
 
-  let width = 0;
-  let height = 0;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline','');
+        video.setAttribute('webkit-playsinline','');
 
-  const player = {
-    x: 0,
-    y: 0,
-    radius: 18,
-    vy: 0
-  };
+        const doWarm = () => {
+          try{
+            video.playbackRate = 1;
+            const p = video.play();
+            if (p && typeof p.then === "function"){
+              p.then(() => {
+                setTimeout(() => {
+                  try { video.pause(); } catch(e) {}
+                  try { video.currentTime = 0; } catch(e) {}
+                  resolve();
+                }, 120);
+              }).catch(() => resolve());
+            } else {
+              setTimeout(() => {
+                try { video.pause(); } catch(e) {}
+                try { video.currentTime = 0; } catch(e) {}
+                resolve();
+              }, 160);
+            }
+          } catch(e){
+            resolve();
+          }
+        };
 
-  const platforms = [];
-  const PLATFORM_WIDTH = 90;
-  const PLATFORM_HEIGHT = 22;
-  const PLATFORM_COUNT = 10;
-  const PLATFORM_SPACING = 120;
-
-  const GRAVITY = 0.35;
-  const JUMP_VELOCITY = -9.5;
-  const HORIZ_SPEED = 3.2;
-
-  let movingLeft = false;
-  let movingRight = false;
-
-  let gameFrozen = false;
-  let awaitingAnswer = false;
-  let currentDigit = null;
-  let expectedAnswer = null;
-
-  let heightScore = 0;
-
-  let lastTime = 0;
-  let rafId = null;
-
-  function resizeCanvas() {
-    const rect = gameArea.getBoundingClientRect();
-    width = rect.width;
-    height = rect.height;
-    canvas.width = width;
-    canvas.height = height;
-  }
-
-  function randomDigitForPlatform() {
-    // Alleen 0 t/m 8, zodat "volgende" altijd ook een enkel cijfer is
-    return Math.floor(Math.random() * 9);
-  }
-
-  function createInitialPlatforms() {
-    platforms.length = 0;
-    const baseY = height - 60;
-    for (let i = 0; i < PLATFORM_COUNT; i++) {
-      const pY = baseY - i * PLATFORM_SPACING;
-      const margin = 40;
-      const pX = margin + Math.random() * (width - margin * 2 - PLATFORM_WIDTH);
-      platforms.push({
-        x: pX,
-        y: pY,
-        w: PLATFORM_WIDTH,
-        h: PLATFORM_HEIGHT,
-        digit: randomDigitForPlatform()
+        if (video.readyState >= 2) doWarm();
+        else video.addEventListener('canplay', doWarm, { once:true });
       });
     }
-  }
 
-  function resetPlayer() {
-    player.x = width / 2;
-    player.y = height - 120;
-    player.vy = 0;
-  }
+    function playFairyOnce(src, speed){
+      fairyVid.loop = false;
+      fairyVid.playbackRate = speed;
 
-  function setScanStatus(status) {
-    scanZone.classList.remove(
-      "status-neutral",
-      "status-scanning",
-      "status-correct",
-      "status-wrong"
-    );
-    scanZone.classList.add("status-" + status);
+      setFairySource(src);
 
-    if (!awaitingAnswer) {
-      scanMessage.textContent = "Leg je cijfer hier";
-      return;
+      fairyVid.onended = () => {
+        fairyVid.onended = null;
+        backToIdleFairy();
+      };
+
+      const start = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = 0; } catch(e) {}
+
+        const p = fairyVid.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      };
+
+      if (fairyVid.readyState >= 2) start();
+      else fairyVid.addEventListener('canplay', start, { once:true });
     }
 
-    if (status === "neutral") {
-      scanMessage.textContent = "Leg het volgende cijfer neer";
-    } else if (status === "scanning") {
-      scanMessage.textContent = "We kijken...";
-    } else if (status === "correct") {
-      scanMessage.textContent = "Goed zo!";
-    } else if (status === "wrong") {
-      scanMessage.textContent = "Nog een keer";
-    }
-  }
+    /* Explosie */
+    function prepareExplosion(){
+      explosionVid.muted = true;
+      explosionVid.playsInline = true;
+      explosionVid.loop = false;
+      explosionVid.controls = false;
+      explosionVid.preload = 'auto';
+      explosionVid.src = EXPLOSION_SRC;
 
-  function showQuestion(digit) {
-    currentDigit = digit;
-    expectedAnswer = digit + 1;
-    // extra veiligheid: als het volgende cijfer > 9 is, geen vraag stellen
-    if (expectedAnswer > 9) {
-      currentDigit = null;
-      expectedAnswer = null;
-      return;
+      explosionWrap.style.opacity = '0';
+
+      try { explosionVid.load(); } catch(e) {}
+
+      explosionVid.addEventListener('error', () => {
+        explosionWrap.style.opacity = '0';
+      });
     }
 
-    awaitingAnswer = true;
-    gameFrozen = true;
-
-    questionDigitSpan.textContent = String(digit);
-    questionPanel.classList.remove("hidden");
-
-    setScanStatus("neutral");
-  }
-
-  function hideQuestion() {
-    awaitingAnswer = false;
-    gameFrozen = false;
-    currentDigit = null;
-    expectedAnswer = null;
-    questionPanel.classList.add("hidden");
-    setScanStatus("neutral");
-  }
-
-  function handleCorrectAnswer() {
-    setScanStatus("correct");
-    // Kort momentje feedback, dan weer verder springen
-    setTimeout(function () {
-      hideQuestion();
-    }, 600);
-  }
-
-  function handleWrongAnswer() {
-    setScanStatus("wrong");
-  }
-
-  function onPlatformLanded(platform) {
-    if (!awaitingAnswer && typeof platform.digit === "number") {
-      showQuestion(platform.digit);
-    }
-  }
-
-  function wrapPlayerHorizontally() {
-    if (player.x < -player.radius) {
-      player.x = width + player.radius;
-    } else if (player.x > width + player.radius) {
-      player.x = -player.radius;
-    }
-  }
-
-  function highestPlatformY() {
-    let minY = Infinity;
-    for (const p of platforms) {
-      if (p.y < minY) minY = p.y;
-    }
-    return minY;
-  }
-
-  function updateGame(dt) {
-    if (gameFrozen) {
-      return;
+    function resetExplosion(){
+      try { explosionVid.pause(); } catch(e) {}
+      try { explosionVid.currentTime = 0; } catch(e) {}
+      explosionVid.onended = null;
+      explosionWrap.style.transition = '';
+      explosionWrap.style.opacity = '0';
     }
 
-    if (movingLeft) {
-      player.x -= HORIZ_SPEED * dt;
-    }
-    if (movingRight) {
-      player.x += HORIZ_SPEED * dt;
-    }
-    wrapPlayerHorizontally();
+    function playExplosionNow(){
+      const fadeInMs = getVarMillis('--explosion-fade-in', 550);
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
 
-    player.vy += GRAVITY * dt;
-    let nextY = player.y + player.vy * dt;
+      resetExplosion();
+      explosionVid.playbackRate = EXPLOSION_SPEED;
 
-    let landed = false;
-    for (const p of platforms) {
-      const withinX =
-        player.x + player.radius > p.x &&
-        player.x - player.radius < p.x + p.w;
+      const start = () => {
+        explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
+        requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
 
-      if (
-        !landed &&
-        player.vy > 0 &&
-        withinX &&
-        player.y + player.radius <= p.y &&
-        nextY + player.radius >= p.y
-      ) {
-        landed = true;
-        nextY = p.y - player.radius;
-        player.vy = JUMP_VELOCITY;
-        onPlatformLanded(p);
-      }
+        explosionVid.onended = () => {
+          explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
+          explosionWrap.style.opacity = '0';
+        };
+
+        try { explosionVid.currentTime = 0; } catch(e) {}
+        const p = explosionVid.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      };
+
+      if (explosionVid.readyState >= 2) start();
+      else explosionVid.addEventListener('canplay', start, { once: true });
     }
 
-    player.y = nextY;
+    /* Marbotic herkenning */
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
-    // Camera / wereld verschuiving: hou speler rond 40% van het scherm
-    const targetY = height * 0.4;
-    if (player.y < targetY) {
-      const diff = targetY - player.y;
-      player.y += diff;
-      heightScore += diff;
-      for (const p of platforms) {
-        p.y += diff;
-      }
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
 
-      const minY = highestPlatformY();
-      for (const p of platforms) {
-        if (p.y > height + PLATFORM_HEIGHT + 20) {
-          p.y = minY - PLATFORM_SPACING;
-          p.x =
-            40 + Math.random() * (width - 80 - PLATFORM_WIDTH);
-          p.digit = randomDigitForPlatform();
-        }
-      }
-    }
-
-    if (player.y - player.radius > height + 80) {
-      // gevallen -> rustig opnieuw
-      heightScore = 0;
-      createInitialPlatforms();
-      resetPlayer();
-    }
-
-    scoreValue.textContent = Math.floor(heightScore);
-  }
-
-  function drawRoundedRect(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  }
-
-  function renderGame() {
-    ctx.clearRect(0, 0, width, height);
-
-    // achtergrond
-    const grd = ctx.createLinearGradient(0, 0, 0, height);
-    grd.addColorStop(0, "#8ec5fc");
-    grd.addColorStop(1, "#e0c3fc");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, width, height);
-
-    // eenvoudige "wolken"
-    ctx.globalAlpha = 0.2;
-    for (let i = 0; i < 4; i++) {
-      const cx = (i * 0.25 + 0.2) * width;
-      const cy = 80 + (i % 2) * 40;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 30, 0, Math.PI * 2);
-      ctx.arc(cx + 35, cy + 10, 26, 0, Math.PI * 2);
-      ctx.arc(cx - 28, cy + 10, 22, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // platforms
-    for (const p of platforms) {
-      drawRoundedRect(p.x, p.y, p.w, p.h, 10);
-      ctx.fillStyle = "rgba(255,255,255,0.95)";
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(0,0,0,0.08)";
-      ctx.stroke();
-
-      if (typeof p.digit === "number") {
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 24px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(p.digit), p.x + p.w / 2, p.y + p.h / 2 + 1);
-      }
-    }
-
-    // speler
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffdd59";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    ctx.stroke();
-
-    // oogjes
-    ctx.fillStyle = "#333";
-    ctx.beginPath();
-    ctx.arc(player.x - 5, player.y - 4, 2, 0, Math.PI * 2);
-    ctx.arc(player.x + 5, player.y - 4, 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // lach
-    ctx.beginPath();
-    ctx.arc(player.x, player.y + 3, 7, 0.2 * Math.PI, 0.8 * Math.PI);
-    ctx.lineWidth = 1.6;
-    ctx.strokeStyle = "#333";
-    ctx.stroke();
-  }
-
-  function gameLoop(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    const deltaMs = timestamp - lastTime;
-    lastTime = timestamp;
-    const dt = Math.min(2, deltaMs / 16.67); // max ~2x frame
-
-    updateGame(dt);
-    renderGame();
-
-    rafId = requestAnimationFrame(gameLoop);
-  }
-
-  function bindControlButton(button, direction) {
-    function start(e) {
-      e.preventDefault();
-      if (direction === "left") {
-        movingLeft = true;
-      } else {
-        movingRight = true;
-      }
-    }
-    function stop(e) {
-      e.preventDefault();
-      if (direction === "left") {
-        movingLeft = false;
-      } else {
-        movingRight = false;
-      }
-    }
-    button.addEventListener("touchstart", start, { passive: false });
-    button.addEventListener("mousedown", start);
-    button.addEventListener("touchend", stop);
-    button.addEventListener("touchcancel", stop);
-    document.addEventListener("mouseup", stop);
-  }
-
-  function initTouchScanZone() {
-    function handleTouch(e) {
-      e.preventDefault();
-
-      const rect = scanZone.getBoundingClientRect();
-      const touches = e.touches;
-      const points = [];
-
-      for (let i = 0; i < touches.length; i++) {
-        const t = touches[i];
-        const x = t.clientX - rect.left;
-        const y = t.clientY - rect.top;
-        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
-          points.push({ x: x, y: y });
-        }
-      }
-
-      if (!awaitingAnswer) {
-        if (points.length === 0) {
-          setScanStatus("neutral");
-        } else {
-          setScanStatus("scanning");
-        }
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
         return;
       }
 
-      if (points.length === expectedTouchPoints) {
-        setScanStatus("scanning");
-        const digit = recognizeDigit(points);
-        if (digit !== null && typeof digit === "number") {
-          if (digit === expectedAnswer) {
-            handleCorrectAnswer();
-          } else {
-            handleWrongAnswer();
-          }
+      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
+        ? calibrationData.expectedTouchPoints
+        : 3;
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
+    }
+
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = data[String(d)];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+          const features = computeFeatures(pts);
+          obj[String(d)].samples.push({ points: pts, features });
+        });
+      });
+
+      return obj;
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return { vector: [0,0,0] };
+
+      const p0 = points[0], p1 = points[1], p2 = points[2];
+      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+
+      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+      let maxDist = 0;
+      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+      if (maxDist < 1e-6) maxDist = 1;
+
+      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      const orientationVal = (a,b,c) => {
+        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+        return v > 0 ? 1 : v < 0 ? -1 : 0;
+      };
+      const orientation = orientationVal(A,B,C);
+
+      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+      const denom = 2 * AC * BC;
+      let cosAngle = 0;
+      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+      let width = maxX-minX, height = maxY-minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+      const aspect = height / (width + height);
+
+      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+      return { vector };
+    }
+
+    function buildFeatureVector(f) {
+      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+      return [
+        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
+        f.cosAngle*wCos, f.orientation*wOrient,
+        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
+        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
+        f.aspect*wAspect
+      ];
+    }
+
+    function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeClassificationStats() {
+      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+      const allSamples = [];
+      DIGIT_ORDER.forEach(d => {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+      });
+
+      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+      const sameMin = [];
+      const betweenMin = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        let minSame = Infinity, minOther = Infinity;
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const dist = vectorDistance(a.vector, b.vector);
+          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+          else minOther = Math.min(minOther, dist);
         }
+        if (minSame < Infinity) sameMin.push(minSame);
+        if (minOther < Infinity) betweenMin.push(minOther);
+      }
+
+      const maxSame = Math.max.apply(null, sameMin);
+      const minBetween = Math.min.apply(null, betweenMin);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const vec = computeFeatures(points).vector;
+      if (!vec) return null;
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const dist = vectorDistance(vec, samples[i].features.vector);
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+        }
+      });
+
+      if (bestDigit === null) return null;
+      if (bestDist > classificationStats.thresholdUnknown) return null;
+      if (bestDist > classificationStats.thresholdBase) return null;
+      return bestDigit;
+    }
+
+    /* Spel */
+    let started = false;
+    let locked = false;
+    let targetDigit = 0;
+
+    let currentPoints = [];
+    let hasResultForCurrentTouches = false;
+
+    let explosionTimerPlay = null;
+
+    function clearExplosionTimers(){
+      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
+    }
+
+    function wrongFeedback(){
+      scanArea.classList.remove('wrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('wrong');
+      setTimeout(() => scanArea.classList.remove('wrong'), 260);
+
+      scanArea.classList.remove('flashWrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('flashWrong');
+      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
+    }
+
+    function chooseNextDigit(){
+      const prev = targetDigit;
+      let next = Math.floor(Math.random() * 10);
+      if (next === prev) next = (next + 1) % 10;
+      targetDigit = next;
+    }
+
+    function clearDigitAndExplosion(){
+      clearExplosionTimers();
+      stage.classList.remove('play');
+
+      digitImg.style.opacity = '0';
+      digitImg.removeAttribute('src');
+      digitImg.alt = '';
+
+      resetExplosion();
+    }
+
+    function scheduleExplosionFlow(){
+      clearExplosionTimers();
+
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      explosionTimerPlay = setTimeout(() => {
+        playExplosionNow();
+      }, startMs);
+    }
+
+    function estimateExplosionTotalMs(){
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
+
+      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
+      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
+
+      return startMs + playMs + fadeOutMs + 200;
+    }
+
+    function applyPresetForDigit(digit){
+      const p = MARBOTIC_PRESETS[digit] || MARBOTIC_PRESETS[0];
+
+      document.documentElement.style.setProperty('--digit-left', p.xPct + '%');
+      document.documentElement.style.setProperty('--digit-top', p.yPct + '%');
+      document.documentElement.style.setProperty('--cijfertoon-delay', p.start + 's');
+      document.documentElement.style.setProperty('--fade-duration', p.fadeIn + 's');
+    }
+
+    function playSuccessAnimation(digit){
+      clearDigitAndExplosion();
+
+      applyPresetForDigit(digit);
+
+      digitImg.src = ASSET_DIGIT(digit);
+      digitImg.alt = String(digit);
+
+      void stage.offsetHeight;
+      stage.classList.add('play');
+
+      playFairyOnce(FAIRY_SRC, FAIRY_SPEED);
+      scheduleExplosionFlow();
+    }
+
+    function playWrongAnimation(){
+      clearDigitAndExplosion();
+      playFairyOnce(FAIRY_NO_SRC, FAIRY_NO_SPEED);
+    }
+
+    function nextRound(){
+      locked = false;
+      clearDigitAndExplosion();
+
+      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+      scanSub.textContent = 'Alle puntjes in het vak.';
+      scanHint.textContent = '📱 Blokje stil laten liggen';
+
+      chooseNextDigit();
+      speakDigit(targetDigit);
+    }
+
+    function handleRecognitionResult(recognizedDigit){
+      if (recognizedDigit == null) return;
+      if (!started || locked) return;
+
+      if (recognizedDigit === targetDigit){
+        locked = true;
+
+        scanTitle.textContent = 'Goed gedaan.';
+        scanSub.textContent = '';
+        scanHint.textContent = '';
+
+        playSfx(goodAudio);
+        playSuccessAnimation(recognizedDigit);
+
+        const waitMs = Math.max(1800, estimateExplosionTotalMs());
+        setTimeout(() => { nextRound(); }, waitMs);
       } else {
-        if (points.length === 0) {
-          setScanStatus("neutral");
-        } else {
-          setScanStatus("scanning");
+        wrongFeedback();
+        playSfx(wrongAudio);
+        playWrongAnimation();
+      }
+    }
+
+    function getPointsFromTouches(touchList) {
+      const rect = scanArea.getBoundingClientRect();
+      const points = [];
+      for (let i = 0; i < touchList.length; i++) {
+        const t = touchList[i];
+        const x = t.clientX;
+        const y = t.clientY;
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          points.push({ x, y });
+        }
+      }
+      return points;
+    }
+
+    function handleTouchEvent(e){
+      if (!calibration || !classificationStats) return;
+
+      const touches = e.touches || [];
+      currentPoints = getPointsFromTouches(touches);
+
+      if (currentPoints.length === 0){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+        scanSub.textContent = 'Alle puntjes in het vak.';
+        scanHint.textContent = '📱 Blokje stil laten liggen';
+        return;
+      }
+
+      if (currentPoints.length !== expectedTouchPoints){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Even stil houden.';
+        scanSub.textContent = 'We lezen de puntjes.';
+        scanHint.textContent = '';
+        return;
+      }
+
+      scanTitle.textContent = 'Even stil houden.';
+      scanSub.textContent = 'We lezen de puntjes.';
+      scanHint.textContent = '';
+
+      if (!hasResultForCurrentTouches && !locked){
+        const digit = recognizeDigit(currentPoints);
+        if (digit !== null && typeof digit === "number"){
+          hasResultForCurrentTouches = true;
+          handleRecognitionResult(digit);
         }
       }
     }
 
-    ["touchstart", "touchmove", "touchend", "touchcancel"].forEach(function (evtName) {
-      scanZone.addEventListener(evtName, handleTouch, { passive: false });
+    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
+      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
-  }
 
-  function startGame() {
-    resizeCanvas();
-    createInitialPlatforms();
-    resetPlayer();
-    heightScore = 0;
-    scoreValue.textContent = "0";
-    setScanStatus("neutral");
-    if (rafId) cancelAnimationFrame(rafId);
-    lastTime = 0;
-    rafId = requestAnimationFrame(gameLoop);
-  }
+    /* Spraak, iOS robuust */
+    let selectedVoice = null;
+    function pickDutchVoice(){
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const nl = voices.filter(v => (v.lang || '').toLowerCase().startsWith('nl'));
+      selectedVoice = nl.find(v => (v.lang || '').toLowerCase() === 'nl-nl') || nl[0] || null;
+    }
+    if ('speechSynthesis' in window){
+      pickDutchVoice();
+      window.speechSynthesis.onvoiceschanged = () => pickDutchVoice();
+    }
 
-  window.addEventListener("resize", function () {
-    resizeCanvas();
-  });
+    let speakToken = 0;
+    function speakDigit(digit){
+      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
+      if (!('speechSynthesis' in window)) return;
 
-  bindControlButton(leftBtn, "left");
-  bindControlButton(rightBtn, "right");
-  initTouchScanZone();
+      const myToken = ++speakToken;
 
-  // Kalibratie laden, daarna spel starten
-  fetch("calibration.json")
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      initCalibration(data);
-      if (loadingOverlay) {
-        loadingOverlay.style.display = "none";
-      }
-      startGame();
-    })
-    .catch(function (err) {
-      console.error("Kalibratie laden mislukt", err);
-      if (loadingOverlay) {
-        var textEl = loadingOverlay.querySelector(".overlay-text");
-        if (textEl) {
-          textEl.textContent = "Scanvak niet klaar (kalibratie ontbreekt)";
+      const doSpeak = () => {
+        if (myToken !== speakToken) return;
+
+        try { window.speechSynthesis.resume(); } catch(e) {}
+
+        const u = new SpeechSynthesisUtterance('\u200B' + word);
+        u.lang = 'nl-NL';
+        if (selectedVoice) u.voice = selectedVoice;
+        u.rate = 0.92;
+        u.pitch = 1.05;
+        u.volume = 1;
+
+        try { window.speechSynthesis.speak(u); } catch(e) {}
+
+        setTimeout(() => {
+          if (myToken !== speakToken) return;
+          try { window.speechSynthesis.resume(); } catch(e) {}
+        }, 140);
+      };
+
+      try{
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending){
+          window.speechSynthesis.cancel();
+          setTimeout(doSpeak, 260);
+        } else {
+          setTimeout(doSpeak, 90);
         }
-        loadingOverlay.style.display = "none";
+      } catch(e){
+        setTimeout(doSpeak, 220);
       }
-      startGame();
+    }
+
+    /* Start */
+    function startGame(){
+      if (started) return;
+      started = true;
+      startOverlay.style.display = 'none';
+
+      pickDutchVoice();
+      setTimeout(() => pickDutchVoice(), 250);
+
+      warmUpVideo(explosionVid);
+
+      setFairySource(FAIRY_SRC);
+      warmUpVideo(fairyVid).then(() => backToIdleFairy());
+
+      try{
+        goodAudio.load();
+        wrongAudio.load();
+      } catch(e){}
+
+      nextRound();
+    }
+
+    speakBtn.addEventListener('click', () => {
+      if (!started) startGame();
+      else speakDigit(targetDigit);
     });
-});
+
+    startBtn.addEventListener('click', startGame);
+    startOverlay.addEventListener('click', (e) => {
+      if (e.target === startOverlay) startGame();
+    });
+
+    homeBtn.addEventListener('click', () => {
+      try { window.location.href = 'index.html'; } catch (e) {}
+    });
+
+    window.addEventListener('load', () => {
+      setAutoScale();
+
+      showFirstFrame();
+      prepareExplosion();
+      clearDigitAndExplosion();
+      backToIdleFairy();
+
+      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+      scanSub.textContent = 'Alle puntjes in het vak.';
+      scanHint.textContent = '📱 Blokje stil laten liggen';
+
+      fetch('calibration.json', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => initCalibration(data))
+        .catch(() => { });
+    });
   </script>
 </body>
 </html>
