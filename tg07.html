@@ -629,7 +629,7 @@
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>Tik om te starten</h1>
-      <p>Je hoort een cijfer, leg dat cijfer in het scanvlak. Met de spreekknop hoor je het nog eens.</p>
+      <p>Je hoort een vraag, leg het juiste cijfer in het scanvak. Met de spreekknop hoor je het nog eens.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
@@ -702,9 +702,11 @@
 
       Audio map:
       audio/backgroundmuziek.mp3
+      audio/hocuspocus00.mp3 t/m audio/hocuspocus09.mp3
+      audio/zozieteruitde00.mp3 t/m audio/zozieteruitde09.mp3
     */
 
-    const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
     const FAIRY_SRC = 'toverfee.mp4';
@@ -712,6 +714,11 @@
 
     const GOOD_SOUND_SRC = 'goed.mp3';
     const WRONG_SOUND_SRC = 'fout.mp3';
+
+    const VOICE_DIR = 'audio/'; // zet op '' als jouw mp3 stem bestanden in dezelfde map staan
+
+    const QUESTION_SRC = (d) => `${VOICE_DIR}hocuspocus${String(d).padStart(2,'0')}.mp3`;
+    const REVEAL_SRC   = (d) => `${VOICE_DIR}zozieteruitde${String(d).padStart(2,'0')}.mp3`;
 
     const FAIRY_SPEED = 1.00;
     const FAIRY_NO_SPEED = 1.00;
@@ -822,6 +829,18 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
+    function clamp(n, a, b){
+      n = Number(n);
+      if (!Number.isFinite(n)) return a;
+      return Math.max(a, Math.min(b, n));
+    }
+
+    function fmtSec(s){
+      const v = Number(s);
+      if (!Number.isFinite(v)) return '0.00s';
+      return v.toFixed(2) + 's';
+    }
+
     /* Audio SFX */
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
@@ -835,6 +854,56 @@
         const p = audio.play();
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
+    }
+
+    /* Mp3 stemmen */
+    const questionVoices = DIGIT_ORDER.map(d => {
+      const a = new Audio(QUESTION_SRC(d));
+      a.preload = 'auto';
+      return a;
+    });
+
+    const revealVoices = DIGIT_ORDER.map(d => {
+      const a = new Audio(REVEAL_SRC(d));
+      a.preload = 'auto';
+      return a;
+    });
+
+    let currentVoice = null;
+
+    function stopVoice(){
+      if (!currentVoice) return;
+      try { currentVoice.pause(); } catch(e) {}
+      try { currentVoice.currentTime = 0; } catch(e) {}
+      currentVoice = null;
+    }
+
+    function playVoice(a){
+      if (!a) return;
+      try{
+        if (currentVoice && currentVoice !== a){
+          currentVoice.pause();
+          currentVoice.currentTime = 0;
+        }
+      } catch(e){}
+
+      currentVoice = a;
+
+      try{
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function askDigit(digit){
+      const a = questionVoices[digit];
+      playVoice(a);
+    }
+
+    function sayReveal(digit){
+      const a = revealVoices[digit];
+      playVoice(a);
     }
 
     /* Achtergrondmuziek */
@@ -879,7 +948,7 @@
     updateMusicBtn();
 
     /* Toverfee timing */
-    const TIMING_KEY = 'fairyTimingV2';
+    const TIMING_KEY = 'fairyTimingV3';
 
     function loadTiming(){
       try{
@@ -904,18 +973,6 @@
 
     let fairyTiming = loadTiming();
 
-    function clamp(n, a, b){
-      n = Number(n);
-      if (!Number.isFinite(n)) return a;
-      return Math.max(a, Math.min(b, n));
-    }
-
-    function fmtSec(s){
-      const v = Number(s);
-      if (!Number.isFinite(v)) return '0.00s';
-      return v.toFixed(2) + 's';
-    }
-
     function setFairySourceOnce(){
       try{
         if (fairyVid.src && fairyVid.src.includes(FAIRY_SRC)) return;
@@ -930,8 +987,7 @@
         try { fairyVid.pause(); } catch(e) {}
         try { fairyVid.currentTime = Math.max(0, fairyTiming.idle || 0); } catch(e) {}
         try { fairyVid.pause(); } catch(e) {}
-        badge('still', true);
-        setTimeout(() => badge('still', false), 550);
+        badge('still', false);
       };
       if (fairyVid.readyState >= 2) snap();
       else fairyVid.addEventListener('canplay', snap, { once:true });
@@ -942,8 +998,8 @@
       if (segRAF){ cancelAnimationFrame(segRAF); segRAF = null; }
     }
 
-    // Robuuste segment speler, clamp op videoduur, luistert ook naar ended
-    function playSegment(startSec, endSec, speed, labelText){
+    // Segment speler met callback, hierdoor stopt "goed" nooit meer te vroeg door nextRound timing
+    function playSegment(startSec, endSec, speed, labelText, onDone){
       setFairySourceOnce();
       stopSegmentWatcher();
 
@@ -960,26 +1016,26 @@
       fairyVid.loop = false;
       fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
 
-      if (labelText){
-        badge(labelText, true);
-      }
+      if (labelText) badge(labelText, true);
 
-      const cleanupAndIdle = () => {
+      const finish = () => {
         stopSegmentWatcher();
-        fairyVid.removeEventListener('ended', cleanupAndIdle);
+        fairyVid.removeEventListener('ended', finish);
         try { fairyVid.pause(); } catch(e) {}
         snapToIdle();
+        badge('', false);
+        if (typeof onDone === 'function') onDone();
       };
 
       const beginPlay = () => {
-        fairyVid.addEventListener('ended', cleanupAndIdle, { once:true });
+        fairyVid.addEventListener('ended', finish, { once:true });
 
         const p = fairyVid.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
 
         const watch = () => {
           if (fairyVid.currentTime >= end){
-            cleanupAndIdle();
+            finish();
             return;
           }
           segRAF = requestAnimationFrame(watch);
@@ -1109,9 +1165,38 @@
       else explosionVid.addEventListener('canplay', start, { once: true });
     }
 
-    /* Marbotic herkenning */
-    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+    let explosionTimerPlay = null;
 
+    function clearExplosionTimers(){
+      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
+    }
+
+    function scheduleExplosionFlow(){
+      clearExplosionTimers();
+
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      explosionTimerPlay = setTimeout(() => {
+        playExplosionNow();
+      }, startMs);
+    }
+
+    function estimateExplosionTotalMs(){
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
+
+      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
+      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
+
+      return startMs + playMs + fadeOutMs + 200;
+    }
+
+    /* Marbotic herkenning */
     let calibration = null;
     let classificationStats = null;
     let expectedTouchPoints = 3;
@@ -1299,14 +1384,12 @@
     let locked = false;
     let targetDigit = 0;
 
+    let wrongTries = 0;
+
     let currentPoints = [];
     let hasResultForCurrentTouches = false;
 
-    let explosionTimerPlay = null;
-
-    function clearExplosionTimers(){
-      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
-    }
+    let roundToken = 0;
 
     function wrongFeedback(){
       scanArea.classList.remove('wrong');
@@ -1341,31 +1424,6 @@
       backToIdleFairy();
     }
 
-    function scheduleExplosionFlow(){
-      clearExplosionTimers();
-
-      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-      const startMs = Math.max(0, digitDelayMs + startDelayMs);
-
-      explosionTimerPlay = setTimeout(() => {
-        playExplosionNow();
-      }, startMs);
-    }
-
-    function estimateExplosionTotalMs(){
-      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
-      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
-      const startMs = Math.max(0, digitDelayMs + startDelayMs);
-
-      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
-
-      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
-      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
-
-      return startMs + playMs + fadeOutMs + 200;
-    }
-
     function applyPresetForDigit(digit){
       const p = MARBOTIC_PRESETS[digit] || MARBOTIC_PRESETS[0];
 
@@ -1375,28 +1433,38 @@
       document.documentElement.style.setProperty('--fade-duration', p.fadeIn + 's');
     }
 
-    function playSuccessAnimation(digit){
-      clearDigitAndExplosion();
-
+    function showDigit(digit){
       applyPresetForDigit(digit);
-
       digitImg.src = ASSET_DIGIT(digit);
       digitImg.alt = String(digit);
-
       void stage.offsetHeight;
       stage.classList.add('play');
-
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed');
-      scheduleExplosionFlow();
     }
 
-    function playWrongAnimation(){
+    function playSuccessAnimation(digit, onFairyDone){
       clearDigitAndExplosion();
-      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, 'fout');
+      showDigit(digit);
+      scheduleExplosionFlow();
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed', onFairyDone);
+      return estimateExplosionTotalMs();
+    }
+
+    function playWrongAnimation(onDone){
+      clearDigitAndExplosion();
+      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, 'fout', onDone);
+    }
+
+    function playRevealAnimation(digit, onDone){
+      clearDigitAndExplosion();
+      showDigit(digit);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'kijk', onDone);
     }
 
     function nextRound(){
+      const myToken = ++roundToken;
+
       locked = false;
+      wrongTries = 0;
       clearDigitAndExplosion();
 
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
@@ -1404,7 +1472,29 @@
       scanHint.textContent = '📱 Blokje stil laten liggen';
 
       chooseNextDigit();
-      speakDigit(targetDigit);
+
+      setTimeout(() => {
+        if (myToken !== roundToken) return;
+        askDigit(targetDigit);
+      }, 80);
+    }
+
+    function revealCorrectAfterThreeWrong(){
+      const myToken = ++roundToken;
+
+      locked = true;
+
+      scanTitle.textContent = 'Kijk goed.';
+      scanSub.textContent = 'Zo ziet het juiste cijfer eruit.';
+      scanHint.textContent = '';
+
+      stopVoice();
+      sayReveal(targetDigit);
+
+      playRevealAnimation(targetDigit, () => {
+        if (myToken !== roundToken) return;
+        nextRound();
+      });
     }
 
     function handleRecognitionResult(recognizedDigit){
@@ -1412,21 +1502,48 @@
       if (!started || locked) return;
 
       if (recognizedDigit === targetDigit){
+        const myToken = ++roundToken;
         locked = true;
 
         scanTitle.textContent = 'Goed gedaan.';
         scanSub.textContent = '';
         scanHint.textContent = '';
 
-        playSfx(goodAudio);
-        playSuccessAnimation(recognizedDigit);
+        wrongTries = 0;
 
-        const waitMs = Math.max(1800, estimateExplosionTotalMs());
-        setTimeout(() => { nextRound(); }, waitMs);
+        stopVoice();
+        playSfx(goodAudio);
+
+        let fairyDone = false;
+        let explosionDone = false;
+
+        const explosionMs = playSuccessAnimation(recognizedDigit, () => {
+          fairyDone = true;
+          if (myToken === roundToken && fairyDone && explosionDone) nextRound();
+        });
+
+        setTimeout(() => {
+          explosionDone = true;
+          if (myToken === roundToken && fairyDone && explosionDone) nextRound();
+        }, Math.max(0, explosionMs));
+
       } else {
+        wrongTries += 1;
+
+        if (wrongTries >= 3){
+          wrongFeedback();
+          playSfx(wrongAudio);
+          revealCorrectAfterThreeWrong();
+          return;
+        }
+
         wrongFeedback();
         playSfx(wrongAudio);
-        playWrongAnimation();
+
+        playWrongAnimation(() => {
+          if (!started || locked) return;
+          setTimeout(() => askDigit(targetDigit), 250);
+        });
       }
     }
 
@@ -1482,58 +1599,6 @@
     ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
-
-    /* Spraak, iOS robuust */
-    let selectedVoice = null;
-    function pickDutchVoice(){
-      if (!('speechSynthesis' in window)) return;
-      const voices = window.speechSynthesis.getVoices() || [];
-      const nl = voices.filter(v => (v.lang || '').toLowerCase().startsWith('nl'));
-      selectedVoice = nl.find(v => (v.lang || '').toLowerCase() === 'nl-nl') || nl[0] || null;
-    }
-    if ('speechSynthesis' in window){
-      pickDutchVoice();
-      window.speechSynthesis.onvoiceschanged = () => pickDutchVoice();
-    }
-
-    let speakToken = 0;
-    function speakDigit(digit){
-      const word = DIGIT_WORDS_NL[digit] ?? String(digit);
-      if (!('speechSynthesis' in window)) return;
-
-      const myToken = ++speakToken;
-
-      const doSpeak = () => {
-        if (myToken !== speakToken) return;
-
-        try { window.speechSynthesis.resume(); } catch(e) {}
-
-        const u = new SpeechSynthesisUtterance('\u200B' + word);
-        u.lang = 'nl-NL';
-        if (selectedVoice) u.voice = selectedVoice;
-        u.rate = 0.92;
-        u.pitch = 1.05;
-        u.volume = 1;
-
-        try { window.speechSynthesis.speak(u); } catch(e) {}
-
-        setTimeout(() => {
-          if (myToken !== speakToken) return;
-          try { window.speechSynthesis.resume(); } catch(e) {}
-        }, 140);
-      };
-
-      try{
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending){
-          window.speechSynthesis.cancel();
-          setTimeout(doSpeak, 260);
-        } else {
-          setTimeout(doSpeak, 90);
-        }
-      } catch(e){
-        setTimeout(doSpeak, 220);
-      }
-    }
 
     /* Timing paneel logica */
     let tuneRAF = null;
@@ -1625,7 +1690,7 @@
     if (setYesStartHereBtn) setYesStartHereBtn.addEventListener('click', () => setFieldToCurrent('yesStart'));
     if (setYesEndHereBtn) setYesEndHereBtn.addEventListener('click', () => setFieldToCurrent('yesEnd'));
 
-    if (testWrongBtn) testWrongBtn.addEventListener('click', () => playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, 'fout'));
+    if (testWrongBtn) testWrongBtn.addEventListener('click', () => playWrongAnimation());
     if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed'));
     if (toIdleBtn) toIdleBtn.addEventListener('click', () => { stopSegmentWatcher(); backToIdleFairy(); });
 
@@ -1651,19 +1716,18 @@
       started = true;
       startOverlay.style.display = 'none';
 
-      pickDutchVoice();
-      setTimeout(() => pickDutchVoice(), 250);
-
       startBackgroundMusic();
+
+      warmUpVideo(explosionVid);
 
       setFairySourceOnce();
       warmUpVideo(fairyVid).then(() => backToIdleFairy());
 
-      warmUpVideo(explosionVid);
-
       try{
         goodAudio.load();
         wrongAudio.load();
+        questionVoices.forEach(a => { try { a.load(); } catch(e){} });
+        revealVoices.forEach(a => { try { a.load(); } catch(e){} });
       } catch(e){}
 
       nextRound();
@@ -1671,7 +1735,7 @@
 
     speakBtn.addEventListener('click', () => {
       if (!started) startGame();
-      else speakDigit(targetDigit);
+      else askDigit(targetDigit);
     });
 
     startBtn.addEventListener('click', startGame);
