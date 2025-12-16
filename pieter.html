@@ -129,6 +129,23 @@
     .homeBtn:active{ transform: scale(0.98); }
     .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
 
+    .musicBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+      font-size: 34px;
+      line-height: 1;
+    }
+    .musicBtn:active{ transform: scale(0.98); }
+
     .titlePill{
       padding: 18px 44px;
       border-radius: 22px;
@@ -353,7 +370,6 @@
 
     .scan-surface.wrong{ animation: wiggle 220ms ease; }
 
-    /* Extra fout flits, pastel lichtrood */
     .scan-surface.flashWrong{
       animation: flashWrong 260ms ease;
     }
@@ -426,6 +442,9 @@
       <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
         <img src="home.png" alt="Home" />
       </button>
+
+      <button class="musicBtn" id="musicBtn" aria-label="Muziek uit">🔊</button>
+
       <div class="titlePill">pak het juiste cijfer</div>
     </div>
 
@@ -471,25 +490,28 @@
     </div>
   </div>
 
+  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
+
   <script>
     /*
       Bestanden in dezelfde map:
       calibration.json
       marbotic0.png tot en met marbotic9.png
-      toverfee.mp4
-      toverfee_nee.mp4
+      toverfee.mp4 (samengestelde mp4 met still, nee, ja)
       explosie.mp4
       goed.mp3
       fout.mp3
       home.png
       spreekknop.png
+
+      Audio map:
+      audio/backgroundmuziek.mp3
     */
 
     const DIGIT_WORDS_NL = ['nul','één','twee','drie','vier','vijf','zes','zeven','acht','negen'];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
     const FAIRY_SRC = 'toverfee.mp4';
-    const FAIRY_NO_SRC = 'toverfee_nee.mp4';
     const EXPLOSION_SRC = 'explosie.mp4';
 
     const GOOD_SOUND_SRC = 'goed.mp3';
@@ -498,6 +520,13 @@
     const FAIRY_SPEED = 1.00;
     const FAIRY_NO_SPEED = 1.00;
     const EXPLOSION_SPEED = 2.65;
+
+    // Segmenten in de samengestelde mp4, format m:ss:cs
+    const FAIRY_IDLE_TC      = '0:00:00';
+    const FAIRY_NO_START_TC  = '0:00:10';
+    const FAIRY_NO_END_TC    = '0:01:28';
+    const FAIRY_YES_START_TC = '0:01:45';
+    const FAIRY_YES_END_TC   = '0:05:83';
 
     const MARBOTIC_PRESETS = {
       0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
@@ -559,7 +588,7 @@
       return Number.isFinite(n) ? n : fallbackMs;
     }
 
-    /* Audio */
+    /* Audio SFX */
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
     goodAudio.preload = 'auto';
@@ -574,46 +603,150 @@
       } catch(e){}
     }
 
-    /* Toverfee */
-    function setFairySource(src){
+    /* Achtergrondmuziek */
+    const bgMusic = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicBtn');
+    let bgMusicMuted = false;
+
+    function updateMusicBtn(){
+      if (!musicBtn) return;
+      musicBtn.textContent = bgMusicMuted ? '🔇' : '🔊';
+      musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+    }
+
+    function startBackgroundMusic(){
+      if (!bgMusic) return;
+
+      bgMusic.loop = true;
+      bgMusic.volume = 0.25;
+
+      if (bgMusicMuted){
+        try { bgMusic.pause(); } catch(e) {}
+        return;
+      }
+
       try{
-        if (fairyVid.src && fairyVid.src.includes(src)) return;
+        const p = bgMusic.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
-      fairyVid.src = src;
+    }
+
+    function toggleBackgroundMusic(){
+      bgMusicMuted = !bgMusicMuted;
+      if (bgMusicMuted){
+        try { bgMusic.pause(); } catch(e) {}
+      } else {
+        startBackgroundMusic();
+      }
+      updateMusicBtn();
+    }
+
+    if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
+    updateMusicBtn();
+
+    /* Toverfee, 1 mp4 met segmenten */
+    function tcToSeconds(tc){
+      const parts = String(tc).trim().split(':').map(Number);
+      if (parts.some(n => !Number.isFinite(n))) return 0;
+
+      if (parts.length === 3){
+        const [m, s, cs] = parts;
+        return (m * 60) + s + (cs / 100);
+      }
+      if (parts.length === 2){
+        const [m, s] = parts;
+        return (m * 60) + s;
+      }
+      return parts[0] || 0;
+    }
+
+    const FAIRY_SEG = {
+      idle: tcToSeconds(FAIRY_IDLE_TC),
+      no:  { start: tcToSeconds(FAIRY_NO_START_TC),  end: tcToSeconds(FAIRY_NO_END_TC) },
+      yes: { start: tcToSeconds(FAIRY_YES_START_TC), end: tcToSeconds(FAIRY_YES_END_TC) }
+    };
+
+    function setFairySourceOnce(){
+      try{
+        if (fairyVid.src && fairyVid.src.includes(FAIRY_SRC)) return;
+      } catch(e){}
+      fairyVid.src = FAIRY_SRC;
       try { fairyVid.load(); } catch(e) {}
+    }
+
+    function snapToIdle(){
+      setFairySourceOnce();
+      const snap = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = FAIRY_SEG.idle; } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+      };
+      if (fairyVid.readyState >= 2) snap();
+      else fairyVid.addEventListener('canplay', snap, { once:true });
+    }
+
+    let segRAF = null;
+
+    function stopSegmentWatcher(){
+      if (segRAF){ cancelAnimationFrame(segRAF); segRAF = null; }
+    }
+
+    function playSegment(startSec, endSec, speed){
+      setFairySourceOnce();
+      stopSegmentWatcher();
+
+      const start = Math.max(0, startSec || 0);
+      const end = Math.max(start, endSec || start);
+
+      fairyVid.loop = false;
+      fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
+
+      const beginPlay = () => {
+        const p = fairyVid.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+        const cutoff = end - 0.03;
+
+        const watch = () => {
+          if (fairyVid.currentTime >= cutoff){
+            stopSegmentWatcher();
+            try { fairyVid.pause(); } catch(e) {}
+            snapToIdle();
+            return;
+          }
+          segRAF = requestAnimationFrame(watch);
+        };
+        watch();
+      };
+
+      const seekAndPlay = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        const onSeeked = () => {
+          fairyVid.removeEventListener('seeked', onSeeked);
+          beginPlay();
+        };
+        fairyVid.addEventListener('seeked', onSeeked, { once:true });
+        try { fairyVid.currentTime = start; } catch(e) { beginPlay(); }
+      };
+
+      if (fairyVid.readyState >= 2) seekAndPlay();
+      else fairyVid.addEventListener('canplay', seekAndPlay, { once:true });
     }
 
     function showFirstFrame(){
       fairyVid.muted = true;
       fairyVid.playsInline = true;
+      fairyVid.setAttribute('playsinline','');
+      fairyVid.setAttribute('webkit-playsinline','');
       fairyVid.loop = false;
       fairyVid.controls = false;
       fairyVid.preload = "auto";
 
-      setFairySource(FAIRY_SRC);
-
-      const onReady = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-        try { fairyVid.pause(); } catch(e) {}
-      };
-
-      fairyVid.addEventListener('loadeddata', onReady, { once:true });
-      fairyVid.addEventListener('canplay', onReady, { once:true });
-      try { fairyVid.load(); } catch(e) {}
+      setFairySourceOnce();
+      snapToIdle();
     }
 
     function backToIdleFairy(){
-      setFairySource(FAIRY_SRC);
-
-      const snap = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-        try { fairyVid.pause(); } catch(e) {}
-      };
-
-      if (fairyVid.readyState >= 2) snap();
-      else fairyVid.addEventListener('canplay', snap, { once:true });
+      snapToIdle();
     }
 
     function warmUpVideo(video){
@@ -652,29 +785,6 @@
         if (video.readyState >= 2) doWarm();
         else video.addEventListener('canplay', doWarm, { once:true });
       });
-    }
-
-    function playFairyOnce(src, speed){
-      fairyVid.loop = false;
-      fairyVid.playbackRate = speed;
-
-      setFairySource(src);
-
-      fairyVid.onended = () => {
-        fairyVid.onended = null;
-        backToIdleFairy();
-      };
-
-      const start = () => {
-        try { fairyVid.pause(); } catch(e) {}
-        try { fairyVid.currentTime = 0; } catch(e) {}
-
-        const p = fairyVid.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      };
-
-      if (fairyVid.readyState >= 2) start();
-      else fairyVid.addEventListener('canplay', start, { once:true });
     }
 
     /* Explosie */
@@ -955,6 +1065,9 @@
       digitImg.alt = '';
 
       resetExplosion();
+
+      stopSegmentWatcher();
+      backToIdleFairy();
     }
 
     function scheduleExplosionFlow(){
@@ -1002,13 +1115,13 @@
       void stage.offsetHeight;
       stage.classList.add('play');
 
-      playFairyOnce(FAIRY_SRC, FAIRY_SPEED);
+      playSegment(FAIRY_SEG.yes.start, FAIRY_SEG.yes.end, FAIRY_SPEED);
       scheduleExplosionFlow();
     }
 
     function playWrongAnimation(){
       clearDigitAndExplosion();
-      playFairyOnce(FAIRY_NO_SRC, FAIRY_NO_SPEED);
+      playSegment(FAIRY_SEG.no.start, FAIRY_SEG.no.end, FAIRY_NO_SPEED);
     }
 
     function nextRound(){
@@ -1160,9 +1273,11 @@
       pickDutchVoice();
       setTimeout(() => pickDutchVoice(), 250);
 
+      startBackgroundMusic();
+
       warmUpVideo(explosionVid);
 
-      setFairySource(FAIRY_SRC);
+      setFairySourceOnce();
       warmUpVideo(fairyVid).then(() => backToIdleFairy());
 
       try{
