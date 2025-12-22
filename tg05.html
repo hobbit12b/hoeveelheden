@@ -17,12 +17,10 @@
       --card-radius:28px;
 
       --scale: 1;
-
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      /* telkaart */
-      --mark-color: rgba(120,171,255,0.88);
-      --item-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      --bubble-opacity: 0.92;
+      --bubble-size-mult: 2.25;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -200,13 +198,13 @@
       transform: translateY(-2px);
       transition: opacity 120ms ease, transform 120ms ease;
       pointer-events:none;
+      text-transform: lowercase;
     }
     .badge.show{
       opacity: 1;
       transform: translateY(0);
     }
 
-    /* telcanvas */
     #countCanvas{
       position:absolute;
       inset:0;
@@ -216,7 +214,6 @@
       touch-action: none;
     }
 
-    /* feedback overlay in kaart */
     .cardFlash{
       position:absolute;
       inset:0;
@@ -347,6 +344,7 @@
       margin: 0 0 10px 0;
       font-size: 28px;
       color: #4d4a48;
+      text-transform: lowercase;
     }
 
     .startCard p{
@@ -370,7 +368,6 @@
     }
     .startBtn:active{ transform: scale(0.99); }
 
-    /* instellingenpaneel */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -447,7 +444,6 @@
       color: rgba(77,74,72,0.68);
       line-height: 1.35;
     }
-
   </style>
 </head>
 
@@ -470,9 +466,9 @@
           <img src="spreekknop.png" alt="Spreek" />
         </button>
 
-        <div class="badge" id="stateBadge" aria-hidden="true">still</div>
+        <div class="badge" id="stateBadge" aria-hidden="true">klaar</div>
 
-        <div class="cardInner" id="cardInner">
+        <div class="cardInner">
           <canvas id="countCanvas" aria-label="Telveld"></canvas>
           <div class="cardFlash good" id="goodFlash"></div>
           <div class="cardFlash bad" id="badFlash"></div>
@@ -498,8 +494,8 @@
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
-      <h1>Tik om te starten</h1>
-      <p>Tel de dingen in de kaart, tik erop om af te vinken, leg daarna het juiste houten cijfer in het scanvak.</p>
+      <h1>tik om te starten</h1>
+      <p>Tel de dingen in de kaart, tik erop om te markeren, leg daarna het juiste houten cijfer in het scanvak.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
@@ -531,9 +527,9 @@
     </div>
 
     <div style="margin-top:12px; padding-top:12px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">uitleg audio</div>
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">audio</div>
       <div class="tuneHint">
-        De spreekknop speelt een uitlegbestand af als het bestaat: audio/uitleg.mp3
+        Spreekknop: audio/uitleg.mp3, optioneel. Goed en fout: audio/goedantwoord.mp3 en audio/foutantwoord.mp3, optioneel.
       </div>
     </div>
   </div>
@@ -542,20 +538,24 @@
 
   <script>
     /*
-      Bestanden in dezelfde map:
+      Verplicht:
       calibration.json
       marbotic0.png tot en met marbotic9.png
+      bubble.png
+      lieveheersbeestje.png
+      ster.png
+      blad.png
       goed.mp3
       fout.mp3
       home.png
       spreekknop.png
 
-      Audio map:
+      Optioneel:
       audio/backgroundmuziek.mp3
-      audio/uitleg.mp3 (optioneel)
-      audio/goedantwoord.mp3 (optioneel)
-      audio/foutantwoord.mp3 (optioneel)
-      audio/zoishet.mp3 (optioneel, voor reveal na 3 fout)
+      audio/uitleg.mp3
+      audio/goedantwoord.mp3
+      audio/foutantwoord.mp3
+      audio/zoishet.mp3
     */
 
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
@@ -569,9 +569,15 @@
     const GOOD_VOICE_SRC = `${VOICE_DIR}goedantwoord.mp3`;
     const WRONG_VOICE_SRC = `${VOICE_DIR}foutantwoord.mp3`;
 
-    const gameCard = document.getElementById('gameCard');
-    const cardInner = document.getElementById('cardInner');
+    const BUBBLE_SRC = 'bubble.png';
 
+    const ITEM_SRC = {
+      lady: 'lieveheersbeestje.png',
+      star: 'ster.png',
+      leaf: 'blad.png'
+    };
+
+    const gameCard = document.getElementById('gameCard');
     const countCanvas = document.getElementById('countCanvas');
 
     const speakBtn = document.getElementById('speakBtn');
@@ -806,6 +812,22 @@
     });
     if (tuneClose) tuneClose.addEventListener('click', closeTunePanel);
 
+    /* Afbeeldingen */
+    function loadImage(src){
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ ok:true, img });
+        img.onerror = () => resolve({ ok:false, img:null });
+        img.src = src;
+      });
+    }
+
+    const bubbleImg = new Image();
+    bubbleImg.src = BUBBLE_SRC;
+
+    const itemImgs = { star:null, leaf:null, lady:null };
+    const itemReady = { star:false, leaf:false, lady:false };
+
     /* Marbotic herkenning */
     let calibration = null;
     let classificationStats = null;
@@ -989,7 +1011,7 @@
       return bestDigit;
     }
 
-    /* Telkaart rendering */
+    /* Telkaart */
     let ctx = null;
     let items = [];
     let targetDigit = 1;
@@ -1025,42 +1047,45 @@
       return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
     }
 
+    function getAvoidSpeakRect(){
+      const r = gameCard.getBoundingClientRect();
+      const scale = Number(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
+
+      const speakW = 108 * scale;
+      const pad = 14;
+      const extra = 18 * scale;
+
+      return {
+        x: r.width - pad - speakW - extra,
+        y: pad - extra,
+        w: speakW + extra*2,
+        h: speakW + extra*2
+      };
+    }
+
+    function pickKind(){
+      const all = ['star','leaf','lady'];
+      return all[Math.floor(Math.random() * all.length)];
+    }
+
     function generateItems(n){
       const r = gameCard.getBoundingClientRect();
-
       const pad = 56;
+
       const safe = {
         x: pad, y: pad,
         w: Math.max(40, r.width - pad*2),
         h: Math.max(40, r.height - pad*2),
       };
 
-      const scale = Number(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
-      const speakR = 120 * scale;
-      const avoid = { x: r.width - 14 - speakR, y: 14, w: speakR, h: speakR };
+      const avoid = getAvoidSpeakRect();
 
-      const baseRadius = Math.max(18, Math.min(34, r.width * 0.035));
-      const minDist = baseRadius * 2.2;
-
-      const types = [
-        { kind:'star', w:1.0 },
-        { kind:'lady', w:1.0 },
-        { kind:'leaf', w:1.0 }
-      ];
-
-      function pickType(){
-        const total = types.reduce((s,t)=>s+t.w,0);
-        let x = Math.random() * total;
-        for (const t of types){
-          x -= t.w;
-          if (x <= 0) return t.kind;
-        }
-        return 'star';
-      }
+      const baseRadius = Math.max(22, Math.min(44, r.width * 0.045));
+      const minDist = baseRadius * 2.15;
 
       const out = [];
       let tries = 0;
-      const maxTries = 1400;
+      const maxTries = 1800;
 
       while(out.length < n && tries < maxTries){
         tries++;
@@ -1079,115 +1104,51 @@
 
         out.push({
           x, y,
-          kind: pickType(),
+          kind: pickKind(),
           r: baseRadius,
-          counted: false
+          counted: false,
+          popUntil: 0
         });
       }
 
       return out;
     }
 
-    function drawStar(c, cx, cy, outerR, innerR, points){
-      const step = Math.PI / points;
-      c.beginPath();
-      c.moveTo(cx, cy - outerR);
-      for (let i = 0; i < points; i++) {
-        c.lineTo(cx + Math.cos(step * (i*2+1) - Math.PI/2) * innerR,
-                 cy + Math.sin(step * (i*2+1) - Math.PI/2) * innerR);
-        c.lineTo(cx + Math.cos(step * (i*2+2) - Math.PI/2) * outerR,
-                 cy + Math.sin(step * (i*2+2) - Math.PI/2) * outerR);
-      }
-      c.closePath();
-      c.fillStyle = 'rgba(244,204,78,0.98)';
-      c.shadowColor = 'rgba(0,0,0,0.12)';
-      c.shadowBlur = 10;
-      c.fill();
-      c.shadowBlur = 0;
-      c.lineWidth = 3;
-      c.strokeStyle = 'rgba(255,255,255,0.85)';
-      c.stroke();
-    }
-
-    function drawLeaf(c, cx, cy, r){
+    function drawSprite(c, img, cx, cy, r){
+      if (!img || !img.complete) return;
+      const size = r * 2;
+      const x = cx - size/2;
+      const y = cy - size/2;
       c.save();
-      c.translate(cx, cy);
-      c.rotate((Math.random()*0.25) - 0.12);
-      c.beginPath();
-      c.moveTo(0, -r);
-      c.quadraticCurveTo(r*0.95, -r*0.10, 0, r);
-      c.quadraticCurveTo(-r*0.95, -r*0.10, 0, -r);
-      c.closePath();
-      c.fillStyle = 'rgba(114,196,120,0.96)';
-      c.shadowColor = 'rgba(0,0,0,0.12)';
-      c.shadowBlur = 10;
-      c.fill();
-      c.shadowBlur = 0;
-      c.lineWidth = 3;
-      c.strokeStyle = 'rgba(255,255,255,0.78)';
-      c.stroke();
-
-      c.beginPath();
-      c.moveTo(0, -r*0.75);
-      c.lineTo(0, r*0.75);
-      c.lineWidth = 2;
-      c.strokeStyle = 'rgba(255,255,255,0.65)';
-      c.stroke();
+      c.imageSmoothingEnabled = true;
+      c.drawImage(img, x, y, size, size);
       c.restore();
     }
 
-    function drawLadybug(c, cx, cy, r){
+    function drawBubbleMark(c, cx, cy, r, popFactor){
+      if (!bubbleImg || !bubbleImg.complete) return;
+
+      const mult = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-size-mult')) || 2.25;
+      const size = r * mult * (popFactor || 1);
+
+      const x = cx - size / 2;
+      const y = cy - size / 2;
+
+      const opacity = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-opacity')) || 0.92;
+
       c.save();
-      c.translate(cx, cy);
-      c.beginPath();
-      c.arc(0, 0, r, 0, Math.PI*2);
-      c.fillStyle = 'rgba(234,86,86,0.98)';
-      c.shadowColor = 'rgba(0,0,0,0.12)';
-      c.shadowBlur = 10;
-      c.fill();
-      c.shadowBlur = 0;
-
-      c.beginPath();
-      c.arc(0, -r*0.55, r*0.42, 0, Math.PI*2);
-      c.fillStyle = 'rgba(52,52,52,0.95)';
-      c.fill();
-
-      c.beginPath();
-      c.moveTo(0, -r*0.95);
-      c.lineTo(0, r*0.95);
-      c.lineWidth = 3;
-      c.strokeStyle = 'rgba(52,52,52,0.80)';
-      c.stroke();
-
-      const dotR = Math.max(2.5, r*0.14);
-      const dots = [
-        {x:-r*0.35, y:-r*0.10},
-        {x:-r*0.35, y: r*0.30},
-        {x: r*0.35, y:-r*0.10},
-        {x: r*0.35, y: r*0.30},
-      ];
-      c.fillStyle = 'rgba(52,52,52,0.90)';
-      for (const d of dots){
-        c.beginPath();
-        c.arc(d.x, d.y, dotR, 0, Math.PI*2);
-        c.fill();
-      }
-
-      c.lineWidth = 3;
-      c.strokeStyle = 'rgba(255,255,255,0.78)';
-      c.beginPath();
-      c.arc(0, 0, r, 0, Math.PI*2);
-      c.stroke();
-
+      c.globalAlpha = opacity;
+      c.drawImage(bubbleImg, x, y, size, size);
       c.restore();
     }
 
-    function drawMark(c, cx, cy, r){
-      c.beginPath();
-      c.arc(cx, cy, r*0.78, 0, Math.PI*2);
-      c.lineWidth = Math.max(5, r*0.18);
-      c.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--mark-color').trim() || 'rgba(120,171,255,0.88)';
-      c.stroke();
+    let renderRAF = null;
+    function requestRender(){
+      if (renderRAF) return;
+      renderRAF = requestAnimationFrame(() => {
+        renderRAF = null;
+        render();
+      });
     }
 
     function render(){
@@ -1195,12 +1156,22 @@
       const r = gameCard.getBoundingClientRect();
       ctx.clearRect(0,0,r.width,r.height);
 
-      for (const it of items){
-        if (it.kind === 'star') drawStar(ctx, it.x, it.y, it.r, it.r*0.55, 5);
-        if (it.kind === 'leaf') drawLeaf(ctx, it.x, it.y, it.r*0.95);
-        if (it.kind === 'lady') drawLadybug(ctx, it.x, it.y, it.r*0.95);
+      const now = performance.now();
 
-        if (it.counted) drawMark(ctx, it.x, it.y, it.r);
+      for (const it of items){
+        const img = itemImgs[it.kind];
+        drawSprite(ctx, img, it.x, it.y, it.r);
+
+        if (it.counted){
+          let pop = 1;
+          if (it.popUntil && now < it.popUntil){
+            const t = 1 - ((it.popUntil - now) / 170);
+            const eased = Math.sin(t * Math.PI);
+            pop = 1 + eased * 0.18;
+            requestRender();
+          }
+          drawBubbleMark(ctx, it.x, it.y, it.r, pop);
+        }
       }
     }
 
@@ -1240,7 +1211,6 @@
     let wrongTries = 0;
     let hasResultForCurrentTouches = false;
     let currentPoints = [];
-    let roundToken = 0;
 
     function wrongFeedback(){
       scanArea.classList.remove('wrong');
@@ -1260,6 +1230,8 @@
       scanHint.textContent = '📱 Leg het blokje stil in het vak';
     }
 
+    let roundToken = 0;
+
     function nextRound(){
       const myToken = ++roundToken;
 
@@ -1270,8 +1242,7 @@
       targetDigit = pickTarget();
 
       items = generateItems(targetDigit);
-      for (const it of items) it.counted = false;
-      render();
+      requestRender();
 
       setTimeout(() => {
         if (myToken !== roundToken) return;
@@ -1359,7 +1330,8 @@
       if (it.counted) return;
 
       it.counted = true;
-      render();
+      it.popUntil = performance.now() + 170;
+      requestRender();
     }
 
     countCanvas.addEventListener('touchstart', onCountTap, { passive: true });
@@ -1453,6 +1425,18 @@
       try { window.location.href = 'index.html'; } catch (e) {}
     });
 
+    async function preloadImages(){
+      const a = await loadImage(ITEM_SRC.star);
+      const b = await loadImage(ITEM_SRC.leaf);
+      const c = await loadImage(ITEM_SRC.lady);
+
+      if (a.ok) { itemImgs.star = a.img; itemReady.star = true; }
+      if (b.ok) { itemImgs.leaf = b.img; itemReady.leaf = true; }
+      if (c.ok) { itemImgs.lady = c.img; itemReady.lady = true; }
+
+      requestRender();
+    }
+
     window.addEventListener('load', () => {
       setAutoScale();
 
@@ -1464,13 +1448,14 @@
       window.addEventListener('orientationchange', () => setTimeout(resizeCountCanvas, 120));
 
       badge('', false);
+      clearRoundUI();
+
+      preloadImages();
 
       fetch('calibration.json', { cache: 'no-store' })
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-
-      clearRoundUI();
     });
   </script>
 </body>
