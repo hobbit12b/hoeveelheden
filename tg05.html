@@ -102,23 +102,6 @@
     .homeBtn:active{ transform: scale(0.98); }
     .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
 
-    .musicBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-      font-size: 34px;
-      line-height: 1;
-    }
-    .musicBtn:active{ transform: scale(0.98); }
-
     .tuneBtn{
       width:72px;
       height:72px;
@@ -456,7 +439,6 @@
         <img src="home.png" alt="Home" />
       </button>
 
-      <button class="musicBtn" id="musicBtn" aria-label="Muziek uit">🔊</button>
       <button class="tuneBtn" id="tuneBtn" aria-label="Instellen">⚙️</button>
 
       <div class="titlePill">tellen en scannen</div>
@@ -478,7 +460,6 @@
     </div>
   </section>
 
-  <!-- Scanvak, exact zoals jouw bestaande layout -->
   <section class="scan-surface" id="scan-area" aria-label="Scanvak">
     <div class="scanOverlay">
       <div class="scanUI">
@@ -528,8 +509,6 @@
     </div>
   </div>
 
-  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
-
   <script>
     /*
       Vereist:
@@ -543,9 +522,6 @@
       fout.mp3
       home.png
       spreekknop.png
-
-      Optioneel:
-      audio/backgroundmuziek.mp3
     */
 
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
@@ -606,46 +582,6 @@
 
     window.addEventListener('resize', setAutoScale);
     window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
-
-    /* Achtergrondmuziek */
-    const bgMusic = document.getElementById('bgMusic');
-    const musicBtn = document.getElementById('musicBtn');
-    let bgMusicMuted = false;
-
-    function updateMusicBtn(){
-      if (!musicBtn) return;
-      musicBtn.textContent = bgMusicMuted ? '🔇' : '🔊';
-      musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
-    }
-
-    function startBackgroundMusic(){
-      if (!bgMusic) return;
-      bgMusic.loop = true;
-      bgMusic.volume = 0.25;
-
-      if (bgMusicMuted){
-        try { bgMusic.pause(); } catch(e) {}
-        return;
-      }
-
-      try{
-        const p = bgMusic.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    function toggleBackgroundMusic(){
-      bgMusicMuted = !bgMusicMuted;
-      if (bgMusicMuted){
-        try { bgMusic.pause(); } catch(e) {}
-      } else {
-        startBackgroundMusic();
-      }
-      updateMusicBtn();
-    }
-
-    if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
-    updateMusicBtn();
 
     /* SFX */
     const goodAudio = new Audio(GOOD_SOUND_SRC);
@@ -796,6 +732,11 @@
       return all[Math.floor(Math.random() * all.length)];
     }
 
+    function kindScale(kind){
+      if (kind === 'star') return 0.88;     // sterren iets kleiner
+      return 1.00;
+    }
+
     function generateItems(n){
       const r = gameCard.getBoundingClientRect();
       const pad = 56;
@@ -808,12 +749,12 @@
 
       const avoid = getAvoidSpeakRect();
 
-      const baseRadius = Math.max(30, Math.min(62, r.width * 0.060));  // groter
-      const minDist = baseRadius * 2.25;
+      const baseRadius = Math.max(30, Math.min(62, r.width * 0.060));
+      const minDist = baseRadius * 2.20;
 
       const out = [];
       let tries = 0;
-      const maxTries = 2200;
+      const maxTries = 2400;
 
       while(out.length < n && tries < maxTries){
         tries++;
@@ -830,12 +771,14 @@
         }
         if (!ok) continue;
 
+        const kind = pickKind();
+
         out.push({
           x, y,
-          kind: pickKind(),
-          r: baseRadius,
-          rot: (Math.random() * 0.9) - 0.45,     // vaste basisrotatie
-          wobble: 0,                             // extra wiebel
+          kind,
+          r: baseRadius * kindScale(kind),
+          rot: (Math.random() * 1.8) - 0.9,   // meer verschil in draaien
+          wobble: 0,
           popUntil: 0,
           wobbleUntil: 0,
           counted: false
@@ -868,13 +811,13 @@
 
       c.save();
       c.translate(cx, cy);
-
       c.rotate((Number(rot) || 0) + (Number(wobble) || 0));
 
-      c.shadowColor = 'rgba(0,0,0,0.22)';
-      c.shadowBlur = Math.max(10, r * 0.38);
+      // Schaduw onder elk object
+      c.shadowColor = 'rgba(0,0,0,0.28)';
+      c.shadowBlur = Math.max(12, r * 0.42);
       c.shadowOffsetX = Math.max(2, r * 0.10);
-      c.shadowOffsetY = Math.max(3, r * 0.14);
+      c.shadowOffsetY = Math.max(5, r * 0.20);
 
       c.imageSmoothingEnabled = true;
       c.drawImage(img, x, y, size, size);
@@ -1329,8 +1272,6 @@
       started = true;
       startOverlay.style.display = 'none';
 
-      startBackgroundMusic();
-
       try{
         goodAudio.load();
         wrongAudio.load();
@@ -1341,11 +1282,7 @@
 
     speakBtn.addEventListener('click', () => {
       if (!started) startGame();
-      else {
-        scanTitle.textContent = 'Tel de dingen in de kaart.';
-        scanSub.textContent = 'Scan het juiste cijfer.';
-        scanHint.textContent = '📱 Blokje stil laten liggen';
-      }
+      else clearRoundUI();
     });
 
     startBtn.addEventListener('click', startGame);
