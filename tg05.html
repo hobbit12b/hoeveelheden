@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Tellen en scannen</title>
+
+  <style>
+    :root{
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --text:#6f6b68;
+
+      --dash-w:4px;
+      --card-radius:28px;
+
+      --scale: 1;
+
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+
+      /* telkaart */
+      --mark-color: rgba(120,171,255,0.88);
+      --item-shadow: 0 10px 22px rgba(0,0,0,0.10);
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overflow:hidden;
+    }
+
+    body{
+      display:grid;
+      grid-template-columns: 58fr 42fr;
+      height: 100%;
+    }
+
+    @media (orientation: portrait){
+      body{
+        grid-template-columns: 1fr;
+        grid-template-rows: 54fr 46fr;
+      }
+    }
+
+    .left{
+      background: var(--bg-left);
+      padding: 28px 26px 22px 26px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+    }
+
+    .scan-surface{
+      background:#ffffff;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+      transition: background 120ms ease;
+    }
+
+    @media (orientation: landscape){
+      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
+    }
+    @media (orientation: portrait){
+      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
+      .left{ padding: 22px; gap: 16px; }
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap: 18px;
+      flex: 0 0 auto;
+    }
+
+    .homeBtn,
+    .musicBtn,
+    .tuneBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+    .homeBtn:active,
+    .musicBtn:active,
+    .tuneBtn:active{ transform: scale(0.98); }
+
+    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
+    .musicBtn{ font-size: 34px; line-height: 1; }
+    .tuneBtn{ font-size: 30px; line-height: 1; }
+
+    .titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.1vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 64px;
+      width: min(660px, 100%);
+      text-transform: lowercase;
+    }
+
+    .content{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+      min-height: 0;
+    }
+
+    .gameCard{
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
+      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      position:relative;
+      overflow: visible;
+    }
+
+    @media (orientation: portrait){
+      .gameCard{ height: min(420px, 34vh); }
+    }
+
+    .cardInner{
+      position:absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+    }
+
+    .speakBtn{
+      position:absolute;
+      right: 14px;
+      top: 14px;
+      width: calc(108px * var(--scale));
+      height: calc(108px * var(--scale));
+      border-radius: 999px;
+      border: 4px solid rgba(245,180,152,0.95);
+      background: var(--bg-left);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      z-index: 60;
+      padding: 0;
+    }
+    .speakBtn:active{ transform: scale(0.98); }
+    .speakBtn img{
+      width: calc(62px * var(--scale));
+      height: calc(62px * var(--scale));
+      object-fit: contain;
+      display:block;
+    }
+
+    .badge{
+      position:absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 80;
+      background: rgba(255,255,255,0.92);
+      border: 2px solid rgba(245,180,152,0.85);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 900;
+      font-size: 13px;
+      color:#4d4a48;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity 120ms ease, transform 120ms ease;
+      pointer-events:none;
+    }
+    .badge.show{
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* telcanvas */
+    #countCanvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index: 5;
+      touch-action: none;
+    }
+
+    /* feedback overlay in kaart */
+    .cardFlash{
+      position:absolute;
+      inset:0;
+      border-radius: var(--card-radius);
+      pointer-events:none;
+      opacity:0;
+      z-index: 90;
+      transition: opacity 140ms ease;
+    }
+    .cardFlash.show{ opacity:1; }
+    .cardFlash.good{ background: rgba(198,255,210,0.40); }
+    .cardFlash.bad{ background: rgba(255,210,210,0.45); }
+
+    .bigMark{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%, -50%) scale(0.98);
+      font-weight: 1000;
+      font-size: clamp(64px, 7vw, 110px);
+      color: rgba(77,74,72,0.88);
+      text-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      opacity:0;
+      pointer-events:none;
+      z-index: 95;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .bigMark.show{
+      opacity:1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .scanOverlay{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+      pointer-events:none;
+    }
+
+    .scanUI{
+      width: min(520px, 92%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 14px;
+      text-align:center;
+      transform: translateY(-8px);
+    }
+
+    .miniTile{
+      width: 66px;
+      height: 66px;
+      border-radius: 10px;
+      background: #78abff;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      color:#fff;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      place-items:center;
+    }
+
+    .scanTitle{
+      font-size: clamp(22px, 2vw, 34px);
+      font-weight: 800;
+      color: #7b7876;
+      margin-top: 6px;
+    }
+
+    .scanSub{
+      font-size: clamp(16px, 1.3vw, 20px);
+      color: rgba(123,120,118,0.75);
+      margin-top: -4px;
+    }
+
+    .scanHint{
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 10px;
+    }
+
+    .scan-surface.wrong{ animation: wiggle 220ms ease; }
+
+    .scan-surface.flashWrong{
+      animation: flashWrong 260ms ease;
+    }
+    @keyframes flashWrong{
+      0%{ background:#ffffff; }
+      40%{ background:#fde1e1; }
+      100%{ background:#ffffff; }
+    }
+
+    @keyframes wiggle{
+      0%{ transform: translateX(0); }
+      28%{ transform: translateX(-6px); }
+      58%{ transform: translateX(5px); }
+      100%{ transform: translateX(0); }
+    }
+
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.55);
+      backdrop-filter: blur(2px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index: 999;
+      padding: 24px;
+    }
+
+    .startCard{
+      width: min(560px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align:center;
+    }
+
+    .startCard h1{
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #4d4a48;
+    }
+
+    .startCard p{
+      margin: 0 0 16px 0;
+      color: rgba(77,74,72,0.82);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .startBtn{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 800;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+    }
+    .startBtn:active{ transform: scale(0.99); }
+
+    /* instellingenpaneel */
+    .tunePanel{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(520px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 1200;
+      color: #4d4a48;
+    }
+
+    .tunePanel.hidden{ display:none; }
+
+    .tuneHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tuneTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+
+    .tuneClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .tuneClose:active{ transform: scale(0.99); }
+
+    .tuneRow{
+      display:grid;
+      grid-template-columns: 140px 1fr 84px;
+      gap: 10px;
+      align-items:center;
+      margin: 8px 0;
+    }
+
+    .tuneLabel{
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      text-transform: lowercase;
+    }
+
+    .tuneValue{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 13px;
+      text-align:right;
+      color: rgba(77,74,72,0.86);
+    }
+
+    .tuneRow input[type="range"]{
+      width: 100%;
+    }
+
+    .tuneHint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(77,74,72,0.68);
+      line-height: 1.35;
+    }
+
+  </style>
+</head>
+
+<body>
+  <section class="left" aria-label="Spel">
+    <div class="topbar">
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
+        <img src="home.png" alt="Home" />
+      </button>
+
+      <button class="musicBtn" id="musicBtn" aria-label="Muziek uit">🔊</button>
+      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen">⚙️</button>
+
+      <div class="titlePill">tellen en scannen</div>
+    </div>
+
+    <div class="content">
+      <div class="gameCard" id="gameCard" aria-label="Telkaart">
+        <button class="speakBtn" id="speakBtn" aria-label="Uitleg nog een keer">
+          <img src="spreekknop.png" alt="Spreek" />
+        </button>
+
+        <div class="badge" id="stateBadge" aria-hidden="true">still</div>
+
+        <div class="cardInner" id="cardInner">
+          <canvas id="countCanvas" aria-label="Telveld"></canvas>
+          <div class="cardFlash good" id="goodFlash"></div>
+          <div class="cardFlash bad" id="badFlash"></div>
+          <div class="bigMark" id="bigMark">✓</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+    <div class="scanOverlay">
+      <div class="scanUI">
+        <div class="miniTile" aria-hidden="true">
+          <div>1</div><div>2</div><div>3</div><div>4</div>
+        </div>
+
+        <div class="scanTitle" id="scan-title">Tel de dingen in de kaart.</div>
+        <div class="scanSub" id="scan-sub">Scan het juiste cijfer.</div>
+        <div class="scanHint" id="scan-hint">📱 Leg het blokje stil in het vak</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <h1>Tik om te starten</h1>
+      <p>Tel de dingen in de kaart, tik erop om af te vinken, leg daarna het juiste houten cijfer in het scanvak.</p>
+      <button class="startBtn" id="startBtn">Start</button>
+    </div>
+  </div>
+
+  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">instellingen</div>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten">Sluit</button>
+    </div>
+
+    <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">telinstellingen</div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">minimum</div>
+        <input type="range" id="countMinRange" min="1" max="9" step="1" value="1" />
+        <div class="tuneValue" id="countMinValue">1</div>
+      </div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">maximum</div>
+        <input type="range" id="countMaxRange" min="1" max="9" step="1" value="5" />
+        <div class="tuneValue" id="countMaxValue">5</div>
+      </div>
+
+      <div class="tuneHint" id="countHint">
+        Stel in hoeveel dingen er geteld worden, per ronde kiest het spel een aantal binnen jouw bereik.
+      </div>
+    </div>
+
+    <div style="margin-top:12px; padding-top:12px; border-top:2px solid rgba(245,180,152,0.45);">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">uitleg audio</div>
+      <div class="tuneHint">
+        De spreekknop speelt een uitlegbestand af als het bestaat: audio/uitleg.mp3
+      </div>
+    </div>
+  </div>
+
+  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
+
+  <script>
+    /*
+      Bestanden in dezelfde map:
+      calibration.json
+      marbotic0.png tot en met marbotic9.png
+      goed.mp3
+      fout.mp3
+      home.png
+      spreekknop.png
+
+      Audio map:
+      audio/backgroundmuziek.mp3
+      audio/uitleg.mp3 (optioneel)
+      audio/goedantwoord.mp3 (optioneel)
+      audio/foutantwoord.mp3 (optioneel)
+      audio/zoishet.mp3 (optioneel, voor reveal na 3 fout)
+    */
+
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+
+    const GOOD_SOUND_SRC = 'goed.mp3';
+    const WRONG_SOUND_SRC = 'fout.mp3';
+
+    const VOICE_DIR = 'audio/';
+    const UITLEG_SRC = `${VOICE_DIR}uitleg.mp3`;
+    const REVEAL_SRC = `${VOICE_DIR}zoishet.mp3`;
+    const GOOD_VOICE_SRC = `${VOICE_DIR}goedantwoord.mp3`;
+    const WRONG_VOICE_SRC = `${VOICE_DIR}foutantwoord.mp3`;
+
+    const gameCard = document.getElementById('gameCard');
+    const cardInner = document.getElementById('cardInner');
+
+    const countCanvas = document.getElementById('countCanvas');
+
+    const speakBtn = document.getElementById('speakBtn');
+    const homeBtn = document.getElementById('homeBtn');
+
+    const scanArea = document.getElementById('scan-area');
+    const scanTitle = document.getElementById('scan-title');
+    const scanSub = document.getElementById('scan-sub');
+    const scanHint = document.getElementById('scan-hint');
+
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
+
+    const stateBadge = document.getElementById('stateBadge');
+
+    const tuneBtn = document.getElementById('tuneBtn');
+    const tunePanel = document.getElementById('tunePanel');
+    const tuneClose = document.getElementById('tuneClose');
+
+    const countMinRange = document.getElementById('countMinRange');
+    const countMaxRange = document.getElementById('countMaxRange');
+    const countMinValue = document.getElementById('countMinValue');
+    const countMaxValue = document.getElementById('countMaxValue');
+    const countHint = document.getElementById('countHint');
+
+    const goodFlash = document.getElementById('goodFlash');
+    const badFlash = document.getElementById('badFlash');
+    const bigMark = document.getElementById('bigMark');
+
+    function badge(text, show){
+      if (!stateBadge) return;
+      stateBadge.textContent = text;
+      if (show) stateBadge.classList.add('show');
+      else stateBadge.classList.remove('show');
+    }
+
+    function setAutoScale(){
+      if (!gameCard) return;
+      const r = gameCard.getBoundingClientRect();
+
+      const baseW = 980;
+      const baseH = 520;
+      const pad = 18;
+
+      const sW = Math.max(0.1, (r.width  - pad) / baseW);
+      const sH = Math.max(0.1, (r.height - pad) / baseH);
+
+      let s = Math.min(sW, sH);
+      s = Math.max(0.55, Math.min(1.05, s));
+      document.documentElement.style.setProperty('--scale', String(s));
+    }
+
+    window.addEventListener('resize', setAutoScale);
+    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
+
+    /* Audio */
+    const goodAudio = new Audio(GOOD_SOUND_SRC);
+    const wrongAudio = new Audio(WRONG_SOUND_SRC);
+    goodAudio.preload = 'auto';
+    wrongAudio.preload = 'auto';
+
+    const uitlegAudio = new Audio(UITLEG_SRC);
+    uitlegAudio.preload = 'auto';
+
+    const revealAudio = new Audio(REVEAL_SRC);
+    revealAudio.preload = 'auto';
+
+    const goodVoiceAudio = new Audio(GOOD_VOICE_SRC);
+    goodVoiceAudio.preload = 'auto';
+
+    const wrongVoiceAudio = new Audio(WRONG_VOICE_SRC);
+    wrongVoiceAudio.preload = 'auto';
+
+    let currentVoice = null;
+
+    function stopVoice(){
+      if (!currentVoice) return;
+      try { currentVoice.pause(); } catch(e) {}
+      try { currentVoice.currentTime = 0; } catch(e) {}
+      currentVoice = null;
+    }
+
+    function playVoice(a){
+      if (!a) return;
+      try{
+        if (currentVoice && currentVoice !== a){
+          currentVoice.pause();
+          currentVoice.currentTime = 0;
+        }
+      } catch(e){}
+      currentVoice = a;
+      try{
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function playSfx(a){
+      if (!a) return;
+      try{
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    /* Achtergrondmuziek */
+    const bgMusic = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicBtn');
+    let bgMusicMuted = false;
+
+    function updateMusicBtn(){
+      if (!musicBtn) return;
+      musicBtn.textContent = bgMusicMuted ? '🔇' : '🔊';
+      musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+    }
+
+    function startBackgroundMusic(){
+      if (!bgMusic) return;
+      bgMusic.loop = true;
+      bgMusic.volume = 0.25;
+
+      if (bgMusicMuted){
+        try { bgMusic.pause(); } catch(e) {}
+        return;
+      }
+
+      try{
+        const p = bgMusic.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function toggleBackgroundMusic(){
+      bgMusicMuted = !bgMusicMuted;
+      if (bgMusicMuted){
+        try { bgMusic.pause(); } catch(e) {}
+      } else {
+        startBackgroundMusic();
+      }
+      updateMusicBtn();
+    }
+
+    if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
+    updateMusicBtn();
+
+    /* Telinstellingen */
+    const COUNT_KEY = 'countRangeV1';
+    const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
+    let countRange = { ...DEFAULT_COUNT_RANGE };
+
+    function clampInt(n, a, b){
+      const v = Math.round(Number(n));
+      if (!Number.isFinite(v)) return a;
+      return Math.max(a, Math.min(b, v));
+    }
+
+    function loadCountRange(){
+      try{
+        const raw = localStorage.getItem(COUNT_KEY);
+        if (!raw) return { ...DEFAULT_COUNT_RANGE };
+        const obj = JSON.parse(raw);
+
+        let min = clampInt(obj.min ?? DEFAULT_COUNT_RANGE.min, 1, 9);
+        let max = clampInt(obj.max ?? DEFAULT_COUNT_RANGE.max, 1, 9);
+        if (max < min) max = min;
+
+        return { min, max };
+      } catch(e){
+        return { ...DEFAULT_COUNT_RANGE };
+      }
+    }
+
+    function saveCountRange(r){
+      try { localStorage.setItem(COUNT_KEY, JSON.stringify(r)); } catch(e) {}
+    }
+
+    function syncCountUI(){
+      if (!countMinRange || !countMaxRange) return;
+
+      countMinRange.value = String(countRange.min);
+      countMaxRange.value = String(countRange.max);
+
+      if (countMinValue) countMinValue.textContent = String(countRange.min);
+      if (countMaxValue) countMaxValue.textContent = String(countRange.max);
+
+      if (countHint){
+        if (countRange.min === countRange.max){
+          countHint.textContent = `Elke ronde zijn het precies ${countRange.min} dingen.`;
+        } else {
+          countHint.textContent = `Elke ronde kiest het spel een aantal van ${countRange.min} tot ${countRange.max}.`;
+        }
+      }
+    }
+
+    function applyCountChange(from){
+      if (!countMinRange || !countMaxRange) return;
+
+      let min = clampInt(countMinRange.value, 1, 9);
+      let max = clampInt(countMaxRange.value, 1, 9);
+
+      if (from === 'min' && max < min){
+        max = min;
+        countMaxRange.value = String(max);
+      }
+      if (from === 'max' && max < min){
+        min = max;
+        countMinRange.value = String(min);
+      }
+
+      countRange = { min, max };
+      saveCountRange(countRange);
+      syncCountUI();
+    }
+
+    if (countMinRange) countMinRange.addEventListener('input', () => applyCountChange('min'));
+    if (countMaxRange) countMaxRange.addEventListener('input', () => applyCountChange('max'));
+
+    function openTunePanel(){
+      tunePanel.classList.remove('hidden');
+      syncCountUI();
+    }
+
+    function closeTunePanel(){
+      tunePanel.classList.add('hidden');
+    }
+
+    if (tuneBtn) tuneBtn.addEventListener('click', () => {
+      if (tunePanel.classList.contains('hidden')) openTunePanel();
+      else closeTunePanel();
+    });
+    if (tuneClose) tuneClose.addEventListener('click', closeTunePanel);
+
+    /* Marbotic herkenning */
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
+        return;
+      }
+
+      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
+        ? calibrationData.expectedTouchPoints
+        : 3;
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
+    }
+
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = data[String(d)];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+          const features = computeFeatures(pts);
+          obj[String(d)].samples.push({ points: pts, features });
+        });
+      });
+
+      return obj;
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return { vector: [0,0,0] };
+
+      const p0 = points[0], p1 = points[1], p2 = points[2];
+      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+
+      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+      let maxDist = 0;
+      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+      if (maxDist < 1e-6) maxDist = 1;
+
+      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      const orientationVal = (a,b,c) => {
+        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+        return v > 0 ? 1 : v < 0 ? -1 : 0;
+      };
+      const orientation = orientationVal(A,B,C);
+
+      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+      const denom = 2 * AC * BC;
+      let cosAngle = 0;
+      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+      let width = maxX-minX, height = maxY-minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+      const aspect = height / (width + height);
+
+      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+      return { vector };
+    }
+
+    function buildFeatureVector(f) {
+      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+      return [
+        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
+        f.cosAngle*wCos, f.orientation*wOrient,
+        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
+        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
+        f.aspect*wAspect
+      ];
+    }
+
+    function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeClassificationStats() {
+      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+      const allSamples = [];
+      DIGIT_ORDER.forEach(d => {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+      });
+
+      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+      const sameMin = [];
+      const betweenMin = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        let minSame = Infinity, minOther = Infinity;
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const dist = vectorDistance(a.vector, b.vector);
+          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+          else minOther = Math.min(minOther, dist);
+        }
+        if (minSame < Infinity) sameMin.push(minSame);
+        if (minOther < Infinity) betweenMin.push(minOther);
+      }
+
+      const maxSame = Math.max.apply(null, sameMin);
+      const minBetween = Math.min.apply(null, betweenMin);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const vec = computeFeatures(points).vector;
+      if (!vec) return null;
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const dist = vectorDistance(vec, samples[i].features.vector);
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+        }
+      });
+
+      if (bestDigit === null) return null;
+      if (bestDist > classificationStats.thresholdUnknown) return null;
+      if (bestDist > classificationStats.thresholdBase) return null;
+      return bestDigit;
+    }
+
+    /* Telkaart rendering */
+    let ctx = null;
+    let items = [];
+    let targetDigit = 1;
+
+    function resizeCountCanvas(){
+      if (!countCanvas || !gameCard) return;
+
+      const r = gameCard.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+      countCanvas.width = Math.round(r.width * dpr);
+      countCanvas.height = Math.round(r.height * dpr);
+      countCanvas.style.width = r.width + 'px';
+      countCanvas.style.height = r.height + 'px';
+
+      ctx = countCanvas.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      render();
+    }
+
+    function randInt(a, b){
+      return a + Math.floor(Math.random() * (b - a + 1));
+    }
+
+    function pickTarget(){
+      const min = countRange.min;
+      const max = countRange.max;
+      return randInt(min, max);
+    }
+
+    function pointInRect(px, py, rect){
+      return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
+    }
+
+    function generateItems(n){
+      const r = gameCard.getBoundingClientRect();
+
+      const pad = 56;
+      const safe = {
+        x: pad, y: pad,
+        w: Math.max(40, r.width - pad*2),
+        h: Math.max(40, r.height - pad*2),
+      };
+
+      const scale = Number(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
+      const speakR = 120 * scale;
+      const avoid = { x: r.width - 14 - speakR, y: 14, w: speakR, h: speakR };
+
+      const baseRadius = Math.max(18, Math.min(34, r.width * 0.035));
+      const minDist = baseRadius * 2.2;
+
+      const types = [
+        { kind:'star', w:1.0 },
+        { kind:'lady', w:1.0 },
+        { kind:'leaf', w:1.0 }
+      ];
+
+      function pickType(){
+        const total = types.reduce((s,t)=>s+t.w,0);
+        let x = Math.random() * total;
+        for (const t of types){
+          x -= t.w;
+          if (x <= 0) return t.kind;
+        }
+        return 'star';
+      }
+
+      const out = [];
+      let tries = 0;
+      const maxTries = 1400;
+
+      while(out.length < n && tries < maxTries){
+        tries++;
+
+        const x = safe.x + Math.random() * safe.w;
+        const y = safe.y + Math.random() * safe.h;
+
+        if (pointInRect(x, y, avoid)) continue;
+
+        let ok = true;
+        for (const it of out){
+          const d = Math.hypot(it.x - x, it.y - y);
+          if (d < minDist) { ok = false; break; }
+        }
+        if (!ok) continue;
+
+        out.push({
+          x, y,
+          kind: pickType(),
+          r: baseRadius,
+          counted: false
+        });
+      }
+
+      return out;
+    }
+
+    function drawStar(c, cx, cy, outerR, innerR, points){
+      const step = Math.PI / points;
+      c.beginPath();
+      c.moveTo(cx, cy - outerR);
+      for (let i = 0; i < points; i++) {
+        c.lineTo(cx + Math.cos(step * (i*2+1) - Math.PI/2) * innerR,
+                 cy + Math.sin(step * (i*2+1) - Math.PI/2) * innerR);
+        c.lineTo(cx + Math.cos(step * (i*2+2) - Math.PI/2) * outerR,
+                 cy + Math.sin(step * (i*2+2) - Math.PI/2) * outerR);
+      }
+      c.closePath();
+      c.fillStyle = 'rgba(244,204,78,0.98)';
+      c.shadowColor = 'rgba(0,0,0,0.12)';
+      c.shadowBlur = 10;
+      c.fill();
+      c.shadowBlur = 0;
+      c.lineWidth = 3;
+      c.strokeStyle = 'rgba(255,255,255,0.85)';
+      c.stroke();
+    }
+
+    function drawLeaf(c, cx, cy, r){
+      c.save();
+      c.translate(cx, cy);
+      c.rotate((Math.random()*0.25) - 0.12);
+      c.beginPath();
+      c.moveTo(0, -r);
+      c.quadraticCurveTo(r*0.95, -r*0.10, 0, r);
+      c.quadraticCurveTo(-r*0.95, -r*0.10, 0, -r);
+      c.closePath();
+      c.fillStyle = 'rgba(114,196,120,0.96)';
+      c.shadowColor = 'rgba(0,0,0,0.12)';
+      c.shadowBlur = 10;
+      c.fill();
+      c.shadowBlur = 0;
+      c.lineWidth = 3;
+      c.strokeStyle = 'rgba(255,255,255,0.78)';
+      c.stroke();
+
+      c.beginPath();
+      c.moveTo(0, -r*0.75);
+      c.lineTo(0, r*0.75);
+      c.lineWidth = 2;
+      c.strokeStyle = 'rgba(255,255,255,0.65)';
+      c.stroke();
+      c.restore();
+    }
+
+    function drawLadybug(c, cx, cy, r){
+      c.save();
+      c.translate(cx, cy);
+      c.beginPath();
+      c.arc(0, 0, r, 0, Math.PI*2);
+      c.fillStyle = 'rgba(234,86,86,0.98)';
+      c.shadowColor = 'rgba(0,0,0,0.12)';
+      c.shadowBlur = 10;
+      c.fill();
+      c.shadowBlur = 0;
+
+      c.beginPath();
+      c.arc(0, -r*0.55, r*0.42, 0, Math.PI*2);
+      c.fillStyle = 'rgba(52,52,52,0.95)';
+      c.fill();
+
+      c.beginPath();
+      c.moveTo(0, -r*0.95);
+      c.lineTo(0, r*0.95);
+      c.lineWidth = 3;
+      c.strokeStyle = 'rgba(52,52,52,0.80)';
+      c.stroke();
+
+      const dotR = Math.max(2.5, r*0.14);
+      const dots = [
+        {x:-r*0.35, y:-r*0.10},
+        {x:-r*0.35, y: r*0.30},
+        {x: r*0.35, y:-r*0.10},
+        {x: r*0.35, y: r*0.30},
+      ];
+      c.fillStyle = 'rgba(52,52,52,0.90)';
+      for (const d of dots){
+        c.beginPath();
+        c.arc(d.x, d.y, dotR, 0, Math.PI*2);
+        c.fill();
+      }
+
+      c.lineWidth = 3;
+      c.strokeStyle = 'rgba(255,255,255,0.78)';
+      c.beginPath();
+      c.arc(0, 0, r, 0, Math.PI*2);
+      c.stroke();
+
+      c.restore();
+    }
+
+    function drawMark(c, cx, cy, r){
+      c.beginPath();
+      c.arc(cx, cy, r*0.78, 0, Math.PI*2);
+      c.lineWidth = Math.max(5, r*0.18);
+      c.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--mark-color').trim() || 'rgba(120,171,255,0.88)';
+      c.stroke();
+    }
+
+    function render(){
+      if (!ctx || !gameCard) return;
+      const r = gameCard.getBoundingClientRect();
+      ctx.clearRect(0,0,r.width,r.height);
+
+      for (const it of items){
+        if (it.kind === 'star') drawStar(ctx, it.x, it.y, it.r, it.r*0.55, 5);
+        if (it.kind === 'leaf') drawLeaf(ctx, it.x, it.y, it.r*0.95);
+        if (it.kind === 'lady') drawLadybug(ctx, it.x, it.y, it.r*0.95);
+
+        if (it.counted) drawMark(ctx, it.x, it.y, it.r);
+      }
+    }
+
+    function getCanvasPointFromEvent(e){
+      const rect = countCanvas.getBoundingClientRect();
+      const t = (e.touches && e.touches[0]) ? e.touches[0] : null;
+      const clientX = t ? t.clientX : (e.clientX ?? 0);
+      const clientY = t ? t.clientY : (e.clientY ?? 0);
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function hitTest(px, py){
+      for (let i = items.length - 1; i >= 0; i--){
+        const it = items[i];
+        const d = Math.hypot(it.x - px, it.y - py);
+        if (d <= it.r * 1.15) return it;
+      }
+      return null;
+    }
+
+    function flash(el, ms){
+      if (!el) return;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), Math.max(120, ms || 320));
+    }
+
+    function showBigMark(text, ms){
+      if (!bigMark) return;
+      bigMark.textContent = text;
+      bigMark.classList.add('show');
+      setTimeout(() => bigMark.classList.remove('show'), Math.max(200, ms || 520));
+    }
+
+    /* Spel flow */
+    let started = false;
+    let locked = false;
+    let wrongTries = 0;
+    let hasResultForCurrentTouches = false;
+    let currentPoints = [];
+    let roundToken = 0;
+
+    function wrongFeedback(){
+      scanArea.classList.remove('wrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('wrong');
+      setTimeout(() => scanArea.classList.remove('wrong'), 260);
+
+      scanArea.classList.remove('flashWrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('flashWrong');
+      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
+    }
+
+    function clearRoundUI(){
+      scanTitle.textContent = 'Tel de dingen in de kaart.';
+      scanSub.textContent = 'Scan het juiste cijfer.';
+      scanHint.textContent = '📱 Leg het blokje stil in het vak';
+    }
+
+    function nextRound(){
+      const myToken = ++roundToken;
+
+      locked = false;
+      wrongTries = 0;
+      clearRoundUI();
+
+      targetDigit = pickTarget();
+
+      items = generateItems(targetDigit);
+      for (const it of items) it.counted = false;
+      render();
+
+      setTimeout(() => {
+        if (myToken !== roundToken) return;
+        stopVoice();
+        playVoice(uitlegAudio);
+      }, 80);
+    }
+
+    function revealCorrectAfterThreeWrong(){
+      const myToken = ++roundToken;
+      locked = true;
+
+      scanTitle.textContent = 'Kijk nog eens.';
+      scanSub.textContent = 'Tel opnieuw en scan het juiste cijfer.';
+      scanHint.textContent = '';
+
+      stopVoice();
+      playVoice(revealAudio);
+
+      flash(badFlash, 380);
+      showBigMark(String(targetDigit), 900);
+
+      setTimeout(() => {
+        if (myToken !== roundToken) return;
+        nextRound();
+      }, 1400);
+    }
+
+    function handleRecognitionResult(recognizedDigit){
+      if (recognizedDigit == null) return;
+      if (!started || locked) return;
+
+      if (recognizedDigit === targetDigit){
+        const myToken = ++roundToken;
+        locked = true;
+
+        scanTitle.textContent = 'Goed gedaan.';
+        scanSub.textContent = '';
+        scanHint.textContent = '';
+
+        wrongTries = 0;
+
+        stopVoice();
+        playSfx(goodAudio);
+        playVoice(goodVoiceAudio);
+
+        flash(goodFlash, 420);
+        showBigMark('✓', 700);
+
+        setTimeout(() => {
+          if (myToken !== roundToken) return;
+          nextRound();
+        }, 820);
+
+      } else {
+        wrongTries += 1;
+
+        wrongFeedback();
+        playSfx(wrongAudio);
+        playVoice(wrongVoiceAudio);
+
+        flash(badFlash, 320);
+        showBigMark('✗', 420);
+
+        if (wrongTries >= 3){
+          revealCorrectAfterThreeWrong();
+          return;
+        }
+
+        setTimeout(() => {
+          if (!started || locked) return;
+          clearRoundUI();
+        }, 520);
+      }
+    }
+
+    /* Tellen door tikken */
+    function onCountTap(e){
+      if (!started || locked) return;
+
+      const p = getCanvasPointFromEvent(e);
+      const it = hitTest(p.x, p.y);
+      if (!it) return;
+
+      if (it.counted) return;
+
+      it.counted = true;
+      render();
+    }
+
+    countCanvas.addEventListener('touchstart', onCountTap, { passive: true });
+    countCanvas.addEventListener('mousedown', onCountTap);
+
+    /* Marbotic touch events, alleen op scanvlak */
+    function getPointsFromTouches(touchList) {
+      const rect = scanArea.getBoundingClientRect();
+      const points = [];
+      for (let i = 0; i < touchList.length; i++) {
+        const t = touchList[i];
+        const x = t.clientX;
+        const y = t.clientY;
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          points.push({ x, y });
+        }
+      }
+      return points;
+    }
+
+    function handleTouchEvent(e){
+      if (!calibration || !classificationStats) return;
+
+      const touches = e.touches || [];
+      currentPoints = getPointsFromTouches(touches);
+
+      if (currentPoints.length === 0){
+        hasResultForCurrentTouches = false;
+        return;
+      }
+
+      if (currentPoints.length !== expectedTouchPoints){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Even stil houden.';
+        scanSub.textContent = 'We lezen de puntjes.';
+        scanHint.textContent = '';
+        return;
+      }
+
+      scanTitle.textContent = 'Even stil houden.';
+      scanSub.textContent = 'We lezen de puntjes.';
+      scanHint.textContent = '';
+
+      if (!hasResultForCurrentTouches && !locked){
+        const digit = recognizeDigit(currentPoints);
+        if (digit !== null && typeof digit === "number"){
+          hasResultForCurrentTouches = true;
+          handleRecognitionResult(digit);
+        }
+      }
+    }
+
+    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
+      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
+    });
+
+    /* Start */
+    function startGame(){
+      if (started) return;
+      started = true;
+      startOverlay.style.display = 'none';
+
+      startBackgroundMusic();
+
+      try{
+        goodAudio.load();
+        wrongAudio.load();
+        uitlegAudio.load();
+        revealAudio.load();
+        goodVoiceAudio.load();
+        wrongVoiceAudio.load();
+      } catch(e){}
+
+      nextRound();
+    }
+
+    speakBtn.addEventListener('click', () => {
+      if (!started) startGame();
+      else {
+        stopVoice();
+        playVoice(uitlegAudio);
+      }
+    });
+
+    startBtn.addEventListener('click', startGame);
+    startOverlay.addEventListener('click', (e) => {
+      if (e.target === startOverlay) startGame();
+    });
+
+    homeBtn.addEventListener('click', () => {
+      try { window.location.href = 'index.html'; } catch (e) {}
+    });
+
+    window.addEventListener('load', () => {
+      setAutoScale();
+
+      countRange = loadCountRange();
+      syncCountUI();
+
+      resizeCountCanvas();
+      window.addEventListener('resize', () => setTimeout(resizeCountCanvas, 60));
+      window.addEventListener('orientationchange', () => setTimeout(resizeCountCanvas, 120));
+
+      badge('', false);
+
+      fetch('calibration.json', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => initCalibration(data))
+        .catch(() => { });
+
+      clearRoundUI();
+    });
+  </script>
+</body>
+</html>
