@@ -195,7 +195,6 @@
       transform: translate(-50%, -50%) scale(1);
     }
 
-    /* Succes gif */
     .successGif{
       position:absolute;
       left:50%;
@@ -452,9 +451,7 @@
       <div class="gameCard" id="gameCard" aria-label="Telkaart">
         <div class="cardInner">
           <canvas id="countCanvas" aria-label="Telveld"></canvas>
-
           <img class="successGif" id="successGif" src="bellen_blazen02.gif" alt="" aria-hidden="true" />
-
           <div class="bigMark" id="bigMark">✓</div>
         </div>
       </div>
@@ -478,7 +475,7 @@
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>Tik om te starten</h1>
-      <p>Tel de dingen, tik erop om te markeren, leg daarna het juiste houten cijfer in het scanvak.</p>
+      <p>Tel de dingen, tik erop om te markeren, scan daarna het juiste houten cijfer. Scannen mag ook zonder tikken.</p>
       <button class="startBtn" id="startBtn">Start</button>
     </div>
   </div>
@@ -597,7 +594,6 @@
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
 
-    // Plop mag vaak achter elkaar, dus we gebruiken een klein pooltje
     const plopPool = Array.from({ length: 6 }, () => {
       const a = new Audio(PLOP_SOUND_SRC);
       a.preload = 'auto';
@@ -739,11 +735,6 @@
 
     const itemImgs = { star:null, leaf:null, lady:null };
 
-    function getCardSize(){
-      const r = gameCard.getBoundingClientRect();
-      return { w: r.width, h: r.height };
-    }
-
     function getSafeRectWH(w, h){
       const pad = Math.max(46, Math.min(70, w * 0.065));
       return {
@@ -766,36 +757,32 @@
         x, y,
         kind,
         r: baseR * kindScale(kind),
-        rot: (Math.random() * 1.8) - 0.9,
+
+        rot: (Math.random() * 2.8) - 1.4,
         wobble: 0,
         wobbleUntil: 0,
 
         counted: false,
 
-        // bubble pop animatie (fout)
         bubblePopping: false,
         bubblePopStart: 0,
         bubblePopDur: 220,
 
-        // float animatie (goed)
         floating: false,
         floatStart: 0,
-        floatDur: 1500, // wordt dynamisch gezet, maximaal 2s
+        floatDur: 1500,
         driftX: 0,
         driftPhase: Math.random() * Math.PI * 2,
 
-        // verdwijnen (einde float)
         vanished: false,
-
-        // bubble pop bij plaatsen
         bubbleJustPlacedUntil: 0
       };
     }
 
     function generateItems(n){
-      const { w, h } = getCardSize();
-      const safe = getSafeRectWH(w, h);
-      const baseR = computeBaseRadius(w);
+      const r = gameCard.getBoundingClientRect();
+      const safe = getSafeRectWH(r.width, r.height);
+      const baseR = computeBaseRadius(r.width);
       const minDist = baseR * 2.15;
 
       const out = [];
@@ -824,9 +811,9 @@
     }
 
     function projectNormalizedToPixels(){
-      const { w, h } = getCardSize();
-      const safe = getSafeRectWH(w, h);
-      const baseR = computeBaseRadius(w);
+      const r = gameCard.getBoundingClientRect();
+      const safe = getSafeRectWH(r.width, r.height);
+      const baseR = computeBaseRadius(r.width);
 
       for (const it of items){
         it.x = safe.x + it.nx * safe.w;
@@ -844,7 +831,8 @@
     }
 
     function resolveOverlapsGentle(){
-      const safe = getSafeRectWH(getCardSize().w, getCardSize().h);
+      const r = gameCard.getBoundingClientRect();
+      const safe = getSafeRectWH(r.width, r.height);
 
       const maxIter = 22;
       for (let iter = 0; iter < maxIter; iter++){
@@ -982,7 +970,6 @@
 
       const now = performance.now();
 
-      // filter items die klaar zijn met float
       items = items.filter(it => !it.vanished);
 
       for (const it of items){
@@ -991,10 +978,8 @@
 
         let x = it.x;
         let y = it.y;
-
         let itemAlpha = 1;
 
-        // float gedrag bij goed antwoord
         if (it.floating){
           const t = (now - it.floatStart) / Math.max(1, it.floatDur);
           const e = easeInOut(t);
@@ -1005,7 +990,6 @@
           const sway = Math.sin((now / 220) + it.driftPhase) * it.driftX;
           x = it.x + sway;
 
-          // heel licht transparanter richting einde
           if (t > 0.72) itemAlpha = clamp(1 - (t - 0.72) / 0.28, 0, 1);
 
           if (t >= 1){
@@ -1019,7 +1003,6 @@
 
         drawSprite(ctx, img, x, y, it.r, it.rot, wobble, itemAlpha);
 
-        // bubble tekenen
         if (it.counted || it.bubblePopping || it.floating){
           let bAlpha = 1;
           let bScale = 1;
@@ -1039,17 +1022,14 @@
             }
           }
 
-          if (it.counted){
-            if (it.bubbleJustPlacedUntil && now < it.bubbleJustPlacedUntil){
-              const tt = 1 - ((it.bubbleJustPlacedUntil - now) / 160);
-              const ee = Math.sin(tt * Math.PI);
-              bScale = 1 + ee * 0.16;
-              requestRender();
-            }
+          if (it.counted && it.bubbleJustPlacedUntil && now < it.bubbleJustPlacedUntil){
+            const tt = 1 - ((it.bubbleJustPlacedUntil - now) / 160);
+            const ee = Math.sin(tt * Math.PI);
+            bScale = 1 + ee * 0.16;
+            requestRender();
           }
 
           if (it.floating){
-            // bubble blijft bij het item, licht groter door lucht
             bScale = Math.max(bScale, 1.02);
           }
 
@@ -1087,11 +1067,8 @@
 
     function showSuccessGif(ms){
       if (!successGif) return;
-
-      // herstart gif
       const src = successGif.getAttribute('src');
       successGif.setAttribute('src', src);
-
       successGif.classList.add('show');
       setTimeout(() => successGif.classList.remove('show'), Math.max(300, ms || 1900));
     }
@@ -1117,35 +1094,38 @@
       }
     }
 
+    function ensureAllHaveBubbles(){
+      for (const it of items){
+        if (!it.counted){
+          it.counted = true;
+          it.bubbleJustPlacedUntil = performance.now() + 120;
+        }
+      }
+    }
+
     function floatAllBubblesOutWithinTwoSeconds(){
-      const card = gameCard.getBoundingClientRect();
       const start = performance.now();
       const deadline = start + 2000;
+      const card = gameCard.getBoundingClientRect();
 
       for (const it of items){
         if (it.vanished) continue;
-
-        // Alleen items met bubble nemen we mee in de "bellen weg" animatie
-        // Maar jij wil: "met het item erin", dus ook als niet geteld, krijgt hij geen bubble
-        // Daarom: we laten alleen de bubbled items opstijgen
         if (!it.counted) continue;
 
         it.floating = true;
-        it.floatStart = start + randInt(0, 700);
+        it.floatStart = start + randInt(0, 650);
 
-        // duur zo dat alles vóór de deadline klaar is
         const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
         it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
 
-        // natuurlijke drift
-        const driftMax = Math.max(10, Math.min(36, card.width * 0.05));
+        const driftMax = Math.max(10, Math.min(40, card.width * 0.055));
         it.driftX = randFloat(driftMax * 0.35, driftMax);
 
         requestRender();
       }
     }
 
-    /* Game flow */
+    /* Spelstatus, één keer declareren */
     let started = false;
     let locked = false;
     let wrongTries = 0;
@@ -1194,24 +1174,6 @@
       }, 80);
     }
 
-    function revealCorrectAfterThreeWrong(){
-      const myToken = ++roundToken;
-      locked = true;
-
-      scanTitle.textContent = 'Kijk goed.';
-      scanSub.textContent = 'Dit is het juiste aantal.';
-      scanHint.textContent = '';
-
-      showBigMark(String(targetDigit), 900);
-
-      popAllBubblesOnly();
-
-      setTimeout(() => {
-        if (myToken !== roundToken) return;
-        nextRound();
-      }, 1400);
-    }
-
     function handleRecognitionResult(recognizedDigit){
       if (recognizedDigit == null) return;
       if (!started || locked) return;
@@ -1228,16 +1190,20 @@
 
         playSfx(goodAudio);
 
+        showBigMark('✓', 650);
+
         // pinguin dubbel zo lang
         showSuccessGif(1900);
 
-        // geen verkleuring, geen plop, bubbels zweven omhoog met item erin
+        // scannen mag altijd, dus bij goed zorgen we dat iedereen een bel heeft
+        // daarna zweven alle bellen met item omhoog, geen plop, geen verkleuring
+        ensureAllHaveBubbles();
         floatAllBubblesOutWithinTwoSeconds();
 
         setTimeout(() => {
           if (myToken !== roundToken) return;
           nextRound();
-        }, 1200);
+        }, 1300);
 
       } else {
         wrongTries += 1;
@@ -1245,14 +1211,26 @@
         wrongFeedback();
         playSfx(wrongAudio);
 
-        // Geen kruis tonen bij fout
+        // geen kruis bij fout
         if (bigMark) bigMark.classList.remove('show');
 
-        // Alleen de bellen knappen met plop, object blijft
+        // alleen de bellen knappen met plop, object blijft
         popAllBubblesOnly();
 
         if (wrongTries >= 3){
-          revealCorrectAfterThreeWrong();
+          const myToken2 = ++roundToken;
+          locked = true;
+
+          scanTitle.textContent = 'Kijk goed.';
+          scanSub.textContent = 'Dit is het juiste aantal.';
+          scanHint.textContent = '';
+
+          showBigMark(String(targetDigit), 900);
+
+          setTimeout(() => {
+            if (myToken2 !== roundToken) return;
+            nextRound();
+          }, 1400);
           return;
         }
 
@@ -1263,7 +1241,7 @@
       }
     }
 
-    /* Tellen door tikken, bubble plus wiebel */
+    /* Tellen door tikken */
     function onCountTap(e){
       if (!started || locked) return;
 
@@ -1531,211 +1509,18 @@
       handleRecognitionResult(wrong);
     }
 
-    if (testGoodBtn) testGoodBtn.addEventListener('click', testGood);
-    if (testWrongBtn) testWrongBtn.addEventListener('click', testWrong);
-    if (newRoundBtn) newRoundBtn.addEventListener('click', () => {
+    testGoodBtn.addEventListener('click', testGood);
+    testWrongBtn.addEventListener('click', testWrong);
+    newRoundBtn.addEventListener('click', () => {
       if (!started) return;
       nextRound();
     });
-
-    /* Game flow */
-    let started = false;
-    let locked = false;
-    let wrongTries = 0;
-    let hasResultForCurrentTouches = false;
-    let currentPoints = [];
-    let roundToken = 0;
-
-    function wrongFeedback(){
-      scanArea.classList.remove('wrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('wrong');
-      setTimeout(() => scanArea.classList.remove('wrong'), 260);
-
-      scanArea.classList.remove('flashWrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('flashWrong');
-      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
-    }
-
-    function clearRoundUI(){
-      scanTitle.textContent = 'Tel de dingen in de kaart.';
-      scanSub.textContent = 'Scan het juiste cijfer.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-    }
-
-    function nextRound(){
-      const myToken = ++roundToken;
-
-      locked = false;
-      wrongTries = 0;
-      clearRoundUI();
-
-      if (successGif) successGif.classList.remove('show');
-      if (bigMark) bigMark.classList.remove('show');
-
-      targetDigit = pickTarget();
-      items = generateItems(targetDigit);
-
-      projectNormalizedToPixels();
-      resolveOverlapsGentle();
-
-      requestRender();
-
-      setTimeout(() => {
-        if (myToken !== roundToken) return;
-      }, 80);
-    }
-
-    function popAllBubblesOnly(){
-      const marked = items.filter(it => it.counted && !it.floating && !it.vanished);
-      if (!marked.length) return;
-
-      for (const it of marked){
-        const delay = randInt(0, 520);
-        const dur = randInt(180, 320);
-        setTimeout(() => popBubble(it, dur), delay);
-      }
-    }
-
-    function floatAllBubblesOutWithinTwoSeconds(){
-      const start = performance.now();
-      const deadline = start + 2000;
-      const card = gameCard.getBoundingClientRect();
-
-      for (const it of items){
-        if (it.vanished) continue;
-        if (!it.counted) continue;
-
-        it.floating = true;
-        it.floatStart = start + randInt(0, 650);
-
-        const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
-        it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
-
-        const driftMax = Math.max(10, Math.min(40, card.width * 0.055));
-        it.driftX = randFloat(driftMax * 0.35, driftMax);
-
-        requestRender();
-      }
-    }
-
-    function handleRecognitionResult(recognizedDigit){
-      if (recognizedDigit == null) return;
-      if (!started || locked) return;
-
-      if (recognizedDigit === targetDigit){
-        const myToken = ++roundToken;
-        locked = true;
-
-        scanTitle.textContent = 'Goed gedaan.';
-        scanSub.textContent = '';
-        scanHint.textContent = '';
-
-        wrongTries = 0;
-
-        playSfx(goodAudio);
-
-        // pinguin dubbel zo lang
-        showSuccessGif(1900);
-
-        // bubbels zweven omhoog met item erin, geen plop
-        floatAllBubblesOutWithinTwoSeconds();
-
-        setTimeout(() => {
-          if (myToken !== roundToken) return;
-          nextRound();
-        }, 1300);
-
-      } else {
-        wrongTries += 1;
-
-        wrongFeedback();
-        playSfx(wrongAudio);
-
-        // Geen kruis tonen bij fout
-        if (bigMark) bigMark.classList.remove('show');
-
-        // Alleen bellen knappen met plop
-        popAllBubblesOnly();
-
-        if (wrongTries >= 3){
-          const myToken2 = ++roundToken;
-          locked = true;
-
-          scanTitle.textContent = 'Kijk goed.';
-          scanSub.textContent = 'Dit is het juiste aantal.';
-          scanHint.textContent = '';
-
-          showBigMark(String(targetDigit), 900);
-
-          setTimeout(() => {
-            if (myToken2 !== roundToken) return;
-            nextRound();
-          }, 1400);
-          return;
-        }
-
-        setTimeout(() => {
-          if (!started || locked) return;
-          clearRoundUI();
-        }, 520);
-      }
-    }
-
-    /* Tellen door tikken */
-    function onCountTap(e){
-      if (!started || locked) return;
-
-      const p = getCanvasPointFromEvent(e);
-      const it = hitTest(p.x, p.y);
-      if (!it) return;
-      if (it.counted) return;
-
-      it.counted = true;
-      it.bubbleJustPlacedUntil = performance.now() + 160;
-
-      const now = performance.now();
-      const dir = Math.random() < 0.5 ? -1 : 1;
-      it.wobble = dir * 0.32;
-      it.wobbleUntil = now + 220;
-
-      requestRender();
-    }
-
-    countCanvas.addEventListener('touchstart', onCountTap, { passive: true });
-    countCanvas.addEventListener('mousedown', onCountTap);
-
-    /* Helper functies voor bubble animaties */
-    function popBubble(it, dur){
-      if (!it) return;
-      const now = performance.now();
-      it.bubblePopping = true;
-      it.bubblePopStart = now;
-      it.bubblePopDur = dur ?? randInt(180, 320);
-      playPlop();
-      requestRender();
-    }
-
-    function showSuccessGif(ms){
-      if (!successGif) return;
-      const src = successGif.getAttribute('src');
-      successGif.setAttribute('src', src);
-      successGif.classList.add('show');
-      setTimeout(() => successGif.classList.remove('show'), Math.max(300, ms || 1900));
-    }
-
-    function showBigMark(text, ms){
-      if (!bigMark) return;
-      bigMark.textContent = text;
-      bigMark.classList.add('show');
-      setTimeout(() => bigMark.classList.remove('show'), Math.max(200, ms || 520));
-    }
 
     /* Start */
     function startGame(){
       if (started) return;
       started = true;
+
       startOverlay.style.display = 'none';
 
       try{
@@ -1789,7 +1574,6 @@
       syncCountUI();
 
       resizeCountCanvas();
-
       window.addEventListener('resize', () => setTimeout(resizeCountCanvas, 180));
       window.addEventListener('orientationchange', () => setTimeout(resizeCountCanvas, 280));
 
