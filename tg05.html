@@ -159,7 +159,7 @@
       left:50%;
       top:50%;
       transform: translate(-50%, -50%) scale(1);
-      width: clamp(160px, calc(260px * var(--scale)), 320px);
+      width: clamp(160px, calc(260px * var(--scale)), 340px);
       height: auto;
       opacity: 0;
       pointer-events:none;
@@ -458,23 +458,6 @@
   </div>
 
   <script>
-    /*
-      Bestanden in dezelfde map:
-      calibration.json
-      bubble.png
-      ster.png
-      blad.png
-      lieveheersbeestje.png
-      bellen_blazen02.gif
-      bel_barst.gif
-      goed.mp3
-      fout.mp3
-      home.png
-
-      Audio map:
-      audio/plopgeluid.mp3
-    */
-
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     const GOOD_SOUND_SRC = 'goed.mp3';
@@ -523,10 +506,7 @@
     function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
-
-      const baseW = 980;
-      const baseH = 520;
-      const pad = 18;
+      const baseW = 980, baseH = 520, pad = 18;
 
       const sW = Math.max(0.1, (r.width  - pad) / baseW);
       const sH = Math.max(0.1, (r.height - pad) / baseH);
@@ -535,11 +515,9 @@
       s = Math.max(0.55, Math.min(1.05, s));
       document.documentElement.style.setProperty('--scale', String(s));
     }
-
     window.addEventListener('resize', setAutoScale);
     window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
 
-    /* Audio goed en fout */
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
 
@@ -552,7 +530,6 @@
       } catch(e){}
     }
 
-    /* Plop WebAudio met fallback pool */
     let audioCtx = null;
     let plopBuffer = null;
     let plopFallbackPool = [];
@@ -663,7 +640,6 @@
     document.addEventListener('touchstart', unlockOnFirstGesture, { passive: true, once: true });
     document.addEventListener('mousedown', unlockOnFirstGesture, { once: true });
 
-    /* Telbereik instellingen */
     const COUNT_KEY = 'countRangeV2';
     const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
     let countRange = { ...DEFAULT_COUNT_RANGE };
@@ -734,10 +710,7 @@
       syncCountUI();
       unlockAudio();
     }
-
-    function closeTunePanel(){
-      tunePanel.classList.add('hidden');
-    }
+    function closeTunePanel(){ tunePanel.classList.add('hidden'); }
 
     tuneBtn.addEventListener('click', () => {
       if (tunePanel.classList.contains('hidden')) openTunePanel();
@@ -745,10 +718,9 @@
     });
     tuneClose.addEventListener('click', closeTunePanel);
 
-    /* Canvas en assets */
     let ctx = null;
     let items = [];
-    let targetDigit = 1;
+    let target = 1;
 
     const bubbleImg = new Image();
     bubbleImg.src = BUBBLE_SRC;
@@ -779,11 +751,11 @@
     }
 
     function computeBaseRadius(w){
-      return Math.max(36, Math.min(56, w * 0.070));
+      return Math.max(38, Math.min(58, w * 0.075));
     }
 
     function kindScale(kind){
-      if (kind === 'star') return 0.82; // sterren iets kleiner
+      if (kind === 'star') return 0.78;
       return 1.00;
     }
 
@@ -792,9 +764,14 @@
       return all[Math.floor(Math.random() * all.length)];
     }
 
-    function makeItem(nx, ny, kind, baseR, safe){
+    function nowMs(){ return performance.now(); }
+
+    function makeItem(nx, ny, kind, baseR, safe, appearBase){
       const x = safe.x + nx * safe.w;
       const y = safe.y + ny * safe.h;
+
+      const delay = randInt(0, 220);
+      const appearDur = randInt(260, 360);
 
       return {
         nx, ny,
@@ -802,7 +779,7 @@
         kind,
         r: baseR * kindScale(kind),
 
-        rot: randFloat(-1.75, 1.75), // meer verschil in rotatie
+        rot: randFloat(-1.95, 1.95),
         counted: false,
 
         bubblePopping: false,
@@ -815,7 +792,11 @@
         driftX: 0,
         driftPhase: Math.random() * Math.PI * 2,
 
-        vanished: false
+        vanished: false,
+
+        appearStart: appearBase + delay,
+        appearDur,
+        appearDone: false
       };
     }
 
@@ -828,6 +809,7 @@
       const out = [];
       let tries = 0;
       const maxTries = 2800;
+      const appearBase = nowMs();
 
       while(out.length < n && tries < maxTries){
         tries++;
@@ -844,7 +826,7 @@
         }
         if (!ok) continue;
 
-        out.push(makeItem(nx, ny, pickKind(), baseR, safe));
+        out.push(makeItem(nx, ny, pickKind(), baseR, safe, appearBase));
       }
 
       return out;
@@ -943,12 +925,28 @@
       else render();
     }
 
-    function drawSprite(c, img, cx, cy, r, rot, alpha){
+    function easeOut(t){
+      t = clamp(t, 0, 1);
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function easeInOut(t){
+      t = clamp(t, 0, 1);
+      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+    }
+
+    function easeOutBack(t){
+      t = clamp(t, 0, 1);
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    function drawSprite(c, img, cx, cy, r, rot, alpha, scale){
       if (!img || !img.complete) return;
 
-      const size = r * 2.25;
-      const x = -size / 2;
-      const y = -size / 2;
+      const base = r * 2.25;
+      const size = base * (scale || 1);
 
       c.save();
       c.globalAlpha = alpha;
@@ -962,7 +960,7 @@
       c.shadowOffsetY = Math.max(6, r * 0.22);
 
       c.imageSmoothingEnabled = true;
-      c.drawImage(img, x, y, size, size);
+      c.drawImage(img, -size/2, -size/2, size, size);
 
       c.restore();
     }
@@ -979,16 +977,6 @@
       c.restore();
     }
 
-    function easeOut(t){
-      t = clamp(t, 0, 1);
-      return 1 - Math.pow(1 - t, 3);
-    }
-
-    function easeInOut(t){
-      t = clamp(t, 0, 1);
-      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
-    }
-
     let renderRAF = null;
     function requestRender(){
       if (renderRAF) return;
@@ -1003,7 +991,7 @@
       const card = gameCard.getBoundingClientRect();
       ctx.clearRect(0,0,card.width,card.height);
 
-      const now = performance.now();
+      const tNow = nowMs();
 
       items = items.filter(it => !it.vanished);
 
@@ -1013,18 +1001,35 @@
         let x = it.x;
         let y = it.y;
         let itemAlpha = 1;
+        let itemScale = 1;
+
+        if (!it.appearDone){
+          const t = (tNow - it.appearStart) / Math.max(1, it.appearDur);
+          if (t <= 0){
+            itemAlpha = 0;
+            itemScale = 0.88;
+            requestRender();
+          } else if (t < 1){
+            const e = easeOut(t);
+            itemAlpha = e;
+            itemScale = 0.88 + easeOutBack(t) * 0.16;
+            requestRender();
+          } else {
+            it.appearDone = true;
+          }
+        }
 
         if (it.floating){
-          const t = (now - it.floatStart) / Math.max(1, it.floatDur);
+          const t = (tNow - it.floatStart) / Math.max(1, it.floatDur);
           const e = easeInOut(t);
 
           const lift = (card.height + it.r * 3.2) * e;
           y = it.y - lift;
 
-          const sway = Math.sin((now / 220) + it.driftPhase) * it.driftX;
+          const sway = Math.sin((tNow / 220) + it.driftPhase) * it.driftX;
           x = it.x + sway;
 
-          if (t > 0.72) itemAlpha = clamp(1 - (t - 0.72) / 0.28, 0, 1);
+          if (t > 0.72) itemAlpha *= clamp(1 - (t - 0.72) / 0.28, 0, 1);
 
           if (t >= 1){
             it.vanished = true;
@@ -1035,14 +1040,14 @@
           }
         }
 
-        drawSprite(ctx, img, x, y, it.r, it.rot, itemAlpha);
+        drawSprite(ctx, img, x, y, it.r, it.rot, itemAlpha, itemScale);
 
         if (it.counted || it.bubblePopping || it.floating){
           let bAlpha = 1;
           let bScale = 1;
 
           if (it.bubblePopping){
-            const t = (now - it.bubblePopStart) / Math.max(1, it.bubblePopDur);
+            const t = (tNow - it.bubblePopStart) / Math.max(1, it.bubblePopDur);
             const e = easeOut(t);
             bAlpha = 1 - e;
             bScale = 1 + e * 0.28;
@@ -1057,7 +1062,7 @@
           }
 
           if (it.counted || it.floating || bAlpha > 0.01){
-            drawBubble(ctx, x, y, it.r, bAlpha * itemAlpha, bScale);
+            drawBubble(ctx, x, y, it.r, bAlpha * itemAlpha, bScale * itemScale);
           }
         }
       }
@@ -1065,9 +1070,8 @@
 
     function getCanvasPointFromEvent(e){
       const rect = countCanvas.getBoundingClientRect();
-      const t = (e.touches && e.touches[0]) ? e.touches[0] : null;
-      const clientX = t ? t.clientX : (e.clientX ?? 0);
-      const clientY = t ? t.clientY : (e.clientY ?? 0);
+      const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
       return { x: clientX - rect.left, y: clientY - rect.top };
     }
 
@@ -1075,20 +1079,24 @@
       for (let i = items.length - 1; i >= 0; i--){
         const it = items[i];
         if (it.vanished) continue;
+
         const d = Math.hypot(it.x - px, it.y - py);
-        if (d <= it.r * 1.18) return it;
+
+        const minTap = 44;                         // minimale klikradius voor kindvingers
+        const extra = Math.max(minTap, it.r * 1.55); // grotere hitbox, voelt veel beter
+
+        if (d <= extra) return it;
       }
       return null;
     }
 
     function popBubble(it, dur){
       if (!it) return;
-
       it.bubblePopping = true;
-      it.bubblePopStart = performance.now();
+      it.bubblePopStart = nowMs();
       it.bubblePopDur = dur ?? randInt(180, 320);
 
-      playPlop(); // synchroon met start van de barst animatie
+      playPlop(); // direct synchroon met de start van barsten
       requestRender();
     }
 
@@ -1097,20 +1105,18 @@
       if (!marked.length) return;
 
       for (const it of marked){
-        const delay = randInt(0, 180); // strak, zodat beeld en geluid niet loslopen
+        const delay = randInt(0, 180);
         const dur = randInt(180, 320);
         setTimeout(() => popBubble(it, dur), delay);
       }
     }
 
     function ensureAllHaveBubbles(){
-      for (const it of items){
-        it.counted = true;
-      }
+      for (const it of items) it.counted = true;
     }
 
     function floatAllBubblesOutWithinTwoSeconds(){
-      const start = performance.now();
+      const start = nowMs();
       const deadline = start + 2000;
       const card = gameCard.getBoundingClientRect();
 
@@ -1131,34 +1137,32 @@
       }
     }
 
-    function showSuccessSequence(){
-      if (!successGif) return;
+    function showSuccessSequenceAndReturnTotalMs(){
+      if (!successGif) return 0;
 
-      const BLOW_TIME = 3200; // pinguin langer in beeld
-      const POP_TIME  = 950;  // barstgif
+      const BLOW_TIME = 3200;
+      const POP_TIME  = 950;
 
       successGif.classList.add('show');
       successGif.src = BLOW_GIF_SRC;
 
       setTimeout(() => {
-        successGif.src = POP_GIF_SRC; // direct wisselen, zelfde plek, geen reload truc nodig
+        successGif.src = POP_GIF_SRC;
       }, BLOW_TIME);
 
       setTimeout(() => {
         successGif.classList.remove('show');
         successGif.src = BLOW_GIF_SRC;
       }, BLOW_TIME + POP_TIME);
+
+      return BLOW_TIME + POP_TIME;
     }
 
-    /* Spelstatus */
     let started = false;
     let locked = false;
     let wrongTries = 0;
-    let target = 1;
 
-    function pickTarget(){
-      return randInt(countRange.min, countRange.max);
-    }
+    function pickTarget(){ return randInt(countRange.min, countRange.max); }
 
     function clearRoundUI(){
       scanTitle.textContent = 'Tel de dingen in de kaart.';
@@ -1172,10 +1176,11 @@
       clearRoundUI();
 
       target = pickTarget();
-      items = generateItems(target);
 
+      items = generateItems(target);
       projectNormalizedToPixels();
       resolveOverlapsGentle();
+
       requestRender();
     }
 
@@ -1200,10 +1205,11 @@
         playSfx(goodAudio);
 
         ensureAllHaveBubbles();
-        showSuccessSequence();
+        const totalMs = showSuccessSequenceAndReturnTotalMs();
         floatAllBubblesOutWithinTwoSeconds();
 
-        setTimeout(() => nextRound(), 1400);
+        // wacht met de volgende opdracht tot pinguin en barst klaar zijn
+        setTimeout(() => nextRound(), Math.max(1200, totalMs + 120));
       } else {
         wrongTries += 1;
 
@@ -1229,11 +1235,12 @@
       }
     }
 
-    /* Tellen door tikken */
-    function onCountTap(e){
+    function onCanvasPointerDown(e){
       if (!started || locked) return;
 
       unlockAudio();
+
+      e.preventDefault();
 
       const p = getCanvasPointFromEvent(e);
       const it = hitTest(p.x, p.y);
@@ -1243,10 +1250,10 @@
       requestRender();
     }
 
-    countCanvas.addEventListener('touchstart', onCountTap, { passive: true });
-    countCanvas.addEventListener('mousedown', onCountTap);
+    // één duidelijke inputroute
+    countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
 
-    /* Marbotic herkenning */
+    /* Marbotic herkenning, ongewijzigd uit je werkende code */
     let calibration = null;
     let classificationStats = null;
     let expectedTouchPoints = 3;
@@ -1483,15 +1490,10 @@
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
-    /* Test knoppen */
-    function testGood(){
-      if (!started || locked) return;
-      handleAnswer(target);
-    }
-
+    function testGood(){ if (!started || locked) return; handleAnswer(target); }
     function testWrong(){
       if (!started || locked) return;
-      const wrong = (target % 9) + 1;
+      const wrong = target === 9 ? 1 : target + 1;
       handleAnswer(wrong);
     }
 
@@ -1500,7 +1502,6 @@
     newRoundBtn.addEventListener('click', () => { unlockAudio(); if (started) nextRound(); });
     testPlopBtn.addEventListener('click', () => { unlockAudio(); playPlop(); });
 
-    /* Start */
     async function startGame(){
       if (started) return;
       started = true;
@@ -1534,11 +1535,6 @@
       requestRender();
     }
 
-    function loop(){
-      requestAnimationFrame(loop);
-      requestRender();
-    }
-
     window.addEventListener('load', () => {
       setAutoScale();
 
@@ -1550,9 +1546,7 @@
       window.addEventListener('orientationchange', () => setTimeout(resizeCountCanvas, 280));
 
       clearRoundUI();
-
       preloadImages();
-      loop();
 
       fetch('calibration.json', { cache: 'no-store' })
         .then(r => r.json())
