@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="nl">
 <head>
@@ -483,13 +482,11 @@
   </div>
 
   <script>
-    // Helpers
     const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
     const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
     const randFloat = (a,b) => a + Math.random() * (b - a);
     const nowMs = () => performance.now();
 
-    // Assets
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     const GOOD_SOUND_SRC = 'goed.mp3';
@@ -508,7 +505,6 @@
 
     const voiceSrc = (n) => `audio/${n}.mp3`;
 
-    // Elements
     const gameCard = document.getElementById('gameCard');
     const countCanvas = document.getElementById('countCanvas');
     const homeBtn = document.getElementById('homeBtn');
@@ -542,7 +538,6 @@
 
     const successGif = document.getElementById('successGif');
 
-    // Scale
     function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
@@ -556,9 +551,10 @@
       document.documentElement.style.setProperty('--scale', String(s));
     }
 
-    // Sounds
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
+    goodAudio.preload = 'auto';
+    wrongAudio.preload = 'auto';
 
     function playSfx(a){
       if (!a) return;
@@ -569,27 +565,29 @@
       } catch(e){}
     }
 
-    // Voice (counting, plus “zeg het goede cijfer”)
+    // Voice, alleen gebruiken bij telhulp en bij goed antwoord
     const voicePlayer = new Audio();
     voicePlayer.preload = 'auto';
     voicePlayer.volume = 1;
 
+    let voiceBusy = false;
+
     function stopVoice(){
       try{ voicePlayer.pause(); } catch(e){}
       try{ voicePlayer.currentTime = 0; } catch(e){}
+      voiceBusy = false;
     }
 
     function speakNumber(n){
       return new Promise((resolve) => {
-        let done = false;
         const finish = () => {
-          if (done) return;
-          done = true;
           voicePlayer.onended = null;
           voicePlayer.onerror = null;
+          voiceBusy = false;
           resolve();
         };
 
+        voiceBusy = true;
         voicePlayer.onended = finish;
         voicePlayer.onerror = finish;
 
@@ -598,17 +596,30 @@
           voicePlayer.currentTime = 0;
           voicePlayer.src = voiceSrc(n);
           voicePlayer.load();
+
           const p = voicePlayer.play();
-          if (p && typeof p.catch === 'function') p.catch(() => finish());
+          if (p && typeof p.catch === 'function'){
+            p.catch(() => {
+              // iOS kan soms de eerste play weigeren, probeer 1 korte retry
+              setTimeout(() => {
+                try{
+                  const p2 = voicePlayer.play();
+                  if (p2 && typeof p2.catch === 'function') p2.catch(() => finish());
+                } catch(e){ finish(); }
+              }, 120);
+            });
+          }
         } catch(e){
           finish();
         }
 
-        setTimeout(() => finish(), 1800);
+        setTimeout(() => {
+          if (voiceBusy) finish();
+        }, 2000);
       });
     }
 
-    // Plop, WebAudio first, fallback pool otherwise
+    // Plop, WebAudio plus fallback
     let audioCtx = null;
     let plopBuffer = null;
     let plopFallbackPool = [];
@@ -660,20 +671,7 @@
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
       } catch(e){}
 
-      // Warmup voice, maar nooit blokkeren
-      try{
-        voicePlayer.muted = true;
-        voicePlayer.src = voiceSrc(1);
-        voicePlayer.load();
-        const p = voicePlayer.play();
-        if (p && typeof p.catch === 'function') await p.catch(() => {});
-        voicePlayer.pause();
-        voicePlayer.currentTime = 0;
-        voicePlayer.muted = false;
-      } catch(e){
-        try{ voicePlayer.muted = false; } catch(err){}
-      }
-
+      // Warmup plop fallback, zonder hoorbaar effect
       if (plopFallbackPool.length){
         try{
           const a = plopFallbackPool[0];
@@ -721,7 +719,7 @@
       }
     }
 
-    // Settings
+    // Settings telbereik
     const COUNT_KEY = 'countRangeV3';
     const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
     let countRange = { ...DEFAULT_COUNT_RANGE };
@@ -871,6 +869,7 @@
         r: baseR * kindScale(kind),
 
         rot: randFloat(-2.35, 2.35),
+
         counted: false,
         helpBubble: false,
 
@@ -1034,6 +1033,7 @@
 
       c.save();
       c.globalAlpha = alpha;
+
       c.translate(cx, cy);
       c.rotate(rot || 0);
 
@@ -1197,6 +1197,7 @@
 
       for (const it of items){
         if (it.vanished) continue;
+
         it.counted = true;
         it.helpBubble = false;
 
@@ -1230,8 +1231,8 @@
     function showSuccessSequenceTotalMs(){
       if (!successGif) return 0;
 
-      const BLOW_TIME = 5200;
-      const POP_TIME  = 950;
+      const BLOW_TIME = 2800;
+      const POP_TIME  = 900;
 
       successGif.src = BLOW_GIF_SRC;
       successGif.classList.add('show');
@@ -1268,10 +1269,10 @@
       wrongTries = 0;
       mode = 'normal';
 
+      stopVoice();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
-      stopVoice();
       clearRoundUI();
 
       target = pickTarget();
@@ -1297,26 +1298,33 @@
       scanSub.textContent = 'We tellen samen.';
       scanHint.textContent = '';
 
-      for (const it of items){
+      // reset
+      items.forEach(it => {
         it.counted = false;
         it.helpBubble = false;
-      }
+      });
       requestRender();
 
+      // opbouwend tellen, bubbles blijven staan
       for (let i = 0; i < items.length; i++){
         if (myToken !== helpToken) return;
 
-        for (const it of items) it.helpBubble = false;
-        items[i].helpBubble = true;
+        for (let j = 0; j <= i; j++){
+          items[j].helpBubble = true;
+        }
         requestRender();
 
         await speakNumber(i + 1);
-        await new Promise(r => setTimeout(r, 120));
+        await new Promise(r => setTimeout(r, 220));
       }
 
       if (myToken !== helpToken) return;
 
-      for (const it of items) it.helpBubble = false;
+      // maak de bubbles definitief zichtbaar
+      items.forEach(it => {
+        it.counted = true;
+        it.helpBubble = false;
+      });
       requestRender();
 
       showScanDigit(target);
@@ -1345,8 +1353,7 @@
       const seqMs = showSuccessSequenceTotalMs();
       floatAllBubblesOutWithinTwoSeconds();
 
-      const waitMs = Math.max(2300, seqMs + 200);
-      setTimeout(() => nextRound(), waitMs);
+      setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
     }
 
     function onWrongAnswer(){
@@ -1355,6 +1362,8 @@
       playSfx(wrongAudio);
       flashTelvlakWrong();
       wrongFeedback();
+
+      // bij fout, alleen bubbles ploppen, items blijven zichtbaar
       popAllMarkedBubblesOnly();
 
       if (wrongTries >= 3){
@@ -1389,13 +1398,14 @@
       const it = hitTest(p.x, p.y);
       if (!it) return;
 
+      // aanklikken is stil, alleen visueel
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
     }
     countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
 
-    // Marbotic recognition
+    // Marbotic herkenning
     let calibration = null;
     let classificationStats = null;
     let expectedTouchPoints = 3;
@@ -1646,15 +1656,13 @@
     testHelpBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started && !locked) { wrongTries = 2; onWrongAnswer(); } });
     testPlopBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); playPlop(); });
 
-    // Start, deze kan niet meer vastlopen
+    // Start
     function startGame(){
       if (started) return;
       started = true;
 
-      // Eerst altijd UI vrijgeven
       startOverlay.style.display = 'none';
 
-      // Dan audio en preload proberen, zonder blokkeren
       Promise.resolve()
         .then(() => initWebAudio())
         .then(() => unlockAudio())
@@ -1665,7 +1673,6 @@
         wrongAudio.load();
       } catch(e){}
 
-      // Altijd direct een ronde starten
       nextRound();
     }
 
