@@ -208,6 +208,25 @@
       transform: translate(-50%, -50%) scale(1);
     }
 
+    /* Succes gif */
+    .successGif{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%, -50%) scale(0.96);
+      width: clamp(140px, calc(220px * var(--scale)), 280px);
+      height: auto;
+      opacity: 0;
+      pointer-events:none;
+      z-index: 110;
+      transition: opacity 160ms ease, transform 160ms ease;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
+    }
+    .successGif.show{
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
     .scanOverlay{
       position:absolute;
       inset: 0;
@@ -396,6 +415,31 @@
 
     .tuneRow input[type="range"]{ width: 100%; }
 
+    .tuneButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tuneBtnSmall{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      font-size: 14px;
+    }
+    .tuneBtnSmall.secondary{
+      background:#f8c3b0;
+      color:#4d4a48;
+    }
+    .tuneBtnSmall:active{ transform: scale(0.99); }
+
     .tuneHint{
       margin-top: 8px;
       font-size: 12px;
@@ -421,6 +465,9 @@
       <div class="gameCard" id="gameCard" aria-label="Telkaart">
         <div class="cardInner">
           <canvas id="countCanvas" aria-label="Telveld"></canvas>
+
+          <img class="successGif" id="successGif" src="bellen_blazen02.gif" alt="" aria-hidden="true" />
+
           <div class="cardFlash good" id="goodFlash"></div>
           <div class="cardFlash bad" id="badFlash"></div>
           <div class="bigMark" id="bigMark">✓</div>
@@ -472,24 +519,32 @@
         <div class="tuneValue" id="countMaxValue">5</div>
       </div>
 
+      <div class="tuneButtons">
+        <button class="tuneBtnSmall" id="testGoodBtn">Test goed</button>
+        <button class="tuneBtnSmall secondary" id="testWrongBtn">Test fout</button>
+        <button class="tuneBtnSmall secondary" id="newRoundBtn">Nieuwe ronde</button>
+      </div>
+
       <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
   </div>
 
   <script>
     /*
-      Vereist:
+      Vereist in dezelfde map:
       calibration.json
       bubble.png
       lieveheersbeestje.png
       ster.png
       blad.png
+      bellen_blazen02.gif
       goed.mp3
       fout.mp3
       home.png
     */
 
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+
     const GOOD_SOUND_SRC = 'goed.mp3';
     const WRONG_SOUND_SRC = 'fout.mp3';
 
@@ -523,9 +578,14 @@
     const countMaxValue = document.getElementById('countMaxValue');
     const countHint = document.getElementById('countHint');
 
+    const testGoodBtn = document.getElementById('testGoodBtn');
+    const testWrongBtn = document.getElementById('testWrongBtn');
+    const newRoundBtn = document.getElementById('newRoundBtn');
+
     const goodFlash = document.getElementById('goodFlash');
     const badFlash = document.getElementById('badFlash');
     const bigMark = document.getElementById('bigMark');
+    const successGif = document.getElementById('successGif');
 
     function setAutoScale(){
       if (!gameCard) return;
@@ -640,18 +700,15 @@
     });
     tuneClose.addEventListener('click', closeTunePanel);
 
-    /* Canvas */
+    /* Canvas en items */
     let ctx = null;
     let items = [];
     let targetDigit = 1;
 
-    function randInt(a, b){
-      return a + Math.floor(Math.random() * (b - a + 1));
-    }
+    function randInt(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
+    function randFloat(a, b){ return a + Math.random() * (b - a); }
 
-    function pickTarget(){
-      return randInt(countRange.min, countRange.max);
-    }
+    function pickTarget(){ return randInt(countRange.min, countRange.max); }
 
     function pickKind(){
       const all = ['star','leaf','lady'];
@@ -693,10 +750,7 @@
     }
 
     function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-    function computeBaseRadius(w){
-      return Math.max(30, Math.min(62, w * 0.060));
-    }
+    function computeBaseRadius(w){ return Math.max(30, Math.min(62, w * 0.060)); }
 
     function makeItemAt(nx, ny, kind, baseR, safe){
       const x = safe.x + nx * safe.w;
@@ -710,8 +764,18 @@
         rot: (Math.random() * 1.8) - 0.9,
         wobble: 0,
         wobbleUntil: 0,
-        popUntil: 0,
-        counted: false
+
+        counted: false,
+
+        // bubble animatie
+        bubblePopping: false,
+        bubblePopStart: 0,
+        bubblePopDur: 220,
+
+        // verdwijnen van het item
+        vanishing: false,
+        vanishStart: 0,
+        vanishDur: 240
       };
     }
 
@@ -741,8 +805,7 @@
         if (!ok) continue;
 
         const kind = pickKind();
-        const it = makeItemAt(nx, ny, kind, baseR, safe);
-        out.push(it);
+        out.push(makeItemAt(nx, ny, kind, baseR, safe));
       }
 
       return out;
@@ -818,7 +881,6 @@
 
     function relayoutKeepPositions(){
       if (!items || !items.length) return;
-
       projectNormalizedToPixels();
       resolveOverlapsGentle();
       requestRender();
@@ -838,14 +900,11 @@
       ctx = countCanvas.getContext('2d');
       ctx.setTransform(dpr,0,0,dpr,0,0);
 
-      if (started && items && items.length){
-        relayoutKeepPositions();
-      } else {
-        render();
-      }
+      if (started && items && items.length) relayoutKeepPositions();
+      else render();
     }
 
-    function drawSprite(c, img, cx, cy, r, rot, wobble){
+    function drawSprite(c, img, cx, cy, r, rot, wobble, alpha){
       if (!img || !img.complete) return;
 
       const size = r * 2.15;
@@ -853,6 +912,8 @@
       const y = -size / 2;
 
       c.save();
+      c.globalAlpha = alpha;
+
       c.translate(cx, cy);
       c.rotate((Number(rot) || 0) + (Number(wobble) || 0));
 
@@ -867,21 +928,26 @@
       c.restore();
     }
 
-    function drawBubbleMark(c, cx, cy, r, popFactor){
+    function drawBubble(c, cx, cy, r, alpha, scale){
       if (!bubbleImg || !bubbleImg.complete) return;
 
       const mult = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-size-mult')) || 2.2;
-      const size = r * mult * (popFactor || 1);
+      const size = r * mult * (scale || 1);
 
       const x = cx - size / 2;
       const y = cy - size / 2;
 
-      const opacity = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-opacity')) || 0.92;
+      const baseOpacity = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-opacity')) || 0.92;
 
       c.save();
-      c.globalAlpha = opacity;
+      c.globalAlpha = baseOpacity * alpha;
       c.drawImage(bubbleImg, x, y, size, size);
       c.restore();
+    }
+
+    function easeOut(t){
+      t = clamp(t, 0, 1);
+      return 1 - Math.pow(1 - t, 3);
     }
 
     let renderRAF = null;
@@ -900,23 +966,66 @@
 
       const now = performance.now();
 
+      // items verwijderen die klaar zijn met verdwijnen
+      let changed = false;
+      items = items.filter(it => {
+        if (!it.vanishing) return true;
+        const t = (now - it.vanishStart) / Math.max(1, it.vanishDur);
+        if (t >= 1) { changed = true; return false; }
+        return true;
+      });
+
       for (const it of items){
         const img = itemImgs[it.kind];
-
         const wobble = (it.wobbleUntil && now < it.wobbleUntil) ? it.wobble : 0;
-        drawSprite(ctx, img, it.x, it.y, it.r, it.rot, wobble);
 
-        if (it.counted){
-          let pop = 1;
-          if (it.popUntil && now < it.popUntil){
-            const t = 1 - ((it.popUntil - now) / 170);
-            const eased = Math.sin(t * Math.PI);
-            pop = 1 + eased * 0.18;
-            requestRender();
+        // alpha voor item
+        let itemAlpha = 1;
+        if (it.vanishing){
+          const t = (now - it.vanishStart) / Math.max(1, it.vanishDur);
+          itemAlpha = 1 - easeOut(t);
+          if (itemAlpha < 0) itemAlpha = 0;
+        }
+
+        drawSprite(ctx, img, it.x, it.y, it.r, it.rot, wobble, itemAlpha);
+
+        // bubble toestand
+        if (it.counted || it.bubblePopping){
+          let bAlpha = 1;
+          let bScale = 1;
+
+          if (it.bubblePopping){
+            const t = (now - it.bubblePopStart) / Math.max(1, it.bubblePopDur);
+            const e = easeOut(t);
+            bAlpha = 1 - e;
+            bScale = 1 + e * 0.28;
+
+            if (t >= 1){
+              it.bubblePopping = false;
+              it.counted = false;
+              bAlpha = 0;
+            } else {
+              requestRender();
+            }
           }
-          drawBubbleMark(ctx, it.x, it.y, it.r, pop);
+
+          if (it.counted){
+            // kleine pop bij plaatsen van bubble
+            if (it._bubbleJustPlacedUntil && now < it._bubbleJustPlacedUntil){
+              const tt = 1 - ((it._bubbleJustPlacedUntil - now) / 160);
+              const ee = Math.sin(tt * Math.PI);
+              bScale = 1 + ee * 0.16;
+              requestRender();
+            }
+          }
+
+          if (it.counted || bAlpha > 0.01){
+            drawBubble(ctx, it.x, it.y, it.r, bAlpha * itemAlpha, bScale);
+          }
         }
       }
+
+      if (changed) requestRender();
     }
 
     function getCanvasPointFromEvent(e){
@@ -930,6 +1039,7 @@
     function hitTest(px, py){
       for (let i = items.length - 1; i >= 0; i--){
         const it = items[i];
+        if (it.vanishing) continue;
         const d = Math.hypot(it.x - px, it.y - py);
         if (d <= it.r * 1.15) return it;
       }
@@ -947,6 +1057,75 @@
       bigMark.textContent = text;
       bigMark.classList.add('show');
       setTimeout(() => bigMark.classList.remove('show'), Math.max(200, ms || 520));
+    }
+
+    function showSuccessGif(ms){
+      if (!successGif) return;
+      // forceer herstart gif door src te resetten
+      const src = successGif.getAttribute('src');
+      successGif.setAttribute('src', src);
+
+      successGif.classList.add('show');
+      setTimeout(() => successGif.classList.remove('show'), Math.max(300, ms || 900));
+    }
+
+    function popBubble(it, now, dur){
+      if (!it) return;
+      it.bubblePopping = true;
+      it.bubblePopStart = now;
+      it.bubblePopDur = dur ?? randInt(180, 320);
+      requestRender();
+    }
+
+    function popAllBubblesOnly(){
+      const now = performance.now();
+      const marked = items.filter(it => it.counted && !it.vanishing);
+      if (!marked.length) return;
+
+      for (const it of marked){
+        const delay = randInt(0, 520);
+        const dur = randInt(180, 320);
+        setTimeout(() => popBubble(it, performance.now(), dur), delay);
+      }
+    }
+
+    function popAndRemoveAllWithinTwoSeconds(){
+      const start = performance.now();
+      const deadline = start + 2000;
+
+      // eerst: voor elk item een willekeurig moment kiezen waarop de bubble knapt
+      // daarna: item zelf verdwijnt kort erna, alles klaar vóór deadline
+      for (const it of items){
+        if (it.vanishing) continue;
+
+        const popAt = start + randInt(0, 1650);
+        const popDur = randInt(180, 320);
+
+        const vanishDur = randInt(220, 360);
+        const vanishAtRaw = popAt + randInt(60, 260);
+
+        const latestStart = deadline - vanishDur;
+        const vanishAt = Math.min(vanishAtRaw, latestStart);
+
+        // bubble knappen, ook als hij nog niet geteld was
+        setTimeout(() => {
+          // bubble knappen alleen als er een bubble was, anders slaan we over
+          if (it.counted || it.bubblePopping){
+            popBubble(it, performance.now(), popDur);
+          } else {
+            // geen bubble, maar voor effect mag hij ook even "knappen"
+            // we laten dit bewust weg zodat het rustiger blijft
+          }
+        }, Math.max(0, popAt - start));
+
+        // item verdwijnen
+        setTimeout(() => {
+          it.vanishing = true;
+          it.vanishStart = performance.now();
+          it.vanishDur = vanishDur;
+          requestRender();
+        }, Math.max(0, vanishAt - start));
+      }
     }
 
     /* Game flow */
@@ -982,8 +1161,9 @@
       wrongTries = 0;
       clearRoundUI();
 
-      targetDigit = pickTarget();
+      if (successGif) successGif.classList.remove('show');
 
+      targetDigit = pickTarget();
       items = generateItems(targetDigit);
 
       projectNormalizedToPixels();
@@ -1006,6 +1186,9 @@
 
       flash(badFlash, 380);
       showBigMark(String(targetDigit), 900);
+
+      // bij drie fout: bubble knapt, object blijft staan
+      popAllBubblesOnly();
 
       setTimeout(() => {
         if (myToken !== roundToken) return;
@@ -1031,10 +1214,16 @@
         flash(goodFlash, 420);
         showBigMark('✓', 700);
 
+        // Succes gif
+        showSuccessGif(950);
+
+        // Alles met bellen knapt, en binnen 2 tellen is alles weg
+        popAndRemoveAllWithinTwoSeconds();
+
         setTimeout(() => {
           if (myToken !== roundToken) return;
           nextRound();
-        }, 820);
+        }, 1050);
 
       } else {
         wrongTries += 1;
@@ -1043,6 +1232,9 @@
         playSfx(wrongAudio);
         flash(badFlash, 320);
         showBigMark('✗', 420);
+
+        // Alleen de bel knapt, object blijft zichtbaar
+        popAllBubblesOnly();
 
         if (wrongTries >= 3){
           revealCorrectAfterThreeWrong();
@@ -1066,10 +1258,9 @@
       if (it.counted) return;
 
       it.counted = true;
+      it._bubbleJustPlacedUntil = performance.now() + 160;
 
       const now = performance.now();
-      it.popUntil = now + 170;
-
       const dir = Math.random() < 0.5 ? -1 : 1;
       it.wobble = dir * 0.32;
       it.wobbleUntil = now + 220;
@@ -1313,6 +1504,25 @@
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
+    /* Test knoppen */
+    function testGood(){
+      if (!started || locked) return;
+      handleRecognitionResult(targetDigit);
+    }
+
+    function testWrong(){
+      if (!started || locked) return;
+      const wrong = (targetDigit % 9) + 1; // 1..9, altijd anders dan target
+      handleRecognitionResult(wrong);
+    }
+
+    if (testGoodBtn) testGoodBtn.addEventListener('click', testGood);
+    if (testWrongBtn) testWrongBtn.addEventListener('click', testWrong);
+    if (newRoundBtn) newRoundBtn.addEventListener('click', () => {
+      if (!started) return;
+      nextRound();
+    });
+
     /* Start */
     function startGame(){
       if (started) return;
@@ -1353,7 +1563,9 @@
           needs = true;
           if (Math.abs(it.wobble) < 0.002) it.wobble = 0;
         }
-        if (it.popUntil && now < it.popUntil) needs = true;
+        if (it.bubblePopping) needs = true;
+        if (it.vanishing) needs = true;
+        if (it._bubbleJustPlacedUntil && now < it._bubbleJustPlacedUntil) needs = true;
       }
 
       if (needs) requestRender();
@@ -1368,7 +1580,6 @@
 
       resizeCountCanvas();
 
-      // Belangrijk: op draaien eerst de browser laten uitrekenen, dan pas relayout
       window.addEventListener('resize', () => setTimeout(resizeCountCanvas, 180));
       window.addEventListener('orientationchange', () => setTimeout(resizeCountCanvas, 280));
 
