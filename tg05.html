@@ -590,16 +590,9 @@
     window.addEventListener('resize', setAutoScale);
     window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
 
-    /* Audio */
+    /* Audio, goed en fout */
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
-
-    const plopPool = Array.from({ length: 6 }, () => {
-      const a = new Audio(PLOP_SOUND_SRC);
-      a.preload = 'auto';
-      return a;
-    });
-    let plopIndex = 0;
 
     function playSfx(a){
       if (!a) return;
@@ -610,13 +603,52 @@
       } catch(e){}
     }
 
-    function playPlop(){
-      const a = plopPool[plopIndex % plopPool.length];
-      plopIndex++;
+    /* Web Audio, plop supersnel en synchroon */
+    let audioCtx = null;
+    let plopBuffer = null;
+
+    async function initWebAudio(){
+      if (audioCtx) return;
+
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+
+      audioCtx = new Ctx();
+
       try{
-        a.currentTime = 0;
-        const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
+        const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
+        const arr = await resp.arrayBuffer();
+        plopBuffer = await new Promise((resolve, reject) => {
+          audioCtx.decodeAudioData(arr, resolve, reject);
+        });
+      } catch(e){
+        plopBuffer = null;
+      }
+    }
+
+    async function unlockAudio(){
+      if (!audioCtx) return;
+      try{
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+      } catch(e){}
+    }
+
+    function playPlop(){
+      if (!audioCtx || !plopBuffer) return;
+      if (audioCtx.state !== 'running') return;
+
+      try{
+        const src = audioCtx.createBufferSource();
+        const gain = audioCtx.createGain();
+
+        const v = 0.78 + Math.random() * 0.28;
+        gain.gain.setValueAtTime(v, audioCtx.currentTime);
+
+        src.buffer = plopBuffer;
+        src.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        src.start(audioCtx.currentTime);
       } catch(e){}
     }
 
@@ -1075,10 +1107,12 @@
 
     function popBubble(it, dur){
       if (!it) return;
+
       const now = performance.now();
       it.bubblePopping = true;
       it.bubblePopStart = now;
       it.bubblePopDur = dur ?? randInt(180, 320);
+
       playPlop();
       requestRender();
     }
@@ -1125,7 +1159,7 @@
       }
     }
 
-    /* Spelstatus, één keer declareren */
+    /* Spelstatus */
     let started = false;
     let locked = false;
     let wrongTries = 0;
@@ -1189,14 +1223,10 @@
         wrongTries = 0;
 
         playSfx(goodAudio);
-
         showBigMark('✓', 650);
 
-        // pinguin dubbel zo lang
         showSuccessGif(1900);
 
-        // scannen mag altijd, dus bij goed zorgen we dat iedereen een bel heeft
-        // daarna zweven alle bellen met item omhoog, geen plop, geen verkleuring
         ensureAllHaveBubbles();
         floatAllBubblesOutWithinTwoSeconds();
 
@@ -1211,10 +1241,8 @@
         wrongFeedback();
         playSfx(wrongAudio);
 
-        // geen kruis bij fout
         if (bigMark) bigMark.classList.remove('show');
 
-        // alleen de bellen knappen met plop, object blijft
         popAllBubblesOnly();
 
         if (wrongTries >= 3){
@@ -1517,16 +1545,18 @@
     });
 
     /* Start */
-    function startGame(){
+    async function startGame(){
       if (started) return;
       started = true;
+
+      await initWebAudio();
+      await unlockAudio();
 
       startOverlay.style.display = 'none';
 
       try{
         goodAudio.load();
         wrongAudio.load();
-        plopPool.forEach(a => { try{ a.load(); } catch(e){} });
       } catch(e){}
 
       nextRound();
