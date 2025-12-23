@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Tellen en scannen</title>
+<title>Tellen met bellen en scannen</title>
 
 <style>
 :root{
@@ -43,6 +43,9 @@ body{
 .scan-surface{
   background:#fff;
   position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 @media(orientation:landscape){
   .scan-surface{border-left:6px dashed rgba(245,180,152,0.85);}
@@ -50,6 +53,14 @@ body{
 @media(orientation:portrait){
   .scan-surface{border-top:6px dashed rgba(245,180,152,0.85);}
 }
+
+.scanDigit{
+  max-width:60%;
+  max-height:60%;
+  opacity:0;
+  transition:opacity 200ms ease;
+}
+.scanDigit.show{opacity:1;}
 
 .topbar{
   display:flex;
@@ -65,8 +76,8 @@ body{
   box-shadow:0 8px 18px rgba(0,0,0,0.1);
   display:grid;
   place-items:center;
-  cursor:pointer;
 }
+
 .homeBtn img{width:42px;}
 
 .titlePill{
@@ -97,9 +108,7 @@ body{
   overflow:hidden;
   transition:background 220ms ease;
 }
-.gameCard.flash-wrong{
-  background:#fde1e1;
-}
+.gameCard.flash-wrong{background:#fde1e1;}
 
 canvas{
   position:absolute;
@@ -109,7 +118,7 @@ canvas{
 .successGif{
   position:absolute;
   left:50%;
-  bottom:14%;
+  bottom:12%;
   transform:translateX(-50%);
   width:260px;
   opacity:0;
@@ -160,12 +169,14 @@ canvas{
   <div class="content">
     <div class="gameCard" id="gameCard">
       <canvas id="canvas"></canvas>
-      <img id="successGif" class="successGif" src="bellen_blazen02.gif">
+      <img id="successGif" class="successGif" src="">
     </div>
   </div>
 </section>
 
-<section class="scan-surface"></section>
+<section class="scan-surface">
+  <img id="scanDigit" class="scanDigit">
+</section>
 
 <div class="startOverlay" id="startOverlay">
   <div class="startCard">
@@ -180,6 +191,7 @@ const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const card=document.getElementById('gameCard');
 const gif=document.getElementById('successGif');
+const scanDigit=document.getElementById('scanDigit');
 
 const popSound=new Audio('audio/plopgeluid.mp3');
 const countSounds=[1,2,3,4,5,6,7,8,9].map(n=>new Audio(`audio/${n}.mp3`));
@@ -188,6 +200,7 @@ let items=[];
 let target=0;
 let wrongTries=0;
 let started=false;
+let state="playing";
 
 /* ---------- RESIZE ---------- */
 function resize(){
@@ -196,6 +209,7 @@ function resize(){
   canvas.width=r.width*dpr;
   canvas.height=r.height*dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  distributeItems();
 }
 window.addEventListener('resize',resize);
 
@@ -204,33 +218,51 @@ function spawnItems(n){
   items=[];
   for(let i=0;i<n;i++){
     items.push({
-      x:80+Math.random()*(canvas.width-160),
-      y:80+Math.random()*(canvas.height-160),
-      r:36,
+      x:0,y:0,
+      r:38,
+      rot:(Math.random()*60-30)*Math.PI/180,
       counted:false,
-      ring:false
+      ring:false,
+      bubble:true
     });
   }
+  distributeItems();
+}
+
+function distributeItems(){
+  if(items.length===0)return;
+  const pad=80;
+  items.forEach(it=>{
+    it.x=pad+Math.random()*(canvas.width/dpr-pad*2);
+    it.y=pad+Math.random()*(canvas.height/dpr-pad*2);
+  });
 }
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   items.forEach(it=>{
+    ctx.save();
+    ctx.translate(it.x,it.y);
+    ctx.rotate(it.rot);
+
+    ctx.shadowColor='rgba(0,0,0,0.25)';
+    ctx.shadowBlur=12;
+    ctx.shadowOffsetY=6;
+
     ctx.beginPath();
-    ctx.arc(it.x,it.y,it.r,0,Math.PI*2);
+    ctx.arc(0,0,it.r,0,Math.PI*2);
     ctx.fillStyle='#9ad0ff';
     ctx.fill();
 
-    if(it.counted){
-      ctx.strokeStyle='rgba(255,255,255,0.9)';
-      ctx.lineWidth=6;
-      ctx.stroke();
-    }
+    ctx.shadowBlur=0;
+
     if(it.ring){
       ctx.strokeStyle='#ff9a9a';
       ctx.lineWidth=4;
       ctx.stroke();
     }
+
+    ctx.restore();
   });
   requestAnimationFrame(draw);
 }
@@ -238,20 +270,30 @@ function draw(){
 /* ---------- FEEDBACK ---------- */
 function flashWrong(){
   card.classList.add('flash-wrong');
-  setTimeout(()=>card.classList.remove('flash-wrong'),240);
+  setTimeout(()=>card.classList.remove('flash-wrong'),260);
 }
 
 async function countOutLoud(){
+  state="counting";
   for(let i=0;i<items.length;i++){
     items[i].ring=true;
     countSounds[i].currentTime=0;
     countSounds[i].play();
-    await new Promise(r=>setTimeout(r,650));
+    await new Promise(r=>setTimeout(r,700));
   }
+  showScanDigit();
+}
+
+function showScanDigit(){
+  scanDigit.src=`marbotic${items.length}.png`;
+  scanDigit.classList.add('show');
+  setTimeout(()=>scanDigit.classList.remove('show'),5000);
+  state="waitForScan";
 }
 
 /* ---------- ANTWOORD ---------- */
 async function goodAnswer(){
+  state="success";
   gif.src='bellen_blazen02.gif';
   gif.classList.add('show');
 
@@ -270,18 +312,18 @@ async function goodAnswer(){
 async function wrongAnswer(){
   flashWrong();
   wrongTries++;
-
   if(wrongTries>=3){
     await countOutLoud();
-    nextRound();
   }
 }
 
 /* ---------- RONDE ---------- */
 function nextRound(){
   wrongTries=0;
+  scanDigit.classList.remove('show');
   target=1+Math.floor(Math.random()*5);
   spawnItems(target);
+  state="playing";
 }
 
 /* ---------- INPUT ---------- */
@@ -292,7 +334,7 @@ canvas.addEventListener('pointerdown',e=>{
   const y=e.clientY-r.top;
   items.forEach(it=>{
     if(Math.hypot(it.x-x,it.y-y)<it.r+20){
-      it.counted=!it.counted;
+      it.bubble=!it.bubble;
     }
   });
 });
