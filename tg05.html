@@ -505,6 +505,7 @@
         <button class="tuneBtnSmall" id="testGoodBtn">Test goed</button>
         <button class="tuneBtnSmall secondary" id="testWrongBtn">Test fout</button>
         <button class="tuneBtnSmall secondary" id="newRoundBtn">Nieuwe ronde</button>
+        <button class="tuneBtnSmall secondary" id="testPlopBtn">Test plop</button>
       </div>
 
       <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
@@ -567,6 +568,7 @@
     const testGoodBtn = document.getElementById('testGoodBtn');
     const testWrongBtn = document.getElementById('testWrongBtn');
     const newRoundBtn = document.getElementById('newRoundBtn');
+    const testPlopBtn = document.getElementById('testPlopBtn');
 
     const bigMark = document.getElementById('bigMark');
     const successGif = document.getElementById('successGif');
@@ -603,54 +605,121 @@
       } catch(e){}
     }
 
-    /* Web Audio, plop supersnel en synchroon */
+    /* Plop, WebAudio met fallback */
     let audioCtx = null;
     let plopBuffer = null;
+    let plopFallbackPool = [];
+    let plopFallbackIndex = 0;
+    let plopMode = 'none'; // web, fallback, none
+
+    function ensureFallbackPool(){
+      if (plopFallbackPool.length) return;
+      plopFallbackPool = Array.from({ length: 6 }, () => {
+        const a = new Audio(PLOP_SOUND_SRC);
+        a.preload = 'auto';
+        return a;
+      });
+      plopMode = 'fallback';
+    }
 
     async function initWebAudio(){
       if (audioCtx) return;
 
       const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) return;
+      if (!Ctx){
+        ensureFallbackPool();
+        return;
+      }
 
       audioCtx = new Ctx();
 
       try{
         const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
         const arr = await resp.arrayBuffer();
+
         plopBuffer = await new Promise((resolve, reject) => {
-          audioCtx.decodeAudioData(arr, resolve, reject);
+          try{
+            audioCtx.decodeAudioData(arr, resolve, reject);
+          } catch(err){
+            reject(err);
+          }
         });
+
+        if (plopBuffer){
+          plopMode = 'web';
+        } else {
+          ensureFallbackPool();
+        }
       } catch(e){
-        plopBuffer = null;
+        ensureFallbackPool();
       }
     }
 
     async function unlockAudio(){
-      if (!audioCtx) return;
-      try{
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
-      } catch(e){}
+      if (audioCtx){
+        try{
+          if (audioCtx.state === 'suspended') await audioCtx.resume();
+        } catch(e){}
+      }
+      if (plopFallbackPool.length){
+        try{
+          const a = plopFallbackPool[0];
+          a.muted = true;
+          const p = a.play();
+          if (p && typeof p.catch === 'function') await p.catch(() => {});
+          a.pause();
+          a.currentTime = 0;
+          a.muted = false;
+        } catch(e){}
+      }
     }
 
     function playPlop(){
-      if (!audioCtx || !plopBuffer) return;
-      if (audioCtx.state !== 'running') return;
+      if (plopMode === 'web' && audioCtx && plopBuffer){
+        if (audioCtx.state !== 'running'){
+          try{ audioCtx.resume(); } catch(e){}
+        }
+        if (audioCtx.state !== 'running') return;
 
-      try{
-        const src = audioCtx.createBufferSource();
-        const gain = audioCtx.createGain();
+        try{
+          const src = audioCtx.createBufferSource();
+          const gain = audioCtx.createGain();
 
-        const v = 0.78 + Math.random() * 0.28;
-        gain.gain.setValueAtTime(v, audioCtx.currentTime);
+          const v = 0.75 + Math.random() * 0.35;
+          gain.gain.setValueAtTime(v, audioCtx.currentTime);
 
-        src.buffer = plopBuffer;
-        src.connect(gain);
-        gain.connect(audioCtx.destination);
+          src.buffer = plopBuffer;
+          src.connect(gain);
+          gain.connect(audioCtx.destination);
+          src.start(audioCtx.currentTime);
+          return;
+        } catch(e){
+          // val terug op fallback
+          ensureFallbackPool();
+        }
+      }
 
-        src.start(audioCtx.currentTime);
-      } catch(e){}
+      if (plopFallbackPool.length){
+        const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
+        plopFallbackIndex++;
+        try{
+          a.currentTime = 0;
+          a.volume = 0.75 + Math.random() * 0.35;
+          const p = a.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){}
+      }
     }
+
+    // extra zekerheid, elk eerste tikmoment unlockt opnieuw
+    let unlockedOnce = false;
+    function unlockOnFirstGesture(){
+      if (unlockedOnce) return;
+      unlockedOnce = true;
+      initWebAudio().then(unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockOnFirstGesture, { passive: true, once: true });
+    document.addEventListener('mousedown', unlockOnFirstGesture, { once: true });
 
     /* Telbereik instellingen */
     const COUNT_KEY = 'countRangeV1';
@@ -721,6 +790,7 @@
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
+      unlockAudio();
     }
 
     function closeTunePanel(){
@@ -1001,7 +1071,6 @@
       ctx.clearRect(0,0,card.width,card.height);
 
       const now = performance.now();
-
       items = items.filter(it => !it.vanished);
 
       for (const it of items){
@@ -1113,6 +1182,7 @@
       it.bubblePopStart = now;
       it.bubblePopDur = dur ?? randInt(180, 320);
 
+      // plop exact op start van de animatie
       playPlop();
       requestRender();
     }
@@ -1200,7 +1270,6 @@
 
       projectNormalizedToPixels();
       resolveOverlapsGentle();
-
       requestRender();
 
       setTimeout(() => {
@@ -1224,7 +1293,6 @@
 
         playSfx(goodAudio);
         showBigMark('✓', 650);
-
         showSuccessGif(1900);
 
         ensureAllHaveBubbles();
@@ -1240,8 +1308,6 @@
 
         wrongFeedback();
         playSfx(wrongAudio);
-
-        if (bigMark) bigMark.classList.remove('show');
 
         popAllBubblesOnly();
 
@@ -1272,6 +1338,8 @@
     /* Tellen door tikken */
     function onCountTap(e){
       if (!started || locked) return;
+
+      unlockAudio();
 
       const p = getCanvasPointFromEvent(e);
       const it = hitTest(p.x, p.y);
@@ -1492,6 +1560,8 @@
     function handleTouchEvent(e){
       if (!calibration || !classificationStats) return;
 
+      unlockAudio();
+
       const touches = e.touches || [];
       currentPoints = getPointsFromTouches(touches);
 
@@ -1537,12 +1607,10 @@
       handleRecognitionResult(wrong);
     }
 
-    testGoodBtn.addEventListener('click', testGood);
-    testWrongBtn.addEventListener('click', testWrong);
-    newRoundBtn.addEventListener('click', () => {
-      if (!started) return;
-      nextRound();
-    });
+    testGoodBtn.addEventListener('click', () => { unlockAudio(); testGood(); });
+    testWrongBtn.addEventListener('click', () => { unlockAudio(); testWrong(); });
+    newRoundBtn.addEventListener('click', () => { unlockAudio(); if (started) nextRound(); });
+    testPlopBtn.addEventListener('click', () => { unlockAudio(); playPlop(); });
 
     /* Start */
     async function startGame(){
@@ -1557,6 +1625,9 @@
       try{
         goodAudio.load();
         wrongAudio.load();
+        if (plopFallbackPool.length){
+          plopFallbackPool.forEach(a => { try{ a.load(); } catch(e){} });
+        }
       } catch(e){}
 
       nextRound();
