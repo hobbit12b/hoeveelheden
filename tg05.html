@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="nl">
 <head>
@@ -141,9 +142,7 @@
       transition: background 160ms ease;
     }
 
-    .gameCard.flashWrong{
-      background: #fde1e1;
-    }
+    .gameCard.flashWrong{ background: #fde1e1; }
 
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
@@ -237,7 +236,6 @@
       100%{ transform: translateX(0); }
     }
 
-    /* Marbotic hint in scanvak */
     .scanDigitWrap{
       position:absolute;
       inset:0;
@@ -249,7 +247,6 @@
       z-index: 4;
     }
     .scanDigitWrap.show{ opacity: 1; }
-
     .scanDigitWrap img{
       width: min(62%, 360px);
       height: auto;
@@ -448,14 +445,14 @@
     <div class="startCard">
       <h1>Tik om te starten</h1>
       <p>Tel de dingen, tik erop om een bel te zetten, scan daarna het juiste houten cijfer. Scannen mag ook zonder tikken.</p>
-      <button class="startBtn" id="startBtn">Start</button>
+      <button class="startBtn" id="startBtn" type="button">Start</button>
     </div>
   </div>
 
   <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
     <div class="tuneHeader">
       <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten">Sluit</button>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
     </div>
 
     <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
@@ -474,11 +471,11 @@
       </div>
 
       <div class="tuneButtons">
-        <button class="tuneBtnSmall" id="testGoodBtn">Test goed</button>
-        <button class="tuneBtnSmall secondary" id="testWrongBtn">Test fout</button>
-        <button class="tuneBtnSmall secondary" id="newRoundBtn">Nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="testHelpBtn">Test telhulp</button>
-        <button class="tuneBtnSmall secondary" id="testPlopBtn">Test plop</button>
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
+        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+        <button class="tuneBtnSmall secondary" id="testHelpBtn" type="button">Test telhulp</button>
+        <button class="tuneBtnSmall secondary" id="testPlopBtn" type="button">Test plop</button>
       </div>
 
       <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
@@ -486,6 +483,13 @@
   </div>
 
   <script>
+    // Helpers
+    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+    const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+    const randFloat = (a,b) => a + Math.random() * (b - a);
+    const nowMs = () => performance.now();
+
+    // Assets
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     const GOOD_SOUND_SRC = 'goed.mp3';
@@ -502,6 +506,9 @@
       leaf: 'blad.png'
     };
 
+    const voiceSrc = (n) => `audio/${n}.mp3`;
+
+    // Elements
     const gameCard = document.getElementById('gameCard');
     const countCanvas = document.getElementById('countCanvas');
     const homeBtn = document.getElementById('homeBtn');
@@ -535,6 +542,7 @@
 
     const successGif = document.getElementById('successGif');
 
+    // Scale
     function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
@@ -548,6 +556,7 @@
       document.documentElement.style.setProperty('--scale', String(s));
     }
 
+    // Sounds
     const goodAudio = new Audio(GOOD_SOUND_SRC);
     const wrongAudio = new Audio(WRONG_SOUND_SRC);
 
@@ -560,14 +569,10 @@
       } catch(e){}
     }
 
-    /* Voice speler, voor audio/1.mp3 tot audio/9.mp3 */
+    // Voice (counting, plus “zeg het goede cijfer”)
     const voicePlayer = new Audio();
     voicePlayer.preload = 'auto';
     voicePlayer.volume = 1;
-
-    let voiceUnlocked = false;
-
-    function voiceSrc(n){ return `audio/${n}.mp3`; }
 
     function stopVoice(){
       try{ voicePlayer.pause(); } catch(e){}
@@ -576,8 +581,6 @@
 
     function speakNumber(n){
       return new Promise((resolve) => {
-        const src = voiceSrc(n);
-
         let done = false;
         const finish = () => {
           if (done) return;
@@ -593,39 +596,19 @@
         try{
           voicePlayer.pause();
           voicePlayer.currentTime = 0;
-        } catch(e){}
+          voicePlayer.src = voiceSrc(n);
+          voicePlayer.load();
+          const p = voicePlayer.play();
+          if (p && typeof p.catch === 'function') p.catch(() => finish());
+        } catch(e){
+          finish();
+        }
 
-        try{
-          if (!voicePlayer.src || !voicePlayer.src.endsWith(src)){
-            voicePlayer.src = src;
-            voicePlayer.load();
-          }
-        } catch(e){}
-
-        const attemptPlay = () => {
-          try{
-            const p = voicePlayer.play();
-            if (p && typeof p.catch === 'function'){
-              p.catch(() => {
-                setTimeout(() => {
-                  try{
-                    const p2 = voicePlayer.play();
-                    if (p2 && typeof p2.catch === 'function') p2.catch(() => finish());
-                  } catch(e){ finish(); }
-                }, 70);
-              });
-            }
-          } catch(e){
-            finish();
-          }
-        };
-
-        attemptPlay();
-        setTimeout(() => finish(), 1600);
+        setTimeout(() => finish(), 1800);
       });
     }
 
-    /* Plop geluid: WebAudio met fallback pool */
+    // Plop, WebAudio first, fallback pool otherwise
     let audioCtx = null;
     let plopBuffer = null;
     let plopFallbackPool = [];
@@ -634,7 +617,7 @@
 
     function ensureFallbackPool(){
       if (plopFallbackPool.length) return;
-      plopFallbackPool = Array.from({ length: 6 }, () => {
+      plopFallbackPool = Array.from({ length: 8 }, () => {
         const a = new Audio(PLOP_SOUND_SRC);
         a.preload = 'auto';
         return a;
@@ -643,7 +626,7 @@
     }
 
     async function initWebAudio(){
-      if (audioCtx) return;
+      if (audioCtx || plopMode === 'fallback') return;
 
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx){
@@ -651,17 +634,20 @@
         return;
       }
 
-      audioCtx = new Ctx();
+      try{
+        audioCtx = new Ctx();
+      } catch(e){
+        ensureFallbackPool();
+        return;
+      }
 
       try{
         const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
         const arr = await resp.arrayBuffer();
-
         plopBuffer = await new Promise((resolve, reject) => {
           try{ audioCtx.decodeAudioData(arr, resolve, reject); }
           catch(err){ reject(err); }
         });
-
         if (plopBuffer) plopMode = 'web';
         else ensureFallbackPool();
       } catch(e){
@@ -670,26 +656,22 @@
     }
 
     async function unlockAudio(){
-      if (audioCtx){
-        try{
-          if (audioCtx.state === 'suspended') await audioCtx.resume();
-        } catch(e){}
-      }
+      try{
+        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+      } catch(e){}
 
-      if (!voiceUnlocked){
-        voiceUnlocked = true;
-        try{
-          voicePlayer.src = voiceSrc(1);
-          voicePlayer.load();
-          voicePlayer.muted = true;
-          const p = voicePlayer.play();
-          if (p && typeof p.catch === 'function') await p.catch(() => {});
-          voicePlayer.pause();
-          voicePlayer.currentTime = 0;
-          voicePlayer.muted = false;
-        } catch(e){
-          try{ voicePlayer.muted = false; } catch(err){}
-        }
+      // Warmup voice, maar nooit blokkeren
+      try{
+        voicePlayer.muted = true;
+        voicePlayer.src = voiceSrc(1);
+        voicePlayer.load();
+        const p = voicePlayer.play();
+        if (p && typeof p.catch === 'function') await p.catch(() => {});
+        voicePlayer.pause();
+        voicePlayer.currentTime = 0;
+        voicePlayer.muted = false;
+      } catch(e){
+        try{ voicePlayer.muted = false; } catch(err){}
       }
 
       if (plopFallbackPool.length){
@@ -707,17 +689,15 @@
 
     function playPlop(){
       if (plopMode === 'web' && audioCtx && plopBuffer){
-        if (audioCtx.state !== 'running'){
-          try{ audioCtx.resume(); } catch(e){}
-        }
-        if (audioCtx.state !== 'running') return;
-
         try{
+          if (audioCtx.state !== 'running'){
+            try{ audioCtx.resume(); } catch(e){}
+          }
+          if (audioCtx.state !== 'running') throw new Error('ctx');
+
           const src = audioCtx.createBufferSource();
           const gain = audioCtx.createGain();
-
-          const v = 0.80 + Math.random() * 0.25;
-          gain.gain.setValueAtTime(v, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.95, audioCtx.currentTime);
 
           src.buffer = plopBuffer;
           src.connect(gain);
@@ -734,23 +714,14 @@
         plopFallbackIndex++;
         try{
           a.currentTime = 0;
-          a.volume = 0.80 + Math.random() * 0.25;
+          a.volume = 1;
           const p = a.play();
           if (p && typeof p.catch === 'function') p.catch(() => {});
         } catch(e){}
       }
     }
 
-    let unlockedOnce = false;
-    function unlockOnFirstGesture(){
-      if (unlockedOnce) return;
-      unlockedOnce = true;
-      initWebAudio().then(unlockAudio);
-    }
-    document.addEventListener('touchstart', unlockOnFirstGesture, { passive: true, once: true });
-    document.addEventListener('mousedown', unlockOnFirstGesture, { once: true });
-
-    /* Range instellingen */
+    // Settings
     const COUNT_KEY = 'countRangeV3';
     const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
     let countRange = { ...DEFAULT_COUNT_RANGE };
@@ -766,11 +737,9 @@
         const raw = localStorage.getItem(COUNT_KEY);
         if (!raw) return { ...DEFAULT_COUNT_RANGE };
         const obj = JSON.parse(raw);
-
         let min = clampInt(obj.min ?? DEFAULT_COUNT_RANGE.min, 1, 9);
         let max = clampInt(obj.max ?? DEFAULT_COUNT_RANGE.max, 1, 9);
         if (max < min) max = min;
-
         return { min, max };
       } catch(e){
         return { ...DEFAULT_COUNT_RANGE };
@@ -784,7 +753,6 @@
     function syncCountUI(){
       countMinRange.value = String(countRange.min);
       countMaxRange.value = String(countRange.max);
-
       countMinValue.textContent = String(countRange.min);
       countMaxValue.textContent = String(countRange.max);
 
@@ -819,7 +787,7 @@
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
-      unlockAudio();
+      initWebAudio().then(unlockAudio);
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
 
@@ -829,7 +797,7 @@
     });
     tuneClose.addEventListener('click', closeTunePanel);
 
-    /* Scan digit hint */
+    // Scan digit hint
     let scanDigitTimer = null;
 
     function hideScanDigit(){
@@ -840,17 +808,13 @@
 
     function showScanDigit(digit){
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-
       scanDigitImg.src = `marbotic${digit}.png`;
       scanDigitImg.alt = String(digit);
       scanDigitWrap.classList.add('show');
-
-      scanDigitTimer = setTimeout(() => {
-        hideScanDigit();
-      }, 5000);
+      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
     }
 
-    /* Canvas items */
+    // Canvas rendering
     let ctx = null;
     let items = [];
     let target = 1;
@@ -868,11 +832,6 @@
         img.src = src;
       });
     }
-
-    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-    function randInt(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
-    function randFloat(a, b){ return a + Math.random() * (b - a); }
-    function nowMs(){ return performance.now(); }
 
     function getSafeRectWH(w, h){
       const pad = Math.max(44, Math.min(76, w * 0.065));
@@ -941,7 +900,7 @@
 
       const out = [];
       let tries = 0;
-      const maxTries = 2800;
+      const maxTries = 3000;
       const appearBase = nowMs();
 
       while(out.length < n && tries < maxTries){
@@ -1027,9 +986,7 @@
             it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
             it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
           }
-        } else {
-          break;
-        }
+        } else break;
       }
     }
 
@@ -1058,18 +1015,13 @@
       else render();
     }
 
-    function easeOut(t){
-      t = clamp(t, 0, 1);
-      return 1 - Math.pow(1 - t, 3);
-    }
-
+    function easeOut(t){ t = clamp(t,0,1); return 1 - Math.pow(1 - t, 3); }
     function easeInOut(t){
-      t = clamp(t, 0, 1);
+      t = clamp(t,0,1);
       return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
     }
-
     function easeOutBack(t){
-      t = clamp(t, 0, 1);
+      t = clamp(t,0,1);
       const c1 = 1.70158;
       const c3 = c1 + 1;
       return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
@@ -1077,13 +1029,11 @@
 
     function drawSprite(c, img, cx, cy, r, rot, alpha, scale){
       if (!img || !img.complete) return;
-
       const base = r * 2.25;
       const size = base * (scale || 1);
 
       c.save();
       c.globalAlpha = alpha;
-
       c.translate(cx, cy);
       c.rotate(rot || 0);
 
@@ -1094,13 +1044,11 @@
 
       c.imageSmoothingEnabled = true;
       c.drawImage(img, -size/2, -size/2, size, size);
-
       c.restore();
     }
 
     function drawBubble(c, cx, cy, r, alpha, scale){
       if (!bubbleImg || !bubbleImg.complete) return;
-
       const mult = 2.25;
       const size = r * mult * (scale || 1);
 
@@ -1125,7 +1073,6 @@
       ctx.clearRect(0,0,card.width,card.height);
 
       const tNow = nowMs();
-
       items = items.filter(it => !it.vanished);
 
       for (const it of items){
@@ -1147,9 +1094,7 @@
             itemAlpha = e;
             itemScale = 0.88 + easeOutBack(t) * 0.16;
             requestRender();
-          } else {
-            it.appearDone = true;
-          }
+          } else it.appearDone = true;
         }
 
         if (it.floating){
@@ -1168,9 +1113,7 @@
             it.vanished = true;
             requestRender();
             continue;
-          } else {
-            requestRender();
-          }
+          } else requestRender();
         }
 
         drawSprite(ctx, img, x, y, it.r, it.rot, itemAlpha, itemScale);
@@ -1191,9 +1134,7 @@
               it.counted = false;
               it.helpBubble = false;
               bAlpha = 0;
-            } else {
-              requestRender();
-            }
+            } else requestRender();
           }
 
           if (it.counted || it.helpBubble || it.floating || bAlpha > 0.01){
@@ -1218,7 +1159,6 @@
         const d = Math.hypot(it.x - px, it.y - py);
         const minTap = 44;
         const extra = Math.max(minTap, it.r * 1.55);
-
         if (d <= extra) return it;
       }
       return null;
@@ -1229,7 +1169,6 @@
       it.bubblePopping = true;
       it.bubblePopStart = nowMs();
       it.bubblePopDur = dur ?? randInt(180, 320);
-
       playPlop();
       requestRender();
     }
@@ -1237,7 +1176,6 @@
     function popAllMarkedBubblesOnly(){
       const marked = items.filter(it => it.counted && !it.floating && !it.vanished);
       if (!marked.length) return;
-
       for (const it of marked){
         const delay = randInt(0, 180);
         const dur = randInt(180, 320);
@@ -1259,7 +1197,6 @@
 
       for (const it of items){
         if (it.vanished) continue;
-
         it.counted = true;
         it.helpBubble = false;
 
@@ -1283,10 +1220,17 @@
       setTimeout(() => gameCard.classList.remove('flashWrong'), 240);
     }
 
+    function wrongFeedback(){
+      scanArea.classList.remove('wrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('wrong');
+      setTimeout(() => scanArea.classList.remove('wrong'), 240);
+    }
+
     function showSuccessSequenceTotalMs(){
       if (!successGif) return 0;
 
-      const BLOW_TIME = 5200;  // langer in beeld
+      const BLOW_TIME = 5200;
       const POP_TIME  = 950;
 
       successGif.src = BLOW_GIF_SRC;
@@ -1304,12 +1248,11 @@
       return BLOW_TIME + POP_TIME;
     }
 
-    /* Spelstatus */
+    // Game flow
     let started = false;
     let locked = false;
     let wrongTries = 0;
-
-    let mode = 'normal'; // normal, helpCounting, confirmDigit
+    let mode = 'normal';
     let helpToken = 0;
 
     function pickTarget(){ return randInt(countRange.min, countRange.max); }
@@ -1338,13 +1281,6 @@
       resolveOverlapsGentle();
 
       requestRender();
-    }
-
-    function wrongFeedback(){
-      scanArea.classList.remove('wrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('wrong');
-      setTimeout(() => scanArea.classList.remove('wrong'), 240);
     }
 
     async function runHelpCounting(){
@@ -1401,12 +1337,12 @@
       scanHint.textContent = '';
 
       playSfx(goodAudio);
+
+      // spreek het goede cijfer uit
       await speakNumber(target);
 
       ensureAllHaveBubbles();
-
       const seqMs = showSuccessSequenceTotalMs();
-
       floatAllBubblesOutWithinTwoSeconds();
 
       const waitMs = Math.max(2300, seqMs + 200);
@@ -1417,10 +1353,8 @@
       wrongTries += 1;
 
       playSfx(wrongAudio);
-
       flashTelvlakWrong();
       wrongFeedback();
-
       popAllMarkedBubblesOnly();
 
       if (wrongTries >= 3){
@@ -1436,12 +1370,9 @@
 
     function handleAnswer(recognizedDigit){
       if (recognizedDigit == null) return;
-      if (!started) return;
-      if (locked) return;
+      if (!started || locked) return;
 
-      const expected = target;
-
-      if (recognizedDigit === expected){
+      if (recognizedDigit === target){
         onCorrectAnswer();
       } else {
         onWrongAnswer();
@@ -1451,7 +1382,7 @@
     function onCanvasPointerDown(e){
       if (!started || locked) return;
 
-      unlockAudio();
+      initWebAudio().then(unlockAudio);
       e.preventDefault();
 
       const p = getCanvasPointFromEvent(e);
@@ -1462,12 +1393,10 @@
       it.helpBubble = false;
       requestRender();
     }
-
     countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
 
-    /* Marbotic herkenning */
+    // Marbotic recognition
     let calibration = null;
-t
     let classificationStats = null;
     let expectedTouchPoints = 3;
 
@@ -1668,7 +1597,7 @@ t
     function handleTouchEvent(e){
       if (!calibration || !classificationStats) return;
 
-      unlockAudio();
+      initWebAudio().then(unlockAudio);
 
       const touches = e.touches || [];
       const pts = getPointsFromTouches(touches);
@@ -1703,7 +1632,7 @@ t
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
-    /* Tests */
+    // Tests
     function testGood(){ if (!started || locked) return; handleAnswer(target); }
     function testWrong(){
       if (!started || locked) return;
@@ -1711,33 +1640,40 @@ t
       handleAnswer(wrong);
     }
 
-    testGoodBtn.addEventListener('click', () => { unlockAudio(); testGood(); });
-    testWrongBtn.addEventListener('click', () => { unlockAudio(); testWrong(); });
-    newRoundBtn.addEventListener('click', () => { unlockAudio(); if (started) nextRound(); });
-    testHelpBtn.addEventListener('click', () => { unlockAudio(); if (started && !locked) { wrongTries = 2; onWrongAnswer(); } });
-    testPlopBtn.addEventListener('click', () => { unlockAudio(); playPlop(); });
+    testGoodBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testGood(); });
+    testWrongBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testWrong(); });
+    newRoundBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started) nextRound(); });
+    testHelpBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started && !locked) { wrongTries = 2; onWrongAnswer(); } });
+    testPlopBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); playPlop(); });
 
-    /* Start */
-    async function startGame(){
+    // Start, deze kan niet meer vastlopen
+    function startGame(){
       if (started) return;
       started = true;
 
-      await initWebAudio();
-      await unlockAudio();
-
+      // Eerst altijd UI vrijgeven
       startOverlay.style.display = 'none';
+
+      // Dan audio en preload proberen, zonder blokkeren
+      Promise.resolve()
+        .then(() => initWebAudio())
+        .then(() => unlockAudio())
+        .catch(() => {});
 
       try{
         goodAudio.load();
         wrongAudio.load();
-        voicePlayer.src = voiceSrc(1);
-        voicePlayer.load();
       } catch(e){}
 
+      // Altijd direct een ronde starten
       nextRound();
     }
 
-    startBtn.addEventListener('click', startGame);
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      startGame();
+    });
+
     startOverlay.addEventListener('click', (e) => {
       if (e.target === startOverlay) startGame();
     });
