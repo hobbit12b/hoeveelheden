@@ -1,1693 +1,378 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Tellen en scannen</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tellen en scannen</title>
 
-  <style>
-    :root{
-      --bg-left:#fdeeea;
-      --brand:#e58c74;
-      --text:#6f6b68;
+<style>
+:root{
+  --bg-left:#fdeeea;
+  --brand:#e58c74;
+  --text:#6f6b68;
+  --card-radius:28px;
+  --scale:1;
+}
 
-      --dash-w:4px;
-      --card-radius:28px;
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 
-      --scale: 1;
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+html,body{
+  margin:0;height:100%;overflow:hidden;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  user-select:none;
+  background:#fff;
+}
 
-      --bubble-opacity: 0.92;
-      --bubble-size-mult: 2.20;
-    }
+body{
+  display:grid;
+  grid-template-columns:58fr 42fr;
+}
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+@media(orientation:portrait){
+  body{grid-template-columns:1fr;grid-template-rows:54fr 46fr;}
+}
 
-    html, body{
-      height:100%;
-      margin:0;
-      padding:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#ffffff;
-      color: var(--text);
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: none;
-      overflow:hidden;
-    }
+.left{
+  background:var(--bg-left);
+  padding:26px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
 
-    body{
-      display:grid;
-      grid-template-columns: 58fr 42fr;
-      height: 100%;
-    }
+.scan-surface{
+  background:#fff;
+  position:relative;
+}
 
-    @media (orientation: portrait){
-      body{
-        grid-template-columns: 1fr;
-        grid-template-rows: 54fr 46fr;
-      }
-    }
+@media(orientation:landscape){
+  .scan-surface{border-left:6px dashed rgba(245,180,152,0.85);}
+}
+@media(orientation:portrait){
+  .scan-surface{border-top:6px dashed rgba(245,180,152,0.85);}
+}
 
-    .left{
-      background: var(--bg-left);
-      padding: 28px 26px 22px 26px;
-      display:flex;
-      flex-direction:column;
-      gap: 22px;
-      position: relative;
-      overflow:hidden;
-      min-height: 0;
-    }
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
 
-    .scan-surface{
-      background:#ffffff;
-      position: relative;
-      overflow:hidden;
-      min-height: 0;
-      transition: background 120ms ease;
-    }
+.homeBtn,.tuneBtn{
+  width:72px;height:72px;
+  border-radius:18px;
+  background:#f8c3b0;
+  border:none;
+  box-shadow:0 8px 18px rgba(0,0,0,0.1);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
 
-    @media (orientation: landscape){
-      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
-    }
-    @media (orientation: portrait){
-      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
-      .left{ padding: 22px; gap: 16px; }
-    }
+.homeBtn img{width:42px;height:42px;}
 
-    .topbar{
-      display:flex;
-      align-items:center;
-      gap: 18px;
-      flex: 0 0 auto;
-    }
+.titlePill{
+  padding:18px 44px;
+  border-radius:22px;
+  background:var(--brand);
+  color:#fff;
+  font-weight:800;
+  font-size:clamp(22px,2.1vw,34px);
+}
 
-    .homeBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-    }
-    .homeBtn:active{ transform: scale(0.98); }
-    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
+.content{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-    .tuneBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-      font-size: 30px;
-      line-height: 1;
-    }
-    .tuneBtn:active{ transform: scale(0.98); }
+.gameCard{
+  width:100%;
+  height:100%;
+  max-width:980px;
+  max-height:520px;
+  background:#fff;
+  border:4px dashed rgba(245,180,152,0.85);
+  border-radius:var(--card-radius);
+  position:relative;
+}
 
-    .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 64px;
-      width: min(660px, 100%);
-      text-transform: lowercase;
-    }
+@media(orientation:portrait){
+  .gameCard{max-height:420px;}
+}
 
-    .content{
-      flex:1 1 auto;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 10px 6px;
-      min-height: 0;
-    }
+canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
 
-    .gameCard{
-      width: min(980px, 100%);
-      height: min(520px, 58vh);
-      background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
-      border-radius: var(--card-radius);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-      position:relative;
-      overflow: visible;
-    }
+.successGif{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:260px;
+  opacity:0;
+  pointer-events:none;
+  z-index:50;
+  transition:opacity 200ms ease;
+}
+.successGif.show{opacity:1;}
 
-    @media (orientation: portrait){
-      .gameCard{ height: min(420px, 34vh); }
-    }
+.scanOverlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  pointer-events:none;
+  color:#777;
+  font-size:22px;
+}
 
-    .cardInner{
-      position:absolute;
-      inset: 0;
-      border-radius: var(--card-radius);
-      overflow: hidden;
-    }
+.startOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(253,238,234,0.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
 
-    #countCanvas{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      z-index: 5;
-      touch-action: none;
-    }
+.startCard{
+  background:#fff;
+  padding:24px;
+  border-radius:24px;
+  text-align:center;
+}
 
-    .bigMark{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform: translate(-50%, -50%) scale(0.98);
-      font-weight: 1000;
-      font-size: clamp(64px, 7vw, 110px);
-      color: rgba(77,74,72,0.88);
-      text-shadow: 0 12px 30px rgba(0,0,0,0.10);
-      opacity:0;
-      pointer-events:none;
-      z-index: 95;
-      transition: opacity 160ms ease, transform 160ms ease;
-    }
-    .bigMark.show{
-      opacity:1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .successGif{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform: translate(-50%, -50%) scale(0.96);
-      width: clamp(140px, calc(220px * var(--scale)), 280px);
-      height: auto;
-      opacity: 0;
-      pointer-events:none;
-      z-index: 110;
-      transition: opacity 160ms ease, transform 160ms ease;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
-    }
-    .successGif.show{
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .scanOverlay{
-      position:absolute;
-      inset: 0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 28px;
-      pointer-events:none;
-    }
-
-    .scanUI{
-      width: min(520px, 92%);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 14px;
-      text-align:center;
-      transform: translateY(-8px);
-    }
-
-    .miniTile{
-      width: 66px;
-      height: 66px;
-      border-radius: 10px;
-      background: #78abff;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      color:#fff;
-      font-weight: 900;
-      font-size: 20px;
-      line-height: 1;
-      place-items:center;
-    }
-
-    .scanTitle{
-      font-size: clamp(22px, 2vw, 34px);
-      font-weight: 800;
-      color: #7b7876;
-      margin-top: 6px;
-    }
-
-    .scanSub{
-      font-size: clamp(16px, 1.3vw, 20px);
-      color: rgba(123,120,118,0.75);
-      margin-top: -4px;
-    }
-
-    .scanHint{
-      font-size: 13px;
-      color: rgba(0,0,0,0.55);
-      margin-top: 10px;
-    }
-
-    .scan-surface.wrong{ animation: wiggle 220ms ease; }
-    .scan-surface.flashWrong{ animation: flashWrong 260ms ease; }
-
-    @keyframes flashWrong{
-      0%{ background:#ffffff; }
-      40%{ background:#fde1e1; }
-      100%{ background:#ffffff; }
-    }
-
-    @keyframes wiggle{
-      0%{ transform: translateX(0); }
-      28%{ transform: translateX(-6px); }
-      58%{ transform: translateX(5px); }
-      100%{ transform: translateX(0); }
-    }
-
-    .startOverlay{
-      position:fixed;
-      inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
-
-    .startCard{
-      width: min(560px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
-
-    .startCard h1{
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      color: #4d4a48;
-      text-transform: lowercase;
-    }
-
-    .startCard p{
-      margin: 0 0 16px 0;
-      color: rgba(77,74,72,0.82);
-      font-size: 18px;
-      line-height: 1.35;
-    }
-
-    .startBtn{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 800;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 18px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-    }
-    .startBtn:active{ transform: scale(0.99); }
-
-    .tunePanel{
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      width: min(520px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.98);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
-      padding: 14px 14px 12px 14px;
-      z-index: 1200;
-      color: #4d4a48;
-    }
-
-    .tunePanel.hidden{ display:none; }
-
-    .tuneHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .tuneTitle{
-      font-weight: 900;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      text-transform: lowercase;
-    }
-
-    .tuneClose{
-      appearance:none;
-      border:none;
-      background:#f8c3b0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 900;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-    }
-    .tuneClose:active{ transform: scale(0.99); }
-
-    .tuneRow{
-      display:grid;
-      grid-template-columns: 140px 1fr 84px;
-      gap: 10px;
-      align-items:center;
-      margin: 8px 0;
-    }
-
-    .tuneLabel{
-      font-weight: 800;
-      font-size: 13px;
-      color: rgba(77,74,72,0.86);
-      text-transform: lowercase;
-    }
-
-    .tuneValue{
-      font-variant-numeric: tabular-nums;
-      font-weight: 900;
-      font-size: 13px;
-      text-align:right;
-      color: rgba(77,74,72,0.86);
-    }
-
-    .tuneRow input[type="range"]{ width: 100%; }
-
-    .tuneButtons{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .tuneBtnSmall{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 900;
-      padding: 10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      font-size: 14px;
-    }
-    .tuneBtnSmall.secondary{
-      background:#f8c3b0;
-      color:#4d4a48;
-    }
-    .tuneBtnSmall:active{ transform: scale(0.99); }
-
-    .tuneHint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: rgba(77,74,72,0.68);
-      line-height: 1.35;
-    }
-  </style>
+.startBtn{
+  background:var(--brand);
+  color:#fff;
+  border:none;
+  border-radius:18px;
+  padding:14px 20px;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+}
+</style>
 </head>
 
 <body>
-  <section class="left" aria-label="Spel">
-    <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
-        <img src="home.png" alt="Home" />
-      </button>
 
-      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen">⚙️</button>
-
-      <div class="titlePill">tellen en scannen</div>
-    </div>
-
-    <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Telkaart">
-        <div class="cardInner">
-          <canvas id="countCanvas" aria-label="Telveld"></canvas>
-          <img class="successGif" id="successGif" src="bellen_blazen02.gif" alt="" aria-hidden="true" />
-          <div class="bigMark" id="bigMark">✓</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
-    <div class="scanOverlay">
-      <div class="scanUI">
-        <div class="miniTile" aria-hidden="true">
-          <div>1</div><div>2</div><div>3</div><div>4</div>
-        </div>
-
-        <div class="scanTitle" id="scan-title">Tel de dingen in de kaart.</div>
-        <div class="scanSub" id="scan-sub">Scan het juiste cijfer.</div>
-        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <h1>Tik om te starten</h1>
-      <p>Tel de dingen, tik erop om te markeren, scan daarna het juiste houten cijfer. Scannen mag ook zonder tikken.</p>
-      <button class="startBtn" id="startBtn">Start</button>
-    </div>
+<section class="left">
+  <div class="topbar">
+    <button class="homeBtn"><img src="home.png"></button>
+    <div class="titlePill">tellen en scannen</div>
   </div>
 
-  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten">Sluit</button>
-    </div>
-
-    <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">telbereik</div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">minimum</div>
-        <input type="range" id="countMinRange" min="1" max="9" step="1" value="1" />
-        <div class="tuneValue" id="countMinValue">1</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">maximum</div>
-        <input type="range" id="countMaxRange" min="1" max="9" step="1" value="5" />
-        <div class="tuneValue" id="countMaxValue">5</div>
-      </div>
-
-      <div class="tuneButtons">
-        <button class="tuneBtnSmall" id="testGoodBtn">Test goed</button>
-        <button class="tuneBtnSmall secondary" id="testWrongBtn">Test fout</button>
-        <button class="tuneBtnSmall secondary" id="newRoundBtn">Nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="testPlopBtn">Test plop</button>
-      </div>
-
-      <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
+  <div class="content">
+    <div class="gameCard" id="gameCard">
+      <canvas id="countCanvas"></canvas>
+      <img id="successGif" class="successGif" src="bellen_blazen02.gif">
     </div>
   </div>
+</section>
 
-  <script>
-    /*
-      Vereist in dezelfde map:
-      calibration.json
-      bubble.png
-      lieveheersbeestje.png
-      ster.png
-      blad.png
-      bellen_blazen02.gif
-      goed.mp3
-      fout.mp3
-      home.png
+<section class="scan-surface">
+  <div class="scanOverlay">
+    Leg het houten cijfer hier
+  </div>
+</section>
 
-      Audio map:
-      audio/plopgeluid.mp3
-    */
+<div class="startOverlay" id="startOverlay">
+  <div class="startCard">
+    <h2>Tik om te starten</h2>
+    <p>Tel de dingen en scan het juiste cijfer.</p>
+    <button class="startBtn" id="startBtn">Start</button>
+  </div>
+</div>
 
-    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+<script>
+/* ---------- AUDIO ---------- */
+const PLOP_SRC='audio/plopgeluid.mp3';
+const goodAudio=new Audio('goed.mp3');
+const wrongAudio=new Audio('fout.mp3');
 
-    const GOOD_SOUND_SRC = 'goed.mp3';
-    const WRONG_SOUND_SRC = 'fout.mp3';
-    const PLOP_SOUND_SRC = 'audio/plopgeluid.mp3';
+let audioCtx=null,plopBuffer=null;
 
-    const BUBBLE_SRC = 'bubble.png';
-    const ITEM_SRC = {
-      lady: 'lieveheersbeestje.png',
-      star: 'ster.png',
-      leaf: 'blad.png'
-    };
+async function initAudio(){
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  audioCtx=new Ctx();
+  const r=await fetch(PLOP_SRC);
+  const b=await r.arrayBuffer();
+  plopBuffer=await audioCtx.decodeAudioData(b);
+}
 
-    const gameCard = document.getElementById('gameCard');
-    const countCanvas = document.getElementById('countCanvas');
+function playPlop(){
+  if(!audioCtx||!plopBuffer)return;
+  const src=audioCtx.createBufferSource();
+  src.buffer=plopBuffer;
+  src.connect(audioCtx.destination);
+  src.start();
+}
 
-    const homeBtn = document.getElementById('homeBtn');
+/* ---------- CANVAS ---------- */
+const canvas=document.getElementById('countCanvas');
+const ctx=canvas.getContext('2d');
+const card=document.getElementById('gameCard');
 
-    const scanArea = document.getElementById('scan-area');
-    const scanTitle = document.getElementById('scan-title');
-    const scanSub = document.getElementById('scan-sub');
-    const scanHint = document.getElementById('scan-hint');
+function resize(){
+  const r=card.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=r.width*dpr;
+  canvas.height=r.height*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  relayout();
+}
+window.addEventListener('resize',()=>setTimeout(resize,200));
+window.addEventListener('orientationchange',()=>setTimeout(resize,300));
 
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
+const imgs={
+  ster:new Image(),
+  blad:new Image(),
+  lieve:new Image(),
+  bubble:new Image()
+};
+imgs.ster.src='ster.png';
+imgs.blad.src='blad.png';
+imgs.lieve.src='lieveheersbeestje.png';
+imgs.bubble.src='bubble.png';
 
-    const tuneBtn = document.getElementById('tuneBtn');
-    const tunePanel = document.getElementById('tunePanel');
-    const tuneClose = document.getElementById('tuneClose');
+let items=[];
 
-    const countMinRange = document.getElementById('countMinRange');
-    const countMaxRange = document.getElementById('countMaxRange');
-    const countMinValue = document.getElementById('countMinValue');
-    const countMaxValue = document.getElementById('countMaxValue');
-    const countHint = document.getElementById('countHint');
-
-    const testGoodBtn = document.getElementById('testGoodBtn');
-    const testWrongBtn = document.getElementById('testWrongBtn');
-    const newRoundBtn = document.getElementById('newRoundBtn');
-    const testPlopBtn = document.getElementById('testPlopBtn');
-
-    const bigMark = document.getElementById('bigMark');
-    const successGif = document.getElementById('successGif');
-
-    function setAutoScale(){
-      if (!gameCard) return;
-      const r = gameCard.getBoundingClientRect();
-
-      const baseW = 980;
-      const baseH = 520;
-      const pad = 18;
-
-      const sW = Math.max(0.1, (r.width  - pad) / baseW);
-      const sH = Math.max(0.1, (r.height - pad) / baseH);
-
-      let s = Math.min(sW, sH);
-      s = Math.max(0.55, Math.min(1.05, s));
-      document.documentElement.style.setProperty('--scale', String(s));
-    }
-
-    window.addEventListener('resize', setAutoScale);
-    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
-
-    /* Audio, goed en fout */
-    const goodAudio = new Audio(GOOD_SOUND_SRC);
-    const wrongAudio = new Audio(WRONG_SOUND_SRC);
-
-    function playSfx(a){
-      if (!a) return;
-      try{
-        a.currentTime = 0;
-        const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    /* Plop, WebAudio met fallback */
-    let audioCtx = null;
-    let plopBuffer = null;
-    let plopFallbackPool = [];
-    let plopFallbackIndex = 0;
-    let plopMode = 'none'; // web, fallback, none
-
-    function ensureFallbackPool(){
-      if (plopFallbackPool.length) return;
-      plopFallbackPool = Array.from({ length: 6 }, () => {
-        const a = new Audio(PLOP_SOUND_SRC);
-        a.preload = 'auto';
-        return a;
-      });
-      plopMode = 'fallback';
-    }
-
-    async function initWebAudio(){
-      if (audioCtx) return;
-
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx){
-        ensureFallbackPool();
-        return;
-      }
-
-      audioCtx = new Ctx();
-
-      try{
-        const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
-        const arr = await resp.arrayBuffer();
-
-        plopBuffer = await new Promise((resolve, reject) => {
-          try{
-            audioCtx.decodeAudioData(arr, resolve, reject);
-          } catch(err){
-            reject(err);
-          }
-        });
-
-        if (plopBuffer){
-          plopMode = 'web';
-        } else {
-          ensureFallbackPool();
-        }
-      } catch(e){
-        ensureFallbackPool();
-      }
-    }
-
-    async function unlockAudio(){
-      if (audioCtx){
-        try{
-          if (audioCtx.state === 'suspended') await audioCtx.resume();
-        } catch(e){}
-      }
-      if (plopFallbackPool.length){
-        try{
-          const a = plopFallbackPool[0];
-          a.muted = true;
-          const p = a.play();
-          if (p && typeof p.catch === 'function') await p.catch(() => {});
-          a.pause();
-          a.currentTime = 0;
-          a.muted = false;
-        } catch(e){}
-      }
-    }
-
-    function playPlop(){
-      if (plopMode === 'web' && audioCtx && plopBuffer){
-        if (audioCtx.state !== 'running'){
-          try{ audioCtx.resume(); } catch(e){}
-        }
-        if (audioCtx.state !== 'running') return;
-
-        try{
-          const src = audioCtx.createBufferSource();
-          const gain = audioCtx.createGain();
-
-          const v = 0.75 + Math.random() * 0.35;
-          gain.gain.setValueAtTime(v, audioCtx.currentTime);
-
-          src.buffer = plopBuffer;
-          src.connect(gain);
-          gain.connect(audioCtx.destination);
-          src.start(audioCtx.currentTime);
-          return;
-        } catch(e){
-          // val terug op fallback
-          ensureFallbackPool();
-        }
-      }
-
-      if (plopFallbackPool.length){
-        const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
-        plopFallbackIndex++;
-        try{
-          a.currentTime = 0;
-          a.volume = 0.75 + Math.random() * 0.35;
-          const p = a.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){}
-      }
-    }
-
-    // extra zekerheid, elk eerste tikmoment unlockt opnieuw
-    let unlockedOnce = false;
-    function unlockOnFirstGesture(){
-      if (unlockedOnce) return;
-      unlockedOnce = true;
-      initWebAudio().then(unlockAudio);
-    }
-    document.addEventListener('touchstart', unlockOnFirstGesture, { passive: true, once: true });
-    document.addEventListener('mousedown', unlockOnFirstGesture, { once: true });
-
-    /* Telbereik instellingen */
-    const COUNT_KEY = 'countRangeV1';
-    const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
-    let countRange = { ...DEFAULT_COUNT_RANGE };
-
-    function clampInt(n, a, b){
-      const v = Math.round(Number(n));
-      if (!Number.isFinite(v)) return a;
-      return Math.max(a, Math.min(b, v));
-    }
-
-    function loadCountRange(){
-      try{
-        const raw = localStorage.getItem(COUNT_KEY);
-        if (!raw) return { ...DEFAULT_COUNT_RANGE };
-        const obj = JSON.parse(raw);
-
-        let min = clampInt(obj.min ?? DEFAULT_COUNT_RANGE.min, 1, 9);
-        let max = clampInt(obj.max ?? DEFAULT_COUNT_RANGE.max, 1, 9);
-        if (max < min) max = min;
-
-        return { min, max };
-      } catch(e){
-        return { ...DEFAULT_COUNT_RANGE };
-      }
-    }
-
-    function saveCountRange(r){
-      try { localStorage.setItem(COUNT_KEY, JSON.stringify(r)); } catch(e) {}
-    }
-
-    function syncCountUI(){
-      countMinRange.value = String(countRange.min);
-      countMaxRange.value = String(countRange.max);
-
-      countMinValue.textContent = String(countRange.min);
-      countMaxValue.textContent = String(countRange.max);
-
-      if (countRange.min === countRange.max){
-        countHint.textContent = `Elke ronde zijn het precies ${countRange.min} dingen.`;
-      } else {
-        countHint.textContent = `Elke ronde zijn het ${countRange.min} tot ${countRange.max} dingen.`;
-      }
-    }
-
-    function applyCountChange(from){
-      let min = clampInt(countMinRange.value, 1, 9);
-      let max = clampInt(countMaxRange.value, 1, 9);
-
-      if (from === 'min' && max < min){
-        max = min;
-        countMaxRange.value = String(max);
-      }
-      if (from === 'max' && max < min){
-        min = max;
-        countMinRange.value = String(min);
-      }
-
-      countRange = { min, max };
-      saveCountRange(countRange);
-      syncCountUI();
-    }
-
-    countMinRange.addEventListener('input', () => applyCountChange('min'));
-    countMaxRange.addEventListener('input', () => applyCountChange('max'));
-
-    function openTunePanel(){
-      tunePanel.classList.remove('hidden');
-      syncCountUI();
-      unlockAudio();
-    }
-
-    function closeTunePanel(){
-      tunePanel.classList.add('hidden');
-    }
-
-    tuneBtn.addEventListener('click', () => {
-      if (tunePanel.classList.contains('hidden')) openTunePanel();
-      else closeTunePanel();
+function rand(a,b){return a+Math.random()*(b-a);}
+function genItems(n){
+  items=[];
+  const r=card.getBoundingClientRect();
+  for(let i=0;i<n;i++){
+    items.push({
+      x:rand(80,r.width-80),
+      y:rand(80,r.height-80),
+      r:rand(36,44),
+      rot:rand(-1.5,1.5),
+      kind:['ster','blad','lieve'][Math.floor(Math.random()*3)],
+      counted:false,
+      float:false,
+      pop:false,
+      popT:0
     });
-    tuneClose.addEventListener('click', closeTunePanel);
+  }
+}
 
-    /* Canvas en items */
-    let ctx = null;
-    let items = [];
-    let targetDigit = 1;
+function relayout(){
+  if(!items.length)return;
+  const r=card.getBoundingClientRect();
+  items.forEach(it=>{
+    it.x=Math.min(r.width-60,Math.max(60,it.x));
+    it.y=Math.min(r.height-60,Math.max(60,it.y));
+  });
+}
 
-    function randInt(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
-    function randFloat(a, b){ return a + Math.random() * (b - a); }
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const now=performance.now();
 
-    function pickTarget(){ return randInt(countRange.min, countRange.max); }
-
-    function pickKind(){
-      const all = ['star','leaf','lady'];
-      return all[Math.floor(Math.random() * all.length)];
+  items=items.filter(it=>{
+    if(it.float){
+      it.y-=1.4;
+      it.x+=Math.sin(now/300+it.x)*0.3;
+      if(it.y<-100)return false;
     }
+    return true;
+  });
 
-    function kindScale(kind){
-      if (kind === 'star') return 0.88;
-      return 1.00;
+  items.forEach(it=>{
+    const img=imgs[it.kind];
+    ctx.save();
+    ctx.translate(it.x,it.y);
+    ctx.rotate(it.rot);
+    ctx.shadowColor='rgba(0,0,0,0.3)';
+    ctx.shadowBlur=14;
+    ctx.shadowOffsetY=6;
+    ctx.drawImage(img,-it.r,-it.r,it.r*2,it.r*2);
+    ctx.restore();
+
+    if(it.counted){
+      ctx.drawImage(imgs.bubble,it.x-it.r*1.2,it.y-it.r*1.2,it.r*2.4,it.r*2.4);
     }
-
-    function loadImage(src){
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = src;
-      });
-    }
-
-    const bubbleImg = new Image();
-    bubbleImg.src = BUBBLE_SRC;
-
-    const itemImgs = { star:null, leaf:null, lady:null };
-
-    function getSafeRectWH(w, h){
-      const pad = Math.max(46, Math.min(70, w * 0.065));
-      return {
-        x: pad,
-        y: pad,
-        w: Math.max(60, w - pad * 2),
-        h: Math.max(60, h - pad * 2)
-      };
-    }
-
-    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-    function computeBaseRadius(w){ return Math.max(30, Math.min(62, w * 0.060)); }
-
-    function makeItemAt(nx, ny, kind, baseR, safe){
-      const x = safe.x + nx * safe.w;
-      const y = safe.y + ny * safe.h;
-
-      return {
-        nx, ny,
-        x, y,
-        kind,
-        r: baseR * kindScale(kind),
-
-        rot: (Math.random() * 2.8) - 1.4,
-        wobble: 0,
-        wobbleUntil: 0,
-
-        counted: false,
-
-        bubblePopping: false,
-        bubblePopStart: 0,
-        bubblePopDur: 220,
-
-        floating: false,
-        floatStart: 0,
-        floatDur: 1500,
-        driftX: 0,
-        driftPhase: Math.random() * Math.PI * 2,
-
-        vanished: false,
-        bubbleJustPlacedUntil: 0
-      };
-    }
-
-    function generateItems(n){
-      const r = gameCard.getBoundingClientRect();
-      const safe = getSafeRectWH(r.width, r.height);
-      const baseR = computeBaseRadius(r.width);
-      const minDist = baseR * 2.15;
-
-      const out = [];
-      let tries = 0;
-      const maxTries = 2600;
-
-      while(out.length < n && tries < maxTries){
-        tries++;
-
-        const nx = Math.random();
-        const ny = Math.random();
-        const x = safe.x + nx * safe.w;
-        const y = safe.y + ny * safe.h;
-
-        let ok = true;
-        for (const it of out){
-          const d = Math.hypot(it.x - x, it.y - y);
-          if (d < minDist) { ok = false; break; }
-        }
-        if (!ok) continue;
-
-        out.push(makeItemAt(nx, ny, pickKind(), baseR, safe));
-      }
-
-      return out;
-    }
-
-    function projectNormalizedToPixels(){
-      const r = gameCard.getBoundingClientRect();
-      const safe = getSafeRectWH(r.width, r.height);
-      const baseR = computeBaseRadius(r.width);
-
-      for (const it of items){
-        it.x = safe.x + it.nx * safe.w;
-        it.y = safe.y + it.ny * safe.h;
-
-        it.r = baseR * kindScale(it.kind);
-
-        const margin = it.r * 1.20;
-        it.x = clamp(it.x, safe.x + margin, safe.x + safe.w - margin);
-        it.y = clamp(it.y, safe.y + margin, safe.y + safe.h - margin);
-
-        it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
-        it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
-      }
-    }
-
-    function resolveOverlapsGentle(){
-      const r = gameCard.getBoundingClientRect();
-      const safe = getSafeRectWH(r.width, r.height);
-
-      const maxIter = 22;
-      for (let iter = 0; iter < maxIter; iter++){
-        let moved = false;
-
-        for (let i = 0; i < items.length; i++){
-          for (let j = i + 1; j < items.length; j++){
-            const a = items[i];
-            const b = items[j];
-
-            const minD = (a.r + b.r) * 1.15;
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            const d = Math.hypot(dx, dy) || 0.0001;
-
-            if (d < minD){
-              const push = (minD - d) * 0.52;
-              const ux = dx / d;
-              const uy = dy / d;
-
-              a.x -= ux * push;
-              a.y -= uy * push;
-              b.x += ux * push;
-              b.y += uy * push;
-
-              moved = true;
-            }
-          }
-        }
-
-        if (moved){
-          for (const it of items){
-            const margin = it.r * 1.20;
-            it.x = clamp(it.x, safe.x + margin, safe.x + safe.w - margin);
-            it.y = clamp(it.y, safe.y + margin, safe.y + safe.h - margin);
-
-            it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
-            it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
-          }
-        } else {
-          break;
-        }
-      }
-    }
-
-    function relayoutKeepPositions(){
-      if (!items || !items.length) return;
-      projectNormalizedToPixels();
-      resolveOverlapsGentle();
-      requestRender();
-    }
-
-    function resizeCountCanvas(){
-      if (!countCanvas || !gameCard) return;
-
-      const r = gameCard.getBoundingClientRect();
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-      countCanvas.width = Math.round(r.width * dpr);
-      countCanvas.height = Math.round(r.height * dpr);
-      countCanvas.style.width = r.width + 'px';
-      countCanvas.style.height = r.height + 'px';
-
-      ctx = countCanvas.getContext('2d');
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-
-      if (started && items && items.length) relayoutKeepPositions();
-      else render();
-    }
-
-    function drawSprite(c, img, cx, cy, r, rot, wobble, alpha){
-      if (!img || !img.complete) return;
-
-      const size = r * 2.15;
-      const x = -size / 2;
-      const y = -size / 2;
-
-      c.save();
-      c.globalAlpha = alpha;
-
-      c.translate(cx, cy);
-      c.rotate((Number(rot) || 0) + (Number(wobble) || 0));
-
-      c.shadowColor = 'rgba(0,0,0,0.28)';
-      c.shadowBlur = Math.max(12, r * 0.42);
-      c.shadowOffsetX = Math.max(2, r * 0.10);
-      c.shadowOffsetY = Math.max(5, r * 0.20);
-
-      c.imageSmoothingEnabled = true;
-      c.drawImage(img, x, y, size, size);
-
-      c.restore();
-    }
-
-    function drawBubble(c, cx, cy, r, alpha, scale){
-      if (!bubbleImg || !bubbleImg.complete) return;
-
-      const mult = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-size-mult')) || 2.2;
-      const size = r * mult * (scale || 1);
-
-      const x = cx - size / 2;
-      const y = cy - size / 2;
-
-      const baseOpacity = Number(getComputedStyle(document.documentElement).getPropertyValue('--bubble-opacity')) || 0.92;
-
-      c.save();
-      c.globalAlpha = baseOpacity * alpha;
-      c.drawImage(bubbleImg, x, y, size, size);
-      c.restore();
-    }
-
-    function easeOut(t){
-      t = clamp(t, 0, 1);
-      return 1 - Math.pow(1 - t, 3);
-    }
-
-    function easeInOut(t){
-      t = clamp(t, 0, 1);
-      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
-    }
-
-    let renderRAF = null;
-    function requestRender(){
-      if (renderRAF) return;
-      renderRAF = requestAnimationFrame(() => {
-        renderRAF = null;
-        render();
-      });
-    }
-
-    function render(){
-      if (!ctx || !gameCard) return;
-      const card = gameCard.getBoundingClientRect();
-      ctx.clearRect(0,0,card.width,card.height);
-
-      const now = performance.now();
-      items = items.filter(it => !it.vanished);
-
-      for (const it of items){
-        const img = itemImgs[it.kind];
-        const wobble = (it.wobbleUntil && now < it.wobbleUntil) ? it.wobble : 0;
-
-        let x = it.x;
-        let y = it.y;
-        let itemAlpha = 1;
-
-        if (it.floating){
-          const t = (now - it.floatStart) / Math.max(1, it.floatDur);
-          const e = easeInOut(t);
-
-          const lift = (card.height + it.r * 3.2) * e;
-          y = it.y - lift;
-
-          const sway = Math.sin((now / 220) + it.driftPhase) * it.driftX;
-          x = it.x + sway;
-
-          if (t > 0.72) itemAlpha = clamp(1 - (t - 0.72) / 0.28, 0, 1);
-
-          if (t >= 1){
-            it.vanished = true;
-            requestRender();
-            continue;
-          } else {
-            requestRender();
-          }
-        }
-
-        drawSprite(ctx, img, x, y, it.r, it.rot, wobble, itemAlpha);
-
-        if (it.counted || it.bubblePopping || it.floating){
-          let bAlpha = 1;
-          let bScale = 1;
-
-          if (it.bubblePopping){
-            const t = (now - it.bubblePopStart) / Math.max(1, it.bubblePopDur);
-            const e = easeOut(t);
-            bAlpha = 1 - e;
-            bScale = 1 + e * 0.28;
-
-            if (t >= 1){
-              it.bubblePopping = false;
-              it.counted = false;
-              bAlpha = 0;
-            } else {
-              requestRender();
-            }
-          }
-
-          if (it.counted && it.bubbleJustPlacedUntil && now < it.bubbleJustPlacedUntil){
-            const tt = 1 - ((it.bubbleJustPlacedUntil - now) / 160);
-            const ee = Math.sin(tt * Math.PI);
-            bScale = 1 + ee * 0.16;
-            requestRender();
-          }
-
-          if (it.floating){
-            bScale = Math.max(bScale, 1.02);
-          }
-
-          if (it.counted || it.floating || bAlpha > 0.01){
-            drawBubble(ctx, x, y, it.r, bAlpha * itemAlpha, bScale);
-          }
-        }
-      }
-    }
-
-    function getCanvasPointFromEvent(e){
-      const rect = countCanvas.getBoundingClientRect();
-      const t = (e.touches && e.touches[0]) ? e.touches[0] : null;
-      const clientX = t ? t.clientX : (e.clientX ?? 0);
-      const clientY = t ? t.clientY : (e.clientY ?? 0);
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-
-    function hitTest(px, py){
-      for (let i = items.length - 1; i >= 0; i--){
-        const it = items[i];
-        if (it.vanished) continue;
-        const d = Math.hypot(it.x - px, it.y - py);
-        if (d <= it.r * 1.15) return it;
-      }
-      return null;
-    }
-
-    function showBigMark(text, ms){
-      if (!bigMark) return;
-      bigMark.textContent = text;
-      bigMark.classList.add('show');
-      setTimeout(() => bigMark.classList.remove('show'), Math.max(200, ms || 520));
-    }
-
-    function showSuccessGif(ms){
-      if (!successGif) return;
-      const src = successGif.getAttribute('src');
-      successGif.setAttribute('src', src);
-      successGif.classList.add('show');
-      setTimeout(() => successGif.classList.remove('show'), Math.max(300, ms || 1900));
-    }
-
-    function popBubble(it, dur){
-      if (!it) return;
-
-      const now = performance.now();
-      it.bubblePopping = true;
-      it.bubblePopStart = now;
-      it.bubblePopDur = dur ?? randInt(180, 320);
-
-      // plop exact op start van de animatie
+    if(it.pop){
       playPlop();
-      requestRender();
+      it.pop=false;
     }
+  });
 
-    function popAllBubblesOnly(){
-      const marked = items.filter(it => it.counted && !it.floating && !it.vanished);
-      if (!marked.length) return;
+  requestAnimationFrame(draw);
+}
 
-      for (const it of marked){
-        const delay = randInt(0, 520);
-        const dur = randInt(180, 320);
-        setTimeout(() => popBubble(it, dur), delay);
-      }
+/* ---------- GAME ---------- */
+let started=false;
+const successGif=document.getElementById('successGif');
+
+function goodAnswer(){
+  successGif.src='bellen_blazen02.gif';
+  successGif.classList.add('show');
+
+  setTimeout(()=>{
+    successGif.src='bel_barst.gif';
+  },3000);
+
+  setTimeout(()=>{
+    successGif.classList.remove('show');
+  },3900);
+
+  items.forEach(it=>{
+    if(it.counted){
+      it.float=true;
     }
+  });
 
-    function ensureAllHaveBubbles(){
-      for (const it of items){
-        if (!it.counted){
-          it.counted = true;
-          it.bubbleJustPlacedUntil = performance.now() + 120;
-        }
-      }
+  setTimeout(nextRound,1800);
+}
+
+function wrongAnswer(){
+  items.forEach(it=>{
+    if(it.counted){
+      it.pop=true;
+      it.counted=false;
     }
+  });
+}
 
-    function floatAllBubblesOutWithinTwoSeconds(){
-      const start = performance.now();
-      const deadline = start + 2000;
-      const card = gameCard.getBoundingClientRect();
-
-      for (const it of items){
-        if (it.vanished) continue;
-        if (!it.counted) continue;
-
-        it.floating = true;
-        it.floatStart = start + randInt(0, 650);
-
-        const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
-        it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
-
-        const driftMax = Math.max(10, Math.min(40, card.width * 0.055));
-        it.driftX = randFloat(driftMax * 0.35, driftMax);
-
-        requestRender();
-      }
+canvas.addEventListener('pointerdown',e=>{
+  if(!started)return;
+  const r=canvas.getBoundingClientRect();
+  const x=e.clientX-r.left;
+  const y=e.clientY-r.top;
+  items.forEach(it=>{
+    if(!it.counted&&Math.hypot(it.x-x,it.y-y)<it.r){
+      it.counted=true;
     }
+  });
+});
+
+function nextRound(){
+  genItems(Math.floor(rand(1,9)));
+}
+
+document.getElementById('startBtn').onclick=async()=>{
+  if(started)return;
+  started=true;
+  document.getElementById('startOverlay').style.display='none';
+  await initAudio();
+  resize();
+  nextRound();
+  draw();
+};
+</script>
 
-    /* Spelstatus */
-    let started = false;
-    let locked = false;
-    let wrongTries = 0;
-    let hasResultForCurrentTouches = false;
-    let currentPoints = [];
-    let roundToken = 0;
-
-    function wrongFeedback(){
-      scanArea.classList.remove('wrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('wrong');
-      setTimeout(() => scanArea.classList.remove('wrong'), 260);
-
-      scanArea.classList.remove('flashWrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('flashWrong');
-      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
-    }
-
-    function clearRoundUI(){
-      scanTitle.textContent = 'Tel de dingen in de kaart.';
-      scanSub.textContent = 'Scan het juiste cijfer.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-    }
-
-    function nextRound(){
-      const myToken = ++roundToken;
-
-      locked = false;
-      wrongTries = 0;
-      clearRoundUI();
-
-      if (successGif) successGif.classList.remove('show');
-      if (bigMark) bigMark.classList.remove('show');
-
-      targetDigit = pickTarget();
-      items = generateItems(targetDigit);
-
-      projectNormalizedToPixels();
-      resolveOverlapsGentle();
-      requestRender();
-
-      setTimeout(() => {
-        if (myToken !== roundToken) return;
-      }, 80);
-    }
-
-    function handleRecognitionResult(recognizedDigit){
-      if (recognizedDigit == null) return;
-      if (!started || locked) return;
-
-      if (recognizedDigit === targetDigit){
-        const myToken = ++roundToken;
-        locked = true;
-
-        scanTitle.textContent = 'Goed gedaan.';
-        scanSub.textContent = '';
-        scanHint.textContent = '';
-
-        wrongTries = 0;
-
-        playSfx(goodAudio);
-        showBigMark('✓', 650);
-        showSuccessGif(1900);
-
-        ensureAllHaveBubbles();
-        floatAllBubblesOutWithinTwoSeconds();
-
-        setTimeout(() => {
-          if (myToken !== roundToken) return;
-          nextRound();
-        }, 1300);
-
-      } else {
-        wrongTries += 1;
-
-        wrongFeedback();
-        playSfx(wrongAudio);
-
-        popAllBubblesOnly();
-
-        if (wrongTries >= 3){
-          const myToken2 = ++roundToken;
-          locked = true;
-
-          scanTitle.textContent = 'Kijk goed.';
-          scanSub.textContent = 'Dit is het juiste aantal.';
-          scanHint.textContent = '';
-
-          showBigMark(String(targetDigit), 900);
-
-          setTimeout(() => {
-            if (myToken2 !== roundToken) return;
-            nextRound();
-          }, 1400);
-          return;
-        }
-
-        setTimeout(() => {
-          if (!started || locked) return;
-          clearRoundUI();
-        }, 520);
-      }
-    }
-
-    /* Tellen door tikken */
-    function onCountTap(e){
-      if (!started || locked) return;
-
-      unlockAudio();
-
-      const p = getCanvasPointFromEvent(e);
-      const it = hitTest(p.x, p.y);
-      if (!it) return;
-      if (it.counted) return;
-
-      it.counted = true;
-      it.bubbleJustPlacedUntil = performance.now() + 160;
-
-      const now = performance.now();
-      const dir = Math.random() < 0.5 ? -1 : 1;
-      it.wobble = dir * 0.32;
-      it.wobbleUntil = now + 220;
-
-      requestRender();
-    }
-
-    countCanvas.addEventListener('touchstart', onCountTap, { passive: true });
-    countCanvas.addEventListener('mousedown', onCountTap);
-
-    /* Marbotic herkenning */
-    let calibration = null;
-    let classificationStats = null;
-    let expectedTouchPoints = 3;
-
-    function initCalibration(calibrationData) {
-      if (!calibrationData || typeof calibrationData !== "object") {
-        calibration = null;
-        classificationStats = null;
-        expectedTouchPoints = 3;
-        return;
-      }
-
-      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
-        ? calibrationData.expectedTouchPoints
-        : 3;
-
-      calibration = buildCalibrationFromData(calibrationData);
-      recomputeClassificationStats();
-    }
-
-    function buildCalibrationFromData(data) {
-      const obj = {};
-      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
-
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = data[String(d)];
-        if (!entry || !Array.isArray(entry.samples)) return;
-
-        entry.samples.forEach(function (s) {
-          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
-          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
-          const features = computeFeatures(pts);
-          obj[String(d)].samples.push({ points: pts, features });
-        });
-      });
-
-      return obj;
-    }
-
-    function computeFeatures(points) {
-      if (!points || points.length !== 3) return { vector: [0,0,0] };
-
-      const p0 = points[0], p1 = points[1], p2 = points[2];
-      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
-
-      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
-
-      let maxDist = 0;
-      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
-      if (maxDist < 1e-6) maxDist = 1;
-
-      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
-
-      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
-
-      const L01 = dist(isoPoints[0], isoPoints[1]);
-      const L12 = dist(isoPoints[1], isoPoints[2]);
-      const L20 = dist(isoPoints[2], isoPoints[0]);
-
-      const sides = [
-        { len: L01, i: 0, j: 1 },
-        { len: L12, i: 1, j: 2 },
-        { len: L20, i: 2, j: 0 }
-      ];
-      const maxSideLen = Math.max(L01, L12, L20) || 1;
-      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
-
-      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
-      const A = isoPoints[largest.i];
-      const B = isoPoints[largest.j];
-      const CIndex = 3 - largest.i - largest.j;
-      const C = isoPoints[CIndex];
-
-      const orientationVal = (a,b,c) => {
-        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
-        return v > 0 ? 1 : v < 0 ? -1 : 0;
-      };
-      const orientation = orientationVal(A,B,C);
-
-      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
-      const denom = 2 * AC * BC;
-      let cosAngle = 0;
-      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
-
-      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
-      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
-      let width = maxX-minX, height = maxY-minY;
-      if (width < 1e-6) width = 1;
-      if (height < 1e-6) height = 1;
-
-      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
-      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
-      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
-      const aspect = height / (width + height);
-
-      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
-      return { vector };
-    }
-
-    function buildFeatureVector(f) {
-      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
-      return [
-        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
-        f.cosAngle*wCos, f.orientation*wOrient,
-        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
-        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
-        f.aspect*wAspect
-      ];
-    }
-
-    function vectorDistance(a, b) {
-      if (!a || !b || a.length !== b.length) return Infinity;
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
-      return Math.sqrt(sum);
-    }
-
-    function recomputeClassificationStats() {
-      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
-
-      const allSamples = [];
-      DIGIT_ORDER.forEach(d => {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
-      });
-
-      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
-
-      const sameMin = [];
-      const betweenMin = [];
-
-      for (let i = 0; i < allSamples.length; i++) {
-        const a = allSamples[i];
-        let minSame = Infinity, minOther = Infinity;
-        for (let j = 0; j < allSamples.length; j++) {
-          if (i === j) continue;
-          const b = allSamples[j];
-          const dist = vectorDistance(a.vector, b.vector);
-          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
-          else minOther = Math.min(minOther, dist);
-        }
-        if (minSame < Infinity) sameMin.push(minSame);
-        if (minOther < Infinity) betweenMin.push(minOther);
-      }
-
-      const maxSame = Math.max.apply(null, sameMin);
-      const minBetween = Math.min.apply(null, betweenMin);
-
-      let thresholdBase;
-      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
-      else thresholdBase = maxSame * 1.3;
-
-      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
-    }
-
-    function recognizeDigit(points) {
-      if (!calibration || !classificationStats) return null;
-      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
-
-      const vec = computeFeatures(points).vector;
-      if (!vec) return null;
-
-      let bestDigit = null;
-      let bestDist = Infinity;
-
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        const samples = entry.samples || [];
-        for (let i = 0; i < samples.length; i++) {
-          const dist = vectorDistance(vec, samples[i].features.vector);
-          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
-        }
-      });
-
-      if (bestDigit === null) return null;
-      if (bestDist > classificationStats.thresholdUnknown) return null;
-      if (bestDist > classificationStats.thresholdBase) return null;
-      return bestDigit;
-    }
-
-    function getPointsFromTouches(touchList) {
-      const rect = scanArea.getBoundingClientRect();
-      const points = [];
-      for (let i = 0; i < touchList.length; i++) {
-        const t = touchList[i];
-        const x = t.clientX;
-        const y = t.clientY;
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-          points.push({ x, y });
-        }
-      }
-      return points;
-    }
-
-    function handleTouchEvent(e){
-      if (!calibration || !classificationStats) return;
-
-      unlockAudio();
-
-      const touches = e.touches || [];
-      currentPoints = getPointsFromTouches(touches);
-
-      if (currentPoints.length === 0){
-        hasResultForCurrentTouches = false;
-        return;
-      }
-
-      if (currentPoints.length !== expectedTouchPoints){
-        hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Even stil houden.';
-        scanSub.textContent = 'We lezen de puntjes.';
-        scanHint.textContent = '';
-        return;
-      }
-
-      scanTitle.textContent = 'Even stil houden.';
-      scanSub.textContent = 'We lezen de puntjes.';
-      scanHint.textContent = '';
-
-      if (!hasResultForCurrentTouches && !locked){
-        const digit = recognizeDigit(currentPoints);
-        if (digit !== null && typeof digit === "number"){
-          hasResultForCurrentTouches = true;
-          handleRecognitionResult(digit);
-        }
-      }
-    }
-
-    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
-      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
-    });
-
-    /* Test knoppen */
-    function testGood(){
-      if (!started || locked) return;
-      handleRecognitionResult(targetDigit);
-    }
-
-    function testWrong(){
-      if (!started || locked) return;
-      const wrong = (targetDigit % 9) + 1;
-      handleRecognitionResult(wrong);
-    }
-
-    testGoodBtn.addEventListener('click', () => { unlockAudio(); testGood(); });
-    testWrongBtn.addEventListener('click', () => { unlockAudio(); testWrong(); });
-    newRoundBtn.addEventListener('click', () => { unlockAudio(); if (started) nextRound(); });
-    testPlopBtn.addEventListener('click', () => { unlockAudio(); playPlop(); });
-
-    /* Start */
-    async function startGame(){
-      if (started) return;
-      started = true;
-
-      await initWebAudio();
-      await unlockAudio();
-
-      startOverlay.style.display = 'none';
-
-      try{
-        goodAudio.load();
-        wrongAudio.load();
-        if (plopFallbackPool.length){
-          plopFallbackPool.forEach(a => { try{ a.load(); } catch(e){} });
-        }
-      } catch(e){}
-
-      nextRound();
-    }
-
-    startBtn.addEventListener('click', startGame);
-    startOverlay.addEventListener('click', (e) => {
-      if (e.target === startOverlay) startGame();
-    });
-
-    homeBtn.addEventListener('click', () => {
-      try { window.location.href = 'index.html'; } catch (e) {}
-    });
-
-    async function preloadImages(){
-      itemImgs.star = await loadImage(ITEM_SRC.star);
-      itemImgs.leaf = await loadImage(ITEM_SRC.leaf);
-      itemImgs.lady = await loadImage(ITEM_SRC.lady);
-      requestRender();
-    }
-
-    function loop(){
-      const now = performance.now();
-      let needs = false;
-
-      for (const it of items){
-        if (it.wobbleUntil && now < it.wobbleUntil){
-          it.wobble *= 0.72;
-          needs = true;
-          if (Math.abs(it.wobble) < 0.002) it.wobble = 0;
-        }
-        if (it.bubblePopping) needs = true;
-        if (it.floating) needs = true;
-        if (it.bubbleJustPlacedUntil && now < it.bubbleJustPlacedUntil) needs = true;
-      }
-
-      if (needs) requestRender();
-      requestAnimationFrame(loop);
-    }
-
-    window.addEventListener('load', () => {
-      setAutoScale();
-
-      countRange = loadCountRange();
-      syncCountUI();
-
-      resizeCountCanvas();
-      window.addEventListener('resize', () => setTimeout(resizeCountCanvas, 180));
-      window.addEventListener('orientationchange', () => setTimeout(resizeCountCanvas, 280));
-
-      clearRoundUI();
-
-      preloadImages();
-      loop();
-
-      fetch('calibration.json', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => initCalibration(data))
-        .catch(() => { });
-    });
-  </script>
 </body>
 </html>
