@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slim Kijken</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    #game {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .option {
+      width: 120px;
+      height: 120px;
+      margin: 20px;
+      border-radius: 20px;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .dots {
+      display: grid;
+      grid-template-columns: repeat(3, 20px);
+      grid-gap: 8px;
+    }
+
+    .dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: black;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game"></div>
+
+<script>
+/* ---------- DATA ---------- */
+
+const levels = {
+  1: [
+    [1], [2], [3], [4], [5], [6]
+  ],
+  2: [
+    [3,2], [4,1], [2,1]
+  ]
+};
+
+let currentLevel = 1;
+let flashTime = 1200;
+let correctStreak = 0;
+let mistakeCount = 0;
+let currentAmount = null;
+
+/* ---------- UTIL ---------- */
+
+function clearGame() {
+  document.getElementById("game").innerHTML = "";
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/* ---------- DOT DRAWING ---------- */
+
+function createDots(amounts, highlightIndex = null) {
+  const container = document.createElement("div");
+  container.style.display = "flex";
+  container.style.gap = "40px";
+
+  amounts.forEach((amount, index) => {
+    const group = document.createElement("div");
+    group.className = "dots";
+    group.style.opacity = highlightIndex === null || highlightIndex === index ? "1" : "0.2";
+
+    for (let i = 0; i < amount; i++) {
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      group.appendChild(dot);
+    }
+
+    container.appendChild(group);
+  });
+
+  return container;
+}
+
+/* ---------- GAME FLOW ---------- */
+
+async function playRound() {
+  clearGame();
+  await sleep(500);
+
+  const pool = levels[currentLevel];
+  currentAmount = pool[Math.floor(Math.random() * pool.length)];
+
+  const flash = createDots(currentAmount);
+  document.getElementById("game").appendChild(flash);
+
+  await sleep(flashTime);
+  clearGame();
+  await sleep(300);
+
+  showOptions();
+}
+
+function showOptions() {
+  const game = document.getElementById("game");
+  const total = currentAmount.reduce((a,b) => a + b, 0);
+
+  const options = [
+    total - 1,
+    total,
+    total + 1
+  ].sort(() => Math.random() - 0.5);
+
+  options.forEach(value => {
+    const option = document.createElement("div");
+    option.className = "option";
+
+    const dots = createDots([value]);
+    option.appendChild(dots);
+
+    option.onclick = () => checkAnswer(value);
+    game.appendChild(option);
+  });
+}
+
+async function checkAnswer(value) {
+  const total = currentAmount.reduce((a,b) => a + b, 0);
+
+  if (value === total) {
+    correctStreak++;
+    mistakeCount = 0;
+    if (correctStreak >= 3) flashTime = Math.max(600, flashTime - 100);
+    await playRound();
+  } else {
+    correctStreak = 0;
+    mistakeCount++;
+
+    if (mistakeCount === 1) {
+      flashTime += 300;
+      await playRound();
+    } else {
+      await showHelp();
+    }
+  }
+}
+
+/* ---------- HELP ---------- */
+
+async function showHelp() {
+  clearGame();
+
+  const biggestIndex = currentAmount[0] >= currentAmount[1] ? 0 : 1;
+  const help1 = createDots([currentAmount[biggestIndex]], 0);
+  document.getElementById("game").appendChild(help1);
+
+  await sleep(600);
+  clearGame();
+
+  const help2 = createDots(currentAmount);
+  document.getElementById("game").appendChild(help2);
+
+  await sleep(1000);
+  clearGame();
+  showOptions();
+}
+
+/* ---------- START ---------- */
+
+playRound();
+</script>
+
+</body>
+</html>
