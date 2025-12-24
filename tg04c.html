@@ -13,23 +13,21 @@
       --brand:#e58c74;
       --text:#6f6b68;
 
-      --dash-w:4px;
-      --card-radius:28px;
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
-
       --line: rgba(245,180,152,0.85);
       --lineSoft: rgba(245,180,152,0.55);
 
-      --easeOut: cubic-bezier(.18,.84,.26,1);
-      --easeInOut: cubic-bezier(.22,.61,.35,1);
+      --card-radius:28px;
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      --slideMs: 780ms;
+      --slideMs: 980ms;
+      --ease: cubic-bezier(.22,.61,.35,1);
 
-      /* Sizing controls */
-      --answersScaleLandscape: .70; /* ~70% kleiner dan “te groot” */
-      --answersScalePortrait: 1.00;
+      --maskSize: 46px;       /* dik genoeg om schaduw te vangen */
+      --maskFade: 26px;       /* zachte overgang zodat het niet “snijdt” */
 
       --pressDown: 2px;
+
+      --flashMs: 650;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -47,7 +45,7 @@
       overflow:hidden;
     }
 
-    /* EXACT layout zoals tellen en scannen */
+    /* Layout exact zoals tellen en scannen */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
@@ -78,11 +76,12 @@
       min-height: 0;
     }
 
+    /* Scheidingslijn, strak, zelfde plek als origineel */
     @media (orientation: landscape){
-      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); } /* basislijn, zoals je voorbeeld */
+      .scan-surface{ border-left: 6px solid var(--line); }
     }
     @media (orientation: portrait){
-      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }  /* basislijn, zoals je voorbeeld */
+      .scan-surface{ border-top: 6px solid var(--line); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -108,7 +107,7 @@
       flex: 0 0 auto;
       font-size: 30px;
       line-height: 1;
-      transition: transform 120ms var(--easeOut);
+      transition: transform 140ms var(--ease);
     }
     .homeBtn:active,
     .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
@@ -142,17 +141,16 @@
       min-height: 0;
     }
 
-    /* Bovenste kader exact zoals je basis */
+    /* Vraagkader, nu strak */
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85); /* basis blijft zoals voorbeeld */
+      border: 6px solid var(--line);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: hidden;
-      transition: background 160ms ease;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -162,7 +160,6 @@
       .gameCard{ height: min(420px, 34vh); }
     }
 
-    /* “strakke lijn” voor het binnenkader (zoals je vroeg) */
     .flashBoard{
       width: 100%;
       height: 100%;
@@ -175,6 +172,23 @@
       overflow:hidden;
       position:relative;
     }
+
+    /* Portrait: flitsbord iets kleiner, kader blijft gelijk */
+    @media (orientation: portrait){
+      .flashBoard{
+        width: min(560px, 92%);
+        height: auto;
+        aspect-ratio: 1.45 / 1;
+      }
+    }
+    @media (orientation: landscape){
+      .flashBoard{
+        width: 100%;
+        height: 100%;
+        aspect-ratio: auto;
+      }
+    }
+
     .flashSvg{
       width: 100%;
       height: 100%;
@@ -183,7 +197,7 @@
       justify-content:center;
     }
 
-    /* Rechtervak */
+    /* Antwoorden, layout */
     .scanStage{
       position:absolute;
       inset:0;
@@ -191,48 +205,23 @@
       align-items:center;
       justify-content:center;
       padding: 18px;
+      z-index: 10;
     }
 
-    /* Masker precies op de middenlijn, dik genoeg om schaduw te verbergen */
-    .midMask{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      z-index: 50;
-    }
+    /* Ruimte zodat masker nooit een kaart “afsnijdt” in rust */
     @media (orientation: landscape){
-      .midMask::before{
-        content:"";
-        position:absolute;
-        left:-7px; /* over de dashed seam heen */
-        top:0;
-        width: 14px; /* dikker zodat schaduw nooit eronder uit komt */
-        height:100%;
-        background:#ffffff;
-      }
+      .scanStage{ padding-left: calc(18px + var(--maskSize)); }
     }
     @media (orientation: portrait){
-      .midMask::before{
-        content:"";
-        position:absolute;
-        left:0;
-        top:-7px;
-        width:100%;
-        height: 14px;
-        background:#ffffff;
-      }
+      .scanStage{ padding-top: calc(18px + var(--maskSize)); }
     }
 
-    /* Answer area */
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
-      position:relative;
-      z-index: 10;
-      transform: translateZ(0);
     }
 
-    /* Landscape: onder elkaar, in het witte vlak gecentreerd */
+    /* Landscape: onder elkaar, gecentreerd in wit vlak */
     .answers{
       display:grid;
       grid-template-columns: 1fr;
@@ -241,7 +230,7 @@
       align-items:center;
     }
 
-    /* Portrait: naast elkaar onderin */
+    /* Portrait: 3 naast elkaar */
     @media (orientation: portrait){
       .answers{
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -249,7 +238,6 @@
       }
     }
 
-    /* Antwoordknoppen: altijd vierkant */
     .ansBtn{
       appearance:none;
       border:none;
@@ -258,52 +246,38 @@
       border: 3px solid var(--line);
       box-shadow: 0 12px 24px rgba(0,0,0,0.10);
       cursor:pointer;
+
       display:grid;
       place-items:center;
       padding: 10px;
 
+      aspect-ratio: 1 / 1;
       width: 100%;
-      max-width: 240px; /* basis */
-      aspect-ratio: 1 / 1; /* altijd vierkant */
 
-      transition:
-        transform 180ms var(--easeOut),
-        box-shadow 180ms var(--easeOut),
-        border-color 180ms var(--easeOut);
-      will-change: transform;
+      transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
       transform: translateZ(0);
+      will-change: transform, opacity;
     }
 
-    /* Landscape: fors kleiner zodat het altijd past */
+    /* Landscape, ongeveer 70 procent kleiner, altijd passend */
     @media (orientation: landscape){
-      .answersWrap{
-        transform: scale(var(--answersScaleLandscape));
-        transform-origin: center;
-      }
-      .ansBtn{
-        max-width: 210px;
-      }
+      .answersWrap{ width: min(420px, 92%); }
+      .ansBtn{ width: clamp(92px, 14vw, 150px); }
     }
 
-    /* Portrait: iets kleiner, maar vierkant blijft */
+    /* Portrait, iets kleiner dan volle breedte, maar vierkant */
     @media (orientation: portrait){
-      .answersWrap{
-        transform: scale(var(--answersScalePortrait));
-        transform-origin: center;
-      }
-      .ansBtn{
-        max-width: none;
-        width: 100%;
-      }
+      .answersWrap{ width: min(640px, 92%); }
     }
 
-    /* Micro interactie: klein indrukken + zachte terugveer */
+    /* Indrukken plus zachte terugveer */
     .ansBtn:active{
       transform: translateY(var(--pressDown));
       box-shadow: 0 8px 16px rgba(0,0,0,0.10);
     }
+
     .ansBtn.pressBounce{
-      animation: pressBounce 240ms var(--easeOut) 1;
+      animation: pressBounce 260ms var(--ease) 1;
     }
     @keyframes pressBounce{
       0%{ transform: translateY(0); }
@@ -311,36 +285,55 @@
       100%{ transform: translateY(0); }
     }
 
-    .ansBtn.correct{ border-color: rgba(47,179,109,0.55); }
-    .ansBtn.wrong{ border-color: rgba(228,79,108,0.55); }
-
     .answersHidden{ opacity:0; pointer-events:none; }
 
-    /* Slide animations (per button), verdwijnen achter middenlijn-mask */
-    .slideOut{ pointer-events:none; }
+    /* Masker exact op middenlijn, dik genoeg, met zachte fade */
+    .midMask{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index: 50;
+    }
 
     @media (orientation: landscape){
-      .slideOut{ animation: slideOutLeft var(--slideMs) var(--easeInOut) forwards; }
-      .slideIn{ animation: slideInLeft var(--slideMs) var(--easeInOut) forwards; }
-      @keyframes slideOutLeft{
-        0%{ transform: translateX(0); }
-        100%{ transform: translateX(-160%); }
+      .midMask::before{
+        content:"";
+        position:absolute;
+        left: -6px; /* over de scheidingslijn heen */
+        top:0;
+        width: var(--maskSize);
+        height: 100%;
+        background: #fff;
       }
-      @keyframes slideInLeft{
-        0%{ transform: translateX(160%); }
-        100%{ transform: translateX(0); }
+      .midMask::after{
+        content:"";
+        position:absolute;
+        left: calc(-6px + var(--maskSize));
+        top:0;
+        width: var(--maskFade);
+        height:100%;
+        background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0) 100%);
       }
     }
+
     @media (orientation: portrait){
-      .slideOut{ animation: slideOutUp var(--slideMs) var(--easeInOut) forwards; }
-      .slideIn{ animation: slideInUp var(--slideMs) var(--easeInOut) forwards; }
-      @keyframes slideOutUp{
-        0%{ transform: translateY(0); }
-        100%{ transform: translateY(-160%); }
+      .midMask::before{
+        content:"";
+        position:absolute;
+        left: 0;
+        top: -6px;
+        width: 100%;
+        height: var(--maskSize);
+        background: #fff;
       }
-      @keyframes slideInUp{
-        0%{ transform: translateY(160%); }
-        100%{ transform: translateY(0); }
+      .midMask::after{
+        content:"";
+        position:absolute;
+        left:0;
+        top: calc(-6px + var(--maskSize));
+        width:100%;
+        height: var(--maskFade);
+        background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 100%);
       }
     }
 
@@ -387,7 +380,7 @@
       font-size: 18px;
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      transition: transform 140ms var(--easeOut);
+      transition: transform 140ms var(--ease);
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
@@ -551,6 +544,7 @@
       const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
       const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
 
       const startOverlay = document.getElementById("startOverlay");
       const startBtn = document.getElementById("startBtn");
@@ -569,9 +563,9 @@
 
       const flashSvg = document.getElementById("flashSvg");
       const answersEl = document.getElementById("answers");
-      const answersWrap = document.getElementById("answersWrap");
+      const scanArea = document.getElementById("scanArea");
 
-      // Simple beep
+      /* WebAudio beep */
       let audioCtx = null;
       function beep(type){
         try{
@@ -591,7 +585,7 @@
         }catch(e){}
       }
 
-      // Dice positions (no mirroring, stable)
+      /* Dots, stabiel, niet spiegelen */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -614,12 +608,9 @@
       }
 
       function svgForDots(dotSets, opts = {}){
-        const {
-          dotRadius = 14,
-          dotColor = "rgba(25,25,25,.92)"
-        } = opts;
-
+        const { dotRadius = 14, dotColor = "rgba(25,25,25,.92)" } = opts;
         const w = 520, h = 380;
+
         const circles = [];
         dotSets.forEach(set => {
           const b = set.box;
@@ -631,19 +622,14 @@
         });
 
         const cs = circles.map(c => `
-          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}"
-            fill="${dotColor}"
-          />`).join("");
+          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" />
+        `).join("");
 
         return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${cs}</svg>`;
       }
 
-      function setBoard(html){
-        flashSvg.innerHTML = html;
-      }
-      function clearBoard(){
-        setBoard(svgForDots([], {dotRadius: 1}));
-      }
+      function setBoard(html){ flashSvg.innerHTML = html; }
+      function clearBoard(){ setBoard(svgForDots([], {dotRadius: 1})); }
 
       function buildOptions(correct){
         const cap = 6;
@@ -660,7 +646,14 @@
         return arr;
       }
 
-      function renderAnswers(correct){
+      function hideAnswers(){
+        answersEl.classList.add("answersHidden");
+      }
+      function showAnswers(){
+        answersEl.classList.remove("answersHidden");
+      }
+
+      function renderAnswers(correct, onPick){
         const arr = buildOptions(correct);
         answersEl.innerHTML = "";
 
@@ -683,50 +676,112 @@
         });
       }
 
-      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
-      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
 
-      async function slideOutOrder(){
+      function slideVectorForButton(btn){
+        const b = btn.getBoundingClientRect();
+        const a = scanArea.getBoundingClientRect();
+
+        const maskSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--maskSize")) || 46;
+        const extra = maskSize + 18;
+
+        if(isPortrait()){
+          const seamY = a.top;
+          const dy = -((b.bottom - seamY) + extra);
+          return { x: 0, y: dy };
+        }else{
+          const seamX = a.left;
+          const dx = -((b.right - seamX) + extra);
+          return { x: dx, y: 0 };
+        }
+      }
+
+      function sortedButtonsForExit(btns){
+        const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
+        if(isPortrait()){
+          rects.sort((u,v) => v.r.left - u.r.left);  // rechts, midden, links
+        }else{
+          rects.sort((u,v) => v.r.top - u.r.top);    // onder, midden, boven
+        }
+        return rects.map(x => x.b);
+      }
+
+      async function animateInButtons(){
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
-        const order = [2,1,0].filter(i => btns[i]);
 
-        order.forEach((idx, k) => {
-          const b = btns[idx];
-          b.classList.remove("slideIn");
-          b.classList.add("slideOut");
-          b.style.animationDelay = `${k * 130}ms`;
+        hideAnswers();
+        await raf();
+        await raf();
+
+        btns.forEach(btn => {
+          const v = slideVectorForButton(btn);
+          btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
+          btn.style.opacity = "0";
         });
 
-        const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 780;
-        await wait(130*(order.length-1) + base + 60);
+        showAnswers();
+        await raf();
 
-        btns.forEach(b => {
-          b.classList.remove("slideOut");
-          b.style.animationDelay = "0ms";
+        const ms = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 980;
+        const easing = getComputedStyle(document.documentElement).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
+
+        btns.forEach((btn, i) => {
+          btn.animate(
+            [
+              { transform: btn.style.transform, opacity: 0 },
+              { transform: "translate(0px, 0px)", opacity: 1 }
+            ],
+            { duration: ms, easing, fill: "forwards", delay: i * 90 }
+          );
+        });
+
+        await wait(ms + 90*(btns.length-1) + 40);
+
+        btns.forEach(btn => {
+          btn.style.transform = "translate(0px, 0px)";
+          btn.style.opacity = "1";
         });
       }
 
-      async function slideInAll(){
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+      async function animateOutButtons(){
+        const btns = sortedButtonsForExit([...answersEl.querySelectorAll(".ansBtn")]);
         if(!btns.length) return;
 
-        btns.forEach((b, i) => {
-          b.classList.remove("slideOut");
-          b.classList.add("slideIn");
-          b.style.animationDelay = `${i * 90}ms`;
+        const ms = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 980;
+        const easing = getComputedStyle(document.documentElement).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
+
+        btns.forEach((btn, i) => {
+          const v = slideVectorForButton(btn);
+          btn.animate(
+            [
+              { transform: "translate(0px, 0px)", opacity: 1 },
+              { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
+            ],
+            { duration: ms, easing, fill: "forwards", delay: i * 140 }
+          );
         });
 
-        const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 780;
-        await wait(90*(btns.length-1) + base + 60);
+        await wait(ms + 140*(btns.length-1) + 40);
 
-        btns.forEach(b => {
-          b.classList.remove("slideIn");
-          b.style.animationDelay = "0ms";
+        btns.forEach(btn => {
+          btn.style.opacity = "0";
         });
+
+        hideAnswers();
       }
 
-      // Game state
+      async function showChosenThenCorrect(chosen, correct){
+        setBoard(svgForDots(patternLevel1(chosen), {dotRadius: 16}));
+        await wait(900);
+        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        await wait(900);
+        clearBoard();
+      }
+
+      /* Game flow */
       let started = false;
       let locked = false;
       let flashMs = Number(flashMsRange.value);
@@ -737,18 +792,16 @@
 
         hideAnswers();
         clearBoard();
-        await wait(160);
+        await wait(180);
 
         setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
         await wait(flashMs);
 
         clearBoard();
-        await wait(260);
+        await wait(300);
 
-        renderAnswers(correct);
-        showAnswers();
-
-        await slideInAll();
+        renderAnswers(correct, onPick);
+        await animateInButtons();
 
         locked = false;
       }
@@ -758,51 +811,39 @@
         flashAndAsk();
       }
 
-      async function showChosenBrief(choice){
-        setBoard(svgForDots(patternLevel1(choice), {dotRadius: 16}));
-        await wait(900);
-        clearBoard();
-      }
-
       async function onPick(btn, value){
         if(!started || locked) return;
         locked = true;
 
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        btns.forEach(b => b.style.pointerEvents = "none");
+        const all = [...answersEl.querySelectorAll(".ansBtn")];
+        all.forEach(b => b.style.pointerEvents = "none");
 
         if(value === correct){
           beep("ok");
-          btn.classList.add("correct");
 
           setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
           await wait(520);
 
-          await slideOutOrder();
+          await animateOutButtons();
 
           clearBoard();
-          btns.forEach(b => { b.classList.remove("correct","wrong"); b.style.pointerEvents = ""; });
+          all.forEach(b => b.style.pointerEvents = "");
 
           nextRound();
           return;
         }
 
         beep("no");
-        btn.classList.add("wrong");
 
-        await showChosenBrief(value);
-        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
-        await wait(750);
-        clearBoard();
+        await showChosenThenCorrect(value, correct);
 
-        await slideOutOrder();
+        await animateOutButtons();
 
-        btns.forEach(b => { b.classList.remove("correct","wrong"); b.style.pointerEvents = ""; });
-
+        all.forEach(b => b.style.pointerEvents = "");
         nextRound();
       }
 
-      // Settings
+      /* Settings */
       function openTune(){ tunePanel.classList.remove("hidden"); }
       function closeTune(){ tunePanel.classList.add("hidden"); }
 
@@ -822,17 +863,17 @@
         beep("tap");
         if(!started || locked) return;
         const wrong = correct === 6 ? 1 : correct + 1;
-        const b = answersEl.querySelector(".ansBtn");
-        if(b) onPick(b, wrong);
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) onPick(btns[0], wrong);
       });
       testGoodBtn.addEventListener("click", () => {
         beep("tap");
         if(!started || locked) return;
-        const b = answersEl.querySelector(".ansBtn");
-        if(b) onPick(b, correct);
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) onPick(btns[0], correct);
       });
 
-      // Start
+      /* Start */
       function startGame(){
         if(started) return;
         started = true;
@@ -841,12 +882,14 @@
         flashMsValue.textContent = String(flashMs);
         nextRound();
       }
+
       startBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         beep("tap");
         startGame();
       });
+
       startOverlay.addEventListener("click", (e) => {
         if(e.target === startOverlay){
           beep("tap");
@@ -859,21 +902,22 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
-      // On rotation, re-render answers to avoid jitter
-      let rotTimer = null;
+      /* Reflow guard, voorkomt schokken na draaien */
+      let reflowTimer = null;
       function onReflow(){
         if(!started) return;
-        if(rotTimer) clearTimeout(rotTimer);
-        rotTimer = setTimeout(async () => {
-          renderAnswers(correct);
-          showAnswers();
-          await slideInAll();
-        }, 180);
+        if(reflowTimer) clearTimeout(reflowTimer);
+        reflowTimer = setTimeout(() => {
+          hideAnswers();
+          clearBoard();
+          renderAnswers(correct, onPick);
+          animateInButtons();
+        }, 220);
       }
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
-      // Init
+      /* Init */
       clearBoard();
       flashMsValue.textContent = String(flashMsRange.value);
     })();
