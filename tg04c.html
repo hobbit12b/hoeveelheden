@@ -181,6 +181,7 @@
       align-items:center;
       justify-content:center;
       padding: 28px;
+      overflow:hidden;
     }
 
     .rightWrap{
@@ -229,6 +230,7 @@
       transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease, filter 140ms ease, opacity 140ms ease;
       position:relative;
       overflow:hidden;
+      will-change: transform, opacity;
     }
 
     .ansBtn:hover{
@@ -379,9 +381,14 @@
         minMs: 450,
         maxMs: 1600,
 
-        wrongChoiceHoldMs: 850,  // jouw foute keuze even laten staan
-        showCorrectBoardMs: 900,  // daarna juiste voorbeeld op het bord
-        wrongPauseAfterMs: 220
+        wrongChoiceHoldMs: 850,
+        showCorrectBoardMs: 900,
+        wrongPauseAfterMs: 220,
+
+        correctHoldMs: 420,
+        slideDurMs: 260,
+        slideGapMs: 90,
+        afterSlidePauseMs: 140
       };
 
       let audioCtx = null;
@@ -504,6 +511,73 @@
         });
       }
 
+      function isPortrait(){
+        try{ return window.matchMedia("(orientation: portrait)").matches; }
+        catch(e){ return false; }
+      }
+
+      function sortButtonsRightToLeft(btns){
+        const items = btns.map(b => {
+          const r = b.getBoundingClientRect();
+          return { b, left: r.left, top: r.top };
+        });
+
+        if (!isPortrait()){
+          // landscape: rechts, midden, links
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));
+        } else {
+          // portrait: onder, midden, boven (richting scheidingslijn boven)
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));
+        }
+
+        return items.map(x => x.b);
+      }
+
+      function slideOutOne(btn, axis){
+        return new Promise((resolve) => {
+          const onEnd = (e) => {
+            if (e.propertyName !== "transform") return;
+            btn.removeEventListener("transitionend", onEnd);
+            resolve();
+          };
+
+          btn.addEventListener("transitionend", onEnd);
+
+          // fallback, Safari proof
+          const hard = setTimeout(() => {
+            btn.removeEventListener("transitionend", onEnd);
+            resolve();
+          }, SETTINGS.slideDurMs + 120);
+
+          // trigger
+          requestAnimationFrame(() => {
+            btn.style.transition = `transform ${SETTINGS.slideDurMs}ms cubic-bezier(.2,.9,.2,1), opacity ${Math.max(160, SETTINGS.slideDurMs-60)}ms ease`;
+            btn.style.opacity = "0";
+            btn.style.transform = (axis === "y") ? "translateY(-120vh)" : "translateX(-120vw)";
+
+            // clear fallback when transitionend fires
+            btn.addEventListener("transitionend", () => clearTimeout(hard), { once:true });
+          });
+        });
+      }
+
+      async function slideOutAnswersRightMiddleLeft(){
+        const btns = [...answerGrid.querySelectorAll(".ansBtn")];
+        if (!btns.length) return;
+
+        // geen nieuwe klikken tijdens animatie
+        btns.forEach(b => b.style.pointerEvents = "none");
+
+        const axis = isPortrait() ? "y" : "x";
+        const ordered = sortButtonsRightToLeft(btns);
+
+        // eerst rechts, dan midden, dan links
+        for (let i = 0; i < ordered.length; i++){
+          if (i > 0) await wait(SETTINGS.slideGapMs);
+          await slideOutOne(ordered[i], axis);
+        }
+      }
+
       async function doRound(){
         locked = true;
 
@@ -537,13 +611,22 @@
           beep("ok");
           btn.classList.add("correct");
 
+          // korte bevestiging op het bord
           flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
-          await wait(420);
+          await wait(SETTINGS.correctHoldMs);
+
+          // bord leeg, focus naar midden
           flashSvg.innerHTML = emptySvg();
+
+          // animatie: rechts, midden, links, schuift naar de scheidingslijn
+          await slideOutAnswersRightMiddleLeft();
+
+          showAnswers(false);
+          clearAnswers();
 
           flashMs = clamp(flashMs - 60, SETTINGS.minMs, SETTINGS.maxMs);
 
-          await wait(220);
+          await wait(SETTINGS.afterSlidePauseMs);
           await doRound();
           return;
         }
@@ -559,21 +642,17 @@
 
         flashMs = clamp(flashMs + 140, SETTINGS.minMs, SETTINGS.maxMs);
 
-        // Beat 1: foute keuze blijft even staan
         await wait(SETTINGS.wrongChoiceHoldMs);
 
-        // Beat 2: laat het juiste voorbeeld zien op het bord
         flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
         await wait(SETTINGS.showCorrectBoardMs);
 
-        // Beat 3: maak schoon en herhaal dezelfde ronde
         showAnswers(false);
         await wait(SETTINGS.wrongPauseAfterMs);
 
         flashSvg.innerHTML = emptySvg();
         await wait(260);
 
-        // zelfde correct blijft gelden, dus geen nieuwe random
         flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
         await wait(Math.min(SETTINGS.maxMs, flashMs + 260));
 
