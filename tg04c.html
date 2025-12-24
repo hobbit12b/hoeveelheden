@@ -1,458 +1,773 @@
-/* ============================================================
-   Slim Kijken, levels 1 t/m 4
-   Config + item selectie + render helpers + hulpprotocol data
-   ============================================================ */
-
-/* ---------------------------
-   0) Kleine helpers
-----------------------------*/
-const SK = (() => {
-  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-  const rand01 = () => Math.random();
-  const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
-
-  function weightedPick(list, weightKey = "w") {
-    let sum = 0;
-    for (const it of list) sum += Math.max(0, it[weightKey] ?? 0);
-    if (sum <= 0) return list[randInt(0, list.length - 1)];
-    let r = rand01() * sum;
-    for (const it of list) {
-      r -= Math.max(0, it[weightKey] ?? 0);
-      if (r <= 0) return it;
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Slim Kijken, 1 bestand</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#111a2e;
+      --card2:#0f1730;
+      --text:#eaf0ff;
+      --muted:#b8c4ff;
+      --accent:#7cf7c3;
+      --danger:#ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
     }
-    return list[list.length - 1];
-  }
-
-  function shuffle(a){
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 50% 20%, #182452 0%, var(--bg) 60%);
+      color:var(--text);
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
     }
-    return a;
-  }
-
-  /* ---------------------------
-     1) Patronen
-     Dobbelsteen (1..6) en vijfraam (1..10)
-  ----------------------------*/
-  const P = {
-    tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
-    ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
-    bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
-  };
-
-  const diceFaces = {
-    1: [P.mc],
-    2: [P.tl, P.br],
-    3: [P.tl, P.mc, P.br],
-    4: [P.tl, P.tr, P.bl, P.br],
-    5: [P.tl, P.tr, P.mc, P.bl, P.br],
-    6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
-  };
-
-  function dotsFiveFrame(n){
-    const cols = [0.14, 0.32, 0.50, 0.68, 0.86];
-    const rows = [0.38, 0.62];
-    const out = [];
-    for(let i=0;i<n;i++){
-      const row = Math.floor(i/5);
-      const col = i%5;
-      out.push([cols[col], rows[row]]);
+    .app{
+      width:min(980px, 100%);
+      padding: 14px 14px 22px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
-    return out;
-  }
-
-  /* ---------------------------
-     2) Render dotSets (past op jouw svgForDots)
-     dotSet: { dots:[[x,y],...], box:{x0,y0,x1,y1} }
-     Je svgForDots gebruikt 0..1 coords in box en schaal zelf naar px.
-  ----------------------------*/
-  function boxFull(){
-    return { x0:0.12, y0:0.12, x1:0.88, y1:0.88 };
-  }
-  function boxLeft(){
-    return { x0:0.10, y0:0.18, x1:0.48, y1:0.82 };
-  }
-  function boxRight(){
-    return { x0:0.52, y0:0.18, x1:0.90, y1:0.82 };
-  }
-
-  function patternDice(n){
-    return [{ dots: diceFaces[n], box: boxFull() }];
-  }
-
-  function patternTwoDice(leftN, rightN){
-    return [
-      { dots: diceFaces[leftN], box: boxLeft() },
-      { dots: diceFaces[rightN], box: boxRight() }
-    ];
-  }
-
-  function patternFiveFrameTotal(n){
-    return [{ dots: dotsFiveFrame(n), box: { x0:0.10, y0:0.20, x1:0.90, y1:0.80 } }];
-  }
-
-  /* ---------------------------
-     3) Level configuraties
-     Je kunt gewichten later tweaken.
-  ----------------------------*/
-
-  // Level 1: totals 1..4, één groep, vaste dobbelsteenbeelden
-  // extra herhaling op 3 en 4 helpt richting doortellen
-  const L1_ITEMS = [
-    { total: 1, kind: "single", a: 1, w: 5 },
-    { total: 2, kind: "single", a: 2, w: 6 },
-    { total: 3, kind: "single", a: 3, w: 7 },
-    { total: 4, kind: "single", a: 4, w: 8 },
-  ];
-
-  // Level 2: totals 1..6, twee groepen, grootste altijd links
-  // bewust veel startgroep 4 en 5
-  const L2_SPLITS = [
-    { a: 4, b: 1, total: 5, w: 9 },
-    { a: 4, b: 2, total: 6, w: 8 },
-    { a: 5, b: 1, total: 6, w: 9 },
-    { a: 3, b: 1, total: 4, w: 6 },
-    { a: 3, b: 2, total: 5, w: 6 },
-    { a: 2, b: 1, total: 3, w: 4 },
-  ];
-
-  // Level 3: totals 1..9, twee groepen, grootste altijd links
-  // focus: 5 + 1..4, plus wat 6 + 1..3 voor verdieping
-  const L3_SPLITS = [
-    { a: 5, b: 1, total: 6, w: 10 },
-    { a: 5, b: 2, total: 7, w: 10 },
-    { a: 5, b: 3, total: 8, w: 9 },
-    { a: 5, b: 4, total: 9, w: 9 },
-
-    { a: 6, b: 1, total: 7, w: 6 },
-    { a: 6, b: 2, total: 8, w: 6 },
-    { a: 6, b: 3, total: 9, w: 5 },
-
-    // klein beetje herhaling van lagere totals, zodat het niet “altijd veel” voelt
-    { a: 4, b: 1, total: 5, w: 3 },
-    { a: 4, b: 2, total: 6, w: 3 },
-    { a: 3, b: 1, total: 4, w: 2 },
-  ];
-
-  // Level 4: totals 4..9, grootste soms links, soms rechts
-  // 2+2 af en toe, nooit twee keer achter elkaar
-  const L4_SPLITS = [
-    { a: 3, b: 1, total: 4, w: 6 },
-    { a: 2, b: 2, total: 4, w: 1, special: "equal" },
-
-    { a: 4, b: 1, total: 5, w: 7 },
-    { a: 3, b: 2, total: 5, w: 6 },
-
-    { a: 5, b: 1, total: 6, w: 8 },
-    { a: 4, b: 2, total: 6, w: 6 },
-
-    { a: 6, b: 1, total: 7, w: 7 },
-    { a: 5, b: 2, total: 7, w: 6 },
-    { a: 4, b: 3, total: 7, w: 4 },
-
-    { a: 6, b: 2, total: 8, w: 6 },
-    { a: 5, b: 3, total: 8, w: 4 },
-
-    { a: 6, b: 3, total: 9, w: 5 },
-    { a: 5, b: 4, total: 9, w: 4 },
-  ];
-
-  const RULES = {
-    // Level 2 anti tel: antwoordbeelden zichtbaar, daarna dicht
-    l2PeekMs: 1100,
-
-    // Level 4: start met 70% grootste links, later kan dit 0.5 worden
-    l4BigLeftProb: 0.70,
-
-    // Level 4: extra safety, naast lage w, max kans dat 2+2 uberhaupt mag vallen
-    l4EqualMaxProb: 0.10,
-
-    // voorkomt exact dezelfde split achter elkaar (handig voor aandacht)
-    avoidExactRepeat: true,
-  };
-
-  /* ---------------------------
-     4) Item generator per level
-     Retourneert een gestandaardiseerd item:
-     {
-       level,
-       total,
-       left, right,           // voor twee groepjes, anders null
-       single,                // voor level 1
-       bigSide: "left"|"right"|"none",
-       isEqual,
-       key,
-       // render helpers:
-       flashDotSets(),        // dotSets voor flits (jij doet svgForDots)
-       answerDotSets(n),      // dotSets voor antwoordkaart n
-       helpSteps()            // array van dotSets stappen: [stapA, stapB]
-     }
-  ----------------------------*/
-
-  function makeLevel1Item(mem){
-    mem = mem || {};
-    const picked = weightedPick(L1_ITEMS);
-    const n = picked.a;
-    const total = picked.total;
-    const key = `L1:${n}`;
-
-    mem.lastKey = key;
-
-    return {
-      level: 1,
-      total,
-      single: n,
-      left: null,
-      right: null,
-      bigSide: "none",
-      isEqual: false,
-      key,
-      flashDotSets: () => patternDice(n),
-      answerDotSets: (nOpt) => patternDice(nOpt),
-      helpSteps: () => {
-        // Level 1 hulp is alleen herhaling, geen deelstappen
-        const one = patternDice(n);
-        return [one, one];
-      }
-    };
-  }
-
-  function normalizeSplit(a,b){
-    const big = Math.max(a,b);
-    const small = Math.min(a,b);
-    return { big, small, isEqual: big === small };
-  }
-
-  function pickSplitWithMemory(list, mem){
-    mem = mem || {};
-    const lastKey = mem.lastKey || null;
-
-    let candidates = list.slice();
-
-    if (RULES.avoidExactRepeat && lastKey){
-      const filtered = candidates.filter(s => {
-        const k1 = `${s.a}+${s.b}`;
-        const k2 = `${s.b}+${s.a}`;
-        return lastKey !== k1 && lastKey !== k2;
-      });
-      if (filtered.length >= Math.max(5, Math.floor(list.length * 0.6))) candidates = filtered;
+    .topbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding: 12px 14px;
+      background: rgba(17,26,46,.72);
+      border: 1px solid rgba(124,247,195,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .brand{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .brand .sub{
+      font-size:13px;
+      color:var(--muted);
+      opacity:.95;
+    }
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    label{
+      font-size:12px;
+      color:var(--muted);
+    }
+    select, button{
+      font: inherit;
+      color: var(--text);
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline: none;
+    }
+    select{ padding-right: 34px; }
+    button{
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active{ transform: scale(.98); }
+    button.primary{
+      background: rgba(124,247,195,.14);
+      border-color: rgba(124,247,195,.28);
+    }
+    button.ghost{
+      background: rgba(255,255,255,.06);
+    }
+    button.danger{
+      background: rgba(255,107,107,.12);
+      border-color: rgba(255,107,107,.26);
     }
 
-    const picked = weightedPick(candidates);
-    mem.lastKey = `${picked.a}+${picked.b}`;
-    return picked;
-  }
+    .stageWrap{
+      flex:1;
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:12px;
+      min-height: 520px;
+    }
+    @media (max-width: 860px){
+      .stageWrap{ grid-template-columns: 1fr; }
+    }
 
-  function makeLevel2Item(mem){
-    mem = mem || {};
-    const picked = pickSplitWithMemory(L2_SPLITS, mem);
-    const { big, small } = normalizeSplit(picked.a, picked.b);
+    .stage{
+      position:relative;
+      background: linear-gradient(180deg, rgba(17,26,46,.82), rgba(15,23,48,.76));
+      border: 1px solid rgba(124,247,195,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .stageHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .stageHeader .meta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color: var(--muted);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .badge strong{ color: var(--text); }
 
-    // Level 2: grootste altijd links
-    const left = big;
-    const right = small;
+    .canvasArea{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 14px;
+      position:relative;
+    }
+    .board{
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4 / 3;
+      border-radius: 18px;
+      background: radial-gradient(900px 500px at 50% 10%, rgba(124,247,195,.10), rgba(255,255,255,.04) 45%, rgba(0,0,0,.12) 100%);
+      border: 1px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      position:relative;
+    }
+    .board svg{ width:100%; height:100%; display:block; }
 
-    const total = picked.total;
-    const key = `L2:${big}+${small}`;
+    .answerPanel{
+      background: rgba(17,26,46,.72);
+      border: 1px solid rgba(124,247,195,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .answerHeader{
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .answerHeader .hint{
+      font-size:12px;
+      color: var(--muted);
+    }
+    .grid{
+      padding: 12px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+    }
+    @media (max-width: 420px){
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
 
-    return {
+    .cardBtn{
+      padding: 14px 10px;
+      border-radius: 16px;
+      text-align:center;
+      font-size: 20px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      min-height: 58px;
+    }
+    .cardBtn small{
+      display:block;
+      margin-top:4px;
+      font-size:12px;
+      color: var(--muted);
+    }
+
+    .toast{
+      position:absolute;
+      left:50%;
+      transform: translateX(-50%);
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      font-size: 14px;
+      display:none;
+      gap:10px;
+      align-items:center;
+      max-width: calc(100% - 28px);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .toast.show{ display:flex; }
+
+    .emoji{
+      font-size: 20px;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+
+    .overlayCard{
+      position:absolute;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.40);
+      backdrop-filter: blur(6px);
+      padding: 16px;
+      z-index: 20;
+    }
+    .overlayCard.show{ display:flex; }
+    .overlayInner{
+      width: min(520px, 100%);
+      background: rgba(17,26,46,.92);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 14px 14px 12px;
+    }
+    .overlayInner h2{
+      margin:0 0 8px;
+      font-size: 16px;
+    }
+    .overlayInner p{
+      margin:0 0 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .overlayInner .row{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+
+    .debug{
+      position: fixed;
+      right: 10px;
+      bottom: 10px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 320px;
+      z-index: 99;
+      display:none;
+    }
+    .debug.show{ display:block; }
+    .debug b{ color: var(--text); }
+
+    .errorBanner{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,107,107,.14);
+      border: 1px solid rgba(255,107,107,.26);
+      color: var(--text);
+      display:none;
+    }
+    .errorBanner.show{ display:block; }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="appRoot">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Slim Kijken</h1>
+        <div class="sub">snel hoeveelheden overzien, zonder tellen</div>
+      </div>
+
+      <div class="controls">
+        <div class="pill">
+          <label for="levelSel">Level</label>
+          <select id="levelSel" aria-label="Kies level">
+            <option value="1">Level 1, tot en met 4</option>
+            <option value="2" selected>Level 2, tot en met 9 (antwoordkaart kort)</option>
+            <option value="3">Level 3, tot en met 9</option>
+          </select>
+        </div>
+        <button class="ghost" id="btnToggleOrientation" title="Wissel liggend, staand">Liggend of staand</button>
+        <button class="primary" id="btnNew">Nieuwe kaart</button>
+        <button class="danger" id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="stageWrap">
+      <div class="stage">
+        <div class="stageHeader">
+          <div class="meta">
+            <span class="badge">Vraag: <strong id="qCount">0</strong></span>
+            <span class="badge">Goed: <strong id="okCount">0</strong></span>
+            <span class="badge">Fout: <strong id="noCount">0</strong></span>
+          </div>
+          <div class="meta">
+            <span class="badge">Max: <strong id="maxN">9</strong></span>
+            <span class="badge">Weergave: <strong id="oriLabel">liggend</strong></span>
+          </div>
+        </div>
+
+        <div class="canvasArea">
+          <div class="board" id="board" aria-label="Antwoordkaart en stippenveld">
+            <div class="overlayCard" id="coverOverlay">
+              <div class="overlayInner">
+                <h2>Kaart dicht</h2>
+                <p>Dit is expres, om tellen te ontmoedigen. Tik op “Toon kaart” en kijk snel.</p>
+                <div class="row">
+                  <button class="primary" id="btnShowCard">Toon kaart</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="overlayCard" id="endOverlay">
+              <div class="overlayInner">
+                <h2 id="endTitle">Klaar</h2>
+                <p id="endText">Wil je verder spelen of opnieuw beginnen</p>
+                <div class="row">
+                  <button class="ghost" id="btnContinue">Verder</button>
+                  <button class="primary" id="btnRestart">Opnieuw</button>
+                </div>
+              </div>
+            </div>
+
+            <svg id="svgStage" viewBox="0 0 640 480" role="img" aria-label="Stippen"></svg>
+
+            <div class="toast" id="toast">
+              <span class="emoji" id="toastEmoji">🙂</span>
+              <span id="toastText">Goed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="errorBanner" id="errorBanner"></div>
+      </div>
+
+      <div class="answerPanel">
+        <div class="answerHeader">
+          <div>
+            <div style="font-size:14px;color:var(--muted)">Tik op het juiste aantal</div>
+            <div class="hint" id="antiTellHint"></div>
+          </div>
+          <button class="ghost" id="btnRepeat">Nog een keer laten zien</button>
+        </div>
+        <div class="grid" id="answersGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="debug" id="debugBox"></div>
+
+  <script>
+    "use strict";
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+
+    const state = {
       level: 2,
-      total,
-      single: null,
-      left,
-      right,
-      bigSide: "left",
-      isEqual: false,
-      key,
-      flashDotSets: () => patternTwoDice(left, right),
-      // Level 2 antwoordkaarten: vast totaalbeeld via vijfraam (geen splitsing, voorkomt mismatch)
-      answerDotSets: (nOpt) => patternFiveFrameTotal(nOpt),
-      helpSteps: () => {
-        // Hulpprotocol: eerst alleen de grootste groep (links), dan beide samen
-        const stepA = [{ dots: diceFaces[left], box: boxLeft() }];
-        const stepB = patternTwoDice(left, right);
-        return [stepA, stepB];
-      }
+      orientation: "landscape", // landscape | portrait
+      qCount: 0,
+      okCount: 0,
+      noCount: 0,
+      currentAnswer: null,
+      currentDotSets: null,
+      antiTellActive: false,
+      antiTellMs: 900, // alleen level 2
+      boardLocked: false
     };
-  }
 
-  function makeLevel3Item(mem){
-    mem = mem || {};
-    const picked = pickSplitWithMemory(L3_SPLITS, mem);
-    const { big, small } = normalizeSplit(picked.a, picked.b);
+    // level maxima volgens jouw afspraak
+    function maxForLevel(level){
+      if(level === 1) return 4;
+      if(level === 2) return 9; // jij wilde level 2 door tot en met 9
+      return 9; // level 3 tot en met 9
+    }
 
-    // Level 3: grootste altijd links
-    const left = big;
-    const right = small;
+    // hoeveelheid in deelsetjes, om subitizing te stimuleren
+    // voorbeeld 7 kan 4+3 of 5+2, 9 kan 5+4 of 4+3+2
+    function splitNumber(n){
+      if(n <= 3) return [n];
+      const options = [];
+      if(n === 4) options.push([2,2],[3,1]);
+      if(n === 5) options.push([3,2],[4,1]);
+      if(n === 6) options.push([3,3],[4,2],[5,1]);
+      if(n === 7) options.push([4,3],[5,2],[3,2,2]);
+      if(n === 8) options.push([4,4],[5,3],[3,3,2]);
+      if(n === 9) options.push([5,4],[4,3,2],[3,3,3]);
+      if(options.length === 0) return [n];
+      return options[Math.floor(Math.random() * options.length)];
+    }
 
-    const total = picked.total;
-    const key = `L3:${big}+${small}`;
+    // stippen posities genereren per set, in clusters
+    function generateDotSets(split, orientation){
+      // We gebruiken een 640x480 board, clusters verdelen in "zones"
+      const zonesLandscape = [
+        {x: 160, y: 170}, {x: 480, y: 170}, {x: 320, y: 340}
+      ];
+      const zonesPortrait = [
+        {x: 320, y: 140}, {x: 320, y: 300}, {x: 320, y: 430}
+      ];
+      const zones = orientation === "portrait" ? zonesPortrait : zonesLandscape;
 
-    return {
-      level: 3,
-      total,
-      single: null,
-      left,
-      right,
-      bigSide: "left",
-      isEqual: false,
-      key,
-      flashDotSets: () => patternTwoDice(left, right),
-      // In level 3 antwoord via Marbotic scan, maar als je toch een kaart wilt tonen
-      // (bijv voor debug), dan is vijfraam totaal het rustigst.
-      answerDotSets: (nOpt) => patternFiveFrameTotal(nOpt),
-      helpSteps: () => {
-        const stepA = [{ dots: diceFaces[left], box: boxLeft() }];
-        const stepB = patternTwoDice(left, right);
-        return [stepA, stepB];
+      const sets = [];
+      for(let i=0;i<split.length;i++){
+        const count = split[i];
+        const zone = zones[Math.min(i, zones.length-1)];
+        sets.push({
+          count,
+          cx: zone.x + rand(-40, 40),
+          cy: zone.y + rand(-30, 30),
+          dots: makeClusterDots(count, zone, orientation)
+        });
       }
-    };
-  }
+      return sets;
+    }
 
-  function makeLevel4Item(mem){
-    mem = mem || {};
-    const lastWasEqual = !!mem.lastWasEqual;
-    const lastKey = mem.lastKey || null;
+    function makeClusterDots(count, zone, orientation){
+      const dots = [];
+      const baseR = 12;
+      const spread = (orientation === "portrait") ? 52 : 64;
 
-    let candidates = L4_SPLITS.slice();
+      // simpele "botte" anti overlap
+      for(let i=0;i<count;i++){
+        let tries = 0;
+        while(tries < 60){
+          const x = zone.x + rand(-spread, spread);
+          const y = zone.y + rand(-spread, spread);
+          const ok = dots.every(d => dist(d.x,d.y,x,y) > baseR * 2.2);
+          if(ok){
+            dots.push({x,y,r: baseR + rand(-1, 2)});
+            break;
+          }
+          tries++;
+        }
+        if(tries >= 60){
+          dots.push({x: zone.x + rand(-spread, spread), y: zone.y + rand(-spread, spread), r: baseR});
+        }
+      }
+      return dots;
+    }
 
-    // 2+2: af en toe, en nooit twee keer achter elkaar
-    candidates = candidates.filter(s => {
-      const isEqual = (s.a === s.b);
-      if (!isEqual) return true;
-      if (rand01() > RULES.l4EqualMaxProb) return false;
-      if (lastWasEqual) return false;
-      return true;
+    function rand(a,b){ return Math.round(a + Math.random()*(b-a)); }
+    function dist(x1,y1,x2,y2){ return Math.hypot(x2-x1, y2-y1); }
+
+    function renderDots(svgEl, dotSets){
+      // schoon
+      while(svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
+
+      // zachte achtergrond stipjes
+      const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      bg.setAttribute("x","0"); bg.setAttribute("y","0");
+      bg.setAttribute("width","640"); bg.setAttribute("height","480");
+      bg.setAttribute("fill","transparent");
+      svgEl.appendChild(bg);
+
+      // groepjes tekenen
+      for(const set of dotSets){
+        for(const dot of set.dots){
+          const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          c.setAttribute("cx", dot.x);
+          c.setAttribute("cy", dot.y);
+          c.setAttribute("r", dot.r);
+          c.setAttribute("fill", "rgba(234,240,255,.92)");
+          c.setAttribute("opacity", "0.98");
+          svgEl.appendChild(c);
+        }
+      }
+    }
+
+    function buildAnswerButtons(maxN){
+      const grid = $("#answersGrid");
+      grid.innerHTML = "";
+
+      const nums = [];
+      for(let i=1;i<=maxN;i++) nums.push(i);
+
+      // maak grid 1..max, kindvriendelijk groot
+      for(const n of nums){
+        const btn = document.createElement("button");
+        btn.className = "cardBtn";
+        btn.type = "button";
+        btn.dataset.value = String(n);
+        btn.innerHTML = `${n}<small>tik</small>`;
+        btn.addEventListener("click", () => submitAnswer(n));
+        grid.appendChild(btn);
+      }
+    }
+
+    function setLevel(level){
+      state.level = level;
+      const maxN = maxForLevel(level);
+      $("#maxN").textContent = String(maxN);
+      buildAnswerButtons(maxN);
+
+      // anti tel alleen voor level 2
+      state.antiTellActive = (level === 2);
+      $("#antiTellHint").textContent = state.antiTellActive
+        ? "Level 2: kaart is kort zichtbaar"
+        : "Kaart blijft zichtbaar";
+
+      newCard();
+    }
+
+    function setOrientation(next){
+      state.orientation = next;
+      $("#oriLabel").textContent = (next === "portrait") ? "staand" : "liggend";
+      // dezelfde kaart opnieuw tekenen in nieuwe layout
+      if(state.currentDotSets){
+        const svg = $("#svgStage");
+        renderDots(svg, state.currentDotSets);
+      }
+    }
+
+    function lockBoardWithCover(locked){
+      state.boardLocked = locked;
+      const cover = $("#coverOverlay");
+      if(locked) cover.classList.add("show");
+      else cover.classList.remove("show");
+    }
+
+    function toast(emoji, text){
+      const t = $("#toast");
+      $("#toastEmoji").textContent = emoji;
+      $("#toastText").textContent = text;
+      t.classList.add("show");
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => t.classList.remove("show"), 900);
+    }
+
+    function updateCounters(){
+      $("#qCount").textContent = String(state.qCount);
+      $("#okCount").textContent = String(state.okCount);
+      $("#noCount").textContent = String(state.noCount);
+    }
+
+    function chooseNumber(){
+      const maxN = maxForLevel(state.level);
+      // kies 1..max, met iets meer gewicht op middenwaardes
+      const pool = [];
+      for(let n=1;n<=maxN;n++){
+        const w = 1 + Math.round((maxN - Math.abs((maxN+1)/2 - n)) / 2);
+        for(let i=0;i<w;i++) pool.push(n);
+      }
+      return pool[Math.floor(Math.random()*pool.length)];
+    }
+
+    function newCard(){
+      try{
+        const svg = $("#svgStage");
+
+        const n = chooseNumber();
+        state.currentAnswer = n;
+
+        const split = splitNumber(n);
+        const dotSets = generateDotSets(split, state.orientation);
+        state.currentDotSets = dotSets;
+
+        renderDots(svg, dotSets);
+
+        state.qCount += 1;
+        updateCounters();
+
+        if(state.antiTellActive){
+          // Kaart even tonen, dan dicht
+          lockBoardWithCover(false);
+          clearTimeout(newCard._timer);
+          newCard._timer = setTimeout(() => lockBoardWithCover(true), state.antiTellMs);
+        } else {
+          lockBoardWithCover(false);
+        }
+
+        hideEndOverlay();
+        clearError();
+
+        debugLine(`Nieuwe kaart: antwoord ${n}, split ${split.join("+")}`);
+      } catch(err){
+        showError("Er ging iets mis bij het maken van een nieuwe kaart: " + (err && err.message ? err.message : err));
+        console.error(err);
+      }
+    }
+
+    function revealBriefly(){
+      if(!state.antiTellActive){
+        // niks speciaals nodig, kaart blijft toch zichtbaar
+        toast("👀","Kijk nog eens");
+        return;
+      }
+      lockBoardWithCover(false);
+      clearTimeout(revealBriefly._timer);
+      revealBriefly._timer = setTimeout(() => lockBoardWithCover(true), state.antiTellMs);
+      toast("👀","Kijk snel");
+    }
+
+    function submitAnswer(n){
+      try{
+        if(state.boardLocked){
+          toast("⛔","Eerst even de kaart tonen");
+          return;
+        }
+
+        const correct = (n === state.currentAnswer);
+        if(correct){
+          state.okCount += 1;
+          updateCounters();
+          toast("😄", `${n} is goed`);
+        } else {
+          state.noCount += 1;
+          updateCounters();
+          toast("😅", `Dat was ${n}, het was ${state.currentAnswer}`);
+        }
+
+        // automatische volgende kaart
+        // level 2 blijft anti tel gelden, dus kaart wordt ook weer kort
+        setTimeout(() => newCard(), 450);
+      } catch(err){
+        showError("Er ging iets mis bij het verwerken van je antwoord: " + (err && err.message ? err.message : err));
+        console.error(err);
+      }
+    }
+
+    function resetAll(){
+      state.qCount = 0;
+      state.okCount = 0;
+      state.noCount = 0;
+      updateCounters();
+      newCard();
+      toast("🔄","Reset");
+    }
+
+    function showEndOverlay(title, text){
+      $("#endTitle").textContent = title;
+      $("#endText").textContent = text;
+      $("#endOverlay").classList.add("show");
+    }
+    function hideEndOverlay(){
+      $("#endOverlay").classList.remove("show");
+    }
+
+    function showError(msg){
+      const b = $("#errorBanner");
+      b.textContent = msg;
+      b.classList.add("show");
+      debugLine("ERROR: " + msg);
+    }
+    function clearError(){
+      const b = $("#errorBanner");
+      b.textContent = "";
+      b.classList.remove("show");
+    }
+
+    // Debug overlay, handig als je zegt: ik zie alleen code of wit scherm
+    function debugLine(s){
+      const dbg = $("#debugBox");
+      const now = new Date();
+      const stamp = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+      dbg.innerHTML = `<b>${stamp}</b> ${escapeHtml(s)}<br>` + dbg.innerHTML;
+    }
+    function escapeHtml(str){
+      return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+    function toggleDebug(){
+      $("#debugBox").classList.toggle("show");
+    }
+
+    // Init
+    function init(){
+      // Als je dit ziet, dan draait JS echt
+      debugLine("Init ok, scripts draaien");
+
+      // UI
+      $("#levelSel").addEventListener("change", (e) => setLevel(Number(e.target.value)));
+      $("#btnNew").addEventListener("click", () => newCard());
+      $("#btnReset").addEventListener("click", () => resetAll());
+      $("#btnRepeat").addEventListener("click", () => revealBriefly());
+
+      $("#btnShowCard").addEventListener("click", () => {
+        // toon kaart, en bij level 2 sluit hij vanzelf weer
+        revealBriefly();
+      });
+
+      $("#btnToggleOrientation").addEventListener("click", () => {
+        const next = (state.orientation === "landscape") ? "portrait" : "landscape";
+        setOrientation(next);
+        toast("📐", next === "portrait" ? "Staand" : "Liggend");
+      });
+
+      // lange tik rechts onder debug aan of uit
+      let pressTimer = null;
+      document.addEventListener("pointerdown", (e) => {
+        if(e.clientX > window.innerWidth - 90 && e.clientY > window.innerHeight - 90){
+          pressTimer = setTimeout(() => toggleDebug(), 520);
+        }
+      });
+      document.addEventListener("pointerup", () => { clearTimeout(pressTimer); pressTimer = null; });
+
+      // startwaarden
+      setOrientation("landscape");
+      setLevel(2); // standaard level 2
+      updateCounters();
+    }
+
+    // als er iets buiten onze try catch faalt
+    window.addEventListener("error", (e) => {
+      showError("Scriptfout: " + (e.message || "onbekend"));
     });
 
-    // optioneel: geen exact herhaling
-    if (RULES.avoidExactRepeat && lastKey){
-      const filtered = candidates.filter(s => {
-        const k1 = `${s.a}+${s.b}`;
-        const k2 = `${s.b}+${s.a}`;
-        return lastKey !== k1 && lastKey !== k2;
-      });
-      if (filtered.length >= 6) candidates = filtered;
-    }
-
-    const picked = weightedPick(candidates);
-    const { big, small, isEqual } = normalizeSplit(picked.a, picked.b);
-
-    let left, right, bigSide;
-
-    if (isEqual){
-      // 2+2: geen grootste groep, maar wissel wel om statiek te vermijden
-      if (rand01() < 0.5) { left = picked.a; right = picked.b; }
-      else { left = picked.b; right = picked.a; }
-      bigSide = "none";
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", init);
     } else {
-      const bigLeft = rand01() < RULES.l4BigLeftProb;
-      if (bigLeft){
-        left = big; right = small; bigSide = "left";
-      } else {
-        left = small; right = big; bigSide = "right";
-      }
+      init();
     }
-
-    mem.lastKey = `${picked.a}+${picked.b}`;
-    mem.lastWasEqual = isEqual;
-
-    const total = picked.total;
-    const key = `L4:${picked.a}+${picked.b}:${bigSide}`;
-
-    return {
-      level: 4,
-      total,
-      single: null,
-      left,
-      right,
-      bigSide,
-      isEqual,
-      key,
-      flashDotSets: () => patternTwoDice(left, right),
-      answerDotSets: (nOpt) => patternFiveFrameTotal(nOpt),
-      helpSteps: () => {
-        // Level 4 hulp: eerst alleen de grootste groep op de juiste kant
-        // Bij 2+2: eerst een willekeurige kant, dan beide
-        if (isEqual){
-          const firstLeft = rand01() < 0.5;
-          const stepA = firstLeft
-            ? [{ dots: diceFaces[left], box: boxLeft() }]
-            : [{ dots: diceFaces[right], box: boxRight() }];
-          const stepB = patternTwoDice(left, right);
-          return [stepA, stepB];
-        }
-
-        if (bigSide === "left"){
-          const stepA = [{ dots: diceFaces[left], box: boxLeft() }];
-          const stepB = patternTwoDice(left, right);
-          return [stepA, stepB];
-        } else {
-          const stepA = [{ dots: diceFaces[right], box: boxRight() }]; // grootste staat rechts
-          const stepB = patternTwoDice(left, right);
-          return [stepA, stepB];
-        }
-      }
-    };
-  }
-
-  function nextItem(level, mem){
-    if (level === 1) return makeLevel1Item(mem);
-    if (level === 2) return makeLevel2Item(mem);
-    if (level === 3) return makeLevel3Item(mem);
-    if (level === 4) return makeLevel4Item(mem);
-    throw new Error("unknown level");
-  }
-
-  /* ---------------------------
-     5) Antitel helper voor level 2
-     Jij hebt al hideAnswerFaces, hier alleen de regel wanneer.
-  ----------------------------*/
-  function shouldHideAnswerFaces(level){
-    return level === 2;
-  }
-
-  return {
-    RULES,
-    nextItem,
-    shouldHideAnswerFaces,
-
-    // expose patterns if you want
-    diceFaces,
-    patternDice,
-    patternTwoDice,
-    patternFiveFrameTotal,
-
-    // tiny utils
-    shuffle,
-    clamp,
-  };
-})();
-
-/* ============================================================
-   Voorbeeld integratie in jouw Slim Kijken game state
-   ============================================================ */
-
-// Bewaar per level eigen memory zodat herhaling-regels echt werken
-const MEM = {
-  1: { lastKey: null },
-  2: { lastKey: null },
-  3: { lastKey: null },
-  4: { lastKey: null, lastWasEqual: false },
-};
-
-// Bij nieuwe ronde:
-// const item = SK.nextItem(GAME.level, MEM[GAME.level]);
-// setBoard( svgForDots(item.flashDotSets(), opts) );
-
-// Bij antwoordkaarten:
-// Level 1: item.answerDotSets(nOpt) is dice
-// Level 2: item.answerDotSets(nOpt) is fiveframe totaal (en daarna dichtklappen)
-// Level 3: je gebruikt scan, maar je kunt fiveframe gebruiken voor debug
-// Level 4: meestal scan, of ook kaart, net wat je kiest
-
-// Bij hulpprotocol (fout 2):
-// const [stepA, stepB] = item.helpSteps();
-// setBoard(svgForDots(stepA)); wait(650);
-// setBoard(svgForDots(stepB)); wait(800);
+  </script>
+</body>
+</html>
