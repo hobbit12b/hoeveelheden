@@ -22,8 +22,8 @@
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      --slideDur: 320ms;
-      --slideGap: 105ms;
+      --slideDur: 340ms;
+      --slideGap: 115ms;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -209,12 +209,13 @@
       100%{ transform: translateX(0); }
     }
 
+    /* voorbeeld venster: altijd neutrale rand, nooit rood */
     .flashBoard{
       width: min(520px, 88%);
       aspect-ratio: 1.35 / 1;
       border-radius: 26px;
       background: rgba(255,255,255,0.92);
-      border: 2px solid var(--border-soft);
+      border: 2px solid rgba(245,180,152,0.45); /* neutraal */
       display:flex;
       align-items:center;
       justify-content:center;
@@ -224,6 +225,7 @@
     }
     .flashSvg{ width:100%; height:100%; }
 
+    /* rechterpaneel */
     .rightInner{
       position:absolute;
       inset:0;
@@ -231,33 +233,49 @@
       align-items:center;
       justify-content:center;
       padding: 26px;
-      overflow:hidden;
     }
 
-    /* CLIP MASK: alles wat voorbij de middenlijn gaat, verdwijnt */
-    .rightClip{
-      width: min(820px, 94%);
+    /*
+      Belangrijk:
+      We clippen NIET op het hele paneel, maar precies op de helft die zichtbaar mag zijn.
+      - landscape: alleen het rechter deel (rechts van de middenlijn) mag zichtbaar zijn
+      - portrait: alleen het onderste deel (onder de middenlijn) mag zichtbaar zijn
+      Hierdoor verdwijnen knoppen écht "achter de middenlijn".
+    */
+    .maskViewport{
+      position: relative;
+      width: 100%;
       height: 100%;
+      overflow: hidden;
+    }
+
+    .answersSurface{
+      position:absolute;
+      inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      overflow:hidden;
+      padding: 0;
+      will-change: transform;
     }
-    /* landschap: clip tot aan verticale middenlijn (de linker rand van rechts paneel) */
+
+    /* landscape: start op x=0 (in rechterpaneel), schuiven naar links: we laten clip naar rechts intact */
     @media (orientation: landscape){
-      .rightClip{
-        clip-path: inset(0 0 0 0);
+      .maskViewport{
+        /* de hele right is al rechts van middenlijn, dus dit klopt als clip */
+        overflow: hidden;
       }
     }
-    /* portrait: clip tot aan horizontale middenlijn (de bovenrand van onder paneel) */
+
+    /* portrait: start op y=0 in onderpaneel, schuiven omhoog: clip blijft onder */
     @media (orientation: portrait){
-      .rightClip{
-        clip-path: inset(0 0 0 0);
+      .maskViewport{
+        overflow: hidden;
       }
     }
 
     .rightWrap{
-      width: 100%;
+      width: min(860px, 96%);
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -338,17 +356,17 @@
       100%{ opacity:1; transform: translate3d(0,0,0) scale(1); }
     }
 
-    /* schuiven: we duwen naar buiten, het clipmask doet "achter de middenlijn verdwijnen" */
+    /* schuiven per knop, maskViewport zorgt dat het achter de middenlijn verdwijnt */
     .ansBtn.slideLeft{ animation: slideLeft var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
     .ansBtn.slideUp{ animation: slideUp var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
 
     @keyframes slideLeft{
       from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(-130%,0,0); opacity: 1; }
+      to{ transform: translate3d(-160%,0,0); opacity: 1; }
     }
     @keyframes slideUp{
       from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(0,-130%,0); opacity: 1; }
+      to{ transform: translate3d(0,-160%,0); opacity: 1; }
     }
 
     .startOverlay{
@@ -495,13 +513,6 @@
       color: rgba(77,74,72,0.68);
       line-height: 1.35;
     }
-
-    .tinyNote{
-      font-size: 12px;
-      color: rgba(77,74,72,0.66);
-      font-weight: 800;
-      text-transform: lowercase;
-    }
   </style>
 </head>
 
@@ -528,15 +539,15 @@
         </div>
       </div>
     </div>
-
-    <div class="tinyNote" id="tinyNote"></div>
   </section>
 
   <section class="right" aria-label="Antwoorden">
     <div class="rightInner">
-      <div class="rightClip">
-        <div class="rightWrap">
-          <div class="answerGrid" id="answerGrid" aria-label="Keuzes"></div>
+      <div class="maskViewport" id="maskViewport">
+        <div class="answersSurface">
+          <div class="rightWrap">
+            <div class="answerGrid" id="answerGrid" aria-label="Keuzes"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -557,7 +568,7 @@
     </div>
 
     <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level en bereik</div>
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">spel</div>
 
       <div class="tuneRow">
         <div class="tuneLabel">level</div>
@@ -589,28 +600,14 @@
         <div class="tuneValue" id="flashMaxValue">1600</div>
       </div>
 
-      <div class="tuneTitle" style="font-size:16px; margin:14px 0 8px 0;">subitize training</div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">variatie</div>
-        <input type="range" id="varRange" min="0" max="3" step="1" value="2" />
-        <div class="tuneValue" id="varValue">2</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">bliksemronde</div>
-        <input type="range" id="boltRange" min="0" max="5" step="1" value="3" />
-        <div class="tuneValue" id="boltValue">3</div>
-      </div>
-
       <div class="tuneButtons">
         <button class="tuneBtnSmall" id="newRoundBtn" type="button">nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="resetBtn" type="button">reset voortgang</button>
+        <button class="tuneBtnSmall secondary" id="resetBtn" type="button">reset</button>
         <button class="tuneBtnSmall secondary" id="testSlideBtn" type="button">test schuif</button>
       </div>
 
-      <div class="tuneHint" id="tuneHint">
-        Draaien is uitgeschakeld. Variatie betekent nu: spiegeling en kleine jitter, zodat kinderen hoeveelheden zien en niet een plaatje onthouden.
+      <div class="tuneHint">
+        Spiegeling staat nu uit. Variatie is uitgeschakeld, zodat patronen altijd dezelfde oriëntatie houden.
       </div>
     </div>
   </div>
@@ -630,15 +627,13 @@
         return Number.isFinite(n) ? n : fallback;
       };
 
-      const LS_KEY = "slimkijken_subitize_v3";
+      const LS_KEY = "slimkijken_subitize_v4";
       const defaultData = {
         level: 1,
         l1Max: 4,
         flashStart: 800,
         flashMin: 450,
         flashMax: 1600,
-        variation: 2,      // 0 none, 1 mirror, 2 mirror + tiny jitter, 3 a bit more jitter
-        boltEvery: 3,
         stars: 0,
         streak: 0,
         round: 1
@@ -683,12 +678,6 @@
       const flashMaxRange = document.getElementById("flashMaxRange");
       const flashMaxValue = document.getElementById("flashMaxValue");
 
-      const varRange = document.getElementById("varRange");
-      const varValue = document.getElementById("varValue");
-
-      const boltRange = document.getElementById("boltRange");
-      const boltValue = document.getElementById("boltValue");
-
       const newRoundBtn = document.getElementById("newRoundBtn");
       const resetBtn = document.getElementById("resetBtn");
       const testSlideBtn = document.getElementById("testSlideBtn");
@@ -701,7 +690,6 @@
       const hudMs = document.getElementById("hudMs");
       const hudRound = document.getElementById("hudRound");
       const starsEl = document.getElementById("stars");
-      const tinyNote = document.getElementById("tinyNote");
 
       let audioCtx = null;
       function beep(type){
@@ -748,9 +736,7 @@
         locked: false,
         flashMs: DATA.flashStart,
         correct: 1,
-        cap: 4,
-        boltRound: false,
-        level2Meta: null
+        cap: 4
       };
 
       function updateHud(){
@@ -759,17 +745,12 @@
         hudMs.textContent = String(Math.round(CURRENT.flashMs));
       }
 
-      function setTinyNote(text){
-        tinyNote.textContent = text || "";
-      }
-
       function emptySvg(){
         return `<svg viewBox="0 0 520 380" width="100%" height="100%" aria-hidden="true"></svg>`;
       }
 
       /* ---------------------------
-         Patronen: draaien hersteld (dus uitgeschakeld)
-         Variatie = spiegeling + jitter, geen rotatie meer
+         Patronen: NO MIRROR, NO ROTATION, NO JITTER
       ----------------------------*/
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
@@ -785,30 +766,6 @@
         5: [P.tl, P.tr, P.mc, P.bl, P.br],
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
-
-      function buildTransform(variation){
-        const tf = { mirrorX:false, mirrorY:false, jitter:0 };
-        if (variation <= 0) return tf;
-        if (variation >= 1){
-          tf.mirrorX = Math.random() < 0.5;
-          tf.mirrorY = Math.random() < 0.25;
-        }
-        if (variation === 2) tf.jitter = 0.020;
-        if (variation >= 3) tf.jitter = 0.035;
-        return tf;
-      }
-
-      function transformPoint([x,y], tf){
-        let nx = x, ny = y;
-        if (tf.mirrorX) nx = 1 - nx;
-        if (tf.mirrorY) ny = 1 - ny;
-        if (tf.jitter > 0){
-          const j = tf.jitter;
-          nx = clamp(nx + (Math.random() * 2 - 1) * j, 0.10, 0.90);
-          ny = clamp(ny + (Math.random() * 2 - 1) * j, 0.10, 0.90);
-        }
-        return [nx, ny];
-      }
 
       function svgForDots(points, opts = {}){
         const {
@@ -840,46 +797,24 @@
         return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">${filter}${circles}</svg>`;
       }
 
-      function makePatternLevel1(n){
-        const base = diceFaces[n] || [];
-        const tf = buildTransform(DATA.variation);
-        return base.map(p => transformPoint(p, tf));
-      }
-
-      function makePatternLevel2(sum){
-        const maxA = Math.min(6, sum - 1);
-        const minA = Math.max(2, sum - 6);
-        let a = randInt(minA, maxA);
-        let b = sum - a;
-
-        const big = Math.max(a,b);
-        const small = Math.min(a,b);
-
-        const tfL = buildTransform(Math.max(1, DATA.variation - 1));
-        const tfR = buildTransform(Math.max(1, DATA.variation - 1));
-
-        const left = (diceFaces[big] || [])
-          .map(p => transformPoint(p, tfL))
-          .map(([x,y]) => [x * 0.46 + 0.10, y * 0.64 + 0.18]);
-
-        const right = (diceFaces[small] || [])
-          .map(p => transformPoint(p, tfR))
-          .map(([x,y]) => [x * 0.46 + 0.52, y * 0.64 + 0.18]);
-
-        return { big, small, points: left.concat(right) };
-      }
-
       function svgLevel1(n, glow=false, radius=14){
-        return svgForDots(makePatternLevel1(n), { dotRadius: radius, glow });
+        return svgForDots(diceFaces[n] || [], { dotRadius: radius, glow });
       }
 
       function svgLevel2(sum, glow=false, radius=14){
-        const obj = makePatternLevel2(sum);
-        return { svg: svgForDots(obj.points, { dotRadius: radius, glow }), meta: obj };
+        // stabiele split: grootste links, kleinste rechts, NO random
+        const big = Math.min(6, Math.max(2, Math.ceil(sum/2)));
+        const small = sum - big;
+        const bb = Math.max(big, small);
+        const ss = Math.min(big, small);
+
+        const left = (diceFaces[bb] || []).map(([x,y]) => [x * 0.46 + 0.10, y * 0.64 + 0.18]);
+        const right = (diceFaces[ss] || []).map(([x,y]) => [x * 0.46 + 0.52, y * 0.64 + 0.18]);
+        return { svg: svgForDots(left.concat(right), { dotRadius: radius, glow }), meta: {bb, ss} };
       }
 
       /* ---------------------------
-         Options
+         Options + flow
       ----------------------------*/
       function computeCap(){
         if (DATA.level === 1) return clamp(DATA.l1Max, 3, 6);
@@ -907,18 +842,51 @@
         CURRENT.flashMs = clamp(CURRENT.flashMs, DATA.flashMin, DATA.flashMax);
       }
 
-      function isLightningRound(){
-        if (!DATA.boltEvery) return false;
-        return (DATA.round % DATA.boltEvery) === 0;
+      function clearAnswers(){
+        answerGrid.innerHTML = "";
       }
 
-      /* ---------------------------
-         Schuif animatie:
-         landschap: naar links, blijft achter de verticale middenlijn verdwijnen
-         portrait: omhoog, blijft achter de horizontale middenlijn verdwijnen
-      ----------------------------*/
+      function renderAnswers(options){
+        clearAnswers();
+        options.forEach((v, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ansBtn reveal";
+          btn.style.animationDelay = `${idx * 90}ms`;
+          btn.setAttribute("aria-label", `antwoord ${v}`);
+
+          let innerSvg = "";
+          if (DATA.level === 1) innerSvg = svgLevel1(v, false, 14);
+          else innerSvg = svgLevel2(v, false, 14).svg;
+
+          btn.innerHTML = `<div style="width:100%; height:100%;">${innerSvg}</div>`;
+          btn.addEventListener("click", () => onPick(btn, v));
+          answerGrid.appendChild(btn);
+        });
+      }
+
+      function dimOtherButtons(keepBtn){
+        const all = [...answerGrid.querySelectorAll(".ansBtn")];
+        all.forEach(b => { if (b !== keepBtn) b.classList.add("dim"); });
+      }
+
+      function updateAdaptiveOnCorrect(){
+        DATA.streak = (DATA.streak || 0) + 1;
+        if (DATA.streak >= 2){
+          CURRENT.flashMs = clamp(CURRENT.flashMs - 70, DATA.flashMin, DATA.flashMax);
+          DATA.streak = 0;
+        }
+        setStars((DATA.stars || 0) + 1);
+        if (DATA.stars >= 5) setStars(0);
+      }
+
+      function updateAdaptiveOnWrong(){
+        DATA.streak = 0;
+        CURRENT.flashMs = clamp(CURRENT.flashMs + 160, DATA.flashMin, DATA.flashMax);
+      }
+
       function isPortrait(){
-        return window.innerHeight >= window.innerWidth;
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
       function slideAxisClass(){
@@ -943,8 +911,8 @@
       async function slideOutAnswers(){
         const axis = slideAxisClass();
         const ordered = orderButtonsForSlide();
-        const dur = msFromCssVar("--slideDur", 320);
-        const gap = msFromCssVar("--slideGap", 105);
+        const dur = msFromCssVar("--slideDur", 340);
+        const gap = msFromCssVar("--slideGap", 115);
 
         ordered.forEach(b => {
           b.style.pointerEvents = "none";
@@ -962,104 +930,21 @@
         await wait(dur);
       }
 
-      /* ---------------------------
-         Render + flow
-      ----------------------------*/
-      function clearAnswers(){
-        answerGrid.innerHTML = "";
-      }
-
-      function renderAnswers(options){
-        clearAnswers();
-        options.forEach((v, idx) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "ansBtn reveal";
-          btn.style.animationDelay = `${idx * 90}ms`;
-          btn.setAttribute("aria-label", `antwoord ${v}`);
-
-          let innerSvg = "";
-          if (DATA.level === 1){
-            innerSvg = svgLevel1(v, false, 14);
-          } else {
-            innerSvg = svgLevel2(v, false, 14).svg;
-          }
-
-          btn.innerHTML = `<div style="width:100%; height:100%;">${innerSvg}</div>`;
-          btn.addEventListener("click", () => onPick(btn, v));
-          answerGrid.appendChild(btn);
-        });
-      }
-
-      function showAnswers(show){
-        document.body.classList.toggle("answersShown", !!show);
-        document.body.classList.toggle("answersHidden", !show);
-      }
-
-      function dimOtherButtons(keepBtn){
-        const all = [...answerGrid.querySelectorAll(".ansBtn")];
-        all.forEach(b => { if (b !== keepBtn) b.classList.add("dim"); });
-      }
-
-      function updateAdaptiveOnCorrect(){
-        DATA.streak = (DATA.streak || 0) + 1;
-        if (DATA.streak >= 2){
-          CURRENT.flashMs = clamp(CURRENT.flashMs - 70, DATA.flashMin, DATA.flashMax);
-          DATA.streak = 0;
-        }
-        setStars((DATA.stars || 0) + 1);
-        if (DATA.stars >= 5){
-          setStars(0);
-        }
-      }
-
-      function updateAdaptiveOnWrong(){
-        DATA.streak = 0;
-        CURRENT.flashMs = clamp(CURRENT.flashMs + 160, DATA.flashMin, DATA.flashMax);
-      }
-
-      function setStars(n){
-        DATA.stars = clamp(n, 0, 5);
-        const nodes = [...starsEl.querySelectorAll(".star")];
-        nodes.forEach((s, i) => s.classList.toggle("on", i < DATA.stars));
-      }
-
-      async function showCorrectExample(neutral=true){
-        // neutral=true: geen rode rand, geen feedback fase kleuren laten bijten
-        // we houden de fase op feedback, maar tonen voorbeeld zonder extra rand-effecten
-        const prevPhase = document.body.className;
-
-        if (neutral){
-          // tijdelijk terug naar choose randkleur zodat het voorbeeld niet "fout rood" voelt
-          // maar we laten de button feedback staan, enkel het voorbeeld blijft neutraal
-          document.body.classList.remove("phaseFeedbackWrong");
-        }
-
-        if (DATA.level === 1){
-          flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, 14);
-        } else {
-          const out = svgLevel2(CURRENT.correct, true, 14);
-          flashSvg.innerHTML = out.svg;
-        }
-
-        if (neutral){
-          // zet phase terug zoals hij was, zonder knipperen
-          // we doen dit microtask zodat de svg al gezet is
-          queueMicrotask(() => {
-            // restore minimal: als hij wrong was, zet wrong class terug
-            if (prevPhase.includes("phaseFeedbackWrong")) document.body.classList.add("phaseFeedbackWrong");
-          });
-        }
-      }
-
-      function emptyBoard(){
-        flashSvg.innerHTML = emptySvg();
-      }
-
       function pickCorrect(){
         applySettingsToCurrent();
         if (DATA.level === 1) return randInt(1, CURRENT.cap);
         return randInt(1, 9);
+      }
+
+      function emptyBoard(){ flashSvg.innerHTML = emptySvg(); }
+
+      async function showCorrectExample(){
+        // altijd neutraal: flashBoard heeft vaste neutrale border
+        if (DATA.level === 1){
+          flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, 14);
+        } else {
+          flashSvg.innerHTML = svgLevel2(CURRENT.correct, true, 14).svg;
+        }
       }
 
       async function doRound(){
@@ -1069,30 +954,16 @@
 
         showAnswers(false);
         clearAnswers();
-        setTinyNote("");
 
         emptyBoard();
         setPhase(null);
         await wait(220);
 
         CURRENT.correct = pickCorrect();
-        CURRENT.boltRound = isLightningRound();
 
         setPhase("phaseFlash");
-
-        const flashTime = CURRENT.boltRound
-          ? clamp(Math.round(CURRENT.flashMs * 0.62), DATA.flashMin, DATA.flashMax)
-          : CURRENT.flashMs;
-
-        if (DATA.level === 1){
-          flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, 14);
-        } else {
-          const out = svgLevel2(CURRENT.correct, true, 14);
-          CURRENT.level2Meta = out.meta;
-          flashSvg.innerHTML = out.svg;
-        }
-
-        await wait(flashTime);
+        await showCorrectExample();
+        await wait(CURRENT.flashMs);
 
         emptyBoard();
         await wait(300);
@@ -1100,11 +971,6 @@
         setPhase("phaseChoose");
         renderAnswers(buildOptions(CURRENT.correct, CURRENT.cap));
         showAnswers(true);
-
-        if (CURRENT.boltRound){
-          setTinyNote("bliksemronde");
-          setTimeout(() => setTinyNote(""), 950);
-        }
 
         CURRENT.locked = false;
       }
@@ -1120,13 +986,13 @@
           setPhase("phaseFeedbackGood");
           btn.classList.add("correct");
 
-          // voorbeeld kort neutraal, geen rood randgevoel
-          await showCorrectExample(true);
+          // kort voorbeeld, neutraal
+          await showCorrectExample();
           await wait(420);
 
           emptyBoard();
 
-          // schuiven: portrait omhoog, landscape links
+          // schuiven achter middenlijn
           await slideOutAnswers();
 
           showAnswers(false);
@@ -1159,11 +1025,11 @@
         // jouw keuze langer laten staan
         await wait(950);
 
-        // juiste voorbeeld tonen, maar neutraal (geen rood randgevoel)
-        await showCorrectExample(true);
+        // juist voorbeeld tonen
+        await showCorrectExample();
         await wait(1000);
 
-        // opnieuw aanbieden
+        // opnieuw
         showAnswers(false);
         await wait(220);
 
@@ -1171,7 +1037,7 @@
         await wait(240);
 
         setPhase("phaseFlash");
-        await showCorrectExample(true);
+        await showCorrectExample();
         await wait(clamp(CURRENT.flashMs + 260, DATA.flashMin, DATA.flashMax));
 
         emptyBoard();
@@ -1202,15 +1068,9 @@
 
         flashMaxRange.value = String(DATA.flashMax);
         flashMaxValue.textContent = String(DATA.flashMax);
-
-        varRange.value = String(DATA.variation);
-        varValue.textContent = String(DATA.variation);
-
-        boltRange.value = String(DATA.boltEvery);
-        boltValue.textContent = String(DATA.boltEvery);
       }
 
-      function commitTune(from){
+      function commitTune(which){
         DATA.level = Number(levelRange.value) || 1;
         DATA.l1Max = Number(l1MaxRange.value) || 4;
 
@@ -1224,14 +1084,10 @@
           DATA.flashMax = tmp;
         }
 
-        DATA.variation = Number(varRange.value) || 0;
-        DATA.boltEvery = Number(boltRange.value) || 0;
-
-        if (from === "flashStart") CURRENT.flashMs = DATA.flashStart;
+        if (which === "flashStart") CURRENT.flashMs = DATA.flashStart;
 
         saveData();
         syncTuneUI();
-
         applySettingsToCurrent();
         updateHud();
       }
@@ -1249,8 +1105,6 @@
       flashStartRange.addEventListener("input", () => commitTune("flashStart"));
       flashMinRange.addEventListener("input", () => commitTune("flashMin"));
       flashMaxRange.addEventListener("input", () => commitTune("flashMax"));
-      varRange.addEventListener("input", () => commitTune("var"));
-      boltRange.addEventListener("input", () => commitTune("bolt"));
 
       tuneBtn.addEventListener("click", () => {
         beep("tap");
@@ -1348,14 +1202,6 @@
       setStars(DATA.stars || 0);
       updateHud();
       syncTuneUI();
-
-      // bij draaien van iPad: geen rare state, alleen axis voor volgende slide
-      window.addEventListener("orientationchange", () => {
-        // geen UI reset, alleen zekerheid dat het nieuwe axis geldt
-      });
-      window.addEventListener("resize", () => {
-        // idem
-      });
     })();
   </script>
 </body>
