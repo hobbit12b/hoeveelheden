@@ -19,8 +19,6 @@
       --border: rgba(245,180,152,0.90);
       --border-soft: rgba(245,180,152,0.55);
 
-      --tile: #ffffff;
-
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
     }
@@ -72,7 +70,6 @@
       transition: background 140ms ease;
     }
 
-    /* scheidingslijn, solide */
     @media (orientation: landscape){
       .right{ border-left: 6px solid rgba(245,180,152,0.55); }
     }
@@ -135,7 +132,6 @@
       min-height: 0;
     }
 
-    /* buitenkader, solide */
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
@@ -163,7 +159,6 @@
       100%{ transform: translateX(0); }
     }
 
-    /* binnenbord */
     .flashBoard{
       width: min(520px, 88%);
       aspect-ratio: 1.35 / 1;
@@ -179,7 +174,6 @@
     }
     .flashSvg{ width:100%; height:100%; }
 
-    /* rechts */
     .rightInner{
       position:absolute;
       inset:0;
@@ -197,7 +191,6 @@
       gap: 12px;
     }
 
-    /* antwoorden zichtbaar of verborgen */
     .answerGrid{
       width: 100%;
       display:grid;
@@ -220,7 +213,6 @@
       transform: translateY(0);
     }
 
-    /* kaart meer klikbaar */
     .ansBtn{
       appearance:none;
       border: 4px solid rgba(245,180,152,0.75);
@@ -234,7 +226,7 @@
       justify-content:center;
       cursor:pointer;
       transform: translateY(0) scale(1);
-      transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease, filter 140ms ease;
+      transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease, filter 140ms ease, opacity 140ms ease;
       position:relative;
       overflow:hidden;
     }
@@ -262,6 +254,11 @@
     .ansBtn.wrong{
       border-color: var(--no);
       background: rgba(255,91,122,0.10);
+    }
+
+    .ansBtn.dim{
+      opacity: 0.25;
+      filter: grayscale(0.15);
     }
 
     .ansBtn.reveal{
@@ -382,7 +379,8 @@
         minMs: 450,
         maxMs: 1600,
 
-        wrongHoldMs: 900,     // langer laten zien wat gekozen is
+        wrongChoiceHoldMs: 850,  // jouw foute keuze even laten staan
+        showCorrectBoardMs: 900,  // daarna juiste voorbeeld op het bord
         wrongPauseAfterMs: 220
       };
 
@@ -499,6 +497,13 @@
         });
       }
 
+      function dimOtherButtons(keepBtn){
+        const all = [...answerGrid.querySelectorAll(".ansBtn")];
+        all.forEach(b => {
+          if (b !== keepBtn) b.classList.add("dim");
+        });
+      }
+
       async function doRound(){
         locked = true;
 
@@ -543,8 +548,10 @@
           return;
         }
 
+        // fout: eerst jouw keuze laten staan, dan juiste voorbeeld op bord
         beep("no");
         btn.classList.add("wrong");
+        dimOtherButtons(btn);
 
         gameCard.classList.remove("shake");
         void gameCard.offsetHeight;
@@ -552,15 +559,21 @@
 
         flashMs = clamp(flashMs + 140, SETTINGS.minMs, SETTINGS.maxMs);
 
-        /* hier zit jouw wens:
-           bij fout blijft de gekozen kaart langer in beeld
-           we verbergen dus niet meteen de antwoorden
-        */
-        await wait(SETTINGS.wrongHoldMs);
+        // Beat 1: foute keuze blijft even staan
+        await wait(SETTINGS.wrongChoiceHoldMs);
 
+        // Beat 2: laat het juiste voorbeeld zien op het bord
+        flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
+        await wait(SETTINGS.showCorrectBoardMs);
+
+        // Beat 3: maak schoon en herhaal dezelfde ronde
         showAnswers(false);
         await wait(SETTINGS.wrongPauseAfterMs);
 
+        flashSvg.innerHTML = emptySvg();
+        await wait(260);
+
+        // zelfde correct blijft gelden, dus geen nieuwe random
         flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
         await wait(Math.min(SETTINGS.maxMs, flashMs + 260));
 
