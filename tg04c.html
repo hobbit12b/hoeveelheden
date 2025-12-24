@@ -13,25 +13,23 @@
       --brand:#e58c74;
       --text:#6f6b68;
 
+      --dash-w:4px;
       --card-radius:28px;
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
       --line: rgba(245,180,152,0.85);
-      --line2: rgba(245,180,152,0.55);
+      --lineSoft: rgba(245,180,152,0.55);
 
-      --ok: #2fb36d;
-      --no: #e44f6c;
-
-      --scale: 1;
-
-      /* Motion */
       --easeOut: cubic-bezier(.18,.84,.26,1);
       --easeInOut: cubic-bezier(.22,.61,.35,1);
-      --slideMs: 720ms;
 
-      /* Portrait tuning (smaller) */
-      --flashPortraitScale: .86;
-      --answersPortraitScale: .90;
+      --slideMs: 780ms;
+
+      /* Sizing controls */
+      --answersScaleLandscape: .70; /* ~70% kleiner dan “te groot” */
+      --answersScalePortrait: 1.00;
+
+      --pressDown: 2px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -49,7 +47,7 @@
       overflow:hidden;
     }
 
-    /* Layout: landscape split, portrait stacked */
+    /* EXACT layout zoals tellen en scannen */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
@@ -67,29 +65,25 @@
       padding: 28px 26px 22px 26px;
       display:flex;
       flex-direction:column;
-      gap: 18px;
+      gap: 22px;
       position: relative;
       overflow:hidden;
       min-height: 0;
     }
-    @media (orientation: portrait){
-      .left{ padding: 22px; gap: 14px; }
-    }
 
-    .right{
+    .scan-surface{
       background:#ffffff;
       position: relative;
       overflow:hidden;
       min-height: 0;
-      transition: background 120ms ease;
-      display:flex;
-      flex-direction:column;
     }
+
     @media (orientation: landscape){
-      .right{ border-left: 6px solid var(--line); }
+      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); } /* basislijn, zoals je voorbeeld */
     }
     @media (orientation: portrait){
-      .right{ border-top: 6px solid var(--line); }
+      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }  /* basislijn, zoals je voorbeeld */
+      .left{ padding: 22px; gap: 16px; }
     }
 
     .topbar{
@@ -148,11 +142,12 @@
       min-height: 0;
     }
 
+    /* Bovenste kader exact zoals je basis */
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: 3px solid var(--line);
+      border: var(--dash-w) dashed rgba(245,180,152,0.85); /* basis blijft zoals voorbeeld */
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -161,192 +156,26 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 14px;
-    }
-    @media (orientation: portrait){
-      .gameCard{
-        height: min(410px, 32vh);
-      }
-    }
-
-    /* Inner “flash board” */
-    .flashBoard{
-      width: min(720px, 100%);
-      height: min(420px, 100%);
-      border-radius: 24px;
-      border: 2px solid rgba(245,180,152,0.55);
-      background: #ffffff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      overflow:hidden;
-    }
-    @media (orientation: portrait){
-      .flashBoard{
-        transform: scale(var(--flashPortraitScale));
-      }
-    }
-
-    .flashSvg{
-      width:100%;
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    /* Right side content */
-    .rightInner{
-      position:relative;
-      flex:1;
-      min-height:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
       padding: 18px;
     }
     @media (orientation: portrait){
-      .rightInner{
-        padding: 14px 16px 18px 16px;
-      }
+      .gameCard{ height: min(420px, 34vh); }
     }
 
-    /* Mask line that hides sliding answers behind the midline */
-    .maskLine{
-      position:absolute;
-      left:0;
-      top:0;
-      right:0;
-      bottom:0;
-      pointer-events:none;
-      z-index: 20;
-    }
-    @media (orientation: landscape){
-      .maskLine{
-        background:
-          linear-gradient(90deg,
-            transparent 0,
-            transparent calc(0px),
-            transparent 100%);
-      }
-      /* The actual “mask slab” sits exactly on the midline, inside right panel */
-      .maskLine::before{
-        content:"";
-        position:absolute;
-        left:-6px; /* cover the border seam */
-        top:0;
-        width: 12px; /* a bit thicker to fully hide shadows */
-        height:100%;
-        background:#ffffff;
-      }
-    }
-    @media (orientation: portrait){
-      .maskLine::before{
-        content:"";
-        position:absolute;
-        left:0;
-        top:-6px; /* cover border seam */
-        width:100%;
-        height: 12px; /* thicker to hide shadows */
-        background:#ffffff;
-      }
-    }
-
-    /* Answer stack wrapper (we animate this behind the mask) */
-    .answersWrap{
-      width: min(560px, 94%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      z-index: 10;
-    }
-
-    /* LANDSCAPE: buttons under each other, vertically centered */
-    .answers{
+    /* “strakke lijn” voor het binnenkader (zoals je vroeg) */
+    .flashBoard{
       width: 100%;
-      display:flex;
-      flex-direction: column;
-      gap: 14px;
-      justify-content:center;   /* vertical centering inside answersWrap */
-      align-items: stretch;
-    }
-
-    /* PORTRAIT: row */
-    @media (orientation: portrait){
-      .answersWrap{
-        transform: scale(var(--answersPortraitScale));
-      }
-      .answers{
-        flex-direction: row;
-        gap: 12px;
-        align-items: stretch;
-      }
-    }
-
-    .ansBtn{
-      appearance:none;
-      border:none;
+      height: 100%;
+      border-radius: 26px;
       background:#ffffff;
-      border: 3px solid var(--line);
-      border-radius: 22px;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
-      padding: 10px;
-      min-height: 132px;
+      border: 2px solid var(--lineSoft);
       display:flex;
       align-items:center;
       justify-content:center;
-      cursor:pointer;
+      overflow:hidden;
       position:relative;
-
-      /* smooth, “clickable” */
-      transform: translateZ(0);
-      transition:
-        transform 180ms var(--easeOut),
-        box-shadow 180ms var(--easeOut),
-        border-color 180ms var(--easeOut);
-      will-change: transform;
     }
-
-    /* make portrait cards a bit smaller and more square */
-    @media (orientation: portrait){
-      .ansBtn{
-        min-height: 150px; /* higher so they feel more square in portrait */
-      }
-    }
-
-    .ansBtn:active{
-      transform: translateY(2px) scale(0.995);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.10);
-    }
-
-    .ansBtn.pressHold{
-      /* tiny press + soft rebound (done via keyframes on pointerdown) */
-      animation: pressPop 240ms var(--easeOut) 1;
-    }
-    @keyframes pressPop{
-      0%{ transform: translateY(0); }
-      40%{ transform: translateY(2px); }
-      100%{ transform: translateY(0); }
-    }
-
-    /* Feedback styles */
-    .ansBtn.correct{
-      border-color: rgba(47,179,109,0.55);
-      box-shadow: 0 14px 28px rgba(47,179,109,0.10);
-    }
-    .ansBtn.wrong{
-      border-color: rgba(228,79,108,0.55);
-      box-shadow: 0 14px 28px rgba(228,79,108,0.10);
-    }
-
-    /* Do not show any default focus ring */
-    .ansBtn:focus{ outline:none; }
-    .ansBtn::-moz-focus-inner{ border:0; }
-
-    /* SVG inside buttons */
-    .ansInner{
+    .flashSvg{
       width: 100%;
       height: 100%;
       display:flex;
@@ -354,51 +183,165 @@
       justify-content:center;
     }
 
-    /* Slide animations: we animate each button, and also ensure they go behind the midline mask */
-    .answersSlideOut .ansBtn{
-      pointer-events:none;
+    /* Rechtervak */
+    .scanStage{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
     }
 
-    /* Landscape slide left behind vertical midline */
+    /* Masker precies op de middenlijn, dik genoeg om schaduw te verbergen */
+    .midMask{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index: 50;
+    }
     @media (orientation: landscape){
-      .slideOut{
-        animation: slideOutLeft var(--slideMs) var(--easeInOut) forwards;
+      .midMask::before{
+        content:"";
+        position:absolute;
+        left:-7px; /* over de dashed seam heen */
+        top:0;
+        width: 14px; /* dikker zodat schaduw nooit eronder uit komt */
+        height:100%;
+        background:#ffffff;
       }
-      .slideIn{
-        animation: slideInLeft var(--slideMs) var(--easeInOut) forwards;
+    }
+    @media (orientation: portrait){
+      .midMask::before{
+        content:"";
+        position:absolute;
+        left:0;
+        top:-7px;
+        width:100%;
+        height: 14px;
+        background:#ffffff;
       }
+    }
+
+    /* Answer area */
+    .answersWrap{
+      width: min(560px, 92%);
+      max-width: 560px;
+      position:relative;
+      z-index: 10;
+      transform: translateZ(0);
+    }
+
+    /* Landscape: onder elkaar, in het witte vlak gecentreerd */
+    .answers{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      justify-items:center;
+      align-items:center;
+    }
+
+    /* Portrait: naast elkaar onderin */
+    @media (orientation: portrait){
+      .answers{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+    }
+
+    /* Antwoordknoppen: altijd vierkant */
+    .ansBtn{
+      appearance:none;
+      border:none;
+      background:#ffffff;
+      border-radius: 22px;
+      border: 3px solid var(--line);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+      padding: 10px;
+
+      width: 100%;
+      max-width: 240px; /* basis */
+      aspect-ratio: 1 / 1; /* altijd vierkant */
+
+      transition:
+        transform 180ms var(--easeOut),
+        box-shadow 180ms var(--easeOut),
+        border-color 180ms var(--easeOut);
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
+    /* Landscape: fors kleiner zodat het altijd past */
+    @media (orientation: landscape){
+      .answersWrap{
+        transform: scale(var(--answersScaleLandscape));
+        transform-origin: center;
+      }
+      .ansBtn{
+        max-width: 210px;
+      }
+    }
+
+    /* Portrait: iets kleiner, maar vierkant blijft */
+    @media (orientation: portrait){
+      .answersWrap{
+        transform: scale(var(--answersScalePortrait));
+        transform-origin: center;
+      }
+      .ansBtn{
+        max-width: none;
+        width: 100%;
+      }
+    }
+
+    /* Micro interactie: klein indrukken + zachte terugveer */
+    .ansBtn:active{
+      transform: translateY(var(--pressDown));
+      box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+    }
+    .ansBtn.pressBounce{
+      animation: pressBounce 240ms var(--easeOut) 1;
+    }
+    @keyframes pressBounce{
+      0%{ transform: translateY(0); }
+      40%{ transform: translateY(var(--pressDown)); }
+      100%{ transform: translateY(0); }
+    }
+
+    .ansBtn.correct{ border-color: rgba(47,179,109,0.55); }
+    .ansBtn.wrong{ border-color: rgba(228,79,108,0.55); }
+
+    .answersHidden{ opacity:0; pointer-events:none; }
+
+    /* Slide animations (per button), verdwijnen achter middenlijn-mask */
+    .slideOut{ pointer-events:none; }
+
+    @media (orientation: landscape){
+      .slideOut{ animation: slideOutLeft var(--slideMs) var(--easeInOut) forwards; }
+      .slideIn{ animation: slideInLeft var(--slideMs) var(--easeInOut) forwards; }
       @keyframes slideOutLeft{
-        0%{ transform: translateX(0); opacity: 1; }
-        100%{ transform: translateX(-140%); opacity: 1; }
+        0%{ transform: translateX(0); }
+        100%{ transform: translateX(-160%); }
       }
       @keyframes slideInLeft{
-        0%{ transform: translateX(140%); opacity: 1; }
-        100%{ transform: translateX(0); opacity: 1; }
+        0%{ transform: translateX(160%); }
+        100%{ transform: translateX(0); }
       }
     }
-
-    /* Portrait slide up behind horizontal midline */
     @media (orientation: portrait){
-      .slideOut{
-        animation: slideOutUp var(--slideMs) var(--easeInOut) forwards;
-      }
-      .slideIn{
-        animation: slideInUp var(--slideMs) var(--easeInOut) forwards;
-      }
+      .slideOut{ animation: slideOutUp var(--slideMs) var(--easeInOut) forwards; }
+      .slideIn{ animation: slideInUp var(--slideMs) var(--easeInOut) forwards; }
       @keyframes slideOutUp{
-        0%{ transform: translateY(0); opacity: 1; }
-        100%{ transform: translateY(-140%); opacity: 1; }
+        0%{ transform: translateY(0); }
+        100%{ transform: translateY(-160%); }
       }
       @keyframes slideInUp{
-        0%{ transform: translateY(140%); opacity: 1; }
-        100%{ transform: translateY(0); opacity: 1; }
+        0%{ transform: translateY(160%); }
+        100%{ transform: translateY(0); }
       }
-    }
-
-    /* When answers are hidden (during flash) */
-    .answersHidden{
-      opacity:0;
-      pointer-events:none;
     }
 
     /* Start overlay */
@@ -413,7 +356,6 @@
       z-index: 999;
       padding: 24px;
     }
-
     .startCard{
       width: min(560px, 92vw);
       background: #ffffff;
@@ -422,21 +364,18 @@
       padding: 22px 20px;
       text-align:center;
     }
-
     .startCard h1{
       margin: 0 0 10px 0;
       font-size: 28px;
       color: #4d4a48;
       text-transform: lowercase;
     }
-
     .startCard p{
       margin: 0 0 16px 0;
       color: rgba(77,74,72,0.82);
       font-size: 18px;
       line-height: 1.35;
     }
-
     .startBtn{
       appearance:none;
       border:none;
@@ -491,6 +430,7 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
     }
     .tuneClose:active{ transform: translateY(1px) scale(0.99); }
+
     .tuneRow{
       display:grid;
       grid-template-columns: 140px 1fr 84px;
@@ -536,10 +476,6 @@
       color:#4d4a48;
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
-
-    /* Utility */
-    .hidden{ display:none !important; }
-
   </style>
 </head>
 
@@ -547,7 +483,6 @@
   <section class="left" aria-label="Spel">
     <div class="topbar">
       <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
-        <!-- inline “home” icon -->
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
           <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
@@ -561,7 +496,7 @@
     </div>
 
     <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Flitsbord">
+      <div class="gameCard" id="gameCard" aria-label="Vraagvak">
         <div class="flashBoard" id="flashBoard">
           <div class="flashSvg" id="flashSvg"></div>
         </div>
@@ -569,14 +504,12 @@
     </div>
   </section>
 
-  <section class="right" id="rightArea" aria-label="Antwoorden">
-    <div class="rightInner">
+  <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
+    <div class="scanStage">
       <div class="answersWrap" id="answersWrap">
         <div class="answers answersHidden" id="answers"></div>
       </div>
-
-      <!-- midline mask -->
-      <div class="maskLine" aria-hidden="true"></div>
+      <div class="midMask" aria-hidden="true"></div>
     </div>
   </section>
 
@@ -599,8 +532,8 @@
 
       <div class="tuneRow">
         <div class="tuneLabel">ms</div>
-        <input type="range" id="flashMsRange" min="350" max="1400" step="50" value="700" />
-        <div class="tuneValue" id="flashMsValue">700</div>
+        <input type="range" id="flashMsRange" min="350" max="1400" step="50" value="650" />
+        <div class="tuneValue" id="flashMsValue">650</div>
       </div>
 
       <div class="tuneButtons">
@@ -634,13 +567,11 @@
       const testWrongBtn = document.getElementById("testWrongBtn");
       const testGoodBtn = document.getElementById("testGoodBtn");
 
-      const flashBoard = document.getElementById("flashBoard");
       const flashSvg = document.getElementById("flashSvg");
-
-      const answersWrap = document.getElementById("answersWrap");
       const answersEl = document.getElementById("answers");
+      const answersWrap = document.getElementById("answersWrap");
 
-      // Simple beeps
+      // Simple beep
       let audioCtx = null;
       function beep(type){
         try{
@@ -660,7 +591,7 @@
         }catch(e){}
       }
 
-      // Dice dots positions (no mirroring, always same)
+      // Dice positions (no mirroring, stable)
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -675,51 +606,6 @@
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
 
-      function svgForDots(dotSets, opts = {}){
-        const {
-          dotRadius = 11,
-          dotColor = "rgba(25,25,25,.92)",
-          stroke = "rgba(0,0,0,0)",
-          strokeW = 0,
-          glow = false
-        } = opts;
-
-        const w = 520, h = 380;
-        const circles = [];
-        dotSets.forEach((set) => {
-          const box = set.box;
-          set.dots.forEach(([x,y]) => {
-            const X = (box.x0 + x*(box.x1-box.x0)) * w;
-            const Y = (box.y0 + y*(box.y1-box.y0)) * h;
-            circles.push({X,Y});
-          });
-        });
-
-        const filter = glow ? `
-          <defs>
-            <filter id="g">
-              <feGaussianBlur stdDeviation="2.1" result="b"/>
-              <feMerge>
-                <feMergeNode in="b"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>` : "";
-
-        const cs = circles.map(c => `
-          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}"
-            fill="${dotColor}"
-            stroke="${stroke}" stroke-width="${strokeW}"
-            ${glow ? `filter="url(#g)"` : "" }
-          />`).join("");
-
-        return `
-          <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
-            ${filter}
-            ${cs}
-          </svg>`;
-      }
-
       function patternLevel1(n){
         return [{
           dots: diceFaces[n],
@@ -727,33 +613,45 @@
         }];
       }
 
-      function setBoard(svgHtml){
-        flashSvg.innerHTML = svgHtml;
+      function svgForDots(dotSets, opts = {}){
+        const {
+          dotRadius = 14,
+          dotColor = "rgba(25,25,25,.92)"
+        } = opts;
+
+        const w = 520, h = 380;
+        const circles = [];
+        dotSets.forEach(set => {
+          const b = set.box;
+          set.dots.forEach(([x,y]) => {
+            const X = (b.x0 + x*(b.x1-b.x0)) * w;
+            const Y = (b.y0 + y*(b.y1-b.y0)) * h;
+            circles.push({X,Y});
+          });
+        });
+
+        const cs = circles.map(c => `
+          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}"
+            fill="${dotColor}"
+          />`).join("");
+
+        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${cs}</svg>`;
       }
 
+      function setBoard(html){
+        flashSvg.innerHTML = html;
+      }
       function clearBoard(){
-        setBoard(svgForDots([], {glow:false}));
+        setBoard(svgForDots([], {dotRadius: 1}));
       }
-
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-      }
-
-      // GAME
-      let started = false;
-      let locked = false;
-      let flashMs = 700;
-      let currentCorrect = 1;
 
       function buildOptions(correct){
         const cap = 6;
         const options = new Set([correct]);
         while(options.size < 3){
           const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
-          const v = clamp(correct + delta, 1, cap);
-          options.add(v);
+          options.add(clamp(correct + delta, 1, cap));
         }
-        // shuffle
         const arr = [...options];
         for(let i=arr.length-1;i>0;i--){
           const j = Math.floor(Math.random()*(i+1));
@@ -764,81 +662,63 @@
 
       function renderAnswers(correct){
         const arr = buildOptions(correct);
-
         answersEl.innerHTML = "";
+
         arr.forEach(v => {
           const btn = document.createElement("button");
           btn.className = "ansBtn";
           btn.type = "button";
 
-          // micro press + soft rebound
           btn.addEventListener("pointerdown", () => {
-            btn.classList.remove("pressHold");
-            // restart animation
+            btn.classList.remove("pressBounce");
             void btn.offsetWidth;
-            btn.classList.add("pressHold");
+            btn.classList.add("pressBounce");
           }, {passive:true});
 
           btn.addEventListener("click", () => onPick(btn, v));
 
-          const svg = svgForDots(patternLevel1(v), {dotRadius: 12, glow:false});
-          btn.innerHTML = `<div class="ansInner">${svg}</div>`;
+          const svg = svgForDots(patternLevel1(v), {dotRadius: 12});
+          btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
           answersEl.appendChild(btn);
         });
       }
 
-      function hideAnswers(){
-        answersEl.classList.add("answersHidden");
-      }
-      function showAnswers(){
-        answersEl.classList.remove("answersHidden");
-      }
+      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      async function slideAnswersOutSequential(){
-        // order: right -> middle -> left
+      async function slideOutOrder(){
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
-
-        answersWrap.classList.add("answersSlideOut");
-        // Determine order based on current visual order:
-        // In portrait (row): left,middle,right are indices 0,1,2 -> out order 2,1,0
-        // In landscape (column): top,mid,bottom -> we still want "right,middle,left" feel,
-        // but you asked specifically that sequence to guide eyes, we keep 2,1,0 as well.
         const order = [2,1,0].filter(i => btns[i]);
 
         order.forEach((idx, k) => {
           const b = btns[idx];
           b.classList.remove("slideIn");
           b.classList.add("slideOut");
-          b.style.animationDelay = `${k * 110}ms`;
+          b.style.animationDelay = `${k * 130}ms`;
         });
 
-        // wait for last animation to finish
-        const total = 110*(order.length-1) + parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 720;
-        await wait(total + 40);
+        const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 780;
+        await wait(130*(order.length-1) + base + 60);
 
-        // cleanup
         btns.forEach(b => {
           b.classList.remove("slideOut");
           b.style.animationDelay = "0ms";
         });
-        answersWrap.classList.remove("answersSlideOut");
       }
 
-      async function slideAnswersInAll(){
+      async function slideInAll(){
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
 
-        // Put them just offscreen and slide in
         btns.forEach((b, i) => {
           b.classList.remove("slideOut");
           b.classList.add("slideIn");
-          b.style.animationDelay = `${i * 70}ms`;
+          b.style.animationDelay = `${i * 90}ms`;
         });
 
-        const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 720;
-        const total = 70*(btns.length-1) + base;
-        await wait(total + 40);
+        const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 780;
+        await wait(90*(btns.length-1) + base + 60);
 
         btns.forEach(b => {
           b.classList.remove("slideIn");
@@ -846,43 +726,41 @@
         });
       }
 
-      async function flashSequence(){
+      // Game state
+      let started = false;
+      let locked = false;
+      let flashMs = Number(flashMsRange.value);
+      let correct = 1;
+
+      async function flashAndAsk(){
         locked = true;
 
-        // During flash: no answers visible
         hideAnswers();
-
-        // small settle
         clearBoard();
-        await wait(180);
+        await wait(160);
 
-        // flash
-        setBoard(svgForDots(patternLevel1(currentCorrect), {dotRadius: 16, glow:false}));
+        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
         await wait(flashMs);
 
-        // blank
         clearBoard();
         await wait(260);
 
-        // show answers now
-        renderAnswers(currentCorrect);
+        renderAnswers(correct);
         showAnswers();
 
-        // slide in gently every round (works both orientations)
-        await slideAnswersInAll();
+        await slideInAll();
 
         locked = false;
       }
 
       function nextRound(){
-        currentCorrect = randInt(1,6);
-        flashSequence();
+        correct = randInt(1,6);
+        flashAndAsk();
       }
 
-      async function showExampleAndHold(choice){
-        // Show what the child chose a bit longer, without any red frame
-        setBoard(svgForDots(patternLevel1(choice), {dotRadius: 16, glow:false}));
-        await wait(820);
+      async function showChosenBrief(choice){
+        setBoard(svgForDots(patternLevel1(choice), {dotRadius: 16}));
+        await wait(900);
         clearBoard();
       }
 
@@ -893,86 +771,65 @@
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         btns.forEach(b => b.style.pointerEvents = "none");
 
-        if(value === currentCorrect){
+        if(value === correct){
           beep("ok");
           btn.classList.add("correct");
 
-          // show correct in board briefly
-          setBoard(svgForDots(patternLevel1(currentCorrect), {dotRadius: 16, glow:false}));
+          setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
           await wait(520);
 
-          // slide answers out behind mask (direction depends on orientation)
-          await slideAnswersOutSequential();
+          await slideOutOrder();
 
-          // prepare next
           clearBoard();
-          await wait(120);
           btns.forEach(b => { b.classList.remove("correct","wrong"); b.style.pointerEvents = ""; });
 
           nextRound();
           return;
         }
 
-        // wrong
         beep("no");
         btn.classList.add("wrong");
 
-        // show chosen example briefly, then show correct a bit too
-        await showExampleAndHold(value);
-
-        setBoard(svgForDots(patternLevel1(currentCorrect), {dotRadius: 16, glow:false}));
-        await wait(720);
+        await showChosenBrief(value);
+        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        await wait(750);
         clearBoard();
 
-        // remove answers too (same slide out), then bring new
-        await slideAnswersOutSequential();
+        await slideOutOrder();
 
         btns.forEach(b => { b.classList.remove("correct","wrong"); b.style.pointerEvents = ""; });
-        await wait(120);
 
         nextRound();
       }
 
       // Settings
-      function openTunePanel(){
-        tunePanel.classList.remove("hidden");
-      }
-      function closeTunePanel(){
-        tunePanel.classList.add("hidden");
-      }
+      function openTune(){ tunePanel.classList.remove("hidden"); }
+      function closeTune(){ tunePanel.classList.add("hidden"); }
 
       tuneBtn.addEventListener("click", () => {
         beep("tap");
-        if(tunePanel.classList.contains("hidden")) openTunePanel();
-        else closeTunePanel();
+        if(tunePanel.classList.contains("hidden")) openTune();
+        else closeTune();
       });
-      tuneClose.addEventListener("click", () => {
-        beep("tap");
-        closeTunePanel();
-      });
+      tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
 
       flashMsRange.addEventListener("input", () => {
         flashMs = Number(flashMsRange.value);
         flashMsValue.textContent = String(flashMs);
       });
-
-      newRoundBtn.addEventListener("click", () => {
-        beep("tap");
-        if(!started) return;
-        nextRound();
-      });
+      newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
       testWrongBtn.addEventListener("click", () => {
         beep("tap");
         if(!started || locked) return;
-        const wrong = currentCorrect === 6 ? 1 : currentCorrect + 1;
-        const firstBtn = answersEl.querySelector(".ansBtn");
-        if(firstBtn) onPick(firstBtn, wrong);
+        const wrong = correct === 6 ? 1 : correct + 1;
+        const b = answersEl.querySelector(".ansBtn");
+        if(b) onPick(b, wrong);
       });
       testGoodBtn.addEventListener("click", () => {
         beep("tap");
         if(!started || locked) return;
-        const firstBtn = answersEl.querySelector(".ansBtn");
-        if(firstBtn) onPick(firstBtn, currentCorrect);
+        const b = answersEl.querySelector(".ansBtn");
+        if(b) onPick(b, correct);
       });
 
       // Start
@@ -984,7 +841,6 @@
         flashMsValue.textContent = String(flashMs);
         nextRound();
       }
-
       startBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1000,19 +856,18 @@
 
       homeBtn.addEventListener("click", () => {
         beep("tap");
-        try { window.location.href = "index.html"; } catch(e){}
+        try{ window.location.href = "index.html"; }catch(e){}
       });
 
-      // On rotate, re-run a soft “in” on answers so it stays smooth, no jolts
+      // On rotation, re-render answers to avoid jitter
       let rotTimer = null;
       function onReflow(){
         if(!started) return;
         if(rotTimer) clearTimeout(rotTimer);
         rotTimer = setTimeout(async () => {
-          // Re-render answers to match new layout
-          renderAnswers(currentCorrect);
+          renderAnswers(correct);
           showAnswers();
-          await slideAnswersInAll();
+          await slideInAll();
         }, 180);
       }
       window.addEventListener("resize", onReflow);
@@ -1021,7 +876,6 @@
       // Init
       clearBoard();
       flashMsValue.textContent = String(flashMsRange.value);
-
     })();
   </script>
 </body>
