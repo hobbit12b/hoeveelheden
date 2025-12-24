@@ -16,13 +16,12 @@
       --card-radius:28px;
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      --border: rgba(245,180,152,0.90);
-      --border-soft: rgba(245,180,152,0.55);
+      --divider: rgba(245,180,152,0.55);
+      --border: rgba(245,180,152,0.70);
 
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      /* rustiger, geleidelijker */
       --slideOutDur: 560ms;
       --slideOutGap: 140ms;
       --slideInDur: 440ms;
@@ -51,6 +50,7 @@
       grid-template-columns: 58fr 42fr;
       height: 100%;
     }
+
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -74,39 +74,21 @@
       position: relative;
       min-height: 0;
       overflow:hidden;
-      transition: background 140ms ease;
     }
 
-    /* middenlijn, solide */
-    @media (orientation: landscape){
-      .right{ border-left: 6px solid rgba(245,180,152,0.55); }
-    }
-    @media (orientation: portrait){
-      .right{ border-top: 6px solid rgba(245,180,152,0.55); }
-      .left{ padding: 22px; gap: 12px; }
-    }
-
-    /* maskerstrook, smal in landscape zodat links niet wegvalt, wat ruimer in portrait om schaduw te verbergen */
-    .right::before{
+    /* middellijn als overlay, ligt precies op de scheiding */
+    .right::after{
       content:"";
       position:absolute;
       pointer-events:none;
-      background:#ffffff;
-      z-index: 70;
+      background: var(--divider);
+      z-index: 200;
     }
     @media (orientation: landscape){
-      .right::before{
-        top:0; bottom:0;
-        left: 0;
-        width: 14px;
-      }
+      .right::after{ left:0; top:0; bottom:0; width:6px; }
     }
     @media (orientation: portrait){
-      .right::before{
-        left:0; right:0;
-        top: 0;
-        height: 26px;
-      }
+      .right::after{ left:0; right:0; top:0; height:6px; }
     }
 
     .topbar{
@@ -208,7 +190,7 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: 4px solid rgba(245,180,152,0.70);
+      border: 4px solid var(--border);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -267,13 +249,6 @@
       overflow: hidden;
       padding: 26px;
       z-index: 10;
-    }
-
-    @media (orientation: landscape){
-      .maskViewport{ padding: 26px 26px 26px 0; }
-    }
-    @media (orientation: portrait){
-      .maskViewport{ padding: 0 26px 26px 26px; }
     }
 
     .answersSurface{
@@ -338,6 +313,11 @@
       box-shadow: 0 14px 26px rgba(0,0,0,0.10);
     }
 
+    /* tijdens animatie geen schaduw, voorkomt “lekken” bij de middellijn */
+    body.answersAnimating .ansBtn{
+      box-shadow: none !important;
+    }
+
     .ansBtn.correct{
       border-color: var(--ok);
       background: rgba(46,196,122,0.10);
@@ -346,7 +326,6 @@
       border-color: var(--no);
       background: rgba(255,91,122,0.10);
     }
-
     .ansBtn.dim{
       opacity: 0.25;
       filter: grayscale(0.15);
@@ -581,10 +560,6 @@
         <button class="tuneBtnSmall secondary" id="resetBtn" type="button">reset</button>
         <button class="tuneBtnSmall secondary" id="testSlideBtn" type="button">test schuif</button>
       </div>
-
-      <div class="tuneHint">
-        Portrait schuift omhoog en komt ook van boven terug, landscape schuift naar links en komt ook van links terug.
-      </div>
     </div>
   </div>
 
@@ -610,15 +585,20 @@
         return JSON.parse(JSON.stringify(obj));
       };
 
-      /* iPad safe orientation, matchMedia is soms traag in PWA, dit is betrouwbaarder */
       function isPortraitNow(){
+        try{
+          if (window.matchMedia){
+            const mq = window.matchMedia("(orientation: portrait)");
+            if (mq && typeof mq.matches === "boolean") return mq.matches;
+          }
+        }catch(e){}
         const vv = window.visualViewport;
         const w = vv ? vv.width : window.innerWidth;
         const h = vv ? vv.height : window.innerHeight;
         return h >= w;
       }
 
-      const LS_KEY = "slimkijken_subitize_v8";
+      const LS_KEY = "slimkijken_subitize_v9";
       const defaultData = {
         level: 1,
         l1Max: 4,
@@ -715,6 +695,10 @@
       function showAnswers(show){
         document.body.classList.toggle("answersShown", !!show);
         document.body.classList.toggle("answersHidden", !show);
+      }
+
+      function setAnimating(on){
+        document.body.classList.toggle("answersAnimating", !!on);
       }
 
       function setStars(n){
@@ -872,12 +856,9 @@
 
       function emptyBoard(){ flashSvg.innerHTML = emptySvg(); }
 
-      function showCorrectExample(glowOn){
-        if (DATA.level === 1){
-          flashSvg.innerHTML = svgLevel1(CURRENT.correct, !!glowOn, 14);
-        } else {
-          flashSvg.innerHTML = svgLevel2(CURRENT.correct, !!glowOn, 14);
-        }
+      function showExampleForValue(value, glowOn){
+        if (DATA.level === 1) flashSvg.innerHTML = svgLevel1(value, !!glowOn, 14);
+        else flashSvg.innerHTML = svgLevel2(value, !!glowOn, 14);
       }
 
       function orderButtonsForSlideOut(){
@@ -888,17 +869,17 @@
         });
 
         if (!isPortraitNow()){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top)); /* rechts, midden, links */
         } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left)); /* onder, midden, boven */
         }
         return items.map(x => x.b);
       }
+
       function orderButtonsForSlideIn(){
         return orderButtonsForSlideOut().reverse();
       }
 
-      /* kernfix: portrait altijd omhoog, landscape altijd links */
       function getOutVector(btn){
         const view = maskViewport.getBoundingClientRect();
         const r = btn.getBoundingClientRect();
@@ -919,6 +900,7 @@
         const gap = cssMs("--slideOutGap", 140);
         const ease = cssVar("--easeOutSoft") || "cubic-bezier(0.18, 0.85, 0.22, 1)";
 
+        setAnimating(true);
         ordered.forEach(b => b.style.pointerEvents = "none");
 
         for (let i = 0; i < ordered.length; i++){
@@ -938,6 +920,7 @@
         }
 
         await wait(dur + 30);
+        setAnimating(false);
       }
 
       async function slideInAnswers(){
@@ -946,9 +929,11 @@
         const gap = cssMs("--slideInGap", 120);
         const ease = cssVar("--easeSoft") || "cubic-bezier(0.42, 0, 0.58, 1)";
 
-        /* kernfix: terugkomen via dezelfde middellijn, dus starten op dezelfde out vector, niet de omgekeerde */
+        setAnimating(true);
+
         ordered.forEach(b => {
           const out = getOutVector(b);
+          b.getAnimations().forEach(a => a.cancel());
           b.style.transform = `translate3d(${out.x}px,${out.y}px,0)`;
           b.style.opacity = "0";
           b.style.visibility = "hidden";
@@ -984,6 +969,8 @@
           b.style.visibility = "visible";
           b.style.pointerEvents = "auto";
         });
+
+        setAnimating(false);
       }
 
       async function doRound(){
@@ -1001,7 +988,7 @@
         CURRENT.correct = pickCorrect();
 
         setPhase("phaseFlash");
-        showCorrectExample(true);
+        showExampleForValue(CURRENT.correct, true);
         await wait(CURRENT.flashMs);
 
         emptyBoard();
@@ -1029,7 +1016,7 @@
           btn.classList.add("correct");
 
           setPhase("phaseFlash");
-          showCorrectExample(true);
+          showExampleForValue(correct, true);
           await wait(420);
 
           emptyBoard();
@@ -1061,13 +1048,19 @@
         saveData();
         updateHud();
 
-        await wait(950);
-
+        /* eerst jouw keuze groot laten zien */
+        await wait(520);
         setPhase("phaseFlash");
-        showCorrectExample(true);
-        await wait(1000);
+        showExampleForValue(value, false);
+        await wait(650);
 
+        /* daarna het juiste voorbeeld */
+        showExampleForValue(correct, true);
+        await wait(900);
+
+        emptyBoard();
         await slideOutAnswers();
+
         showAnswers(false);
         clearAnswers();
 
@@ -1077,7 +1070,7 @@
         await wait(240);
 
         setPhase("phaseFlash");
-        showCorrectExample(true);
+        showExampleForValue(correct, true);
         await wait(clamp(CURRENT.flashMs + 260, DATA.flashMin, DATA.flashMax));
 
         emptyBoard();
@@ -1235,7 +1228,6 @@
         if (e.target === startOverlay) startGame();
       });
 
-      /* extra zekerheid, bij draaien van iPad even de animaties resetten zodat er geen rest transforms blijven hangen */
       function hardResetTransforms(){
         const btns = [...answerGrid.querySelectorAll(".ansBtn")];
         btns.forEach(b => {
@@ -1245,7 +1237,9 @@
           b.style.visibility = "visible";
           b.style.pointerEvents = "auto";
         });
+        setAnimating(false);
       }
+
       window.addEventListener("resize", () => { hardResetTransforms(); });
       window.addEventListener("orientationchange", () => { setTimeout(hardResetTransforms, 250); });
 
