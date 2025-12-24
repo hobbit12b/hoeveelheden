@@ -22,8 +22,11 @@
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      --slideDur: 360ms;
-      --slideGap: 115ms;
+      --slideOutDur: 340ms;
+      --slideOutGap: 115ms;
+
+      --slideInDur: 260ms;
+      --slideInGap: 90ms;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -45,7 +48,6 @@
       grid-template-columns: 58fr 42fr;
       height: 100%;
     }
-
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -58,7 +60,7 @@
       padding: 28px 26px 22px 26px;
       display:flex;
       flex-direction:column;
-      gap: 18px;
+      gap: 16px;
       position: relative;
       overflow:hidden;
       min-height: 0;
@@ -78,22 +80,30 @@
     }
     @media (orientation: portrait){
       .right{ border-top: 6px solid rgba(245,180,152,0.55); }
-      .left{ padding: 22px; gap: 14px; }
+      .left{ padding: 22px; gap: 12px; }
     }
 
-    /* extra maskerstrip om schaduwrandjes bij de middenlijn weg te drukken */
+    /* maskerstrook: alleen op de middenlijn, heel smal, zodat links niks verdwijnt */
     .right::before{
       content:"";
       position:absolute;
       pointer-events:none;
       background:#ffffff;
-      z-index: 60;
+      z-index: 70;
     }
     @media (orientation: landscape){
-      .right::before{ top:0; bottom:0; left:6px; width: 34px; }
+      .right::before{
+        top:0; bottom:0;
+        left: 0;                 /* exact vanaf de middenlijn */
+        width: 10px;             /* smal, anders slokt het kaarten op */
+      }
     }
     @media (orientation: portrait){
-      .right::before{ left:0; right:0; top:6px; height: 34px; }
+      .right::before{
+        left:0; right:0;
+        top: 0;                  /* exact vanaf de middenlijn */
+        height: 10px;            /* smal */
+      }
     }
 
     .topbar{
@@ -163,7 +173,6 @@
       align-items:center;
       gap: 10px;
     }
-    .hudPill b{ color: rgba(77,74,72,0.95); }
 
     .stars{
       display:flex;
@@ -201,7 +210,6 @@
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: hidden;
-      transition: background 160ms ease;
       display:grid;
       place-items:center;
       padding: 18px;
@@ -236,7 +244,6 @@
       position:relative;
       overflow:hidden;
       box-shadow: 0 14px 26px rgba(0,0,0,0.06);
-      outline: none;
     }
     .flashSvg{ width:100%; height:100%; }
 
@@ -250,6 +257,7 @@
       z-index: 10;
     }
 
+    /* viewport voor het echte “achter de middenlijn verdwijnen” */
     .maskViewport{
       position: relative;
       width: 100%;
@@ -259,7 +267,7 @@
       z-index: 10;
     }
 
-    /* cruciaal: cliprand precies op de middenlijn */
+    /* belangrijk: in landscape geen linker padding, zodat de middenlijn echt de cliprand is */
     @media (orientation: landscape){
       .maskViewport{ padding: 26px 26px 26px 0; }
     }
@@ -273,7 +281,6 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      will-change: transform;
     }
 
     .rightWrap{
@@ -291,7 +298,6 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
       transition: opacity 140ms ease;
-      will-change: opacity;
     }
 
     @media (max-width: 560px){
@@ -345,6 +351,7 @@
       filter: grayscale(0.15);
     }
 
+    /* start */
     .startOverlay{
       position:fixed;
       inset:0;
@@ -396,6 +403,7 @@
     }
     .startBtn:active{ transform: scale(0.99); }
 
+    /* settings */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -482,13 +490,6 @@
       color:#4d4a48;
     }
     .tuneBtnSmall:active{ transform: scale(0.99); }
-
-    .tuneHint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: rgba(77,74,72,0.68);
-      line-height: 1.35;
-    }
   </style>
 </head>
 
@@ -583,7 +584,7 @@
       </div>
 
       <div class="tuneHint">
-        Spiegeling staat uit. Patronen houden dezelfde oriëntatie.
+        Portrait schuift omhoog, landscape schuift naar links. Inschuiven komt altijd uit de tegenovergestelde kant.
       </div>
     </div>
   </div>
@@ -596,14 +597,14 @@
       const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
       const choose = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
-      const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
+      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
 
       const clone = (obj) => {
         if (typeof structuredClone === "function") return structuredClone(obj);
         return JSON.parse(JSON.stringify(obj));
       };
 
-      const LS_KEY = "slimkijken_subitize_v6";
+      const LS_KEY = "slimkijken_subitize_v7";
       const defaultData = {
         level: 1,
         l1Max: 4,
@@ -667,6 +668,10 @@
       const hudMs = document.getElementById("hudMs");
       const hudRound = document.getElementById("hudRound");
       const starsEl = document.getElementById("stars");
+
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
 
       let audioCtx = null;
       function beep(type){
@@ -742,12 +747,7 @@
       };
 
       function svgForDots(points, opts = {}){
-        const {
-          dotRadius = 14,
-          dotColor = "rgba(77,74,72,0.78)",
-          glow = false
-        } = opts;
-
+        const { dotRadius = 14, dotColor = "rgba(77,74,72,0.78)", glow = false } = opts;
         const w = 520, h = 380;
         const box = {x0:0.12, y0:0.12, x1:0.88, y1:0.88};
 
@@ -836,130 +836,6 @@
         CURRENT.flashMs = clamp(CURRENT.flashMs + 160, DATA.flashMin, DATA.flashMax);
       }
 
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-      }
-
-      function orderButtonsForSlideOut(){
-        const btns = [...answerGrid.querySelectorAll(".ansBtn")];
-        const items = btns.map(b => {
-          const r = b.getBoundingClientRect();
-          return { b, left: r.left, top: r.top };
-        });
-
-        if (!isPortrait()){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));   // rechts, midden, links
-        } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));   // onder, midden, boven
-        }
-        return items.map(x => x.b);
-      }
-
-      function orderButtonsForSlideIn(){
-        return orderButtonsForSlideOut().reverse();
-      }
-
-      async function slideOutAnswers(){
-        const ordered = orderButtonsForSlideOut();
-        const dur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideDur")) || 360;
-        const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideGap")) || 115;
-
-        const view = maskViewport.getBoundingClientRect();
-        const extra = 28;
-
-        for (const b of ordered){
-          b.style.pointerEvents = "none";
-        }
-
-        for (let i = 0; i < ordered.length; i++){
-          const b = ordered[i];
-          const r = b.getBoundingClientRect();
-
-          if (!isPortrait()){
-            const dx = -((view.width + r.width) + extra);
-            b.animate(
-              [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${dx}px,0,0)` }],
-              { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
-            );
-          } else {
-            const dy = -((view.height + r.height) + extra);
-            b.animate(
-              [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(0,${dy}px,0)` }],
-              { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
-            );
-          }
-
-          await wait(gap);
-        }
-
-        await wait(dur + 20);
-      }
-
-      async function slideInAnswers(){
-        const ordered = orderButtonsForSlideIn();
-        const dur = 280;
-        const gap = 90;
-
-        const view = maskViewport.getBoundingClientRect();
-        const extra = 28;
-
-        // zet ze eerst echt buiten beeld, zodat er geen flits is
-        for (const b of ordered){
-          b.style.opacity = "0";
-          b.style.pointerEvents = "none";
-          b.style.transform = "translate3d(0,0,0)";
-        }
-
-        await nextFrame();
-
-        for (let i = 0; i < ordered.length; i++){
-          const b = ordered[i];
-          const r = b.getBoundingClientRect();
-
-          if (!isPortrait()){
-            const startX = -((view.width + r.width) + extra);
-            b.style.transform = `translate3d(${startX}px,0,0)`;
-            b.style.opacity = "0";
-
-            b.animate(
-              [
-                { transform: `translate3d(${startX}px,0,0)`, opacity: 0 },
-                { transform: "translate3d(8px,0,0)", opacity: 1 },
-                { transform: "translate3d(0,0,0)", opacity: 1 }
-              ],
-              { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
-            );
-          } else {
-            const startY = -((view.height + r.height) + extra);
-            b.style.transform = `translate3d(0,${startY}px,0)`;
-            b.style.opacity = "0";
-
-            b.animate(
-              [
-                { transform: `translate3d(0,${startY}px,0)`, opacity: 0 },
-                { transform: "translate3d(0,8px,0)", opacity: 1 },
-                { transform: "translate3d(0,0,0)", opacity: 1 }
-              ],
-              { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
-            );
-          }
-
-          b.style.pointerEvents = "auto";
-          b.style.opacity = "1";
-
-          await wait(gap);
-        }
-
-        await wait(40);
-
-        // opruimen van inline troep
-        for (const b of ordered){
-          b.style.transform = "translate3d(0,0,0)";
-          b.style.opacity = "1";
-          b.style.pointerEvents = "auto";
-        }
-      }
-
       function renderAnswers(options){
         clearAnswers();
         options.forEach((v) => {
@@ -994,6 +870,108 @@
         }
       }
 
+      function orderButtonsForSlideOut(){
+        const btns = [...answerGrid.querySelectorAll(".ansBtn")];
+        const items = btns.map(b => {
+          const r = b.getBoundingClientRect();
+          return { b, left: r.left, top: r.top };
+        });
+
+        if (!isPortrait()){
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));   // rechts, midden, links
+        } else {
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));   // onder, midden, boven
+        }
+        return items.map(x => x.b);
+      }
+      function orderButtonsForSlideIn(){
+        return orderButtonsForSlideOut().reverse();
+      }
+
+      function getOutVector(btn){
+        const view = maskViewport.getBoundingClientRect();
+        const r = btn.getBoundingClientRect();
+        const extra = 40;
+
+        if (!isPortrait()){
+          const dx = -((view.width + r.width) + extra);
+          return { x: dx, y: 0 };
+        } else {
+          const dy = -((view.height + r.height) + extra);
+          return { x: 0, y: dy };
+        }
+      }
+
+      async function slideOutAnswers(){
+        const ordered = orderButtonsForSlideOut();
+        const dur = 340;
+        const gap = 115;
+
+        ordered.forEach(b => b.style.pointerEvents = "none");
+
+        for (let i = 0; i < ordered.length; i++){
+          const b = ordered[i];
+          const v = getOutVector(b);
+
+          b.animate(
+            [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${v.x}px,${v.y}px,0)` }],
+            { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
+          );
+
+          await wait(gap);
+        }
+
+        await wait(dur + 20);
+      }
+
+      async function slideInAnswers(){
+        const ordered = orderButtonsForSlideIn();
+        const dur = 260;
+        const gap = 90;
+
+        // eerst echt buiten beeld zetten en onzichtbaar maken, voorkomt knipper
+        ordered.forEach(b => {
+          const out = getOutVector(b);
+          b.style.transform = `translate3d(${-out.x}px,${-out.y}px,0)`; // tegenovergestelde kant
+          b.style.opacity = "0";
+          b.style.visibility = "hidden";
+          b.style.pointerEvents = "none";
+        });
+
+        await raf();
+        await raf(); // 2 frames, iOS is hier kieskeurig
+
+        for (let i = 0; i < ordered.length; i++){
+          const b = ordered[i];
+          const out = getOutVector(b);
+          const startX = -out.x;
+          const startY = -out.y;
+
+          b.style.visibility = "visible";
+
+          b.animate(
+            [
+              { transform: `translate3d(${startX}px,${startY}px,0)`, opacity: 0 },
+              { transform: `translate3d(${Math.sign(startX)*8}px,${Math.sign(startY)*8}px,0)`, opacity: 1 },
+              { transform: "translate3d(0,0,0)", opacity: 1 }
+            ],
+            { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
+          );
+
+          await wait(gap);
+        }
+
+        await wait(dur + 30);
+
+        // opruimen
+        ordered.forEach(b => {
+          b.style.transform = "translate3d(0,0,0)";
+          b.style.opacity = "1";
+          b.style.visibility = "visible";
+          b.style.pointerEvents = "auto";
+        });
+      }
+
       async function doRound(){
         CURRENT.locked = true;
         applySettingsToCurrent();
@@ -1019,8 +997,7 @@
         renderAnswers(buildOptions(CURRENT.correct, CURRENT.cap));
         showAnswers(true);
 
-        // terugplaatsen vanuit de andere kant
-        await nextFrame();
+        await raf();
         await slideInAnswers();
 
         CURRENT.locked = false;
@@ -1071,22 +1048,18 @@
         saveData();
         updateHud();
 
-        // jouw keuze langer zichtbaar
         await wait(950);
 
-        // voorbeeld tonen, zonder fout fase randcontext
         setPhase("phaseFlash");
         showCorrectExample(true);
         await wait(1000);
 
-        // ook bij fout de cijfers weghalen
         await slideOutAnswers();
         showAnswers(false);
         clearAnswers();
 
         await wait(180);
 
-        // opnieuw flitsen
         emptyBoard();
         await wait(240);
 
@@ -1101,7 +1074,7 @@
         renderAnswers(buildOptions(correct, CURRENT.cap));
         showAnswers(true);
 
-        await nextFrame();
+        await raf();
         await slideInAnswers();
 
         CURRENT.locked = false;
@@ -1201,7 +1174,7 @@
         showAnswers(true);
         setPhase("phaseChoose");
         renderAnswers([1,2,3]);
-        await nextFrame();
+        await raf();
         await slideInAnswers();
         await wait(240);
         await slideOutAnswers();
@@ -1249,6 +1222,7 @@
         if (e.target === startOverlay) startGame();
       });
 
+      // init
       flashSvg.innerHTML = emptySvg();
       showAnswers(false);
       setPhase(null);
