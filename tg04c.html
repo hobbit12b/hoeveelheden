@@ -144,7 +144,7 @@
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: hidden;
-      transition: background 160ms ease;
+      transition: background 160ms ease, border-color 160ms ease;
       display:grid;
       place-items:center;
       padding: 18px;
@@ -153,6 +153,9 @@
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
+
+    body.phaseFlash .gameCard{ border-color: rgba(229,140,116,0.85); }
+    body.phaseChoose .gameCard{ border-color: rgba(245,180,152,0.85); }
 
     .gameCard.shake{ animation: wiggle 220ms ease; }
     @keyframes wiggle{
@@ -203,7 +206,8 @@
       transition: opacity 140ms ease, transform 140ms ease;
       will-change: opacity, transform;
     }
-    @media (max-width: 860px){
+
+    @media (max-width: 520px){
       .answerGrid{ grid-template-columns: 1fr; }
     }
 
@@ -221,7 +225,7 @@
     .ansBtn{
       appearance:none;
       border: 4px solid rgba(245,180,152,0.75);
-      background: rgba(255,255,255,0.96);
+      background: rgba(255,255,255,0.98);
       border-radius: 22px;
       box-shadow: 0 16px 28px rgba(0,0,0,0.11);
       padding: 14px;
@@ -256,7 +260,6 @@
       filter: grayscale(0.15);
     }
 
-    /* Reveal in, so it voelt klikbaar en levend */
     .ansBtn.reveal{
       opacity: 0;
       transform: translate3d(0,12px,0) scale(0.985);
@@ -268,21 +271,18 @@
       100%{ opacity:1; transform: translate3d(0,0,0) scale(1); }
     }
 
-    /* Slide out animations */
-    .slideLeft{
-      animation: slideLeft var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards;
-    }
+    /* Belangrijk: slide moet altijd winnen van reveal */
+    .ansBtn.slideLeft{ animation: slideLeft var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
+    .ansBtn.slideUp{ animation: slideUp var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
+
     @keyframes slideLeft{
       from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(-120vw,0,0); opacity: 0; }
+      to{ transform: translate3d(-140vw,0,0); opacity: 0; }
     }
 
-    .slideUp{
-      animation: slideUp var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards;
-    }
     @keyframes slideUp{
       from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(0,-120vh,0); opacity: 0; }
+      to{ transform: translate3d(0,-140vh,0); opacity: 0; }
     }
 
     .startOverlay{
@@ -377,6 +377,11 @@
 
       const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
       const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+      const msFromCssVar = (name, fallback) => {
+        const raw = getComputedStyle(document.documentElement).getPropertyValue(name) || "";
+        const n = parseFloat(raw);
+        return Number.isFinite(n) ? n : fallback;
+      };
 
       const startOverlay = document.getElementById("startOverlay");
       const startBtn = document.getElementById("startBtn");
@@ -392,15 +397,14 @@
         minMs: 450,
         maxMs: 1600,
 
-        wrongChoiceHoldMs: 850,
-        showCorrectBoardMs: 900,
+        wrongChoiceHoldMs: 900,
+        showCorrectBoardMs: 950,
         wrongPauseAfterMs: 220,
 
         correctHoldMs: 420,
         afterSlidePauseMs: 140
       };
 
-      // geluid
       let audioCtx = null;
       function beep(type){
         try{
@@ -425,12 +429,16 @@
         }catch(e){}
       }
 
+      function setPhase(name){
+        document.body.classList.remove("phaseFlash","phaseChoose");
+        if (name) document.body.classList.add(name);
+      }
+
       function showAnswers(show){
         document.body.classList.toggle("answersShown", !!show);
         document.body.classList.toggle("answersHidden", !show);
       }
 
-      // dobbelsteenposities
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -520,8 +528,11 @@
       }
 
       function isPortrait(){
-        try{ return window.matchMedia("(orientation: portrait)").matches; }
-        catch(e){ return false; }
+        return window.innerHeight >= window.innerWidth;
+      }
+
+      function slideAxisClass(){
+        return isPortrait() ? "slideUp" : "slideLeft";
       }
 
       function orderButtonsForSlide(){
@@ -532,33 +543,32 @@
         });
 
         if (!isPortrait()){
-          // rechts, midden, links
           items.sort((a,c) => (c.left - a.left) || (a.top - c.top));
         } else {
-          // onder, midden, boven
           items.sort((a,c) => (c.top - a.top) || (c.left - a.left));
         }
         return items.map(x => x.b);
       }
 
       async function slideOutAnswers(){
-        const axisClass = isPortrait() ? "slideUp" : "slideLeft";
+        const axis = slideAxisClass();
         const ordered = orderButtonsForSlide();
+        const dur = msFromCssVar("--slideDur", 260);
+        const gap = msFromCssVar("--slideGap", 90);
 
-        // geen klikken tijdens animatie
-        ordered.forEach(b => b.style.pointerEvents = "none");
+        ordered.forEach(b => {
+          b.style.pointerEvents = "none";
+          b.classList.remove("reveal");
+          b.classList.remove("slideLeft","slideUp");
+          b.style.animationDelay = "0ms";
+        });
 
-        // zet expliciet startstaat, force reflow
-        ordered.forEach(b => { b.classList.remove("slideLeft","slideUp"); b.style.opacity = "1"; });
         void answerGrid.offsetHeight;
 
         for (let i = 0; i < ordered.length; i++){
           const btn = ordered[i];
-          btn.classList.add(axisClass);
-
-          // wacht op de animatie van deze knop, plus gap
-          await wait(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--slideDur")) || 260);
-          if (i < ordered.length - 1) await wait(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--slideGap")) || 90);
+          btn.classList.add(axis);
+          await wait(dur + (i < ordered.length - 1 ? gap : 0));
         }
       }
 
@@ -567,17 +577,21 @@
 
         showAnswers(false);
         clearAnswers();
+
         flashSvg.innerHTML = emptySvg();
-        await wait(260);
+        setPhase(null);
+        await wait(240);
 
         currentCorrect = randInt(1,6);
 
+        setPhase("phaseFlash");
         flashSvg.innerHTML = svgForDots(currentCorrect, {dotRadius:14, glow:true});
         await wait(flashMs);
 
         flashSvg.innerHTML = emptySvg();
         await wait(300);
 
+        setPhase("phaseChoose");
         renderAnswers(buildOptions(currentCorrect));
         showAnswers(true);
 
@@ -596,7 +610,6 @@
 
           flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
           await wait(SETTINGS.correctHoldMs);
-
           flashSvg.innerHTML = emptySvg();
 
           await slideOutAnswers();
@@ -611,7 +624,6 @@
           return;
         }
 
-        // fout: eerst jouw keuze laten staan, dan juiste voorbeeld op bord
         beep("no");
         btn.classList.add("wrong");
         dimOtherButtons(btn);
@@ -633,12 +645,14 @@
         flashSvg.innerHTML = emptySvg();
         await wait(260);
 
+        setPhase("phaseFlash");
         flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
         await wait(Math.min(SETTINGS.maxMs, flashMs + 260));
 
         flashSvg.innerHTML = emptySvg();
         await wait(280);
 
+        setPhase("phaseChoose");
         renderAnswers(buildOptions(correct));
         showAnswers(true);
         locked = false;
@@ -662,6 +676,7 @@
         clearAnswers();
         flashSvg.innerHTML = emptySvg();
         showAnswers(false);
+        setPhase(null);
         startOverlay.style.display = "flex";
       });
 
@@ -670,8 +685,13 @@
         flashMs = SETTINGS.flashMsStart;
       });
 
+      window.addEventListener("orientationchange", () => {
+        // alleen voor correcte richting bij de volgende animatie
+      });
+
       flashSvg.innerHTML = emptySvg();
       showAnswers(false);
+      setPhase(null);
     })();
   </script>
 </body>
