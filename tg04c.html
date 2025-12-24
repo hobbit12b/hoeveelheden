@@ -13,6 +13,10 @@
       --brand:#e58c74;
       --text:#6f6b68;
 
+      --dashW:6px;
+      --dashLen:18px;
+      --dashGap:12px;
+
       --line: rgba(245,180,152,0.85);
       --lineSoft: rgba(245,180,152,0.55);
 
@@ -20,12 +24,16 @@
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
       --slideMs: 980ms;
+      --slideDelay: 140ms;
       --ease: cubic-bezier(.22,.61,.35,1);
 
-      --maskSize: 46px;       /* dik genoeg om schaduw te vangen */
-      --maskFade: 26px;       /* zachte overgang zodat het niet “snijdt” */
+      --maskSize: 56px;
+      --maskFade: 26px;
 
       --pressDown: 2px;
+
+      --wrongFill: rgba(248, 197, 197, 0.85);
+      --wrongBorder: rgba(229, 140, 116, 0.45);
 
       --flashMs: 650;
     }
@@ -45,7 +53,6 @@
       overflow:hidden;
     }
 
-    /* Layout exact zoals tellen en scannen */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
@@ -76,12 +83,12 @@
       min-height: 0;
     }
 
-    /* Scheidingslijn, strak, zelfde plek als origineel */
+    /* Middenlijn weer gestippeld */
     @media (orientation: landscape){
-      .scan-surface{ border-left: 6px solid var(--line); }
+      .scan-surface{ border-left: var(--dashW) dashed var(--line); }
     }
     @media (orientation: portrait){
-      .scan-surface{ border-top: 6px solid var(--line); }
+      .scan-surface{ border-top: var(--dashW) dashed var(--line); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -141,7 +148,6 @@
       min-height: 0;
     }
 
-    /* Vraagkader, nu strak */
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
@@ -172,20 +178,11 @@
       overflow:hidden;
       position:relative;
     }
-
-    /* Portrait: flitsbord iets kleiner, kader blijft gelijk */
     @media (orientation: portrait){
       .flashBoard{
-        width: min(560px, 92%);
+        width: min(520px, 90%);
         height: auto;
-        aspect-ratio: 1.45 / 1;
-      }
-    }
-    @media (orientation: landscape){
-      .flashBoard{
-        width: 100%;
-        height: 100%;
-        aspect-ratio: auto;
+        aspect-ratio: 1.5 / 1;
       }
     }
 
@@ -197,7 +194,6 @@
       justify-content:center;
     }
 
-    /* Antwoorden, layout */
     .scanStage{
       position:absolute;
       inset:0;
@@ -208,7 +204,7 @@
       z-index: 10;
     }
 
-    /* Ruimte zodat masker nooit een kaart “afsnijdt” in rust */
+    /* ruimte zodat masker niets “afsnijdt” in rust */
     @media (orientation: landscape){
       .scanStage{ padding-left: calc(18px + var(--maskSize)); }
     }
@@ -221,7 +217,7 @@
       max-width: 560px;
     }
 
-    /* Landscape: onder elkaar, gecentreerd in wit vlak */
+    /* Landscape: onder elkaar, gecentreerd */
     .answers{
       display:grid;
       grid-template-columns: 1fr;
@@ -230,12 +226,13 @@
       align-items:center;
     }
 
-    /* Portrait: 3 naast elkaar */
+    /* Portrait: naast elkaar */
     @media (orientation: portrait){
       .answers{
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
       }
+      .answersWrap{ width: min(640px, 92%); }
     }
 
     .ansBtn{
@@ -254,52 +251,47 @@
       aspect-ratio: 1 / 1;
       width: 100%;
 
-      transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+      transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), background 220ms var(--ease), border-color 220ms var(--ease);
       transform: translateZ(0);
       will-change: transform, opacity;
     }
 
-    /* Landscape, ongeveer 70 procent kleiner, altijd passend */
     @media (orientation: landscape){
-      .answersWrap{ width: min(420px, 92%); }
-      .ansBtn{ width: clamp(92px, 14vw, 150px); }
+      .answersWrap{ width: min(380px, 92%); }
+      .ansBtn{ width: clamp(92px, 13vw, 142px); }
     }
 
-    /* Portrait, iets kleiner dan volle breedte, maar vierkant */
-    @media (orientation: portrait){
-      .answersWrap{ width: min(640px, 92%); }
-    }
-
-    /* Indrukken plus zachte terugveer */
     .ansBtn:active{
       transform: translateY(var(--pressDown));
       box-shadow: 0 8px 16px rgba(0,0,0,0.10);
     }
 
-    .ansBtn.pressBounce{
-      animation: pressBounce 260ms var(--ease) 1;
-    }
+    .ansBtn.pressBounce{ animation: pressBounce 260ms var(--ease) 1; }
     @keyframes pressBounce{
       0%{ transform: translateY(0); }
       40%{ transform: translateY(var(--pressDown)); }
       100%{ transform: translateY(0); }
     }
 
+    .ansBtn.wrongHold{
+      background: var(--wrongFill);
+      border-color: var(--wrongBorder);
+    }
+
     .answersHidden{ opacity:0; pointer-events:none; }
 
-    /* Masker exact op middenlijn, dik genoeg, met zachte fade */
+    /* Masker op middenlijn, wit vlak plus fade, vangt schaduw */
     .midMask{
       position:absolute;
       inset:0;
       pointer-events:none;
       z-index: 50;
     }
-
     @media (orientation: landscape){
       .midMask::before{
         content:"";
         position:absolute;
-        left: -6px; /* over de scheidingslijn heen */
+        left: calc(-1 * var(--dashW));
         top:0;
         width: var(--maskSize);
         height: 100%;
@@ -308,20 +300,19 @@
       .midMask::after{
         content:"";
         position:absolute;
-        left: calc(-6px + var(--maskSize));
+        left: calc(-1 * var(--dashW) + var(--maskSize));
         top:0;
         width: var(--maskFade);
         height:100%;
         background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0) 100%);
       }
     }
-
     @media (orientation: portrait){
       .midMask::before{
         content:"";
         position:absolute;
         left: 0;
-        top: -6px;
+        top: calc(-1 * var(--dashW));
         width: 100%;
         height: var(--maskSize);
         background: #fff;
@@ -330,14 +321,13 @@
         content:"";
         position:absolute;
         left:0;
-        top: calc(-6px + var(--maskSize));
+        top: calc(-1 * var(--dashW) + var(--maskSize));
         width:100%;
         height: var(--maskFade);
         background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 100%);
       }
     }
 
-    /* Start overlay */
     .startOverlay{
       position:fixed;
       inset:0;
@@ -384,7 +374,6 @@
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Tune panel */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -423,7 +412,6 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
     }
     .tuneClose:active{ transform: translateY(1px) scale(0.99); }
-
     .tuneRow{
       display:grid;
       grid-template-columns: 140px 1fr 84px;
@@ -445,7 +433,6 @@
       color: rgba(77,74,72,0.86);
     }
     .tuneRow input[type="range"]{ width: 100%; }
-
     .tuneButtons{
       display:flex;
       gap: 10px;
@@ -565,6 +552,8 @@
       const answersEl = document.getElementById("answers");
       const scanArea = document.getElementById("scanArea");
 
+      const cssRoot = document.documentElement;
+
       /* WebAudio beep */
       let audioCtx = null;
       function beep(type){
@@ -631,6 +620,16 @@
       function setBoard(html){ flashSvg.innerHTML = html; }
       function clearBoard(){ setBoard(svgForDots([], {dotRadius: 1})); }
 
+      function dissolveBoard(ms){
+        flashSvg.style.transition = `opacity ${ms}ms ease`;
+        flashSvg.style.opacity = "0";
+        setTimeout(() => {
+          clearBoard();
+          flashSvg.style.transition = "";
+          flashSvg.style.opacity = "1";
+        }, ms + 40);
+      }
+
       function buildOptions(correct){
         const cap = 6;
         const options = new Set([correct]);
@@ -661,6 +660,7 @@
           const btn = document.createElement("button");
           btn.className = "ansBtn";
           btn.type = "button";
+          btn.dataset.value = String(v);
 
           btn.addEventListener("pointerdown", () => {
             btn.classList.remove("pressBounce");
@@ -684,15 +684,15 @@
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
 
-        const maskSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--maskSize")) || 46;
-        const extra = maskSize + 18;
+        const maskSize = parseFloat(getComputedStyle(cssRoot).getPropertyValue("--maskSize")) || 56;
+        const extra = maskSize + 22;
 
         if(isPortrait()){
-          const seamY = a.top;
+          const seamY = a.top; /* horizontale middenlijn */
           const dy = -((b.bottom - seamY) + extra);
           return { x: 0, y: dy };
         }else{
-          const seamX = a.left;
+          const seamX = a.left; /* verticale middenlijn */
           const dx = -((b.right - seamX) + extra);
           return { x: dx, y: 0 };
         }
@@ -701,9 +701,9 @@
       function sortedButtonsForExit(btns){
         const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
         if(isPortrait()){
-          rects.sort((u,v) => v.r.left - u.r.left);  // rechts, midden, links
+          rects.sort((u,v) => v.r.left - u.r.left);  /* rechts, midden, links */
         }else{
-          rects.sort((u,v) => v.r.top - u.r.top);    // onder, midden, boven
+          rects.sort((u,v) => v.r.top - u.r.top);    /* onder, midden, boven */
         }
         return rects.map(x => x.b);
       }
@@ -713,8 +713,7 @@
         if(!btns.length) return;
 
         hideAnswers();
-        await raf();
-        await raf();
+        await raf(); await raf();
 
         btns.forEach(btn => {
           const v = slideVectorForButton(btn);
@@ -725,8 +724,8 @@
         showAnswers();
         await raf();
 
-        const ms = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 980;
-        const easing = getComputedStyle(document.documentElement).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
+        const ms = parseFloat(getComputedStyle(cssRoot).getPropertyValue("--slideMs")) || 980;
+        const easing = getComputedStyle(cssRoot).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
           btn.animate(
@@ -738,7 +737,7 @@
           );
         });
 
-        await wait(ms + 90*(btns.length-1) + 40);
+        await wait(ms + 90*(btns.length-1) + 60);
 
         btns.forEach(btn => {
           btn.style.transform = "translate(0px, 0px)";
@@ -746,12 +745,11 @@
         });
       }
 
-      async function animateOutButtons(){
-        const btns = sortedButtonsForExit([...answersEl.querySelectorAll(".ansBtn")]);
+      async function animateOutButtons(btns, staggerMs){
         if(!btns.length) return;
 
-        const ms = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 980;
-        const easing = getComputedStyle(document.documentElement).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
+        const ms = parseFloat(getComputedStyle(cssRoot).getPropertyValue("--slideMs")) || 980;
+        const easing = getComputedStyle(cssRoot).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
           const v = slideVectorForButton(btn);
@@ -760,25 +758,13 @@
               { transform: "translate(0px, 0px)", opacity: 1 },
               { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
             ],
-            { duration: ms, easing, fill: "forwards", delay: i * 140 }
+            { duration: ms, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
           );
         });
 
-        await wait(ms + 140*(btns.length-1) + 40);
+        await wait(ms + (staggerMs ?? 140)*(btns.length-1) + 80);
 
-        btns.forEach(btn => {
-          btn.style.opacity = "0";
-        });
-
-        hideAnswers();
-      }
-
-      async function showChosenThenCorrect(chosen, correct){
-        setBoard(svgForDots(patternLevel1(chosen), {dotRadius: 16}));
-        await wait(900);
-        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
-        await wait(900);
-        clearBoard();
+        btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
       /* Game flow */
@@ -791,14 +777,16 @@
         locked = true;
 
         hideAnswers();
+        answersEl.innerHTML = "";
         clearBoard();
-        await wait(180);
+
+        await wait(160);
 
         setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
         await wait(flashMs);
 
         clearBoard();
-        await wait(300);
+        await wait(260);
 
         renderAnswers(correct, onPick);
         await animateInButtons();
@@ -823,22 +811,45 @@
 
           setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
           await wait(520);
+          dissolveBoard(260);
 
-          await animateOutButtons();
+          const exitOrder = sortedButtonsForExit(all);
+          await animateOutButtons(exitOrder, 140);
 
-          clearBoard();
+          hideAnswers();
           all.forEach(b => b.style.pointerEvents = "");
+          await wait(160);
 
           nextRound();
           return;
         }
 
+        /* FOUT: jouw 5 stappen */
         beep("no");
 
-        await showChosenThenCorrect(value, correct);
+        const notChosen = all.filter(b => b !== btn);
+        const chosen = btn;
 
-        await animateOutButtons();
+        /* 1) niet gekozen weg, gekozen blijft en kleurt pastel rood */
+        chosen.classList.add("wrongHold");
+        await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
+        /* 2) in vraagvenster direct het juiste antwoord, daarna dissolve */
+        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        await wait(1200); /* 1 tot 2 tellen, hier 1.2s */
+        dissolveBoard(320);
+
+        /* 3) verkeerde antwoordknop schuift weg */
+        await wait(120);
+        await animateOutButtons([chosen], 0);
+        chosen.classList.remove("wrongHold");
+
+        hideAnswers();
+
+        /* 4) korte wachttijd, daarna flitskaart in vraagkader */
+        await wait(240);
+
+        /* 5) antwoordknoppen schuiven in beeld (nieuwe ronde) */
         all.forEach(b => b.style.pointerEvents = "");
         nextRound();
       }
@@ -858,19 +869,20 @@
         flashMs = Number(flashMsRange.value);
         flashMsValue.textContent = String(flashMs);
       });
+
       newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
-      testWrongBtn.addEventListener("click", () => {
+      testWrongBtn.addEventListener("click", async () => {
         beep("tap");
         if(!started || locked) return;
         const wrong = correct === 6 ? 1 : correct + 1;
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns[0]) onPick(btns[0], wrong);
+        if(btns[0]) await onPick(btns[0], wrong);
       });
-      testGoodBtn.addEventListener("click", () => {
+      testGoodBtn.addEventListener("click", async () => {
         beep("tap");
         if(!started || locked) return;
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns[0]) onPick(btns[0], correct);
+        if(btns[0]) await onPick(btns[0], correct);
       });
 
       /* Start */
@@ -902,16 +914,20 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
-      /* Reflow guard, voorkomt schokken na draaien */
+      /* Reflow guard, voorkomt “schok” na draaien */
       let reflowTimer = null;
       function onReflow(){
         if(!started) return;
         if(reflowTimer) clearTimeout(reflowTimer);
-        reflowTimer = setTimeout(() => {
+        reflowTimer = setTimeout(async () => {
+          locked = true;
           hideAnswers();
+          answersEl.innerHTML = "";
           clearBoard();
+          await wait(120);
           renderAnswers(correct, onPick);
-          animateInButtons();
+          await animateInButtons();
+          locked = false;
         }, 220);
       }
       window.addEventListener("resize", onReflow);
