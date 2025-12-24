@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Slim Kijken</title>
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#111b33;
+      --card:#16244a;
+      --card2:#0f1a37;
+      --ink:#eaf0ff;
+      --muted:#a8b6e6;
+      --ok:#46e38a;
+      --no:#ff5b7a;
+      --accent:#7aa7ff;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --r:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--ink);
+      background: radial-gradient(1200px 700px at 20% 20%, #1a2a5a 0%, var(--bg1) 45%, #070b14 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app{
+      width:min(980px, 100%);
+      min-height:min(650px, 92vh);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:16px 18px;
+      background: linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,0));
+    }
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      font-weight:700; letter-spacing:.2px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+      font-weight:650;
+      font-size:14px;
+    }
+    .pill b{color:var(--ink)}
+    .content{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      height:calc(100% - 62px);
+    }
+    .screen{
+      flex:1;
+      display:none;
+      gap:16px;
+      align-items:stretch;
+    }
+    .screen.active{display:flex}
+    .panel{
+      background: rgba(15,26,55,.70);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:var(--r);
+      padding:18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+    }
+    .panel h1{
+      margin:0 0 10px 0;
+      font-size:34px;
+      line-height:1.05;
+      letter-spacing:.2px;
+    }
+    .panel p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.35;
+    }
+    .bigCenter{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      gap:18px;
+      padding:30px;
+    }
+    .cta{
+      width:min(420px, 95%);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+    }
+    button{
+      border:none;
+      cursor:pointer;
+      outline:none;
+      font: inherit;
+      color:inherit;
+      background:none;
+    }
+    .btnPrimary{
+      width:100%;
+      padding:18px 18px;
+      border-radius:18px;
+      background: linear-gradient(135deg, rgba(122,167,255,1), rgba(122,167,255,.65));
+      color:#06102b;
+      font-weight:900;
+      letter-spacing:.2px;
+      box-shadow: 0 14px 30px rgba(122,167,255,.18);
+      transition: transform .08s ease;
+    }
+    .btnPrimary:active{transform: scale(.98)}
+    .btnGhost{
+      width:100%;
+      padding:14px 16px;
+      border-radius:18px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--ink);
+      font-weight:850;
+      transition: transform .08s ease;
+    }
+    .btnGhost:active{transform: scale(.98)}
+    .btnGhost[disabled]{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none;
+    }
+    .levelGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:14px;
+      width:min(720px, 100%);
+    }
+    .levelCard{
+      padding:16px;
+      border-radius:22px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .levelCard .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .levelCard .title{
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .tag{
+      padding:8px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      font-weight:800;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .tag.ok{color:rgba(70,227,138,.95); border-color:rgba(70,227,138,.35)}
+    .tag.lock{color:rgba(255,255,255,.65)}
+    .mini{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.3;
+    }
+
+    /* Game layout */
+    .gameWrap{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .arena{
+      flex:1;
+      border-radius:26px;
+      background: radial-gradient(900px 520px at 50% 20%, rgba(122,167,255,.20), rgba(0,0,0,0) 60%),
+                  linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .flashBoard{
+      width:min(520px, 88%);
+      aspect-ratio: 1.35 / 1;
+      border-radius:26px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .flashBoard::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(420px 240px at 50% 20%, rgba(255,255,255,.12), rgba(0,0,0,0) 70%);
+      pointer-events:none;
+    }
+    .hintPulse{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .15s ease;
+    }
+    .hintPulse.show{opacity:1}
+    .hintBubble{
+      padding:10px 14px;
+      border-radius:999px;
+      background: rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      color:rgba(255,255,255,.90);
+      font-weight:900;
+      letter-spacing:.2px;
+      font-size:14px;
+      backdrop-filter: blur(6px);
+    }
+
+    .answers{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap:12px;
+    }
+    .ansBtn{
+      border-radius:22px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      padding:14px;
+      min-height:130px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: transform .08s ease, border-color .18s ease, background .18s ease;
+    }
+    .ansBtn:active{transform: scale(.985)}
+    .ansBtn.correct{
+      background: rgba(70,227,138,.12);
+      border-color: rgba(70,227,138,.45);
+    }
+    .ansBtn.wrong{
+      background: rgba(255,91,122,.12);
+      border-color: rgba(255,91,122,.45);
+    }
+
+    .footerRow{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .meter{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      color:var(--muted);
+      font-weight:850;
+      font-size:14px;
+    }
+    .stars{
+      display:flex; gap:6px; align-items:center;
+    }
+    .star{
+      width:14px; height:14px;
+      border-radius:50%;
+      background: rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.20);
+    }
+    .star.on{
+      background: rgba(122,167,255,.95);
+      border-color: rgba(122,167,255,.65);
+    }
+    .backBtn{
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:900;
+    }
+
+    /* Hidden settings overlay */
+    .overlay{
+      position:absolute;
+      inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+    .overlay.show{display:flex}
+    .settings{
+      width:min(680px, 100%);
+      border-radius:26px;
+      background: rgba(15,26,55,.92);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+    .settings h2{
+      margin:0 0 10px 0;
+      font-size:22px;
+      font-weight:950;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:12px;
+    }
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      color:var(--muted);
+      font-weight:800;
+      font-size:14px;
+    }
+    input[type="range"]{
+      width:100%;
+    }
+    .settings .row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-top:12px;
+    }
+    .smallBtn{
+      padding:12px 14px;
+      border-radius:16px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:900;
+    }
+
+    /* Dot rendering helpers */
+    .svgWrap{width:100%; height:100%; position:relative; z-index:2;}
+    .shake{
+      animation: shake .22s linear 1;
+    }
+    @keyframes shake{
+      0%{transform: translateX(0)}
+      25%{transform: translateX(-6px)}
+      50%{transform: translateX(6px)}
+      75%{transform: translateX(-4px)}
+      100%{transform: translateX(0)}
+    }
+
+    /* Corner hotspot for settings */
+    .hotspot{
+      position:absolute;
+      top:0;
+      right:0;
+      width:52px;
+      height:52px;
+      opacity:0;
+    }
+
+    @media (max-width: 720px){
+      .answers{grid-template-columns: 1fr; }
+      .ansBtn{min-height:110px}
+      .levelGrid{grid-template-columns: 1fr}
+      .panel h1{font-size:30px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="hotspot" id="hotspot" title=""></div>
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="pill"><b>👀</b> Slim Kijken</div>
+      </div>
+      <div class="pill" id="statusPill"><span>Level</span> <b id="pillLevel">1</b> <span>•</span> <span id="pillMode">klaar</span></div>
+    </div>
+
+    <div class="content">
+      <!-- START -->
+      <div class="screen active" id="screenStart">
+        <div class="panel bigCenter">
+          <h1>Kijk, onthoud, kies</h1>
+          <p>Je ziet stippen heel kort. Daarna kies je wat je zag.</p>
+          <div class="cta">
+            <button class="btnPrimary" id="btnStart">Start ▶</button>
+            <button class="btnGhost" id="btnToLevels">Levels</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEVELS -->
+      <div class="screen" id="screenLevels">
+        <div class="panel bigCenter" style="gap:14px;">
+          <h1>Kies een level</h1>
+          <p>Level 1 is snel herkennen. Level 2 is slim doortellen met twee groepjes.</p>
+
+          <div class="levelGrid">
+            <button class="levelCard" id="pickL1">
+              <div class="row">
+                <div class="title">Level 1</div>
+                <div class="tag ok" id="tagL1">open</div>
+              </div>
+              <div class="mini">Dobbelsteenpatronen, 1 tot en met 6.</div>
+            </button>
+
+            <button class="levelCard" id="pickL2">
+              <div class="row">
+                <div class="title">Level 2</div>
+                <div class="tag lock" id="tagL2">slot</div>
+              </div>
+              <div class="mini">Twee groepjes, bijvoorbeeld 3 en 2. Eerst grootste groep, daarna erbij.</div>
+            </button>
+          </div>
+
+          <div class="cta" style="max-width:420px;">
+            <button class="btnGhost" id="btnBackFromLevels">Terug</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME -->
+      <div class="screen" id="screenGame">
+        <div class="gameWrap">
+          <div class="arena">
+            <div class="flashBoard" id="flashBoard" aria-label="flitsbord">
+              <div class="svgWrap" id="flashSvg"></div>
+              <div class="hintPulse" id="hintPulse"><div class="hintBubble" id="hintText">kijk</div></div>
+            </div>
+          </div>
+
+          <div class="answers" id="answers">
+            <!-- answer buttons injected -->
+          </div>
+
+          <div class="footerRow">
+            <div class="meter">
+              <span>Ronde</span>
+              <b id="roundNum">1</b>
+              <span>•</span>
+              <span>Tijd</span>
+              <b id="flashMs">800</b><span>ms</span>
+            </div>
+
+            <div class="stars" id="stars" aria-label="voortgang">
+              <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+            </div>
+
+            <button class="backBtn" id="btnBackToLevels">Levels</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS OVERLAY (long press top right corner) -->
+    <div class="overlay" id="overlay">
+      <div class="settings">
+        <h2>Instellingen</h2>
+        <div class="grid2">
+          <label>
+            Starttijd Level 1 (ms)
+            <input type="range" min="500" max="1200" step="50" id="setL1" />
+            <span id="valL1"></span>
+          </label>
+          <label>
+            Starttijd Level 2 (ms)
+            <input type="range" min="700" max="1600" step="50" id="setL2" />
+            <span id="valL2"></span>
+          </label>
+          <label>
+            Max tijd (ms)
+            <input type="range" min="1200" max="2400" step="50" id="setMax" />
+            <span id="valMax"></span>
+          </label>
+          <label>
+            Min tijd (ms)
+            <input type="range" min="350" max="900" step="50" id="setMin" />
+            <span id="valMin"></span>
+          </label>
+        </div>
+        <div class="row">
+          <button class="smallBtn" id="btnReset">Reset voortgang</button>
+          <button class="smallBtn" id="btnCloseOverlay">Sluiten</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------------------------
+     State and persistence
+  ----------------------------*/
+  const LS_KEY = "slimkijken_v1";
+  const defaultData = {
+    unlockedL2: false,
+    playedL1Once: false,
+    settings: {
+      l1Start: 800,
+      l2Start: 1200,
+      minMs: 500,
+      maxMs: 2000
+    },
+    logs: [] // lightweight process log
+  };
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return structuredClone(defaultData);
+      const data = JSON.parse(raw);
+      // merge shallow
+      return {
+        ...structuredClone(defaultData),
+        ...data,
+        settings: { ...structuredClone(defaultData.settings), ...(data.settings||{}) }
+      };
+    }catch(e){
+      return structuredClone(defaultData);
+    }
+  }
+  function saveData(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
+
+  let DATA = loadData();
+
+  /* ---------------------------
+     DOM
+  ----------------------------*/
+  const screens = {
+    start: document.getElementById("screenStart"),
+    levels: document.getElementById("screenLevels"),
+    game: document.getElementById("screenGame")
+  };
+  const statusPill = document.getElementById("statusPill");
+  const pillLevel = document.getElementById("pillLevel");
+  const pillMode  = document.getElementById("pillMode");
+
+  const btnStart = document.getElementById("btnStart");
+  const btnToLevels = document.getElementById("btnToLevels");
+  const btnBackFromLevels = document.getElementById("btnBackFromLevels");
+  const btnBackToLevels = document.getElementById("btnBackToLevels");
+
+  const pickL1 = document.getElementById("pickL1");
+  const pickL2 = document.getElementById("pickL2");
+  const tagL2 = document.getElementById("tagL2");
+
+  const flashBoard = document.getElementById("flashBoard");
+  const flashSvg = document.getElementById("flashSvg");
+  const answersEl = document.getElementById("answers");
+
+  const roundNumEl = document.getElementById("roundNum");
+  const flashMsEl = document.getElementById("flashMs");
+  const starsEl = document.getElementById("stars");
+  const hintPulse = document.getElementById("hintPulse");
+  const hintText = document.getElementById("hintText");
+
+  const overlay = document.getElementById("overlay");
+  const hotspot = document.getElementById("hotspot");
+  const setL1 = document.getElementById("setL1");
+  const setL2 = document.getElementById("setL2");
+  const setMin = document.getElementById("setMin");
+  const setMax = document.getElementById("setMax");
+  const valL1 = document.getElementById("valL1");
+  const valL2 = document.getElementById("valL2");
+  const valMin = document.getElementById("valMin");
+  const valMax = document.getElementById("valMax");
+  const btnCloseOverlay = document.getElementById("btnCloseOverlay");
+  const btnReset = document.getElementById("btnReset");
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove("active"));
+    screens[name].classList.add("active");
+  }
+
+  function updateLevelLockUI(){
+    if(DATA.unlockedL2){
+      pickL2.disabled = false;
+      tagL2.textContent = "open";
+      tagL2.classList.remove("lock");
+      tagL2.classList.add("ok");
+    }else{
+      pickL2.disabled = true;
+      tagL2.textContent = "slot";
+      tagL2.classList.add("lock");
+      tagL2.classList.remove("ok");
+    }
+  }
+
+  /* ---------------------------
+     Sound via WebAudio
+  ----------------------------*/
+  let audioCtx = null;
+  function beep(type){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = audioCtx.currentTime;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+
+      o.type = "sine";
+      if(type === "ok") o.frequency.setValueAtTime(740, t);
+      if(type === "no") o.frequency.setValueAtTime(220, t);
+      if(type === "tap") o.frequency.setValueAtTime(520, t);
+
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
+
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + 0.22);
+    }catch(e){}
+  }
+
+  /* ---------------------------
+     Patterns
+     We render dots as SVG circles in a 3x3 grid area for clarity.
+     Level 1 uses standard dice faces (1..6).
+     Level 2 uses two clusters. Each cluster itself is a dice face (1..6),
+     placed left and right. The sum is the answer.
+  ----------------------------*/
+
+  // Dot positions in a 3x3 grid, normalized 0..1
+  const P = {
+    tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
+    ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
+    bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
+  };
+
+  const diceFaces = {
+    1: [P.mc],
+    2: [P.tl, P.br],
+    3: [P.tl, P.mc, P.br],
+    4: [P.tl, P.tr, P.bl, P.br],
+    5: [P.tl, P.tr, P.mc, P.bl, P.br],
+    6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+  };
+
+  function svgForDots(dotSets, opts = {}){
+    const {
+      dotRadius = 10,
+      dotColor = "rgba(234,240,255,.96)",
+      stroke = "rgba(0,0,0,.25)",
+      strokeW = 1.2,
+      glow = true,
+      highlight = null // index of dotSets to highlight, else null
+    } = opts;
+
+    const w = 520, h = 380;
+    const r = dotRadius;
+
+    // dotSets is array of { dots: [[x,y],...], box: {x0,y0,x1,y1} } in normalized coords
+    // We convert each dot to absolute coords inside its box.
+    const circles = [];
+    dotSets.forEach((set, idx) => {
+      const box = set.box;
+      const isHi = highlight === idx;
+      const alpha = highlight === null ? 1 : (isHi ? 1 : 0.22);
+      set.dots.forEach(([x,y]) => {
+        const X = (box.x0 + x*(box.x1-box.x0)) * w;
+        const Y = (box.y0 + y*(box.y1-box.y0)) * h;
+        circles.push({X,Y,alpha,hi:isHi});
+      });
+    });
+
+    const filter = glow ? `
+      <defs>
+        <filter id="g">
+          <feGaussianBlur stdDeviation="2.3" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>` : "";
+
+    const cs = circles.map(c => `
+      <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${r}"
+        fill="${dotColor}"
+        fill-opacity="${(0.88*c.alpha).toFixed(3)}"
+        stroke="${stroke}" stroke-width="${strokeW}"
+        ${glow ? `filter="url(#g)"` : "" }
+      />`).join("");
+
+    return `
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
+        ${filter}
+        ${cs}
+      </svg>`;
+  }
+
+  function patternLevel1(n){
+    // single set, full box
+    return [{
+      dots: diceFaces[n],
+      box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+    }];
+  }
+
+  function patternLevel2(a, b){
+    // two sets in left and right boxes, both use dice face layouts
+    return [
+      { dots: diceFaces[a], box:{x0:0.10, y0:0.18, x1:0.48, y1:0.82} },
+      { dots: diceFaces[b], box:{x0:0.52, y0:0.18, x1:0.90, y1:0.82} }
+    ];
+  }
+
+  /* ---------------------------
+     Game engine
+  ----------------------------*/
+  let GAME = null;
+
+  function newGame(level){
+    const s = DATA.settings;
+
+    const startMs = (level === 1) ? s.l1Start : s.l2Start;
+
+    GAME = {
+      level,
+      flashMs: clamp(startMs, s.minMs, s.maxMs),
+      round: 1,
+      streak: 0,          // correct in a row
+      stars: 0,           // 0..5
+      locked: false,      // to prevent double taps
+      phase: "ready",     // ready, flash, recall, feedback
+      current: null,      // { correct, renderFlash, renderOpt, meta }
+      wrongCountThisItem: 0
+    };
+
+    pillLevel.textContent = String(level);
+    pillMode.textContent = "klaar";
+
+    renderStars();
+    updateMeter();
+    buildNextRound();
+  }
+
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+  function updateMeter(){
+    roundNumEl.textContent = String(GAME.round);
+    flashMsEl.textContent = String(Math.round(GAME.flashMs));
+  }
+
+  function renderStars(){
+    const nodes = [...starsEl.querySelectorAll(".star")];
+    nodes.forEach((n, i) => n.classList.toggle("on", i < GAME.stars));
+  }
+
+  function clearAnswers(){
+    answersEl.innerHTML = "";
+  }
+
+  function showHint(text){
+    hintText.textContent = text;
+    hintPulse.classList.add("show");
+    setTimeout(() => hintPulse.classList.remove("show"), 700);
+  }
+
+  function setBoard(svgHtml){
+    flashSvg.innerHTML = svgHtml;
+  }
+
+  async function buildNextRound(){
+    clearAnswers();
+    flashBoard.classList.remove("shake");
+    hintPulse.classList.remove("show");
+
+    GAME.phase = "ready";
+    GAME.locked = true;
+    pillMode.textContent = "kijk";
+
+    // create item
+    let item;
+    if(GAME.level === 1){
+      const n = randInt(1, 6);
+      item = makeItemLevel1(n);
+    }else{
+      item = makeItemLevel2();
+    }
+    GAME.current = item;
+    GAME.wrongCountThisItem = 0;
+
+    // quiet moment before flash
+    setBoard(svgForDots([], {glow:false})); // empty
+    await wait(500);
+
+    await doFlashAndAsk();
+  }
+
+  function makeItemLevel1(n){
+    const correct = n;
+    const dotSets = patternLevel1(n);
+    const flash = () => svgForDots(dotSets);
+    const option = () => svgForDots(patternLevel1(n), {dotRadius:11, glow:false});
+    return { correct, flash, option, meta:{n} };
+  }
+
+  function makeItemLevel2(){
+    // pick two groups with sum up to 7 (kleuter-proof)
+    // ensure a is the largest group for learning, a >= b
+    const a = randInt(2, 5);
+    const b = randInt(1, Math.min(3, 7 - a));
+    const big = Math.max(a,b);
+    const small = Math.min(a,b);
+    const correct = big + small;
+
+    const dotSets = patternLevel2(big, small);
+    const flash = () => svgForDots(dotSets);
+    const option = (x,y) => svgForDots(patternLevel2(x,y), {dotRadius:11, glow:false});
+    return { correct, flash, option, meta:{big, small} };
+  }
+
+  async function doFlashAndAsk(){
+    GAME.phase = "flash";
+    // show flash
+    setBoard(GAME.current.flash());
+    await wait(GAME.flashMs);
+
+    // forced empty moment
+    setBoard(svgForDots([], {glow:false}));
+    await wait(320);
+
+    // build answers
+    GAME.phase = "recall";
+    pillMode.textContent = "kies";
+    renderAnswerButtons();
+
+    GAME.locked = false;
+  }
+
+  function renderAnswerButtons(){
+    const correct = GAME.current.correct;
+
+    // create plausible distractors: within +-2 and within 1..7
+    const options = new Set([correct]);
+    const cap = (GAME.level === 1) ? 6 : 7;
+
+    while(options.size < 3){
+      const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
+      const v = clamp(correct + delta, 1, cap);
+      options.add(v);
+    }
+    const arr = shuffle([...options]);
+
+    answersEl.innerHTML = "";
+    arr.forEach(v => {
+      const btn = document.createElement("button");
+      btn.className = "ansBtn";
+      btn.setAttribute("aria-label", "antwoord");
+      btn.addEventListener("click", () => onPickAnswer(btn, v));
+
+      // render option image
+      let svg;
+      if(GAME.level === 1){
+        svg = svgForDots(patternLevel1(v), {dotRadius:12, glow:false});
+      }else{
+        // Show as two groupjes that sum to v, but keep it simple:
+        // We choose a stable split with largest group first, using dice faces 1..6
+        const big = Math.min(6, Math.max(2, Math.ceil(v/2)));
+        const small = v - big;
+        const bb = Math.max(big, small);
+        const ss = Math.min(big, small);
+        svg = svgForDots(patternLevel2(bb, ss), {dotRadius:12, glow:false});
+      }
+
+      btn.innerHTML = `<div style="width:100%; height:100%;">${svg}</div>`;
+      answersEl.appendChild(btn);
+    });
+  }
+
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  async function onPickAnswer(btn, value){
+    if(GAME.locked) return;
+    GAME.locked = true;
+
+    const correct = GAME.current.correct;
+    const now = Date.now();
+
+    if(value === correct){
+      beep("ok");
+      btn.classList.add("correct");
+      GAME.streak += 1;
+
+      // stars: every correct answer adds progress, but a small celebration at 5
+      GAME.stars = Math.min(5, GAME.stars + 1);
+      renderStars();
+
+      // adaptive speed: after 3 correct in a row, slightly faster
+      if(GAME.streak >= 3){
+        GAME.flashMs = clamp(GAME.flashMs - 100, DATA.settings.minMs, DATA.settings.maxMs);
+        GAME.streak = 0;
+      }
+
+      // show only the amount briefly (no text)
+      setBoard(GAME.current.flash());
+      pillMode.textContent = "goed";
+      await wait(550);
+
+      logEvent({t:now, level:GAME.level, ok:true, correct, chosen:value, flashMs:GAME.flashMs, help:false});
+
+      // unlock level 2 after finishing 5 stars in level 1 at least once
+      if(GAME.level === 1){
+        DATA.playedL1Once = true;
+        if(GAME.stars >= 5){
+          DATA.unlockedL2 = true;
+        }
+        saveData();
+        updateLevelLockUI();
+      }
+
+      // next round
+      GAME.round += 1;
+      updateMeter();
+
+      // keep sessions short and sweet: after 10 rounds, go back to levels
+      if(GAME.round > 10){
+        showScreen("levels");
+        pillMode.textContent = "klaar";
+        return;
+      }
+
+      await buildNextRound();
+      return;
+    }
+
+    // wrong
+    beep("no");
+    btn.classList.add("wrong");
+    flashBoard.classList.add("shake");
+    GAME.streak = 0;
+    GAME.wrongCountThisItem += 1;
+
+    logEvent({t:now, level:GAME.level, ok:false, correct, chosen:value, flashMs:GAME.flashMs, help: (GAME.wrongCountThisItem>=2)});
+
+    // adapt slower
+    GAME.flashMs = clamp(GAME.flashMs + 200, DATA.settings.minMs, DATA.settings.maxMs);
+    updateMeter();
+
+    pillMode.textContent = "nog eens";
+
+    await wait(350);
+    flashBoard.classList.remove("shake");
+
+    // help protocol:
+    // first wrong: show full again a bit longer, then ask again
+    // second wrong: show guided look: largest group first, then add the rest
+    if(GAME.wrongCountThisItem === 1){
+      showHint("kijk nog eens");
+      setBoard(GAME.current.flash());
+      await wait(Math.min(DATA.settings.maxMs, GAME.flashMs + 250));
+      setBoard(svgForDots([], {glow:false}));
+      await wait(320);
+
+      // rebuild answers
+      renderAnswerButtons();
+      GAME.locked = false;
+      pillMode.textContent = "kies";
+      return;
+    }
+
+    // second wrong or more, guided look
+    if(GAME.level === 1){
+      // Level 1 guided look: just repeat slightly longer, no per-dot animation
+      showHint("rustig kijken");
+      setBoard(GAME.current.flash());
+      await wait(Math.min(DATA.settings.maxMs, GAME.flashMs + 350));
+      setBoard(svgForDots([], {glow:false}));
+      await wait(320);
+      renderAnswerButtons();
+      GAME.locked = false;
+      pillMode.textContent = "kies";
+      return;
+    }
+
+    // Level 2 guided look: biggest group first, then add
+    const big = GAME.current.meta.big;
+    const small = GAME.current.meta.small;
+
+    showHint("eerst groot, dan erbij");
+
+    // Step 1: show only biggest group on the left, then add the other
+    const step1 = svgForDots(
+      [{dots: diceFaces[big], box:{x0:0.10, y0:0.18, x1:0.48, y1:0.82}}],
+      {glow:true}
+    );
+    setBoard(step1);
+    await wait(650);
+
+    // Step 2: show both groups
+    const step2 = svgForDots(patternLevel2(big, small), {glow:true});
+    setBoard(step2);
+    await wait(800);
+
+    // empty and choose again
+    setBoard(svgForDots([], {glow:false}));
+    await wait(320);
+
+    renderAnswerButtons();
+    GAME.locked = false;
+    pillMode.textContent = "kies";
+  }
+
+  function logEvent(e){
+    // keep it small
+    DATA.logs.push(e);
+    if(DATA.logs.length > 250) DATA.logs.splice(0, DATA.logs.length - 250);
+    saveData();
+  }
+
+  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  /* ---------------------------
+     Navigation
+  ----------------------------*/
+  btnStart.addEventListener("click", () => {
+    beep("tap");
+    showScreen("levels");
+    updateLevelLockUI();
+  });
+
+  btnToLevels.addEventListener("click", () => {
+    beep("tap");
+    showScreen("levels");
+    updateLevelLockUI();
+  });
+
+  btnBackFromLevels.addEventListener("click", () => {
+    beep("tap");
+    showScreen("start");
+    pillMode.textContent = "klaar";
+  });
+
+  btnBackToLevels.addEventListener("click", () => {
+    beep("tap");
+    showScreen("levels");
+    pillMode.textContent = "klaar";
+    updateLevelLockUI();
+  });
+
+  pickL1.addEventListener("click", () => {
+    beep("tap");
+    showScreen("game");
+    newGame(1);
+  });
+
+  pickL2.addEventListener("click", () => {
+    if(!DATA.unlockedL2) return;
+    beep("tap");
+    showScreen("game");
+    newGame(2);
+  });
+
+  /* ---------------------------
+     Hidden settings via long press
+  ----------------------------*/
+  let pressTimer = null;
+  hotspot.addEventListener("touchstart", startPress, {passive:true});
+  hotspot.addEventListener("mousedown", startPress);
+  hotspot.addEventListener("touchend", endPress);
+  hotspot.addEventListener("mouseup", endPress);
+  hotspot.addEventListener("mouseleave", endPress);
+
+  function startPress(){
+    pressTimer = setTimeout(() => {
+      openSettings();
+    }, 650);
+  }
+  function endPress(){
+    if(pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+  }
+
+  function openSettings(){
+    // sync sliders
+    setL1.value = DATA.settings.l1Start;
+    setL2.value = DATA.settings.l2Start;
+    setMin.value = DATA.settings.minMs;
+    setMax.value = DATA.settings.maxMs;
+    syncVals();
+    overlay.classList.add("show");
+  }
+
+  function closeSettings(){
+    overlay.classList.remove("show");
+  }
+
+  function syncVals(){
+    valL1.textContent = String(DATA.settings.l1Start);
+    valL2.textContent = String(DATA.settings.l2Start);
+    valMin.textContent = String(DATA.settings.minMs);
+    valMax.textContent = String(DATA.settings.maxMs);
+  }
+
+  function commitSettings(){
+    DATA.settings.l1Start = Number(setL1.value);
+    DATA.settings.l2Start = Number(setL2.value);
+    DATA.settings.minMs = Number(setMin.value);
+    DATA.settings.maxMs = Number(setMax.value);
+
+    // ensure min <= max
+    if(DATA.settings.minMs > DATA.settings.maxMs){
+      const tmp = DATA.settings.minMs;
+      DATA.settings.minMs = DATA.settings.maxMs;
+      DATA.settings.maxMs = tmp;
+    }
+
+    saveData();
+    syncVals();
+  }
+
+  [setL1,setL2,setMin,setMax].forEach(el => {
+    el.addEventListener("input", () => {
+      commitSettings();
+    });
+  });
+
+  btnCloseOverlay.addEventListener("click", () => {
+    beep("tap");
+    closeSettings();
+  });
+
+  overlay.addEventListener("click", (e) => {
+    if(e.target === overlay) closeSettings();
+  });
+
+  btnReset.addEventListener("click", () => {
+    beep("tap");
+    DATA = structuredClone(defaultData);
+    saveData();
+    updateLevelLockUI();
+    closeSettings();
+    showScreen("start");
+    pillMode.textContent = "klaar";
+  });
+
+  /* ---------------------------
+     Init
+  ----------------------------*/
+  updateLevelLockUI();
+  syncVals();
+
+  // ensure game does not start with stale board
+  setBoard(svgForDots([], {glow:false}));
+
+})();
+</script>
+</body>
+</html>
