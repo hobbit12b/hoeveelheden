@@ -13,11 +13,12 @@
       --brand:#e58c74;
       --text:#6f6b68;
 
-      --dash-w:4px;
       --card-radius:28px;
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      --border: rgba(245,180,152,0.85);
+      --border: rgba(245,180,152,0.90);
+      --border-soft: rgba(245,180,152,0.55);
+
       --tile: #ffffff;
 
       --ok: rgba(46,196,122,0.95);
@@ -71,11 +72,12 @@
       transition: background 140ms ease;
     }
 
+    /* scheidingslijn, solide */
     @media (orientation: landscape){
-      .right{ border-left: 6px dashed var(--border); }
+      .right{ border-left: 6px solid rgba(245,180,152,0.55); }
     }
     @media (orientation: portrait){
-      .right{ border-top: 6px dashed var(--border); }
+      .right{ border-top: 6px solid rgba(245,180,152,0.55); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -101,6 +103,7 @@
       flex: 0 0 auto;
       font-size: 30px;
       line-height: 1;
+      transition: transform 90ms ease, filter 120ms ease;
     }
     .homeBtn:active,
     .tuneBtn:active{ transform: scale(0.98); }
@@ -132,11 +135,12 @@
       min-height: 0;
     }
 
+    /* buitenkader, solide */
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: var(--dash-w) dashed var(--border);
+      border: 4px solid rgba(245,180,152,0.70);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -147,10 +151,11 @@
       padding: 18px;
     }
 
-    .gameCard.shake{ animation: wiggle 220ms ease; }
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
+
+    .gameCard.shake{ animation: wiggle 220ms ease; }
     @keyframes wiggle{
       0%{ transform: translateX(0); }
       28%{ transform: translateX(-6px); }
@@ -158,22 +163,23 @@
       100%{ transform: translateX(0); }
     }
 
+    /* binnenbord */
     .flashBoard{
       width: min(520px, 88%);
       aspect-ratio: 1.35 / 1;
       border-radius: 26px;
       background: rgba(255,255,255,0.92);
-      border: 2px solid rgba(245,180,152,0.55);
+      border: 2px solid var(--border-soft);
       display:flex;
       align-items:center;
       justify-content:center;
       position:relative;
       overflow:hidden;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.08);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.06);
     }
     .flashSvg{ width:100%; height:100%; }
 
-    /* Rechts: alleen antwoorden + kleine fase label */
+    /* rechts */
     .rightInner{
       position:absolute;
       inset:0;
@@ -188,30 +194,10 @@
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap: 14px;
+      gap: 12px;
     }
 
-    .phaseLine{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      font-weight: 900;
-      font-size: 20px;
-      color: rgba(123,120,118,0.92);
-      text-transform: lowercase;
-      letter-spacing: 0.2px;
-    }
-    .phaseDot{
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: rgba(229,140,116,0.95);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.10);
-    }
-
-    .phaseLook .phaseDot{ background: rgba(120,171,255,0.95); }
-    .phaseChoose .phaseDot{ background: rgba(229,140,116,0.95); }
-
+    /* antwoorden zichtbaar of verborgen */
     .answerGrid{
       width: 100%;
       display:grid;
@@ -223,23 +209,24 @@
       .answerGrid{ grid-template-columns: 1fr; }
     }
 
-    .phaseLook .answerGrid{
+    .answersHidden .answerGrid{
       opacity: 0;
       pointer-events: none;
       transform: translateY(10px);
     }
-    .phaseChoose .answerGrid{
+    .answersShown .answerGrid{
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);
     }
 
+    /* kaart meer klikbaar */
     .ansBtn{
       appearance:none;
-      border: 4px solid var(--border);
-      background: rgba(255,255,255,0.94);
+      border: 4px solid rgba(245,180,152,0.75);
+      background: rgba(255,255,255,0.96);
       border-radius: 22px;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.10);
+      box-shadow: 0 16px 28px rgba(0,0,0,0.11);
       padding: 14px;
       min-height: 130px;
       display:flex;
@@ -247,19 +234,24 @@
       justify-content:center;
       cursor:pointer;
       transform: translateY(0) scale(1);
-      transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease;
+      transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease, filter 140ms ease;
       position:relative;
       overflow:hidden;
     }
 
+    .ansBtn:hover{
+      filter: brightness(1.02);
+      box-shadow: 0 18px 34px rgba(0,0,0,0.13);
+    }
+
     .ansBtn:active{
       transform: translateY(2px) scale(0.985);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.10);
+      box-shadow: 0 12px 22px rgba(0,0,0,0.10);
     }
 
     .ansBtn:focus-visible{
       outline: none;
-      box-shadow: 0 0 0 6px rgba(229,140,116,0.25), 0 18px 34px rgba(0,0,0,0.12);
+      box-shadow: 0 0 0 6px rgba(229,140,116,0.22), 0 18px 34px rgba(0,0,0,0.12);
       border-color: rgba(229,140,116,0.95);
     }
 
@@ -309,6 +301,7 @@
       font-size: 28px;
       color: #4d4a48;
       text-transform: lowercase;
+      font-weight: 900;
     }
 
     .startCard p{
@@ -335,11 +328,11 @@
   </style>
 </head>
 
-<body class="phaseLook">
+<body class="answersHidden">
   <section class="left" aria-label="Opgave">
     <div class="topbar">
       <button class="homeBtn" id="homeBtn" aria-label="Naar begin" type="button">🏠</button>
-      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
+      <button class="tuneBtn" id="tuneBtn" aria-label="Reset tempo" type="button">⚙️</button>
       <div class="titlePill">slim kijken</div>
     </div>
 
@@ -352,14 +345,10 @@
     </div>
   </section>
 
-  <section class="right" aria-label="Antwoordvak">
+  <section class="right" aria-label="Antwoorden">
     <div class="rightInner">
       <div class="rightWrap">
-        <div class="phaseLine" aria-hidden="true">
-          <span class="phaseDot"></span>
-          <span id="phaseText">kijk</span>
-        </div>
-        <div class="answerGrid" id="answerGrid" aria-label="Antwoorden"></div>
+        <div class="answerGrid" id="answerGrid" aria-label="Keuzes"></div>
       </div>
     </div>
   </section>
@@ -387,12 +376,14 @@
       const flashSvg = document.getElementById("flashSvg");
       const answerGrid = document.getElementById("answerGrid");
       const gameCard = document.getElementById("gameCard");
-      const phaseText = document.getElementById("phaseText");
 
       const SETTINGS = {
         flashMsStart: 800,
         minMs: 450,
-        maxMs: 1600
+        maxMs: 1600,
+
+        wrongHoldMs: 900,     // langer laten zien wat gekozen is
+        wrongPauseAfterMs: 220
       };
 
       let audioCtx = null;
@@ -419,10 +410,9 @@
         }catch(e){}
       }
 
-      function setPhase(name){
-        document.body.classList.remove("phaseLook","phaseChoose");
-        document.body.classList.add(name);
-        phaseText.textContent = (name === "phaseChoose") ? "kies" : "kijk";
+      function showAnswers(show){
+        document.body.classList.toggle("answersShown", !!show);
+        document.body.classList.toggle("answersHidden", !show);
       }
 
       const P = {
@@ -441,7 +431,7 @@
       };
 
       function svgForDots(n, opts = {}){
-        const { dotRadius = 12, dotColor = "rgba(77,74,72,0.80)", glow = false } = opts;
+        const { dotRadius = 12, dotColor = "rgba(77,74,72,0.78)", glow = false } = opts;
 
         const w = 520, h = 380;
         const dots = diceFaces[n] || [];
@@ -512,10 +502,10 @@
       async function doRound(){
         locked = true;
 
-        setPhase("phaseLook");
+        showAnswers(false);
         clearAnswers();
         flashSvg.innerHTML = emptySvg();
-        await wait(320);
+        await wait(260);
 
         currentCorrect = randInt(1,6);
 
@@ -523,12 +513,12 @@
         await wait(flashMs);
 
         flashSvg.innerHTML = emptySvg();
-        await wait(320);
+        await wait(300);
 
         const options = buildOptions(currentCorrect);
         renderAnswersWithReveal(options);
 
-        setPhase("phaseChoose");
+        showAnswers(true);
         locked = false;
       }
 
@@ -555,26 +545,32 @@
 
         beep("no");
         btn.classList.add("wrong");
+
         gameCard.classList.remove("shake");
         void gameCard.offsetHeight;
         gameCard.classList.add("shake");
 
         flashMs = clamp(flashMs + 140, SETTINGS.minMs, SETTINGS.maxMs);
 
-        await wait(220);
+        /* hier zit jouw wens:
+           bij fout blijft de gekozen kaart langer in beeld
+           we verbergen dus niet meteen de antwoorden
+        */
+        await wait(SETTINGS.wrongHoldMs);
 
-        setPhase("phaseLook");
-        clearAnswers();
+        showAnswers(false);
+        await wait(SETTINGS.wrongPauseAfterMs);
 
         flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
-        await wait(Math.min(SETTINGS.maxMs, flashMs + 220));
+        await wait(Math.min(SETTINGS.maxMs, flashMs + 260));
 
         flashSvg.innerHTML = emptySvg();
         await wait(280);
 
         const options = buildOptions(correct);
         renderAnswersWithReveal(options);
-        setPhase("phaseChoose");
+
+        showAnswers(true);
         locked = false;
       }
 
@@ -595,7 +591,7 @@
         locked = true;
         clearAnswers();
         flashSvg.innerHTML = emptySvg();
-        setPhase("phaseLook");
+        showAnswers(false);
         startOverlay.style.display = "flex";
       });
 
@@ -605,7 +601,7 @@
       });
 
       flashSvg.innerHTML = emptySvg();
-      setPhase("phaseLook");
+      showAnswers(false);
     })();
   </script>
 </body>
