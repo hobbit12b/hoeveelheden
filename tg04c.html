@@ -14,38 +14,28 @@
       --text:#6f6b68;
 
       --card-radius:28px;
-      --shadowCard: 0 10px 22px rgba(0,0,0,0.08);
-      --shadowBtn: 0 18px 30px rgba(0,0,0,0.11);
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      --divider: rgba(245,180,152,0.55);
-      --border: rgba(245,180,152,0.70);
+      --line: rgba(245,180,152,0.85);
+      --line2: rgba(245,180,152,0.55);
 
-      --ok: rgba(46,196,122,0.95);
-      --no: rgba(255,91,122,0.95);
+      --ok: #2fb36d;
+      --no: #e44f6c;
 
-      --dir-x: -1;
-      --dir-y:  0;
-      --is-portrait: 0;
+      --scale: 1;
 
-      /* trager en vloeiender */
-      --slideOutDur: 980ms;
-      --slideOutGap: 220ms;
-      --slideInDur: 760ms;
-      --slideInGap: 190ms;
+      /* Motion */
+      --easeOut: cubic-bezier(.18,.84,.26,1);
+      --easeInOut: cubic-bezier(.22,.61,.35,1);
+      --slideMs: 720ms;
 
-      --easeInSoft: cubic-bezier(0.22, 0.95, 0.20, 1);
-      --easeOutSoft: cubic-bezier(0.18, 0.85, 0.18, 1);
-    }
-
-    @media (orientation: portrait){
-      :root{
-        --dir-x: 0;
-        --dir-y: -1;
-        --is-portrait: 1;
-      }
+      /* Portrait tuning (smaller) */
+      --flashPortraitScale: .86;
+      --answersPortraitScale: .90;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
     html, body{
       height:100%;
       margin:0;
@@ -59,12 +49,12 @@
       overflow:hidden;
     }
 
+    /* Layout: landscape split, portrait stacked */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
     }
-
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -77,36 +67,29 @@
       padding: 28px 26px 22px 26px;
       display:flex;
       flex-direction:column;
-      gap: 16px;
+      gap: 18px;
       position: relative;
       overflow:hidden;
       min-height: 0;
     }
-
     @media (orientation: portrait){
-      .left{ padding: 22px; }
+      .left{ padding: 22px; gap: 14px; }
     }
 
     .right{
       background:#ffffff;
       position: relative;
-      min-height: 0;
       overflow:hidden;
-      clip-path: inset(0);
-    }
-
-    .divider{
-      position:absolute;
-      pointer-events:none;
-      background: var(--divider);
-      z-index: 300;
-      left:0; top:0;
+      min-height: 0;
+      transition: background 120ms ease;
+      display:flex;
+      flex-direction:column;
     }
     @media (orientation: landscape){
-      .divider{ width:6px; height:100%; }
+      .right{ border-left: 6px solid var(--line); }
     }
     @media (orientation: portrait){
-      .divider{ width:100%; height:6px; }
+      .right{ border-top: 6px solid var(--line); }
     }
 
     .topbar{
@@ -131,20 +114,22 @@
       flex: 0 0 auto;
       font-size: 30px;
       line-height: 1;
-      transition: transform 90ms ease;
+      transition: transform 120ms var(--easeOut);
     }
     .homeBtn:active,
-    .tuneBtn:active{ transform: scale(0.98); }
+    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+
+    .homeBtn svg{ width: 42px; height: 42px; display:block; }
 
     .titlePill{
       padding: 18px 44px;
       border-radius: 22px;
       background: var(--brand);
       color: #ffffff;
-      font-weight: 900;
+      font-weight: 800;
       font-size: clamp(22px, 2.1vw, 34px);
       letter-spacing: 0.3px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow);
       line-height: 1;
       display:flex;
       align-items:center;
@@ -159,7 +144,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 8px 6px 6px 6px;
+      padding: 10px 6px;
       min-height: 0;
     }
 
@@ -167,169 +152,256 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: 4px solid var(--border);
+      border: 3px solid var(--line);
       border-radius: var(--card-radius);
-      box-shadow: var(--shadowCard);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: hidden;
-      display:grid;
-      place-items:center;
-      padding: 18px;
+      transition: background 160ms ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 14px;
     }
-
     @media (orientation: portrait){
-      .gameCard{ height: min(460px, 40vh); }
+      .gameCard{
+        height: min(410px, 32vh);
+      }
     }
 
-    body.phaseFlash .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(229,140,116,0.18) inset; }
-    body.phaseChoose .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(245,180,152,0.16) inset; }
-    body.phaseFeedbackGood .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(46,196,122,0.16) inset; }
-    body.phaseFeedbackWrong .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(255,91,122,0.14) inset; }
-
-    .gameCard.shake{ animation: wiggle 240ms ease; }
-    @keyframes wiggle{
-      0%{ transform: translateX(0); }
-      28%{ transform: translateX(-6px); }
-      58%{ transform: translateX(5px); }
-      100%{ transform: translateX(0); }
-    }
-
-    /* vraagkader consistent */
+    /* Inner “flash board” */
     .flashBoard{
-      width: min(520px, 88%);
-      aspect-ratio: 1.35 / 1;
-      border-radius: 26px;
-      background: rgba(255,255,255,0.92);
-      border: 2px solid rgba(245,180,152,0.45);
+      width: min(720px, 100%);
+      height: min(420px, 100%);
+      border-radius: 24px;
+      border: 2px solid rgba(245,180,152,0.55);
+      background: #ffffff;
       display:flex;
       align-items:center;
       justify-content:center;
       position:relative;
       overflow:hidden;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.06);
     }
     @media (orientation: portrait){
       .flashBoard{
-        width: min(560px, 92%);
-        aspect-ratio: 1.35 / 1; /* blijft gelijk, dus randen voelen hetzelfde */
-        border-radius: 26px;     /* expliciet houden */
+        transform: scale(var(--flashPortraitScale));
       }
     }
 
-    .flashSvg{ width:100%; height:100%; }
+    .flashSvg{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
 
+    /* Right side content */
     .rightInner{
-      position:absolute;
-      inset:0;
+      position:relative;
+      flex:1;
+      min-height:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 0;
+      padding: 18px;
+    }
+    @media (orientation: portrait){
+      .rightInner{
+        padding: 14px 16px 18px 16px;
+      }
+    }
+
+    /* Mask line that hides sliding answers behind the midline */
+    .maskLine{
+      position:absolute;
+      left:0;
+      top:0;
+      right:0;
+      bottom:0;
+      pointer-events:none;
+      z-index: 20;
+    }
+    @media (orientation: landscape){
+      .maskLine{
+        background:
+          linear-gradient(90deg,
+            transparent 0,
+            transparent calc(0px),
+            transparent 100%);
+      }
+      /* The actual “mask slab” sits exactly on the midline, inside right panel */
+      .maskLine::before{
+        content:"";
+        position:absolute;
+        left:-6px; /* cover the border seam */
+        top:0;
+        width: 12px; /* a bit thicker to fully hide shadows */
+        height:100%;
+        background:#ffffff;
+      }
+    }
+    @media (orientation: portrait){
+      .maskLine::before{
+        content:"";
+        position:absolute;
+        left:0;
+        top:-6px; /* cover border seam */
+        width:100%;
+        height: 12px; /* thicker to hide shadows */
+        background:#ffffff;
+      }
+    }
+
+    /* Answer stack wrapper (we animate this behind the mask) */
+    .answersWrap{
+      width: min(560px, 94%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
       z-index: 10;
     }
 
-    .maskViewport{
-      position: relative;
+    /* LANDSCAPE: buttons under each other, vertically centered */
+    .answers{
       width: 100%;
-      height: 100%;
-      overflow: hidden;
-      clip-path: inset(0);
-      contain: paint;
-      padding: 26px;
-      z-index: 10;
-      transform: translateZ(0);
-    }
-
-    .answersSurface{
-      position:absolute;
-      inset:0;
       display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    .rightWrap{
-      width: min(860px, 96%);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
+      flex-direction: column;
       gap: 14px;
+      justify-content:center;   /* vertical centering inside answersWrap */
+      align-items: stretch;
     }
 
-    .answerGrid{
-      width: 100%;
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-      transition: opacity 160ms ease;
-    }
-
-    @media (max-width: 560px){
-      .answerGrid{ grid-template-columns: 1fr; gap: 14px; }
-    }
-
-    body.answersHidden .answerGrid{
-      opacity: 0;
-      pointer-events: none;
-    }
-    body.answersShown .answerGrid{
-      opacity: 1;
-      pointer-events: auto;
+    /* PORTRAIT: row */
+    @media (orientation: portrait){
+      .answersWrap{
+        transform: scale(var(--answersPortraitScale));
+      }
+      .answers{
+        flex-direction: row;
+        gap: 12px;
+        align-items: stretch;
+      }
     }
 
     .ansBtn{
       appearance:none;
-      border: 4px solid rgba(245,180,152,0.78);
-      background: rgba(255,255,255,0.98);
+      border:none;
+      background:#ffffff;
+      border: 3px solid var(--line);
       border-radius: 22px;
-      box-shadow: var(--shadowBtn);
-      padding: 14px;
-      min-height: 130px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+      padding: 10px;
+      min-height: 132px;
       display:flex;
       align-items:center;
       justify-content:center;
       cursor:pointer;
-
-      transform: translate3d(0,0,0);
-      will-change: transform, opacity;
-      backface-visibility: hidden;
-      transform-style: preserve-3d;
-
-      transition: transform 120ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease, opacity 180ms ease, filter 180ms ease;
       position:relative;
-      overflow:hidden;
+
+      /* smooth, “clickable” */
+      transform: translateZ(0);
+      transition:
+        transform 180ms var(--easeOut),
+        box-shadow 180ms var(--easeOut),
+        border-color 180ms var(--easeOut);
+      will-change: transform;
     }
 
-    /* portrait: meer vierkant */
+    /* make portrait cards a bit smaller and more square */
     @media (orientation: portrait){
       .ansBtn{
-        aspect-ratio: 1 / 1;
-        min-height: 160px;
-      }
-      .answerGrid{
-        gap: 14px;
+        min-height: 150px; /* higher so they feel more square in portrait */
       }
     }
 
     .ansBtn:active{
-      transform: translate3d(0,2px,0) scale(0.985);
-      box-shadow: 0 14px 26px rgba(0,0,0,0.10);
+      transform: translateY(2px) scale(0.995);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.10);
     }
 
+    .ansBtn.pressHold{
+      /* tiny press + soft rebound (done via keyframes on pointerdown) */
+      animation: pressPop 240ms var(--easeOut) 1;
+    }
+    @keyframes pressPop{
+      0%{ transform: translateY(0); }
+      40%{ transform: translateY(2px); }
+      100%{ transform: translateY(0); }
+    }
+
+    /* Feedback styles */
     .ansBtn.correct{
-      border-color: var(--ok);
-      background: rgba(46,196,122,0.10);
+      border-color: rgba(47,179,109,0.55);
+      box-shadow: 0 14px 28px rgba(47,179,109,0.10);
     }
     .ansBtn.wrong{
-      border-color: var(--no);
-      background: rgba(255,91,122,0.10);
-    }
-    .ansBtn.dim{
-      opacity: 0.25;
-      filter: grayscale(0.15);
+      border-color: rgba(228,79,108,0.55);
+      box-shadow: 0 14px 28px rgba(228,79,108,0.10);
     }
 
+    /* Do not show any default focus ring */
+    .ansBtn:focus{ outline:none; }
+    .ansBtn::-moz-focus-inner{ border:0; }
+
+    /* SVG inside buttons */
+    .ansInner{
+      width: 100%;
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* Slide animations: we animate each button, and also ensure they go behind the midline mask */
+    .answersSlideOut .ansBtn{
+      pointer-events:none;
+    }
+
+    /* Landscape slide left behind vertical midline */
+    @media (orientation: landscape){
+      .slideOut{
+        animation: slideOutLeft var(--slideMs) var(--easeInOut) forwards;
+      }
+      .slideIn{
+        animation: slideInLeft var(--slideMs) var(--easeInOut) forwards;
+      }
+      @keyframes slideOutLeft{
+        0%{ transform: translateX(0); opacity: 1; }
+        100%{ transform: translateX(-140%); opacity: 1; }
+      }
+      @keyframes slideInLeft{
+        0%{ transform: translateX(140%); opacity: 1; }
+        100%{ transform: translateX(0); opacity: 1; }
+      }
+    }
+
+    /* Portrait slide up behind horizontal midline */
+    @media (orientation: portrait){
+      .slideOut{
+        animation: slideOutUp var(--slideMs) var(--easeInOut) forwards;
+      }
+      .slideIn{
+        animation: slideInUp var(--slideMs) var(--easeInOut) forwards;
+      }
+      @keyframes slideOutUp{
+        0%{ transform: translateY(0); opacity: 1; }
+        100%{ transform: translateY(-140%); opacity: 1; }
+      }
+      @keyframes slideInUp{
+        0%{ transform: translateY(140%); opacity: 1; }
+        100%{ transform: translateY(0); opacity: 1; }
+      }
+    }
+
+    /* When answers are hidden (during flash) */
+    .answersHidden{
+      opacity:0;
+      pointer-events:none;
+    }
+
+    /* Start overlay */
     .startOverlay{
       position:fixed;
       inset:0;
@@ -343,10 +415,10 @@
     }
 
     .startCard{
-      width: min(600px, 92vw);
+      width: min(560px, 92vw);
       background: #ffffff;
       border-radius: 24px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow);
       padding: 22px 20px;
       text-align:center;
     }
@@ -356,7 +428,6 @@
       font-size: 28px;
       color: #4d4a48;
       text-transform: lowercase;
-      font-weight: 950;
     }
 
     .startCard p{
@@ -371,21 +442,22 @@
       border:none;
       background: var(--brand);
       color:#fff;
-      font-weight: 950;
+      font-weight: 800;
       padding: 14px 18px;
       border-radius: 18px;
       font-size: 18px;
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      text-transform: lowercase;
+      transition: transform 140ms var(--easeOut);
     }
-    .startBtn:active{ transform: scale(0.99); }
+    .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
+    /* Tune panel */
     .tunePanel{
       position: fixed;
       right: 18px;
       bottom: 18px;
-      width: min(540px, calc(100vw - 36px));
+      width: min(520px, calc(100vw - 36px));
       background: rgba(255,255,255,0.98);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -395,7 +467,6 @@
       color: #4d4a48;
     }
     .tunePanel.hidden{ display:none; }
-
     .tuneHeader{
       display:flex;
       align-items:center;
@@ -404,7 +475,7 @@
       margin-bottom: 10px;
     }
     .tuneTitle{
-      font-weight: 950;
+      font-weight: 900;
       font-size: 18px;
       letter-spacing: 0.2px;
       text-transform: lowercase;
@@ -415,28 +486,27 @@
       background:#f8c3b0;
       border-radius: 12px;
       padding: 10px 12px;
-      font-weight: 950;
+      font-weight: 900;
       cursor:pointer;
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
     }
-    .tuneClose:active{ transform: scale(0.99); }
-
+    .tuneClose:active{ transform: translateY(1px) scale(0.99); }
     .tuneRow{
       display:grid;
-      grid-template-columns: 170px 1fr 90px;
+      grid-template-columns: 140px 1fr 84px;
       gap: 10px;
       align-items:center;
       margin: 8px 0;
     }
     .tuneLabel{
-      font-weight: 900;
+      font-weight: 800;
       font-size: 13px;
       color: rgba(77,74,72,0.86);
       text-transform: lowercase;
     }
     .tuneValue{
       font-variant-numeric: tabular-nums;
-      font-weight: 950;
+      font-weight: 900;
       font-size: 13px;
       text-align:right;
       color: rgba(77,74,72,0.86);
@@ -454,32 +524,44 @@
       border:none;
       background: var(--brand);
       color:#fff;
-      font-weight: 950;
+      font-weight: 900;
       padding: 10px 12px;
       border-radius: 14px;
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
       font-size: 14px;
-      text-transform: lowercase;
     }
     .tuneBtnSmall.secondary{
       background:#f8c3b0;
       color:#4d4a48;
     }
-    .tuneBtnSmall:active{ transform: scale(0.99); }
+    .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+
+    /* Utility */
+    .hidden{ display:none !important; }
+
   </style>
 </head>
 
-<body class="answersHidden">
-  <section class="left" aria-label="Opgave">
+<body>
+  <section class="left" aria-label="Spel">
     <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar begin" type="button">🏠</button>
-      <button class="tuneBtn" id="tuneBtn" aria-label="Instellingen" type="button">⚙️</button>
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
+        <!-- inline “home” icon -->
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
+          <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
+          <path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
       <div class="titlePill">slim kijken</div>
     </div>
 
     <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Flitskaart">
+      <div class="gameCard" id="gameCard" aria-label="Flitsbord">
         <div class="flashBoard" id="flashBoard">
           <div class="flashSvg" id="flashSvg"></div>
         </div>
@@ -487,71 +569,44 @@
     </div>
   </section>
 
-  <section class="right" aria-label="Antwoorden">
-    <div class="divider" aria-hidden="true"></div>
-
+  <section class="right" id="rightArea" aria-label="Antwoorden">
     <div class="rightInner">
-      <div class="maskViewport" id="maskViewport">
-        <div class="answersSurface">
-          <div class="rightWrap">
-            <div class="answerGrid" id="answerGrid" aria-label="Keuzes"></div>
-          </div>
-        </div>
+      <div class="answersWrap" id="answersWrap">
+        <div class="answers answersHidden" id="answers"></div>
       </div>
+
+      <!-- midline mask -->
+      <div class="maskLine" aria-hidden="true"></div>
     </div>
   </section>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>tik om te starten</h1>
-      <p>Je ziet stippen heel kort. Als ze weg zijn, kies je wat je zag.</p>
-      <button class="startBtn" id="startBtn" type="button">start</button>
+      <p>Je ziet stippen heel kort, daarna kies je wat je zag.</p>
+      <button class="startBtn" id="startBtn" type="button">Start</button>
     </div>
   </div>
 
   <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
     <div class="tuneHeader">
       <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">sluit</button>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
     </div>
 
     <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">spel</div>
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flitstijd</div>
 
       <div class="tuneRow">
-        <div class="tuneLabel">level</div>
-        <input type="range" id="levelRange" min="1" max="2" step="1" value="1" />
-        <div class="tuneValue" id="levelValue">1</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">level 1 max</div>
-        <input type="range" id="l1MaxRange" min="3" max="6" step="1" value="4" />
-        <div class="tuneValue" id="l1MaxValue">4</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">flitstijd start</div>
-        <input type="range" id="flashStartRange" min="450" max="1200" step="50" value="800" />
-        <div class="tuneValue" id="flashStartValue">800</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">flitstijd minimum</div>
-        <input type="range" id="flashMinRange" min="250" max="650" step="25" value="450" />
-        <div class="tuneValue" id="flashMinValue">450</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">flitstijd maximum</div>
-        <input type="range" id="flashMaxRange" min="900" max="2000" step="50" value="1600" />
-        <div class="tuneValue" id="flashMaxValue">1600</div>
+        <div class="tuneLabel">ms</div>
+        <input type="range" id="flashMsRange" min="350" max="1400" step="50" value="700" />
+        <div class="tuneValue" id="flashMsValue">700</div>
       </div>
 
       <div class="tuneButtons">
-        <button class="tuneBtnSmall" id="newRoundBtn" type="button">nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="resetBtn" type="button">reset</button>
-        <button class="tuneBtnSmall secondary" id="testSlideBtn" type="button">test schuif</button>
+        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
     </div>
   </div>
@@ -562,88 +617,30 @@
 
       const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
       const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
-      const choose = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
-      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
-
-      const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      const cssNum = (name, fallback) => {
-        const raw = cssVar(name);
-        const n = Number(String(raw).replace("ms","").trim());
-        return Number.isFinite(n) ? n : fallback;
-      };
-
-      const getDir = () => {
-        const dx = Number(cssVar("--dir-x")) || 0;
-        const dy = Number(cssVar("--dir-y")) || 0;
-        const portrait = (Number(cssVar("--is-portrait")) || 0) === 1;
-        return { dx, dy, portrait };
-      };
-
-      const clone = (obj) => {
-        if (typeof structuredClone === "function") return structuredClone(obj);
-        return JSON.parse(JSON.stringify(obj));
-      };
-
-      const LS_KEY = "slimkijken_subitize_v11";
-      const defaultData = {
-        level: 1,
-        l1Max: 4,
-        flashStart: 800,
-        flashMin: 450,
-        flashMax: 1600,
-        streak: 0,
-        round: 1
-      };
-
-      function loadData(){
-        try{
-          const raw = localStorage.getItem(LS_KEY);
-          if (!raw) return clone(defaultData);
-          const d = JSON.parse(raw);
-          return { ...clone(defaultData), ...d };
-        }catch(e){
-          return clone(defaultData);
-        }
-      }
-      function saveData(){
-        try{ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }catch(e){}
-      }
-
-      let DATA = loadData();
 
       const startOverlay = document.getElementById("startOverlay");
       const startBtn = document.getElementById("startBtn");
+
       const homeBtn = document.getElementById("homeBtn");
       const tuneBtn = document.getElementById("tuneBtn");
-
       const tunePanel = document.getElementById("tunePanel");
       const tuneClose = document.getElementById("tuneClose");
 
-      const levelRange = document.getElementById("levelRange");
-      const levelValue = document.getElementById("levelValue");
-
-      const l1MaxRange = document.getElementById("l1MaxRange");
-      const l1MaxValue = document.getElementById("l1MaxValue");
-
-      const flashStartRange = document.getElementById("flashStartRange");
-      const flashStartValue = document.getElementById("flashStartValue");
-
-      const flashMinRange = document.getElementById("flashMinRange");
-      const flashMinValue = document.getElementById("flashMinValue");
-
-      const flashMaxRange = document.getElementById("flashMaxRange");
-      const flashMaxValue = document.getElementById("flashMaxValue");
+      const flashMsRange = document.getElementById("flashMsRange");
+      const flashMsValue = document.getElementById("flashMsValue");
 
       const newRoundBtn = document.getElementById("newRoundBtn");
-      const resetBtn = document.getElementById("resetBtn");
-      const testSlideBtn = document.getElementById("testSlideBtn");
+      const testWrongBtn = document.getElementById("testWrongBtn");
+      const testGoodBtn = document.getElementById("testGoodBtn");
 
+      const flashBoard = document.getElementById("flashBoard");
       const flashSvg = document.getElementById("flashSvg");
-      const answerGrid = document.getElementById("answerGrid");
-      const gameCard = document.getElementById("gameCard");
-      const maskViewport = document.getElementById("maskViewport");
 
+      const answersWrap = document.getElementById("answersWrap");
+      const answersEl = document.getElementById("answers");
+
+      // Simple beeps
       let audioCtx = null;
       function beep(type){
         try{
@@ -651,51 +648,24 @@
           const t = audioCtx.currentTime;
           const o = audioCtx.createOscillator();
           const g = audioCtx.createGain();
-
           o.type = "sine";
           if(type === "ok") o.frequency.setValueAtTime(740, t);
           if(type === "no") o.frequency.setValueAtTime(220, t);
           if(type === "tap") o.frequency.setValueAtTime(520, t);
-
           g.gain.setValueAtTime(0.0001, t);
           g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
           g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
-
-          o.connect(g);
-          g.connect(audioCtx.destination);
-          o.start(t);
-          o.stop(t + 0.22);
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(t); o.stop(t + 0.22);
         }catch(e){}
       }
 
-      function setPhase(name){
-        document.body.classList.remove("phaseFlash","phaseChoose","phaseFeedbackGood","phaseFeedbackWrong");
-        if (name) document.body.classList.add(name);
-      }
-
-      function showAnswers(show){
-        document.body.classList.toggle("answersShown", !!show);
-        document.body.classList.toggle("answersHidden", !show);
-      }
-
-      const CURRENT = {
-        started: false,
-        locked: false,
-        flashMs: DATA.flashStart,
-        correct: 1,
-        cap: 4
-      };
-
-      function emptySvg(){
-        return `<svg viewBox="0 0 520 380" width="100%" height="100%" aria-hidden="true"></svg>`;
-      }
-
+      // Dice dots positions (no mirroring, always same)
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
         bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
       };
-
       const diceFaces = {
         1: [P.mc],
         2: [P.tl, P.br],
@@ -705,15 +675,30 @@
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
 
-      function svgForDots(points, opts = {}){
-        const { dotRadius = 14, dotColor = "rgba(77,74,72,0.78)", glow = false } = opts;
+      function svgForDots(dotSets, opts = {}){
+        const {
+          dotRadius = 11,
+          dotColor = "rgba(25,25,25,.92)",
+          stroke = "rgba(0,0,0,0)",
+          strokeW = 0,
+          glow = false
+        } = opts;
+
         const w = 520, h = 380;
-        const box = {x0:0.12, y0:0.12, x1:0.88, y1:0.88};
+        const circles = [];
+        dotSets.forEach((set) => {
+          const box = set.box;
+          set.dots.forEach(([x,y]) => {
+            const X = (box.x0 + x*(box.x1-box.x0)) * w;
+            const Y = (box.y0 + y*(box.y1-box.y0)) * h;
+            circles.push({X,Y});
+          });
+        });
 
         const filter = glow ? `
           <defs>
             <filter id="g">
-              <feGaussianBlur stdDeviation="2.2" result="b"/>
+              <feGaussianBlur stdDeviation="2.1" result="b"/>
               <feMerge>
                 <feMergeNode in="b"/>
                 <feMergeNode in="SourceGraphic"/>
@@ -721,44 +706,55 @@
             </filter>
           </defs>` : "";
 
-        const circles = (points || []).map(([x,y]) => {
-          const X = (box.x0 + x*(box.x1-box.x0)) * w;
-          const Y = (box.y0 + y*(box.y1-box.y0)) * h;
-          return `<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" ${glow ? `filter="url(#g)"` : "" } />`;
-        }).join("");
+        const cs = circles.map(c => `
+          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}"
+            fill="${dotColor}"
+            stroke="${stroke}" stroke-width="${strokeW}"
+            ${glow ? `filter="url(#g)"` : "" }
+          />`).join("");
 
-        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">${filter}${circles}</svg>`;
+        return `
+          <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
+            ${filter}
+            ${cs}
+          </svg>`;
       }
 
-      function svgLevel1(n, glow=false, radius=14){
-        return svgForDots(diceFaces[n] || [], { dotRadius: radius, glow });
+      function patternLevel1(n){
+        return [{
+          dots: diceFaces[n],
+          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+        }];
       }
 
-      function svgLevel2(sum, glow=false, radius=14){
-        const big = Math.min(6, Math.max(2, Math.ceil(sum/2)));
-        const small = sum - big;
-        const bb = Math.max(big, small);
-        const ss = Math.min(big, small);
-
-        const left = (diceFaces[bb] || []).map(([x,y]) => [x * 0.46 + 0.10, y * 0.64 + 0.18]);
-        const right = (diceFaces[ss] || []).map(([x,y]) => [x * 0.46 + 0.52, y * 0.64 + 0.18]);
-        return svgForDots(left.concat(right), { dotRadius: radius, glow });
+      function setBoard(svgHtml){
+        flashSvg.innerHTML = svgHtml;
       }
 
-      function computeCap(){
-        if (DATA.level === 1) return clamp(DATA.l1Max, 3, 6);
-        return 9;
+      function clearBoard(){
+        setBoard(svgForDots([], {glow:false}));
       }
 
-      function buildOptions(correct, cap){
-        const opts = new Set([correct]);
-        const deltas = [-1, 1, -2, 2, -1, 1];
-        while(opts.size < 3){
-          const d = choose(deltas);
-          const v = clamp(correct + d, 1, cap);
-          opts.add(v);
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
+
+      // GAME
+      let started = false;
+      let locked = false;
+      let flashMs = 700;
+      let currentCorrect = 1;
+
+      function buildOptions(correct){
+        const cap = 6;
+        const options = new Set([correct]);
+        while(options.size < 3){
+          const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
+          const v = clamp(correct + delta, 1, cap);
+          options.add(v);
         }
-        const arr = [...opts];
+        // shuffle
+        const arr = [...options];
         for(let i=arr.length-1;i>0;i--){
           const j = Math.floor(Math.random()*(i+1));
           [arr[i],arr[j]] = [arr[j],arr[i]];
@@ -766,344 +762,188 @@
         return arr;
       }
 
-      function applySettingsToCurrent(){
-        CURRENT.cap = computeCap();
-        CURRENT.flashMs = clamp(CURRENT.flashMs, DATA.flashMin, DATA.flashMax);
-      }
+      function renderAnswers(correct){
+        const arr = buildOptions(correct);
 
-      function clearAnswers(){
-        answerGrid.innerHTML = "";
-      }
-
-      function dimOtherButtons(keepBtn){
-        const all = [...answerGrid.querySelectorAll(".ansBtn")];
-        all.forEach(b => { if (b !== keepBtn) b.classList.add("dim"); });
-      }
-
-      function updateAdaptiveOnCorrect(){
-        DATA.streak = (DATA.streak || 0) + 1;
-        if (DATA.streak >= 2){
-          CURRENT.flashMs = clamp(CURRENT.flashMs - 70, DATA.flashMin, DATA.flashMax);
-          DATA.streak = 0;
-        }
-      }
-
-      function updateAdaptiveOnWrong(){
-        DATA.streak = 0;
-        CURRENT.flashMs = clamp(CURRENT.flashMs + 160, DATA.flashMin, DATA.flashMax);
-      }
-
-      function renderAnswers(options){
-        clearAnswers();
-        options.forEach((v) => {
+        answersEl.innerHTML = "";
+        arr.forEach(v => {
           const btn = document.createElement("button");
-          btn.type = "button";
           btn.className = "ansBtn";
-          btn.setAttribute("aria-label", `antwoord ${v}`);
+          btn.type = "button";
 
-          let innerSvg = "";
-          if (DATA.level === 1) innerSvg = svgLevel1(v, false, 14);
-          else innerSvg = svgLevel2(v, false, 14);
+          // micro press + soft rebound
+          btn.addEventListener("pointerdown", () => {
+            btn.classList.remove("pressHold");
+            // restart animation
+            void btn.offsetWidth;
+            btn.classList.add("pressHold");
+          }, {passive:true});
 
-          btn.innerHTML = `<div style="width:100%; height:100%;">${innerSvg}</div>`;
           btn.addEventListener("click", () => onPick(btn, v));
-          answerGrid.appendChild(btn);
+
+          const svg = svgForDots(patternLevel1(v), {dotRadius: 12, glow:false});
+          btn.innerHTML = `<div class="ansInner">${svg}</div>`;
+          answersEl.appendChild(btn);
         });
       }
 
-      function pickCorrect(){
-        applySettingsToCurrent();
-        if (DATA.level === 1) return randInt(1, CURRENT.cap);
-        return randInt(1, 9);
+      function hideAnswers(){
+        answersEl.classList.add("answersHidden");
+      }
+      function showAnswers(){
+        answersEl.classList.remove("answersHidden");
       }
 
-      function emptyBoard(){ flashSvg.innerHTML = emptySvg(); }
+      async function slideAnswersOutSequential(){
+        // order: right -> middle -> left
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
 
-      function showExampleForValue(value, glowOn){
-        if (DATA.level === 1) flashSvg.innerHTML = svgLevel1(value, !!glowOn, 14);
-        else flashSvg.innerHTML = svgLevel2(value, !!glowOn, 14);
-      }
+        answersWrap.classList.add("answersSlideOut");
+        // Determine order based on current visual order:
+        // In portrait (row): left,middle,right are indices 0,1,2 -> out order 2,1,0
+        // In landscape (column): top,mid,bottom -> we still want "right,middle,left" feel,
+        // but you asked specifically that sequence to guide eyes, we keep 2,1,0 as well.
+        const order = [2,1,0].filter(i => btns[i]);
 
-      function orderButtonsForSlideOut(){
-        const btns = [...answerGrid.querySelectorAll(".ansBtn")];
-        const items = btns.map(b => {
-          const r = b.getBoundingClientRect();
-          return { b, left: r.left, top: r.top };
+        order.forEach((idx, k) => {
+          const b = btns[idx];
+          b.classList.remove("slideIn");
+          b.classList.add("slideOut");
+          b.style.animationDelay = `${k * 110}ms`;
         });
 
-        const { portrait } = getDir();
+        // wait for last animation to finish
+        const total = 110*(order.length-1) + parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 720;
+        await wait(total + 40);
 
-        if (!portrait){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));
-        } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));
-        }
-        return items.map(x => x.b);
+        // cleanup
+        btns.forEach(b => {
+          b.classList.remove("slideOut");
+          b.style.animationDelay = "0ms";
+        });
+        answersWrap.classList.remove("answersSlideOut");
       }
 
-      function orderButtonsForSlideIn(){
-        return orderButtonsForSlideOut().reverse();
-      }
+      async function slideAnswersInAll(){
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
 
-      function getOutVector(btn){
-        const view = maskViewport.getBoundingClientRect();
-        const r = btn.getBoundingClientRect();
-        const extra = 90;
-
-        const { dx, dy } = getDir();
-
-        const magX = (view.width + r.width) + extra;
-        const magY = (view.height + r.height) + extra;
-
-        return { x: dx * magX, y: dy * magY };
-      }
-
-      async function slideOutAnswers(){
-        const ordered = orderButtonsForSlideOut();
-        const dur = cssNum("--slideOutDur", 980);
-        const gap = cssNum("--slideOutGap", 220);
-        const ease = getComputedStyle(document.documentElement).getPropertyValue("--easeOutSoft").trim()
-          || "cubic-bezier(0.18, 0.85, 0.18, 1)";
-
-        ordered.forEach(b => b.style.pointerEvents = "none");
-
-        for (let i = 0; i < ordered.length; i++){
-          const b = ordered[i];
-          const v = getOutVector(b);
-
-          b.getAnimations().forEach(a => a.cancel());
-
-          const anim = b.animate(
-            [
-              { transform: "translate3d(0,0,0)", opacity: 1 },
-              { transform: `translate3d(${v.x*0.60}px,${v.y*0.60}px,0)`, opacity: 0.98 },
-              { transform: `translate3d(${v.x}px,${v.y}px,0)`, opacity: 0.92 }
-            ],
-            { duration: dur, easing: ease, fill: "forwards" }
-          );
-
-          anim.onfinish = () => {
-            b.style.transform = `translate3d(${v.x}px,${v.y}px,0)`;
-            b.style.opacity = "0";
-          };
-
-          await wait(gap);
-        }
-
-        await wait(dur + 60);
-      }
-
-      async function slideInAnswers(){
-        const ordered = orderButtonsForSlideIn();
-        const dur = cssNum("--slideInDur", 760);
-        const gap = cssNum("--slideInGap", 190);
-        const ease = getComputedStyle(document.documentElement).getPropertyValue("--easeInSoft").trim()
-          || "cubic-bezier(0.22, 0.95, 0.20, 1)";
-
-        ordered.forEach(b => {
-          const out = getOutVector(b);
-          b.getAnimations().forEach(a => a.cancel());
-          b.style.transform = `translate3d(${out.x}px,${out.y}px,0)`;
-          b.style.opacity = "0";
-          b.style.visibility = "hidden";
-          b.style.pointerEvents = "none";
+        // Put them just offscreen and slide in
+        btns.forEach((b, i) => {
+          b.classList.remove("slideOut");
+          b.classList.add("slideIn");
+          b.style.animationDelay = `${i * 70}ms`;
         });
 
-        await raf();
-        await raf();
+        const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideMs")) || 720;
+        const total = 70*(btns.length-1) + base;
+        await wait(total + 40);
 
-        for (let i = 0; i < ordered.length; i++){
-          const b = ordered[i];
-          const out = getOutVector(b);
-
-          b.style.visibility = "visible";
-
-          const anim = b.animate(
-            [
-              { transform: `translate3d(${out.x}px,${out.y}px,0)`, opacity: 0 },
-              { transform: `translate3d(${out.x*0.22}px,${out.y*0.22}px,0)`, opacity: 0.94 },
-              { transform: "translate3d(0,0,0)", opacity: 1 }
-            ],
-            { duration: dur, easing: ease, fill: "forwards" }
-          );
-
-          anim.onfinish = () => {
-            b.style.transform = "translate3d(0,0,0)";
-            b.style.opacity = "1";
-            b.style.visibility = "visible";
-            b.style.pointerEvents = "auto";
-          };
-
-          await wait(gap);
-        }
-
-        await wait(dur + 80);
+        btns.forEach(b => {
+          b.classList.remove("slideIn");
+          b.style.animationDelay = "0ms";
+        });
       }
 
-      async function doRound(){
-        CURRENT.locked = true;
-        applySettingsToCurrent();
+      async function flashSequence(){
+        locked = true;
 
-        showAnswers(false);
-        clearAnswers();
+        // During flash: no answers visible
+        hideAnswers();
 
-        emptyBoard();
-        setPhase(null);
-        await wait(240);
+        // small settle
+        clearBoard();
+        await wait(180);
 
-        CURRENT.correct = pickCorrect();
+        // flash
+        setBoard(svgForDots(patternLevel1(currentCorrect), {dotRadius: 16, glow:false}));
+        await wait(flashMs);
 
-        setPhase("phaseFlash");
-        showExampleForValue(CURRENT.correct, true);
-        await wait(CURRENT.flashMs);
+        // blank
+        clearBoard();
+        await wait(260);
 
-        emptyBoard();
-        await wait(320);
+        // show answers now
+        renderAnswers(currentCorrect);
+        showAnswers();
 
-        setPhase("phaseChoose");
-        renderAnswers(buildOptions(CURRENT.correct, CURRENT.cap));
-        showAnswers(true);
+        // slide in gently every round (works both orientations)
+        await slideAnswersInAll();
 
-        await raf();
-        await slideInAnswers();
+        locked = false;
+      }
 
-        CURRENT.locked = false;
+      function nextRound(){
+        currentCorrect = randInt(1,6);
+        flashSequence();
+      }
+
+      async function showExampleAndHold(choice){
+        // Show what the child chose a bit longer, without any red frame
+        setBoard(svgForDots(patternLevel1(choice), {dotRadius: 16, glow:false}));
+        await wait(820);
+        clearBoard();
       }
 
       async function onPick(btn, value){
-        if (!CURRENT.started || CURRENT.locked) return;
-        CURRENT.locked = true;
+        if(!started || locked) return;
+        locked = true;
 
-        const correct = CURRENT.correct;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        btns.forEach(b => b.style.pointerEvents = "none");
 
-        if (value === correct){
+        if(value === currentCorrect){
           beep("ok");
-          setPhase("phaseFeedbackGood");
           btn.classList.add("correct");
 
-          setPhase("phaseFlash");
-          showExampleForValue(correct, true);
+          // show correct in board briefly
+          setBoard(svgForDots(patternLevel1(currentCorrect), {dotRadius: 16, glow:false}));
           await wait(520);
 
-          emptyBoard();
-          await slideOutAnswers();
+          // slide answers out behind mask (direction depends on orientation)
+          await slideAnswersOutSequential();
 
-          showAnswers(false);
-          clearAnswers();
+          // prepare next
+          clearBoard();
+          await wait(120);
+          btns.forEach(b => { b.classList.remove("correct","wrong"); b.style.pointerEvents = ""; });
 
-          updateAdaptiveOnCorrect();
-          DATA.round += 1;
-          saveData();
-
-          await wait(160);
-          await doRound();
+          nextRound();
           return;
         }
 
+        // wrong
         beep("no");
-        setPhase("phaseFeedbackWrong");
         btn.classList.add("wrong");
-        dimOtherButtons(btn);
 
-        gameCard.classList.remove("shake");
-        void gameCard.offsetHeight;
-        gameCard.classList.add("shake");
+        // show chosen example briefly, then show correct a bit too
+        await showExampleAndHold(value);
 
-        updateAdaptiveOnWrong();
-        saveData();
-
-        await wait(520);
-
-        setPhase("phaseFlash");
-        showExampleForValue(value, false);
+        setBoard(svgForDots(patternLevel1(currentCorrect), {dotRadius: 16, glow:false}));
         await wait(720);
+        clearBoard();
 
-        showExampleForValue(correct, true);
-        await wait(980);
+        // remove answers too (same slide out), then bring new
+        await slideAnswersOutSequential();
 
-        emptyBoard();
-        await slideOutAnswers();
+        btns.forEach(b => { b.classList.remove("correct","wrong"); b.style.pointerEvents = ""; });
+        await wait(120);
 
-        showAnswers(false);
-        clearAnswers();
-
-        await wait(220);
-
-        emptyBoard();
-        await wait(260);
-
-        setPhase("phaseFlash");
-        showExampleForValue(correct, true);
-        await wait(clamp(CURRENT.flashMs + 260, DATA.flashMin, DATA.flashMax));
-
-        emptyBoard();
-        await wait(300);
-
-        setPhase("phaseChoose");
-        renderAnswers(buildOptions(correct, CURRENT.cap));
-        showAnswers(true);
-
-        await raf();
-        await slideInAnswers();
-
-        CURRENT.locked = false;
+        nextRound();
       }
 
-      function syncTuneUI(){
-        levelRange.value = String(DATA.level);
-        levelValue.textContent = String(DATA.level);
-
-        l1MaxRange.value = String(DATA.l1Max);
-        l1MaxValue.textContent = String(DATA.l1Max);
-
-        flashStartRange.value = String(DATA.flashStart);
-        flashStartValue.textContent = String(DATA.flashStart);
-
-        flashMinRange.value = String(DATA.flashMin);
-        flashMinValue.textContent = String(DATA.flashMin);
-
-        flashMaxRange.value = String(DATA.flashMax);
-        flashMaxValue.textContent = String(DATA.flashMax);
-      }
-
-      function commitTune(which){
-        DATA.level = Number(levelRange.value) || 1;
-        DATA.l1Max = Number(l1MaxRange.value) || 4;
-
-        DATA.flashStart = Number(flashStartRange.value) || 800;
-        DATA.flashMin = Number(flashMinRange.value) || 450;
-        DATA.flashMax = Number(flashMaxRange.value) || 1600;
-
-        if (DATA.flashMin > DATA.flashMax){
-          const tmp = DATA.flashMin;
-          DATA.flashMin = DATA.flashMax;
-          DATA.flashMax = tmp;
-        }
-
-        if (which === "flashStart") CURRENT.flashMs = DATA.flashStart;
-
-        saveData();
-        syncTuneUI();
-        applySettingsToCurrent();
-      }
-
+      // Settings
       function openTunePanel(){
         tunePanel.classList.remove("hidden");
-        syncTuneUI();
       }
       function closeTunePanel(){
         tunePanel.classList.add("hidden");
       }
 
-      levelRange.addEventListener("input", () => commitTune("level"));
-      l1MaxRange.addEventListener("input", () => commitTune("l1Max"));
-      flashStartRange.addEventListener("input", () => commitTune("flashStart"));
-      flashMinRange.addEventListener("input", () => commitTune("flashMin"));
-      flashMaxRange.addEventListener("input", () => commitTune("flashMax"));
-
       tuneBtn.addEventListener("click", () => {
         beep("tap");
-        if (tunePanel.classList.contains("hidden")) openTunePanel();
+        if(tunePanel.classList.contains("hidden")) openTunePanel();
         else closeTunePanel();
       });
       tuneClose.addEventListener("click", () => {
@@ -1111,95 +951,77 @@
         closeTunePanel();
       });
 
-      newRoundBtn.addEventListener("click", async () => {
-        beep("tap");
-        if (!CURRENT.started) return;
-        CURRENT.locked = true;
-        showAnswers(false);
-        clearAnswers();
-        emptyBoard();
-        await wait(240);
-        await doRound();
+      flashMsRange.addEventListener("input", () => {
+        flashMs = Number(flashMsRange.value);
+        flashMsValue.textContent = String(flashMs);
       });
 
-      resetBtn.addEventListener("click", () => {
+      newRoundBtn.addEventListener("click", () => {
         beep("tap");
-        DATA = clone(defaultData);
-        saveData();
-        CURRENT.flashMs = DATA.flashStart;
-        syncTuneUI();
+        if(!started) return;
+        nextRound();
+      });
+      testWrongBtn.addEventListener("click", () => {
+        beep("tap");
+        if(!started || locked) return;
+        const wrong = currentCorrect === 6 ? 1 : currentCorrect + 1;
+        const firstBtn = answersEl.querySelector(".ansBtn");
+        if(firstBtn) onPick(firstBtn, wrong);
+      });
+      testGoodBtn.addEventListener("click", () => {
+        beep("tap");
+        if(!started || locked) return;
+        const firstBtn = answersEl.querySelector(".ansBtn");
+        if(firstBtn) onPick(firstBtn, currentCorrect);
       });
 
-      testSlideBtn.addEventListener("click", async () => {
-        beep("tap");
-        showAnswers(true);
-        setPhase("phaseChoose");
-        renderAnswers([1,2,3]);
-        await raf();
-        await slideInAnswers();
-        await wait(320);
-        await slideOutAnswers();
-        showAnswers(false);
-        clearAnswers();
-        setPhase(null);
-      });
-
-      homeBtn.addEventListener("click", () => {
-        beep("tap");
-        CURRENT.started = false;
-        CURRENT.locked = true;
-        clearAnswers();
-        emptyBoard();
-        showAnswers(false);
-        setPhase(null);
-        startOverlay.style.display = "flex";
-      });
-
+      // Start
       function startGame(){
-        if (CURRENT.started) return;
-        CURRENT.started = true;
-
+        if(started) return;
+        started = true;
         startOverlay.style.display = "none";
-        beep("tap");
-
-        CURRENT.flashMs = DATA.flashStart;
-        DATA.round = 1;
-        DATA.streak = 0;
-
-        applySettingsToCurrent();
-        doRound();
+        flashMs = Number(flashMsRange.value);
+        flashMsValue.textContent = String(flashMs);
+        nextRound();
       }
 
       startBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        beep("tap");
         startGame();
       });
-
       startOverlay.addEventListener("click", (e) => {
-        if (e.target === startOverlay) startGame();
+        if(e.target === startOverlay){
+          beep("tap");
+          startGame();
+        }
       });
 
-      function hardResetTransforms(){
-        const btns = [...answerGrid.querySelectorAll(".ansBtn")];
-        btns.forEach(b => {
-          b.getAnimations().forEach(a => a.cancel());
-          b.style.transform = "translate3d(0,0,0)";
-          b.style.opacity = "1";
-          b.style.visibility = "visible";
-          b.style.pointerEvents = "auto";
-        });
+      homeBtn.addEventListener("click", () => {
+        beep("tap");
+        try { window.location.href = "index.html"; } catch(e){}
+      });
+
+      // On rotate, re-run a soft “in” on answers so it stays smooth, no jolts
+      let rotTimer = null;
+      function onReflow(){
+        if(!started) return;
+        if(rotTimer) clearTimeout(rotTimer);
+        rotTimer = setTimeout(async () => {
+          // Re-render answers to match new layout
+          renderAnswers(currentCorrect);
+          showAnswers();
+          await slideAnswersInAll();
+        }, 180);
       }
+      window.addEventListener("resize", onReflow);
+      window.addEventListener("orientationchange", onReflow);
 
-      window.addEventListener("resize", () => { hardResetTransforms(); });
-      window.addEventListener("orientationchange", () => { setTimeout(hardResetTransforms, 240); });
+      // Init
+      clearBoard();
+      flashMsValue.textContent = String(flashMsRange.value);
 
-      flashSvg.innerHTML = emptySvg();
-      showAnswers(false);
-      setPhase(null);
-
-      applySettingsToCurrent();
-      syncTuneUI();
     })();
   </script>
 </body>
