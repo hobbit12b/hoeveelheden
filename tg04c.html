@@ -22,8 +22,8 @@
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      --slideDur: 280ms;
-      --slideGap: 95ms;
+      --slideDur: 320ms;
+      --slideGap: 105ms;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -72,6 +72,7 @@
       transition: background 140ms ease;
     }
 
+    /* middenlijn, solide */
     @media (orientation: landscape){
       .right{ border-left: 6px solid rgba(245,180,152,0.55); }
     }
@@ -233,11 +234,34 @@
       overflow:hidden;
     }
 
-    .rightWrap{
+    /* CLIP MASK: alles wat voorbij de middenlijn gaat, verdwijnt */
+    .rightClip{
       width: min(820px, 94%);
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    /* landschap: clip tot aan verticale middenlijn (de linker rand van rechts paneel) */
+    @media (orientation: landscape){
+      .rightClip{
+        clip-path: inset(0 0 0 0);
+      }
+    }
+    /* portrait: clip tot aan horizontale middenlijn (de bovenrand van onder paneel) */
+    @media (orientation: portrait){
+      .rightClip{
+        clip-path: inset(0 0 0 0);
+      }
+    }
+
+    .rightWrap{
+      width: 100%;
       display:flex;
       flex-direction:column;
       align-items:center;
+      justify-content:center;
       gap: 14px;
     }
 
@@ -314,17 +338,17 @@
       100%{ opacity:1; transform: translate3d(0,0,0) scale(1); }
     }
 
-    /* slide animaties moeten altijd winnen */
+    /* schuiven: we duwen naar buiten, het clipmask doet "achter de middenlijn verdwijnen" */
     .ansBtn.slideLeft{ animation: slideLeft var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
     .ansBtn.slideUp{ animation: slideUp var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
 
     @keyframes slideLeft{
       from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(-140vw,0,0); opacity: 0; }
+      to{ transform: translate3d(-130%,0,0); opacity: 1; }
     }
     @keyframes slideUp{
       from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(0,-140vh,0); opacity: 0; }
+      to{ transform: translate3d(0,-130%,0); opacity: 1; }
     }
 
     .startOverlay{
@@ -510,8 +534,10 @@
 
   <section class="right" aria-label="Antwoorden">
     <div class="rightInner">
-      <div class="rightWrap">
-        <div class="answerGrid" id="answerGrid" aria-label="Keuzes"></div>
+      <div class="rightClip">
+        <div class="rightWrap">
+          <div class="answerGrid" id="answerGrid" aria-label="Keuzes"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -584,7 +610,7 @@
       </div>
 
       <div class="tuneHint" id="tuneHint">
-        Level 1 traint vooral 1 tot en met 4. Variatie zorgt dat kinderen echt hoeveelheden zien, niet alleen plaatjes onthouden.
+        Draaien is uitgeschakeld. Variatie betekent nu: spiegeling en kleine jitter, zodat kinderen hoeveelheden zien en niet een plaatje onthouden.
       </div>
     </div>
   </div>
@@ -604,17 +630,17 @@
         return Number.isFinite(n) ? n : fallback;
       };
 
-      const LS_KEY = "slimkijken_subitize_v2";
+      const LS_KEY = "slimkijken_subitize_v3";
       const defaultData = {
         level: 1,
         l1Max: 4,
         flashStart: 800,
         flashMin: 450,
         flashMax: 1600,
-        variation: 2,      // 0 none, 1 mirror, 2 mirror+rotate small, 3 mirror+rotate+layout jit
-        boltEvery: 3,      // every N rounds a lightning flash (0 off)
-        stars: 0,          // 0..5
-        streak: 0,         // correct streak
+        variation: 2,      // 0 none, 1 mirror, 2 mirror + tiny jitter, 3 a bit more jitter
+        boltEvery: 3,
+        stars: 0,
+        streak: 0,
         round: 1
       };
 
@@ -717,10 +743,24 @@
         nodes.forEach((s, i) => s.classList.toggle("on", i < DATA.stars));
       }
 
+      const CURRENT = {
+        started: false,
+        locked: false,
+        flashMs: DATA.flashStart,
+        correct: 1,
+        cap: 4,
+        boltRound: false,
+        level2Meta: null
+      };
+
       function updateHud(){
         hudLevel.textContent = String(DATA.level);
         hudRound.textContent = String(DATA.round);
         hudMs.textContent = String(Math.round(CURRENT.flashMs));
+      }
+
+      function setTinyNote(text){
+        tinyNote.textContent = text || "";
       }
 
       function emptySvg(){
@@ -728,10 +768,9 @@
       }
 
       /* ---------------------------
-         Subitize patterns with variation
-         Core idea: dice as anchor, plus safe variation so it stays recognizable as quantity
+         Patronen: draaien hersteld (dus uitgeschakeld)
+         Variatie = spiegeling + jitter, geen rotatie meer
       ----------------------------*/
-
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -747,43 +786,28 @@
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
 
+      function buildTransform(variation){
+        const tf = { mirrorX:false, mirrorY:false, jitter:0 };
+        if (variation <= 0) return tf;
+        if (variation >= 1){
+          tf.mirrorX = Math.random() < 0.5;
+          tf.mirrorY = Math.random() < 0.25;
+        }
+        if (variation === 2) tf.jitter = 0.020;
+        if (variation >= 3) tf.jitter = 0.035;
+        return tf;
+      }
+
       function transformPoint([x,y], tf){
         let nx = x, ny = y;
-
         if (tf.mirrorX) nx = 1 - nx;
         if (tf.mirrorY) ny = 1 - ny;
-
-        if (tf.rot90){
-          const tx = nx;
-          nx = ny;
-          ny = 1 - tx;
-        }
-
         if (tf.jitter > 0){
           const j = tf.jitter;
           nx = clamp(nx + (Math.random() * 2 - 1) * j, 0.10, 0.90);
           ny = clamp(ny + (Math.random() * 2 - 1) * j, 0.10, 0.90);
         }
-
         return [nx, ny];
-      }
-
-      function buildTransform(variation){
-        const tf = { mirrorX:false, mirrorY:false, rot90:false, jitter:0 };
-
-        if (variation <= 0) return tf;
-
-        if (variation >= 1){
-          tf.mirrorX = Math.random() < 0.5;
-          tf.mirrorY = Math.random() < 0.25;
-        }
-        if (variation >= 2){
-          tf.rot90 = Math.random() < 0.33;
-        }
-        if (variation >= 3){
-          tf.jitter = 0.035;
-        }
-        return tf;
       }
 
       function svgForDots(points, opts = {}){
@@ -822,7 +846,6 @@
         return base.map(p => transformPoint(p, tf));
       }
 
-      // Level 2: two groupjes, grootste links, kleinste rechts
       function makePatternLevel2(sum){
         const maxA = Math.min(6, sum - 1);
         const minA = Math.max(2, sum - 6);
@@ -835,8 +858,13 @@
         const tfL = buildTransform(Math.max(1, DATA.variation - 1));
         const tfR = buildTransform(Math.max(1, DATA.variation - 1));
 
-        const left = (diceFaces[big] || []).map(p => transformPoint(p, tfL)).map(([x,y]) => [x * 0.46 + 0.10, y * 0.64 + 0.18]);
-        const right = (diceFaces[small] || []).map(p => transformPoint(p, tfR)).map(([x,y]) => [x * 0.46 + 0.52, y * 0.64 + 0.18]);
+        const left = (diceFaces[big] || [])
+          .map(p => transformPoint(p, tfL))
+          .map(([x,y]) => [x * 0.46 + 0.10, y * 0.64 + 0.18]);
+
+        const right = (diceFaces[small] || [])
+          .map(p => transformPoint(p, tfR))
+          .map(([x,y]) => [x * 0.46 + 0.52, y * 0.64 + 0.18]);
 
         return { big, small, points: left.concat(right) };
       }
@@ -851,20 +879,21 @@
       }
 
       /* ---------------------------
-         Options logic: "dichterbij" afleiders, vaker ±1
+         Options
       ----------------------------*/
+      function computeCap(){
+        if (DATA.level === 1) return clamp(DATA.l1Max, 3, 6);
+        return 9;
+      }
 
       function buildOptions(correct, cap){
         const opts = new Set([correct]);
-
-        // meer kans op ±1, dan ±2
         const deltas = [-1, 1, -2, 2, -1, 1];
         while(opts.size < 3){
           const d = choose(deltas);
           const v = clamp(correct + d, 1, cap);
           opts.add(v);
         }
-
         const arr = [...opts];
         for(let i=arr.length-1;i>0;i--){
           const j = Math.floor(Math.random()*(i+1));
@@ -873,14 +902,25 @@
         return arr;
       }
 
-      /* ---------------------------
-         Slide out: order right, middle, left in landscape
-         In portrait: bottom, middle, top (for 3 buttons under elkaar)
-      ----------------------------*/
+      function applySettingsToCurrent(){
+        CURRENT.cap = computeCap();
+        CURRENT.flashMs = clamp(CURRENT.flashMs, DATA.flashMin, DATA.flashMax);
+      }
 
+      function isLightningRound(){
+        if (!DATA.boltEvery) return false;
+        return (DATA.round % DATA.boltEvery) === 0;
+      }
+
+      /* ---------------------------
+         Schuif animatie:
+         landschap: naar links, blijft achter de verticale middenlijn verdwijnen
+         portrait: omhoog, blijft achter de horizontale middenlijn verdwijnen
+      ----------------------------*/
       function isPortrait(){
         return window.innerHeight >= window.innerWidth;
       }
+
       function slideAxisClass(){
         return isPortrait() ? "slideUp" : "slideLeft";
       }
@@ -893,9 +933,9 @@
         });
 
         if (!isPortrait()){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));   // rechts, midden, links
         } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));   // onder, midden, boven
         }
         return items.map(x => x.b);
       }
@@ -903,21 +943,19 @@
       async function slideOutAnswers(){
         const axis = slideAxisClass();
         const ordered = orderButtonsForSlide();
-        const dur = msFromCssVar("--slideDur", 280);
-        const gap = msFromCssVar("--slideGap", 95);
+        const dur = msFromCssVar("--slideDur", 320);
+        const gap = msFromCssVar("--slideGap", 105);
 
         ordered.forEach(b => {
           b.style.pointerEvents = "none";
-          b.classList.remove("reveal");
-          b.classList.remove("slideLeft","slideUp");
+          b.classList.remove("reveal","slideLeft","slideUp");
           b.style.animationDelay = "0ms";
         });
 
         void answerGrid.offsetHeight;
 
         for (let i = 0; i < ordered.length; i++){
-          const btn = ordered[i];
-          btn.classList.add(axis);
+          ordered[i].classList.add(axis);
           await wait(gap);
         }
 
@@ -925,37 +963,14 @@
       }
 
       /* ---------------------------
-         Round engine with subitize training
-         Goal: keep "seeing" leading, not counting
+         Render + flow
       ----------------------------*/
-
-      const CURRENT = {
-        started: false,
-        locked: false,
-        flashMs: DATA.flashStart,
-        correct: 1,
-        cap: 4,
-        boltRound: false,
-        level2Meta: null
-      };
-
-      function computeCap(){
-        if (DATA.level === 1) return clamp(DATA.l1Max, 3, 6);
-        return 9;
-      }
-
-      function applySettingsToCurrent(){
-        CURRENT.flashMs = clamp(CURRENT.flashMs, DATA.flashMin, DATA.flashMax);
-        CURRENT.cap = computeCap();
-      }
-
       function clearAnswers(){
         answerGrid.innerHTML = "";
       }
 
       function renderAnswers(options){
         clearAnswers();
-
         options.forEach((v, idx) => {
           const btn = document.createElement("button");
           btn.type = "button";
@@ -976,92 +991,22 @@
         });
       }
 
+      function showAnswers(show){
+        document.body.classList.toggle("answersShown", !!show);
+        document.body.classList.toggle("answersHidden", !show);
+      }
+
       function dimOtherButtons(keepBtn){
         const all = [...answerGrid.querySelectorAll(".ansBtn")];
         all.forEach(b => { if (b !== keepBtn) b.classList.add("dim"); });
       }
 
-      function setTinyNote(text){
-        tinyNote.textContent = text || "";
-      }
-
-      function pickCorrectForLevel(){
-        if (DATA.level === 1){
-          return randInt(1, CURRENT.cap);
-        }
-        return randInt(1, 9);
-      }
-
-      function isLightningRound(){
-        if (!DATA.boltEvery) return false;
-        return (DATA.round % DATA.boltEvery) === 0;
-      }
-
-      async function doRound(){
-        CURRENT.locked = true;
-
-        applySettingsToCurrent();
-        updateHud();
-
-        showAnswers(false);
-        clearAnswers();
-
-        flashSvg.innerHTML = emptySvg();
-        setPhase(null);
-        setTinyNote("");
-        await wait(220);
-
-        CURRENT.correct = pickCorrectForLevel();
-        CURRENT.boltRound = isLightningRound();
-
-        // flash
-        setPhase("phaseFlash");
-
-        if (DATA.level === 1){
-          const flashRadius = CURRENT.boltRound ? 13 : 14;
-          flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, flashRadius);
-        } else {
-          const out = svgLevel2(CURRENT.correct, true, 14);
-          CURRENT.level2Meta = out.meta;
-          flashSvg.innerHTML = out.svg;
-        }
-
-        const flashTime = CURRENT.boltRound
-          ? clamp(Math.round(CURRENT.flashMs * 0.62), DATA.flashMin, DATA.flashMax)
-          : CURRENT.flashMs;
-
-        await wait(flashTime);
-
-        // empty moment
-        flashSvg.innerHTML = emptySvg();
-        await wait(300);
-
-        // show answers now
-        setPhase("phaseChoose");
-
-        const options = buildOptions(CURRENT.correct, CURRENT.cap);
-        renderAnswers(options);
-
-        showAnswers(true);
-        CURRENT.locked = false;
-        updateHud();
-
-        if (CURRENT.boltRound){
-          setTinyNote("bliksemronde");
-          setTimeout(() => setTinyNote(""), 950);
-        }
-      }
-
       function updateAdaptiveOnCorrect(){
         DATA.streak = (DATA.streak || 0) + 1;
-
-        // zachte versnelling, maar strak genoeg om tellen te ontmoedigen
         if (DATA.streak >= 2){
           CURRENT.flashMs = clamp(CURRENT.flashMs - 70, DATA.flashMin, DATA.flashMax);
           DATA.streak = 0;
         }
-
-        // sterren opbouwen naar 5, dan reset naar 0 voor een nieuwe mini serie
         setStars((DATA.stars || 0) + 1);
         if (DATA.stars >= 5){
           setStars(0);
@@ -1073,13 +1018,95 @@
         CURRENT.flashMs = clamp(CURRENT.flashMs + 160, DATA.flashMin, DATA.flashMax);
       }
 
-      async function showCorrectExample(){
+      function setStars(n){
+        DATA.stars = clamp(n, 0, 5);
+        const nodes = [...starsEl.querySelectorAll(".star")];
+        nodes.forEach((s, i) => s.classList.toggle("on", i < DATA.stars));
+      }
+
+      async function showCorrectExample(neutral=true){
+        // neutral=true: geen rode rand, geen feedback fase kleuren laten bijten
+        // we houden de fase op feedback, maar tonen voorbeeld zonder extra rand-effecten
+        const prevPhase = document.body.className;
+
+        if (neutral){
+          // tijdelijk terug naar choose randkleur zodat het voorbeeld niet "fout rood" voelt
+          // maar we laten de button feedback staan, enkel het voorbeeld blijft neutraal
+          document.body.classList.remove("phaseFeedbackWrong");
+        }
+
         if (DATA.level === 1){
           flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, 14);
         } else {
           const out = svgLevel2(CURRENT.correct, true, 14);
           flashSvg.innerHTML = out.svg;
         }
+
+        if (neutral){
+          // zet phase terug zoals hij was, zonder knipperen
+          // we doen dit microtask zodat de svg al gezet is
+          queueMicrotask(() => {
+            // restore minimal: als hij wrong was, zet wrong class terug
+            if (prevPhase.includes("phaseFeedbackWrong")) document.body.classList.add("phaseFeedbackWrong");
+          });
+        }
+      }
+
+      function emptyBoard(){
+        flashSvg.innerHTML = emptySvg();
+      }
+
+      function pickCorrect(){
+        applySettingsToCurrent();
+        if (DATA.level === 1) return randInt(1, CURRENT.cap);
+        return randInt(1, 9);
+      }
+
+      async function doRound(){
+        CURRENT.locked = true;
+        applySettingsToCurrent();
+        updateHud();
+
+        showAnswers(false);
+        clearAnswers();
+        setTinyNote("");
+
+        emptyBoard();
+        setPhase(null);
+        await wait(220);
+
+        CURRENT.correct = pickCorrect();
+        CURRENT.boltRound = isLightningRound();
+
+        setPhase("phaseFlash");
+
+        const flashTime = CURRENT.boltRound
+          ? clamp(Math.round(CURRENT.flashMs * 0.62), DATA.flashMin, DATA.flashMax)
+          : CURRENT.flashMs;
+
+        if (DATA.level === 1){
+          flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, 14);
+        } else {
+          const out = svgLevel2(CURRENT.correct, true, 14);
+          CURRENT.level2Meta = out.meta;
+          flashSvg.innerHTML = out.svg;
+        }
+
+        await wait(flashTime);
+
+        emptyBoard();
+        await wait(300);
+
+        setPhase("phaseChoose");
+        renderAnswers(buildOptions(CURRENT.correct, CURRENT.cap));
+        showAnswers(true);
+
+        if (CURRENT.boltRound){
+          setTinyNote("bliksemronde");
+          setTimeout(() => setTinyNote(""), 950);
+        }
+
+        CURRENT.locked = false;
       }
 
       async function onPick(btn, value){
@@ -1093,11 +1120,13 @@
           setPhase("phaseFeedbackGood");
           btn.classList.add("correct");
 
-          await showCorrectExample();
+          // voorbeeld kort neutraal, geen rood randgevoel
+          await showCorrectExample(true);
           await wait(420);
 
-          flashSvg.innerHTML = emptySvg();
+          emptyBoard();
 
+          // schuiven: portrait omhoog, landscape links
           await slideOutAnswers();
 
           showAnswers(false);
@@ -1105,7 +1134,6 @@
 
           updateAdaptiveOnCorrect();
           DATA.round += 1;
-
           saveData();
           updateHud();
 
@@ -1114,7 +1142,7 @@
           return;
         }
 
-        // wrong
+        // fout
         beep("no");
         setPhase("phaseFeedbackWrong");
         btn.classList.add("wrong");
@@ -1128,25 +1156,25 @@
         saveData();
         updateHud();
 
-        // 1: jouw keuze even laten staan
+        // jouw keuze langer laten staan
         await wait(950);
 
-        // 2: juiste voorbeeld even tonen, zoals op jouw referenties
-        await showCorrectExample();
+        // juiste voorbeeld tonen, maar neutraal (geen rood randgevoel)
+        await showCorrectExample(true);
         await wait(1000);
 
-        // 3: kort leeg, dan opnieuw flitsen met iets langere tijd
+        // opnieuw aanbieden
         showAnswers(false);
         await wait(220);
 
-        flashSvg.innerHTML = emptySvg();
+        emptyBoard();
         await wait(240);
 
         setPhase("phaseFlash");
-        await showCorrectExample();
+        await showCorrectExample(true);
         await wait(clamp(CURRENT.flashMs + 260, DATA.flashMin, DATA.flashMax));
 
-        flashSvg.innerHTML = emptySvg();
+        emptyBoard();
         await wait(280);
 
         setPhase("phaseChoose");
@@ -1157,17 +1185,8 @@
       }
 
       /* ---------------------------
-         UI actions
+         Instellingen UI
       ----------------------------*/
-
-      function openTunePanel(){
-        tunePanel.classList.remove("hidden");
-        syncTuneUI();
-      }
-      function closeTunePanel(){
-        tunePanel.classList.add("hidden");
-      }
-
       function syncTuneUI(){
         levelRange.value = String(DATA.level);
         levelValue.textContent = String(DATA.level);
@@ -1208,17 +1227,21 @@
         DATA.variation = Number(varRange.value) || 0;
         DATA.boltEvery = Number(boltRange.value) || 0;
 
-        // reset timing baseline if the teacher changes it
-        if (from === "flashStart"){
-          CURRENT.flashMs = DATA.flashStart;
-        }
+        if (from === "flashStart") CURRENT.flashMs = DATA.flashStart;
 
         saveData();
         syncTuneUI();
 
-        // update hud
         applySettingsToCurrent();
         updateHud();
+      }
+
+      function openTunePanel(){
+        tunePanel.classList.remove("hidden");
+        syncTuneUI();
+      }
+      function closeTunePanel(){
+        tunePanel.classList.add("hidden");
       }
 
       levelRange.addEventListener("input", () => commitTune("level"));
@@ -1245,7 +1268,7 @@
         CURRENT.locked = true;
         showAnswers(false);
         clearAnswers();
-        flashSvg.innerHTML = emptySvg();
+        emptyBoard();
         await wait(200);
         await doRound();
       });
@@ -1267,10 +1290,9 @@
 
       testSlideBtn.addEventListener("click", async () => {
         beep("tap");
-        // maak dummy knoppen, schuif ze weg, laat het zien
         showAnswers(true);
         setPhase("phaseChoose");
-        renderAnswers([1,2,3].map(x => x));
+        renderAnswers([1,2,3]);
         await wait(320);
         await slideOutAnswers();
         showAnswers(false);
@@ -1283,7 +1305,7 @@
         CURRENT.started = false;
         CURRENT.locked = true;
         clearAnswers();
-        flashSvg.innerHTML = emptySvg();
+        emptyBoard();
         showAnswers(false);
         setPhase(null);
         startOverlay.style.display = "flex";
@@ -1296,7 +1318,6 @@
         startOverlay.style.display = "none";
         beep("tap");
 
-        // reset session bits but keep settings
         CURRENT.flashMs = DATA.flashStart;
         DATA.round = 1;
         DATA.streak = 0;
@@ -1327,6 +1348,14 @@
       setStars(DATA.stars || 0);
       updateHud();
       syncTuneUI();
+
+      // bij draaien van iPad: geen rare state, alleen axis voor volgende slide
+      window.addEventListener("orientationchange", () => {
+        // geen UI reset, alleen zekerheid dat het nieuwe axis geldt
+      });
+      window.addEventListener("resize", () => {
+        // idem
+      });
     })();
   </script>
 </body>
