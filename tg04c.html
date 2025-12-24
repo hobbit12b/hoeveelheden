@@ -23,23 +23,23 @@
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      /* richtingslogica komt uit CSS, JS leest dit uit */
-      --dir-x: -1;         /* landscape: naar links */
+      --dir-x: -1;
       --dir-y:  0;
       --is-portrait: 0;
 
-      --slideOutDur: 680ms;
-      --slideOutGap: 170ms;
-      --slideInDur: 560ms;
-      --slideInGap: 150ms;
+      /* trager en vloeiender */
+      --slideOutDur: 980ms;
+      --slideOutGap: 220ms;
+      --slideInDur: 760ms;
+      --slideInGap: 190ms;
 
-      --easeSoft: cubic-bezier(0.42, 0, 0.58, 1);
-      --easeOutSoft: cubic-bezier(0.18, 0.85, 0.22, 1);
+      --easeInSoft: cubic-bezier(0.22, 0.95, 0.20, 1);
+      --easeOutSoft: cubic-bezier(0.18, 0.85, 0.18, 1);
     }
 
     @media (orientation: portrait){
       :root{
-        --dir-x: 0;         /* portrait: omhoog */
+        --dir-x: 0;
         --dir-y: -1;
         --is-portrait: 1;
       }
@@ -83,6 +83,10 @@
       min-height: 0;
     }
 
+    @media (orientation: portrait){
+      .left{ padding: 22px; }
+    }
+
     .right{
       background:#ffffff;
       position: relative;
@@ -91,7 +95,6 @@
       clip-path: inset(0);
     }
 
-    /* zichtbare middenlijn, geen masker rand */
     .divider{
       position:absolute;
       pointer-events:none;
@@ -175,7 +178,7 @@
     }
 
     @media (orientation: portrait){
-      .gameCard{ height: min(420px, 34vh); }
+      .gameCard{ height: min(460px, 40vh); }
     }
 
     body.phaseFlash .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(229,140,116,0.18) inset; }
@@ -191,6 +194,7 @@
       100%{ transform: translateX(0); }
     }
 
+    /* vraagkader consistent */
     .flashBoard{
       width: min(520px, 88%);
       aspect-ratio: 1.35 / 1;
@@ -204,6 +208,14 @@
       overflow:hidden;
       box-shadow: 0 14px 26px rgba(0,0,0,0.06);
     }
+    @media (orientation: portrait){
+      .flashBoard{
+        width: min(560px, 92%);
+        aspect-ratio: 1.35 / 1; /* blijft gelijk, dus randen voelen hetzelfde */
+        border-radius: 26px;     /* expliciet houden */
+      }
+    }
+
     .flashSvg{ width:100%; height:100%; }
 
     .rightInner{
@@ -216,7 +228,6 @@
       z-index: 10;
     }
 
-    /* dit is de echte clip, inclusief box shadow tijdens transform animaties */
     .maskViewport{
       position: relative;
       width: 100%;
@@ -226,7 +237,6 @@
       contain: paint;
       padding: 26px;
       z-index: 10;
-      will-change: transform;
       transform: translateZ(0);
     }
 
@@ -280,12 +290,26 @@
       align-items:center;
       justify-content:center;
       cursor:pointer;
+
       transform: translate3d(0,0,0);
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      transform-style: preserve-3d;
+
       transition: transform 120ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease, opacity 180ms ease, filter 180ms ease;
       position:relative;
       overflow:hidden;
-      will-change: transform, opacity;
-      backface-visibility: hidden;
+    }
+
+    /* portrait: meer vierkant */
+    @media (orientation: portrait){
+      .ansBtn{
+        aspect-ratio: 1 / 1;
+        min-height: 160px;
+      }
+      .answerGrid{
+        gap: 14px;
+      }
     }
 
     .ansBtn:active{
@@ -561,7 +585,7 @@
         return JSON.parse(JSON.stringify(obj));
       };
 
-      const LS_KEY = "slimkijken_subitize_v10";
+      const LS_KEY = "slimkijken_subitize_v11";
       const defaultData = {
         level: 1,
         l1Max: 4,
@@ -810,9 +834,9 @@
         const { portrait } = getDir();
 
         if (!portrait){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));  // rechts, midden, links
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));
         } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));  // onder, midden, boven
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));
         }
         return items.map(x => x.b);
       }
@@ -824,7 +848,7 @@
       function getOutVector(btn){
         const view = maskViewport.getBoundingClientRect();
         const r = btn.getBoundingClientRect();
-        const extra = 70;
+        const extra = 90;
 
         const { dx, dy } = getDir();
 
@@ -836,9 +860,10 @@
 
       async function slideOutAnswers(){
         const ordered = orderButtonsForSlideOut();
-        const dur = cssNum("--slideOutDur", 680);
-        const gap = cssNum("--slideOutGap", 170);
-        const ease = cssVar("--easeOutSoft") || "cubic-bezier(0.18, 0.85, 0.22, 1)";
+        const dur = cssNum("--slideOutDur", 980);
+        const gap = cssNum("--slideOutGap", 220);
+        const ease = getComputedStyle(document.documentElement).getPropertyValue("--easeOutSoft").trim()
+          || "cubic-bezier(0.18, 0.85, 0.18, 1)";
 
         ordered.forEach(b => b.style.pointerEvents = "none");
 
@@ -846,10 +871,12 @@
           const b = ordered[i];
           const v = getOutVector(b);
 
+          b.getAnimations().forEach(a => a.cancel());
+
           const anim = b.animate(
             [
               { transform: "translate3d(0,0,0)", opacity: 1 },
-              { transform: `translate3d(${v.x*0.70}px,${v.y*0.70}px,0)`, opacity: 0.98 },
+              { transform: `translate3d(${v.x*0.60}px,${v.y*0.60}px,0)`, opacity: 0.98 },
               { transform: `translate3d(${v.x}px,${v.y}px,0)`, opacity: 0.92 }
             ],
             { duration: dur, easing: ease, fill: "forwards" }
@@ -863,14 +890,15 @@
           await wait(gap);
         }
 
-        await wait(dur + 40);
+        await wait(dur + 60);
       }
 
       async function slideInAnswers(){
         const ordered = orderButtonsForSlideIn();
-        const dur = cssNum("--slideInDur", 560);
-        const gap = cssNum("--slideInGap", 150);
-        const ease = cssVar("--easeSoft") || "cubic-bezier(0.42, 0, 0.58, 1)";
+        const dur = cssNum("--slideInDur", 760);
+        const gap = cssNum("--slideInGap", 190);
+        const ease = getComputedStyle(document.documentElement).getPropertyValue("--easeInSoft").trim()
+          || "cubic-bezier(0.22, 0.95, 0.20, 1)";
 
         ordered.forEach(b => {
           const out = getOutVector(b);
@@ -893,7 +921,7 @@
           const anim = b.animate(
             [
               { transform: `translate3d(${out.x}px,${out.y}px,0)`, opacity: 0 },
-              { transform: `translate3d(${out.x*0.25}px,${out.y*0.25}px,0)`, opacity: 0.94 },
+              { transform: `translate3d(${out.x*0.22}px,${out.y*0.22}px,0)`, opacity: 0.94 },
               { transform: "translate3d(0,0,0)", opacity: 1 }
             ],
             { duration: dur, easing: ease, fill: "forwards" }
@@ -909,7 +937,7 @@
           await wait(gap);
         }
 
-        await wait(dur + 60);
+        await wait(dur + 80);
       }
 
       async function doRound(){
@@ -921,7 +949,7 @@
 
         emptyBoard();
         setPhase(null);
-        await wait(220);
+        await wait(240);
 
         CURRENT.correct = pickCorrect();
 
@@ -930,7 +958,7 @@
         await wait(CURRENT.flashMs);
 
         emptyBoard();
-        await wait(300);
+        await wait(320);
 
         setPhase("phaseChoose");
         renderAnswers(buildOptions(CURRENT.correct, CURRENT.cap));
@@ -955,7 +983,7 @@
 
           setPhase("phaseFlash");
           showExampleForValue(correct, true);
-          await wait(420);
+          await wait(520);
 
           emptyBoard();
           await slideOutAnswers();
@@ -967,7 +995,7 @@
           DATA.round += 1;
           saveData();
 
-          await wait(140);
+          await wait(160);
           await doRound();
           return;
         }
@@ -988,10 +1016,10 @@
 
         setPhase("phaseFlash");
         showExampleForValue(value, false);
-        await wait(680);
+        await wait(720);
 
         showExampleForValue(correct, true);
-        await wait(920);
+        await wait(980);
 
         emptyBoard();
         await slideOutAnswers();
@@ -999,17 +1027,17 @@
         showAnswers(false);
         clearAnswers();
 
-        await wait(180);
+        await wait(220);
 
         emptyBoard();
-        await wait(240);
+        await wait(260);
 
         setPhase("phaseFlash");
         showExampleForValue(correct, true);
         await wait(clamp(CURRENT.flashMs + 260, DATA.flashMin, DATA.flashMax));
 
         emptyBoard();
-        await wait(280);
+        await wait(300);
 
         setPhase("phaseChoose");
         renderAnswers(buildOptions(correct, CURRENT.cap));
@@ -1090,7 +1118,7 @@
         showAnswers(false);
         clearAnswers();
         emptyBoard();
-        await wait(200);
+        await wait(240);
         await doRound();
       });
 
@@ -1098,9 +1126,7 @@
         beep("tap");
         DATA = clone(defaultData);
         saveData();
-
         CURRENT.flashMs = DATA.flashStart;
-
         syncTuneUI();
       });
 
@@ -1111,7 +1137,7 @@
         renderAnswers([1,2,3]);
         await raf();
         await slideInAnswers();
-        await wait(260);
+        await wait(320);
         await slideOutAnswers();
         showAnswers(false);
         clearAnswers();
@@ -1166,7 +1192,7 @@
       }
 
       window.addEventListener("resize", () => { hardResetTransforms(); });
-      window.addEventListener("orientationchange", () => { setTimeout(hardResetTransforms, 220); });
+      window.addEventListener("orientationchange", () => { setTimeout(hardResetTransforms, 240); });
 
       flashSvg.innerHTML = emptySvg();
       showAnswers(false);
