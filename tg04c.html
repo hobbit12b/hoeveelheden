@@ -1,0 +1,458 @@
+/* ============================================================
+   Slim Kijken, levels 1 t/m 4
+   Config + item selectie + render helpers + hulpprotocol data
+   ============================================================ */
+
+/* ---------------------------
+   0) Kleine helpers
+----------------------------*/
+const SK = (() => {
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const rand01 = () => Math.random();
+  const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+
+  function weightedPick(list, weightKey = "w") {
+    let sum = 0;
+    for (const it of list) sum += Math.max(0, it[weightKey] ?? 0);
+    if (sum <= 0) return list[randInt(0, list.length - 1)];
+    let r = rand01() * sum;
+    for (const it of list) {
+      r -= Math.max(0, it[weightKey] ?? 0);
+      if (r <= 0) return it;
+    }
+    return list[list.length - 1];
+  }
+
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  /* ---------------------------
+     1) Patronen
+     Dobbelsteen (1..6) en vijfraam (1..10)
+  ----------------------------*/
+  const P = {
+    tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
+    ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
+    bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
+  };
+
+  const diceFaces = {
+    1: [P.mc],
+    2: [P.tl, P.br],
+    3: [P.tl, P.mc, P.br],
+    4: [P.tl, P.tr, P.bl, P.br],
+    5: [P.tl, P.tr, P.mc, P.bl, P.br],
+    6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+  };
+
+  function dotsFiveFrame(n){
+    const cols = [0.14, 0.32, 0.50, 0.68, 0.86];
+    const rows = [0.38, 0.62];
+    const out = [];
+    for(let i=0;i<n;i++){
+      const row = Math.floor(i/5);
+      const col = i%5;
+      out.push([cols[col], rows[row]]);
+    }
+    return out;
+  }
+
+  /* ---------------------------
+     2) Render dotSets (past op jouw svgForDots)
+     dotSet: { dots:[[x,y],...], box:{x0,y0,x1,y1} }
+     Je svgForDots gebruikt 0..1 coords in box en schaal zelf naar px.
+  ----------------------------*/
+  function boxFull(){
+    return { x0:0.12, y0:0.12, x1:0.88, y1:0.88 };
+  }
+  function boxLeft(){
+    return { x0:0.10, y0:0.18, x1:0.48, y1:0.82 };
+  }
+  function boxRight(){
+    return { x0:0.52, y0:0.18, x1:0.90, y1:0.82 };
+  }
+
+  function patternDice(n){
+    return [{ dots: diceFaces[n], box: boxFull() }];
+  }
+
+  function patternTwoDice(leftN, rightN){
+    return [
+      { dots: diceFaces[leftN], box: boxLeft() },
+      { dots: diceFaces[rightN], box: boxRight() }
+    ];
+  }
+
+  function patternFiveFrameTotal(n){
+    return [{ dots: dotsFiveFrame(n), box: { x0:0.10, y0:0.20, x1:0.90, y1:0.80 } }];
+  }
+
+  /* ---------------------------
+     3) Level configuraties
+     Je kunt gewichten later tweaken.
+  ----------------------------*/
+
+  // Level 1: totals 1..4, één groep, vaste dobbelsteenbeelden
+  // extra herhaling op 3 en 4 helpt richting doortellen
+  const L1_ITEMS = [
+    { total: 1, kind: "single", a: 1, w: 5 },
+    { total: 2, kind: "single", a: 2, w: 6 },
+    { total: 3, kind: "single", a: 3, w: 7 },
+    { total: 4, kind: "single", a: 4, w: 8 },
+  ];
+
+  // Level 2: totals 1..6, twee groepen, grootste altijd links
+  // bewust veel startgroep 4 en 5
+  const L2_SPLITS = [
+    { a: 4, b: 1, total: 5, w: 9 },
+    { a: 4, b: 2, total: 6, w: 8 },
+    { a: 5, b: 1, total: 6, w: 9 },
+    { a: 3, b: 1, total: 4, w: 6 },
+    { a: 3, b: 2, total: 5, w: 6 },
+    { a: 2, b: 1, total: 3, w: 4 },
+  ];
+
+  // Level 3: totals 1..9, twee groepen, grootste altijd links
+  // focus: 5 + 1..4, plus wat 6 + 1..3 voor verdieping
+  const L3_SPLITS = [
+    { a: 5, b: 1, total: 6, w: 10 },
+    { a: 5, b: 2, total: 7, w: 10 },
+    { a: 5, b: 3, total: 8, w: 9 },
+    { a: 5, b: 4, total: 9, w: 9 },
+
+    { a: 6, b: 1, total: 7, w: 6 },
+    { a: 6, b: 2, total: 8, w: 6 },
+    { a: 6, b: 3, total: 9, w: 5 },
+
+    // klein beetje herhaling van lagere totals, zodat het niet “altijd veel” voelt
+    { a: 4, b: 1, total: 5, w: 3 },
+    { a: 4, b: 2, total: 6, w: 3 },
+    { a: 3, b: 1, total: 4, w: 2 },
+  ];
+
+  // Level 4: totals 4..9, grootste soms links, soms rechts
+  // 2+2 af en toe, nooit twee keer achter elkaar
+  const L4_SPLITS = [
+    { a: 3, b: 1, total: 4, w: 6 },
+    { a: 2, b: 2, total: 4, w: 1, special: "equal" },
+
+    { a: 4, b: 1, total: 5, w: 7 },
+    { a: 3, b: 2, total: 5, w: 6 },
+
+    { a: 5, b: 1, total: 6, w: 8 },
+    { a: 4, b: 2, total: 6, w: 6 },
+
+    { a: 6, b: 1, total: 7, w: 7 },
+    { a: 5, b: 2, total: 7, w: 6 },
+    { a: 4, b: 3, total: 7, w: 4 },
+
+    { a: 6, b: 2, total: 8, w: 6 },
+    { a: 5, b: 3, total: 8, w: 4 },
+
+    { a: 6, b: 3, total: 9, w: 5 },
+    { a: 5, b: 4, total: 9, w: 4 },
+  ];
+
+  const RULES = {
+    // Level 2 anti tel: antwoordbeelden zichtbaar, daarna dicht
+    l2PeekMs: 1100,
+
+    // Level 4: start met 70% grootste links, later kan dit 0.5 worden
+    l4BigLeftProb: 0.70,
+
+    // Level 4: extra safety, naast lage w, max kans dat 2+2 uberhaupt mag vallen
+    l4EqualMaxProb: 0.10,
+
+    // voorkomt exact dezelfde split achter elkaar (handig voor aandacht)
+    avoidExactRepeat: true,
+  };
+
+  /* ---------------------------
+     4) Item generator per level
+     Retourneert een gestandaardiseerd item:
+     {
+       level,
+       total,
+       left, right,           // voor twee groepjes, anders null
+       single,                // voor level 1
+       bigSide: "left"|"right"|"none",
+       isEqual,
+       key,
+       // render helpers:
+       flashDotSets(),        // dotSets voor flits (jij doet svgForDots)
+       answerDotSets(n),      // dotSets voor antwoordkaart n
+       helpSteps()            // array van dotSets stappen: [stapA, stapB]
+     }
+  ----------------------------*/
+
+  function makeLevel1Item(mem){
+    mem = mem || {};
+    const picked = weightedPick(L1_ITEMS);
+    const n = picked.a;
+    const total = picked.total;
+    const key = `L1:${n}`;
+
+    mem.lastKey = key;
+
+    return {
+      level: 1,
+      total,
+      single: n,
+      left: null,
+      right: null,
+      bigSide: "none",
+      isEqual: false,
+      key,
+      flashDotSets: () => patternDice(n),
+      answerDotSets: (nOpt) => patternDice(nOpt),
+      helpSteps: () => {
+        // Level 1 hulp is alleen herhaling, geen deelstappen
+        const one = patternDice(n);
+        return [one, one];
+      }
+    };
+  }
+
+  function normalizeSplit(a,b){
+    const big = Math.max(a,b);
+    const small = Math.min(a,b);
+    return { big, small, isEqual: big === small };
+  }
+
+  function pickSplitWithMemory(list, mem){
+    mem = mem || {};
+    const lastKey = mem.lastKey || null;
+
+    let candidates = list.slice();
+
+    if (RULES.avoidExactRepeat && lastKey){
+      const filtered = candidates.filter(s => {
+        const k1 = `${s.a}+${s.b}`;
+        const k2 = `${s.b}+${s.a}`;
+        return lastKey !== k1 && lastKey !== k2;
+      });
+      if (filtered.length >= Math.max(5, Math.floor(list.length * 0.6))) candidates = filtered;
+    }
+
+    const picked = weightedPick(candidates);
+    mem.lastKey = `${picked.a}+${picked.b}`;
+    return picked;
+  }
+
+  function makeLevel2Item(mem){
+    mem = mem || {};
+    const picked = pickSplitWithMemory(L2_SPLITS, mem);
+    const { big, small } = normalizeSplit(picked.a, picked.b);
+
+    // Level 2: grootste altijd links
+    const left = big;
+    const right = small;
+
+    const total = picked.total;
+    const key = `L2:${big}+${small}`;
+
+    return {
+      level: 2,
+      total,
+      single: null,
+      left,
+      right,
+      bigSide: "left",
+      isEqual: false,
+      key,
+      flashDotSets: () => patternTwoDice(left, right),
+      // Level 2 antwoordkaarten: vast totaalbeeld via vijfraam (geen splitsing, voorkomt mismatch)
+      answerDotSets: (nOpt) => patternFiveFrameTotal(nOpt),
+      helpSteps: () => {
+        // Hulpprotocol: eerst alleen de grootste groep (links), dan beide samen
+        const stepA = [{ dots: diceFaces[left], box: boxLeft() }];
+        const stepB = patternTwoDice(left, right);
+        return [stepA, stepB];
+      }
+    };
+  }
+
+  function makeLevel3Item(mem){
+    mem = mem || {};
+    const picked = pickSplitWithMemory(L3_SPLITS, mem);
+    const { big, small } = normalizeSplit(picked.a, picked.b);
+
+    // Level 3: grootste altijd links
+    const left = big;
+    const right = small;
+
+    const total = picked.total;
+    const key = `L3:${big}+${small}`;
+
+    return {
+      level: 3,
+      total,
+      single: null,
+      left,
+      right,
+      bigSide: "left",
+      isEqual: false,
+      key,
+      flashDotSets: () => patternTwoDice(left, right),
+      // In level 3 antwoord via Marbotic scan, maar als je toch een kaart wilt tonen
+      // (bijv voor debug), dan is vijfraam totaal het rustigst.
+      answerDotSets: (nOpt) => patternFiveFrameTotal(nOpt),
+      helpSteps: () => {
+        const stepA = [{ dots: diceFaces[left], box: boxLeft() }];
+        const stepB = patternTwoDice(left, right);
+        return [stepA, stepB];
+      }
+    };
+  }
+
+  function makeLevel4Item(mem){
+    mem = mem || {};
+    const lastWasEqual = !!mem.lastWasEqual;
+    const lastKey = mem.lastKey || null;
+
+    let candidates = L4_SPLITS.slice();
+
+    // 2+2: af en toe, en nooit twee keer achter elkaar
+    candidates = candidates.filter(s => {
+      const isEqual = (s.a === s.b);
+      if (!isEqual) return true;
+      if (rand01() > RULES.l4EqualMaxProb) return false;
+      if (lastWasEqual) return false;
+      return true;
+    });
+
+    // optioneel: geen exact herhaling
+    if (RULES.avoidExactRepeat && lastKey){
+      const filtered = candidates.filter(s => {
+        const k1 = `${s.a}+${s.b}`;
+        const k2 = `${s.b}+${s.a}`;
+        return lastKey !== k1 && lastKey !== k2;
+      });
+      if (filtered.length >= 6) candidates = filtered;
+    }
+
+    const picked = weightedPick(candidates);
+    const { big, small, isEqual } = normalizeSplit(picked.a, picked.b);
+
+    let left, right, bigSide;
+
+    if (isEqual){
+      // 2+2: geen grootste groep, maar wissel wel om statiek te vermijden
+      if (rand01() < 0.5) { left = picked.a; right = picked.b; }
+      else { left = picked.b; right = picked.a; }
+      bigSide = "none";
+    } else {
+      const bigLeft = rand01() < RULES.l4BigLeftProb;
+      if (bigLeft){
+        left = big; right = small; bigSide = "left";
+      } else {
+        left = small; right = big; bigSide = "right";
+      }
+    }
+
+    mem.lastKey = `${picked.a}+${picked.b}`;
+    mem.lastWasEqual = isEqual;
+
+    const total = picked.total;
+    const key = `L4:${picked.a}+${picked.b}:${bigSide}`;
+
+    return {
+      level: 4,
+      total,
+      single: null,
+      left,
+      right,
+      bigSide,
+      isEqual,
+      key,
+      flashDotSets: () => patternTwoDice(left, right),
+      answerDotSets: (nOpt) => patternFiveFrameTotal(nOpt),
+      helpSteps: () => {
+        // Level 4 hulp: eerst alleen de grootste groep op de juiste kant
+        // Bij 2+2: eerst een willekeurige kant, dan beide
+        if (isEqual){
+          const firstLeft = rand01() < 0.5;
+          const stepA = firstLeft
+            ? [{ dots: diceFaces[left], box: boxLeft() }]
+            : [{ dots: diceFaces[right], box: boxRight() }];
+          const stepB = patternTwoDice(left, right);
+          return [stepA, stepB];
+        }
+
+        if (bigSide === "left"){
+          const stepA = [{ dots: diceFaces[left], box: boxLeft() }];
+          const stepB = patternTwoDice(left, right);
+          return [stepA, stepB];
+        } else {
+          const stepA = [{ dots: diceFaces[right], box: boxRight() }]; // grootste staat rechts
+          const stepB = patternTwoDice(left, right);
+          return [stepA, stepB];
+        }
+      }
+    };
+  }
+
+  function nextItem(level, mem){
+    if (level === 1) return makeLevel1Item(mem);
+    if (level === 2) return makeLevel2Item(mem);
+    if (level === 3) return makeLevel3Item(mem);
+    if (level === 4) return makeLevel4Item(mem);
+    throw new Error("unknown level");
+  }
+
+  /* ---------------------------
+     5) Antitel helper voor level 2
+     Jij hebt al hideAnswerFaces, hier alleen de regel wanneer.
+  ----------------------------*/
+  function shouldHideAnswerFaces(level){
+    return level === 2;
+  }
+
+  return {
+    RULES,
+    nextItem,
+    shouldHideAnswerFaces,
+
+    // expose patterns if you want
+    diceFaces,
+    patternDice,
+    patternTwoDice,
+    patternFiveFrameTotal,
+
+    // tiny utils
+    shuffle,
+    clamp,
+  };
+})();
+
+/* ============================================================
+   Voorbeeld integratie in jouw Slim Kijken game state
+   ============================================================ */
+
+// Bewaar per level eigen memory zodat herhaling-regels echt werken
+const MEM = {
+  1: { lastKey: null },
+  2: { lastKey: null },
+  3: { lastKey: null },
+  4: { lastKey: null, lastWasEqual: false },
+};
+
+// Bij nieuwe ronde:
+// const item = SK.nextItem(GAME.level, MEM[GAME.level]);
+// setBoard( svgForDots(item.flashDotSets(), opts) );
+
+// Bij antwoordkaarten:
+// Level 1: item.answerDotSets(nOpt) is dice
+// Level 2: item.answerDotSets(nOpt) is fiveframe totaal (en daarna dichtklappen)
+// Level 3: je gebruikt scan, maar je kunt fiveframe gebruiken voor debug
+// Level 4: meestal scan, of ook kaart, net wat je kiest
+
+// Bij hulpprotocol (fout 2):
+// const [stepA, stepB] = item.helpSteps();
+// setBoard(svgForDots(stepA)); wait(650);
+// setBoard(svgForDots(stepB)); wait(800);
