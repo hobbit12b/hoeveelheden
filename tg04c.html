@@ -2,772 +2,1382 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Slim Kijken, 1 bestand</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Slim Kijken</title>
   <style>
     :root{
-      --bg:#0b1220;
-      --card:#111a2e;
-      --card2:#0f1730;
-      --text:#eaf0ff;
-      --muted:#b8c4ff;
-      --accent:#7cf7c3;
-      --danger:#ff6b6b;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius: 18px;
+      --bg1:#0b1220;
+      --bg2:#111b33;
+      --card:#16244a;
+      --card2:#0f1a37;
+      --ink:#eaf0ff;
+      --muted:#a8b6e6;
+      --ok:#46e38a;
+      --no:#ff5b7a;
+      --accent:#7aa7ff;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --r:22px;
     }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 800px at 50% 20%, #182452 0%, var(--bg) 60%);
-      color:var(--text);
+      min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--ink);
+      background: radial-gradient(1200px 700px at 20% 20%, #1a2a5a 0%, var(--bg1) 45%, #070b14 100%);
       display:flex;
-      align-items:stretch;
+      align-items:center;
       justify-content:center;
-    }
-    .app{
-      width:min(980px, 100%);
-      padding: 14px 14px 22px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-    .topbar{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      padding: 12px 14px;
-      background: rgba(17,26,46,.72);
-      border: 1px solid rgba(124,247,195,.10);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-    }
-    .brand{
-      display:flex;
-      align-items:baseline;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .brand h1{
-      margin:0;
-      font-size:18px;
-      letter-spacing:.2px;
-    }
-    .brand .sub{
-      font-size:13px;
-      color:var(--muted);
-      opacity:.95;
-    }
-    .controls{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:flex-end;
-    }
-    .pill{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    label{
-      font-size:12px;
-      color:var(--muted);
-    }
-    select, button{
-      font: inherit;
-      color: var(--text);
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 12px;
-      padding: 10px 12px;
-      outline: none;
-    }
-    select{ padding-right: 34px; }
-    button{
-      cursor:pointer;
-      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      padding:18px;
       user-select:none;
       -webkit-tap-highlight-color: transparent;
     }
-    button:active{ transform: scale(.98); }
-    button.primary{
-      background: rgba(124,247,195,.14);
-      border-color: rgba(124,247,195,.28);
-    }
-    button.ghost{
-      background: rgba(255,255,255,.06);
-    }
-    button.danger{
-      background: rgba(255,107,107,.12);
-      border-color: rgba(255,107,107,.26);
-    }
-
-    .stageWrap{
-      flex:1;
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:12px;
-      min-height: 520px;
-    }
-    @media (max-width: 860px){
-      .stageWrap{ grid-template-columns: 1fr; }
-    }
-
-    .stage{
+    .app{
+      width:min(980px, 100%);
+      min-height:min(650px, 92vh);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:28px;
+      box-shadow:var(--shadow);
       position:relative;
-      background: linear-gradient(180deg, rgba(17,26,46,.82), rgba(15,23,48,.76));
-      border: 1px solid rgba(124,247,195,.10);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
       overflow:hidden;
-      display:flex;
-      flex-direction:column;
     }
-    .stageHeader{
+    .topbar{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding:16px 18px;
+      background: linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,0));
       gap:10px;
       flex-wrap:wrap;
     }
-    .stageHeader .meta{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      font-weight:700; letter-spacing:.2px;
+    }
+    .pill{
+      display:inline-flex;
       align-items:center;
-    }
-    .badge{
-      padding:6px 10px;
+      gap:10px;
+      padding:10px 14px;
       border-radius:999px;
-      font-size:12px;
-      color: var(--muted);
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+      font-weight:650;
+      font-size:14px;
+      white-space:nowrap;
     }
-    .badge strong{ color: var(--text); }
-
-    .canvasArea{
-      flex:1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 14px;
-      position:relative;
-    }
-    .board{
-      width: 100%;
-      max-width: 640px;
-      aspect-ratio: 4 / 3;
-      border-radius: 18px;
-      background: radial-gradient(900px 500px at 50% 10%, rgba(124,247,195,.10), rgba(255,255,255,.04) 45%, rgba(0,0,0,.12) 100%);
-      border: 1px solid rgba(255,255,255,.12);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      position:relative;
-    }
-    .board svg{ width:100%; height:100%; display:block; }
-
-    .answerPanel{
-      background: rgba(17,26,46,.72);
-      border: 1px solid rgba(124,247,195,.10);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
+    .pill b{color:var(--ink)}
+    .content{
+      padding:18px;
       display:flex;
       flex-direction:column;
+      gap:16px;
+      height:calc(100% - 62px);
     }
-    .answerHeader{
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+    .screen{
+      flex:1;
+      display:none;
+      gap:16px;
+      align-items:stretch;
+    }
+    .screen.active{display:flex}
+    .panel{
+      background: rgba(15,26,55,.70);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:var(--r);
+      padding:18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+    }
+    .panel h1{
+      margin:0 0 10px 0;
+      font-size:34px;
+      line-height:1.05;
+      letter-spacing:.2px;
+    }
+    .panel p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.35;
+    }
+    .bigCenter{
+      flex:1;
       display:flex;
-      justify-content:space-between;
+      flex-direction:column;
+      justify-content:center;
       align-items:center;
+      text-align:center;
+      gap:18px;
+      padding:30px;
+    }
+    .cta{
+      width:min(420px, 95%);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+    }
+    button{
+      border:none;
+      cursor:pointer;
+      outline:none;
+      font: inherit;
+      color:inherit;
+      background:none;
+    }
+    .btnPrimary{
+      width:100%;
+      padding:18px 18px;
+      border-radius:18px;
+      background: linear-gradient(135deg, rgba(122,167,255,1), rgba(122,167,255,.65));
+      color:#06102b;
+      font-weight:900;
+      letter-spacing:.2px;
+      box-shadow: 0 14px 30px rgba(122,167,255,.18);
+      transition: transform .08s ease;
+    }
+    .btnPrimary:active{transform: scale(.98)}
+    .btnGhost{
+      width:100%;
+      padding:14px 16px;
+      border-radius:18px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--ink);
+      font-weight:850;
+      transition: transform .08s ease;
+    }
+    .btnGhost:active{transform: scale(.98)}
+    .levelGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:14px;
+      width:min(820px, 100%);
+    }
+    .levelCard{
+      padding:16px;
+      border-radius:22px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      text-align:left;
+      display:flex;
+      flex-direction:column;
       gap:10px;
+    }
+    .levelCard .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .levelCard .title{
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .tag{
+      padding:8px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      font-weight:800;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .tag.ok{color:rgba(70,227,138,.95); border-color:rgba(70,227,138,.35)}
+    .tag.info{color:rgba(122,167,255,.95); border-color:rgba(122,167,255,.35)}
+    .mini{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.3;
+    }
+
+    /* Game layout */
+    .gameWrap{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .arena{
+      flex:1;
+      border-radius:26px;
+      background: radial-gradient(900px 520px at 50% 20%, rgba(122,167,255,.20), rgba(0,0,0,0) 60%),
+                  linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .flashBoard{
+      width:min(520px, 92%);
+      aspect-ratio: 1.35 / 1;
+      border-radius:26px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .flashBoard::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(420px 240px at 50% 20%, rgba(255,255,255,.12), rgba(0,0,0,0) 70%);
+      pointer-events:none;
+    }
+    .hintPulse{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .15s ease;
+      z-index:5;
+    }
+    .hintPulse.show{opacity:1}
+    .hintBubble{
+      padding:10px 14px;
+      border-radius:999px;
+      background: rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      color:rgba(255,255,255,.90);
+      font-weight:900;
+      letter-spacing:.2px;
+      font-size:14px;
+      backdrop-filter: blur(6px);
+    }
+
+    .answers{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap:12px;
+    }
+    .ansBtn{
+      border-radius:22px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      padding:14px;
+      min-height:130px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: transform .08s ease, border-color .18s ease, background .18s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .ansBtn:active{transform: scale(.985)}
+    .ansBtn.correct{
+      background: rgba(70,227,138,.12);
+      border-color: rgba(70,227,138,.45);
+    }
+    .ansBtn.wrong{
+      background: rgba(255,91,122,.12);
+      border-color: rgba(255,91,122,.45);
+    }
+
+    /* Anti tel cards for level 2 */
+    .cardInner{
+      width:100%;
+      height:100%;
+      position:relative;
+      transform-style:preserve-3d;
+      transition: transform .38s ease;
+    }
+    .cardFace{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      backface-visibility:hidden;
+    }
+    .cardBack{
+      transform: rotateY(180deg);
+      background: rgba(0,0,0,.18);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .backMark{
+      font-weight:950;
+      font-size:42px;
+      color: rgba(255,255,255,.75);
+      letter-spacing:.2px;
+    }
+    .ansBtn.closed .cardInner{
+      transform: rotateY(180deg);
+    }
+
+    /* Scan pad for level 3 */
+    .scanPad{
+      display:none;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap:12px;
+    }
+    .scanPad.show{display:grid}
+    .scanBtn{
+      border-radius:22px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      min-height:100px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:38px;
+      font-weight:950;
+      letter-spacing:.2px;
+      transition: transform .08s ease, border-color .18s ease, background .18s ease;
+    }
+    .scanBtn:active{transform: scale(.985)}
+    .scanBtn.correct{
+      background: rgba(70,227,138,.12);
+      border-color: rgba(70,227,138,.45);
+    }
+    .scanBtn.wrong{
+      background: rgba(255,91,122,.12);
+      border-color: rgba(255,91,122,.45);
+    }
+
+    .footerRow{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
       flex-wrap:wrap;
     }
-    .answerHeader .hint{
-      font-size:12px;
-      color: var(--muted);
-    }
-    .grid{
-      padding: 12px;
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:10px;
-    }
-    @media (max-width: 420px){
-      .grid{ grid-template-columns: repeat(2, 1fr); }
-    }
-
-    .cardBtn{
-      padding: 14px 10px;
-      border-radius: 16px;
-      text-align:center;
-      font-size: 20px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      min-height: 58px;
-    }
-    .cardBtn small{
-      display:block;
-      margin-top:4px;
-      font-size:12px;
-      color: var(--muted);
-    }
-
-    .toast{
-      position:absolute;
-      left:50%;
-      transform: translateX(-50%);
-      bottom: 14px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      color: var(--text);
-      font-size: 14px;
-      display:none;
-      gap:10px;
+    .meter{
+      display:flex;
+      gap:8px;
       align-items:center;
-      max-width: calc(100% - 28px);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
+      color:var(--muted);
+      font-weight:850;
+      font-size:14px;
+      flex-wrap:wrap;
     }
-    .toast.show{ display:flex; }
-
-    .emoji{
-      font-size: 20px;
-      line-height: 1;
-      transform: translateY(-1px);
+    .stars{
+      display:flex; gap:6px; align-items:center;
     }
+    .star{
+      width:14px; height:14px;
+      border-radius:50%;
+      background: rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.20);
+    }
+    .star.on{
+      background: rgba(122,167,255,.95);
+      border-color: rgba(122,167,255,.65);
+    }
+    .backBtn{
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:900;
+    }
+    .peekBtn{
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:950;
+      display:none;
+    }
+    .peekBtn.show{display:inline-flex; align-items:center; gap:8px;}
 
-    .overlayCard{
+    /* Settings overlay */
+    .overlay{
       position:absolute;
-      inset: 0;
+      inset:0;
+      background: rgba(0,0,0,.55);
       display:none;
       align-items:center;
       justify-content:center;
-      background: rgba(0,0,0,.40);
-      backdrop-filter: blur(6px);
-      padding: 16px;
-      z-index: 20;
+      padding:18px;
+      z-index:50;
     }
-    .overlayCard.show{ display:flex; }
-    .overlayInner{
-      width: min(520px, 100%);
-      background: rgba(17,26,46,.92);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 14px 14px 12px;
+    .overlay.show{display:flex}
+    .settings{
+      width:min(720px, 100%);
+      border-radius:26px;
+      background: rgba(15,26,55,.92);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:var(--shadow);
+      padding:18px;
     }
-    .overlayInner h2{
-      margin:0 0 8px;
-      font-size: 16px;
+    .settings h2{
+      margin:0 0 10px 0;
+      font-size:22px;
+      font-weight:950;
     }
-    .overlayInner p{
-      margin:0 0 10px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.4;
+    .grid2{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:12px;
     }
-    .overlayInner .row{
+    label{
       display:flex;
+      flex-direction:column;
+      gap:6px;
+      color:var(--muted);
+      font-weight:800;
+      font-size:14px;
+    }
+    input[type="range"]{width:100%}
+    .settings .row{
+      display:flex;
+      justify-content:space-between;
       gap:10px;
-      justify-content:flex-end;
+      align-items:center;
+      margin-top:12px;
       flex-wrap:wrap;
     }
-
-    .debug{
-      position: fixed;
-      right: 10px;
-      bottom: 10px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 320px;
-      z-index: 99;
-      display:none;
+    .smallBtn{
+      padding:12px 14px;
+      border-radius:16px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:900;
     }
-    .debug.show{ display:block; }
-    .debug b{ color: var(--text); }
 
-    .errorBanner{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      background: rgba(255,107,107,.14);
-      border: 1px solid rgba(255,107,107,.26);
-      color: var(--text);
-      display:none;
+    /* Dot rendering helpers */
+    .svgWrap{width:100%; height:100%; position:relative; z-index:2;}
+    .shake{animation: shake .22s linear 1;}
+    @keyframes shake{
+      0%{transform: translateX(0)}
+      25%{transform: translateX(-6px)}
+      50%{transform: translateX(6px)}
+      75%{transform: translateX(-4px)}
+      100%{transform: translateX(0)}
     }
-    .errorBanner.show{ display:block; }
+
+    /* Corner hotspot for settings */
+    .hotspot{
+      position:absolute;
+      top:0;
+      right:0;
+      width:52px;
+      height:52px;
+      opacity:0;
+      z-index:60;
+    }
+
+    /* Error banner */
+    .err{
+      position:absolute;
+      left:18px;
+      right:18px;
+      bottom:18px;
+      padding:12px 14px;
+      border-radius:18px;
+      background: rgba(255,91,122,.14);
+      border:1px solid rgba(255,91,122,.30);
+      color: rgba(255,255,255,.92);
+      display:none;
+      z-index:80;
+    }
+    .err.show{display:block}
+
+    @media (max-width: 820px){
+      .levelGrid{grid-template-columns: 1fr}
+    }
+    @media (max-width: 720px){
+      .answers{grid-template-columns: 1fr; }
+      .ansBtn{min-height:110px}
+      .panel h1{font-size:30px}
+      .scanBtn{min-height:92px; font-size:34px;}
+    }
   </style>
 </head>
 
 <body>
-  <div class="app" id="appRoot">
+  <div class="app" id="app">
+    <div class="hotspot" id="hotspot" title=""></div>
+    <div class="err" id="err"></div>
+
     <div class="topbar">
       <div class="brand">
-        <h1>Slim Kijken</h1>
-        <div class="sub">snel hoeveelheden overzien, zonder tellen</div>
+        <div class="pill"><b>👀</b> Slim Kijken</div>
       </div>
-
-      <div class="controls">
-        <div class="pill">
-          <label for="levelSel">Level</label>
-          <select id="levelSel" aria-label="Kies level">
-            <option value="1">Level 1, tot en met 4</option>
-            <option value="2" selected>Level 2, tot en met 9 (antwoordkaart kort)</option>
-            <option value="3">Level 3, tot en met 9</option>
-          </select>
-        </div>
-        <button class="ghost" id="btnToggleOrientation" title="Wissel liggend, staand">Liggend of staand</button>
-        <button class="primary" id="btnNew">Nieuwe kaart</button>
-        <button class="danger" id="btnReset">Reset</button>
+      <div class="pill" id="statusPill">
+        <span>Level</span> <b id="pillLevel">1</b> <span>•</span> <span id="pillMode">klaar</span>
       </div>
     </div>
 
-    <div class="stageWrap">
-      <div class="stage">
-        <div class="stageHeader">
-          <div class="meta">
-            <span class="badge">Vraag: <strong id="qCount">0</strong></span>
-            <span class="badge">Goed: <strong id="okCount">0</strong></span>
-            <span class="badge">Fout: <strong id="noCount">0</strong></span>
-          </div>
-          <div class="meta">
-            <span class="badge">Max: <strong id="maxN">9</strong></span>
-            <span class="badge">Weergave: <strong id="oriLabel">liggend</strong></span>
+    <div class="content">
+      <!-- START -->
+      <div class="screen active" id="screenStart">
+        <div class="panel bigCenter">
+          <h1>Kijk, onthoud, kies</h1>
+          <p>Stippen, heel kort, daarna kies je.</p>
+          <div class="cta">
+            <button class="btnPrimary" id="btnStart">Start ▶</button>
+            <button class="btnGhost" id="btnToLevels">Levels</button>
           </div>
         </div>
-
-        <div class="canvasArea">
-          <div class="board" id="board" aria-label="Antwoordkaart en stippenveld">
-            <div class="overlayCard" id="coverOverlay">
-              <div class="overlayInner">
-                <h2>Kaart dicht</h2>
-                <p>Dit is expres, om tellen te ontmoedigen. Tik op “Toon kaart” en kijk snel.</p>
-                <div class="row">
-                  <button class="primary" id="btnShowCard">Toon kaart</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="overlayCard" id="endOverlay">
-              <div class="overlayInner">
-                <h2 id="endTitle">Klaar</h2>
-                <p id="endText">Wil je verder spelen of opnieuw beginnen</p>
-                <div class="row">
-                  <button class="ghost" id="btnContinue">Verder</button>
-                  <button class="primary" id="btnRestart">Opnieuw</button>
-                </div>
-              </div>
-            </div>
-
-            <svg id="svgStage" viewBox="0 0 640 480" role="img" aria-label="Stippen"></svg>
-
-            <div class="toast" id="toast">
-              <span class="emoji" id="toastEmoji">🙂</span>
-              <span id="toastText">Goed</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="errorBanner" id="errorBanner"></div>
       </div>
 
-      <div class="answerPanel">
-        <div class="answerHeader">
-          <div>
-            <div style="font-size:14px;color:var(--muted)">Tik op het juiste aantal</div>
-            <div class="hint" id="antiTellHint"></div>
+      <!-- LEVELS -->
+      <div class="screen" id="screenLevels">
+        <div class="panel bigCenter" style="gap:14px;">
+          <h1>Kies een level</h1>
+          <p>Rustig starten, daarna sneller en groter.</p>
+
+          <div class="levelGrid">
+            <button class="levelCard" id="pickL1">
+              <div class="row">
+                <div class="title">Level 1</div>
+                <div class="tag ok">1 tot en met 4</div>
+              </div>
+              <div class="mini">Snel herkennen.</div>
+            </button>
+
+            <button class="levelCard" id="pickL2">
+              <div class="row">
+                <div class="title">Level 2</div>
+                <div class="tag info">1 tot en met 9</div>
+              </div>
+              <div class="mini">Antwoordkaarten klappen dicht.</div>
+            </button>
+
+            <button class="levelCard" id="pickL3">
+              <div class="row">
+                <div class="title">Level 3</div>
+                <div class="tag info">1 tot en met 9</div>
+              </div>
+              <div class="mini">Kies het cijfer.</div>
+            </button>
           </div>
-          <button class="ghost" id="btnRepeat">Nog een keer laten zien</button>
+
+          <div class="cta" style="max-width:420px;">
+            <button class="btnGhost" id="btnBackFromLevels">Terug</button>
+          </div>
         </div>
-        <div class="grid" id="answersGrid"></div>
+      </div>
+
+      <!-- GAME -->
+      <div class="screen" id="screenGame">
+        <div class="gameWrap">
+          <div class="arena">
+            <div class="flashBoard" id="flashBoard" aria-label="flitsbord">
+              <div class="svgWrap" id="flashSvg"></div>
+              <div class="hintPulse" id="hintPulse"><div class="hintBubble" id="hintText">kijk</div></div>
+            </div>
+          </div>
+
+          <div class="answers" id="answers"></div>
+          <div class="scanPad" id="scanPad"></div>
+
+          <div class="footerRow">
+            <div class="meter">
+              <span>Ronde</span>
+              <b id="roundNum">1</b>
+              <span>•</span>
+              <span>Tijd</span>
+              <b id="flashMs">800</b><span>ms</span>
+            </div>
+
+            <button class="peekBtn" id="btnPeek"><span>👀</span><span>Kort kijken</span></button>
+
+            <div class="stars" id="stars" aria-label="voortgang">
+              <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+            </div>
+
+            <button class="backBtn" id="btnBackToLevels">Levels</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS OVERLAY (druk lang rechtsboven) -->
+    <div class="overlay" id="overlay">
+      <div class="settings">
+        <h2>Instellingen</h2>
+        <div class="grid2">
+          <label>
+            Level 1 tijd (ms)
+            <input type="range" min="450" max="1200" step="50" id="setL1" />
+            <span id="valL1"></span>
+          </label>
+          <label>
+            Level 2 tijd (ms)
+            <input type="range" min="500" max="1600" step="50" id="setL2" />
+            <span id="valL2"></span>
+          </label>
+          <label>
+            Level 3 tijd (ms)
+            <input type="range" min="500" max="1600" step="50" id="setL3" />
+            <span id="valL3"></span>
+          </label>
+          <label>
+            Level 2 kaart open (ms)
+            <input type="range" min="500" max="1400" step="50" id="setPeek" />
+            <span id="valPeek"></span>
+          </label>
+          <label>
+            Min tijd (ms)
+            <input type="range" min="350" max="900" step="50" id="setMin" />
+            <span id="valMin"></span>
+          </label>
+          <label>
+            Max tijd (ms)
+            <input type="range" min="1200" max="2400" step="50" id="setMax" />
+            <span id="valMax"></span>
+          </label>
+        </div>
+        <div class="row">
+          <button class="smallBtn" id="btnResetProgress">Reset</button>
+          <button class="smallBtn" id="btnCloseOverlay">Sluiten</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="debug" id="debugBox"></div>
+<script>
+(() => {
+  "use strict";
 
-  <script>
-    "use strict";
+  /* ---------------------------
+     Helpers
+  ----------------------------*/
+  const $ = (id) => document.getElementById(id);
+  const errBox = $("err");
+  function showErr(msg){
+    errBox.textContent = msg;
+    errBox.classList.add("show");
+  }
+  function clearErr(){
+    errBox.textContent = "";
+    errBox.classList.remove("show");
+  }
 
-    const $ = (sel, root=document) => root.querySelector(sel);
+  function deepClone(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  function uiOrientation(){
+    return (window.innerHeight > window.innerWidth) ? "portrait" : "landscape";
+  }
 
-    const state = {
-      level: 2,
-      orientation: "landscape", // landscape | portrait
-      qCount: 0,
-      okCount: 0,
-      noCount: 0,
-      currentAnswer: null,
-      currentDotSets: null,
-      antiTellActive: false,
-      antiTellMs: 900, // alleen level 2
-      boardLocked: false
+  /* ---------------------------
+     Persistence
+  ----------------------------*/
+  const LS_KEY = "slimkijken_v2";
+  const defaultData = {
+    settings: {
+      l1Start: 800,
+      l2Start: 900,
+      l3Start: 900,
+      l2Peek: 900,
+      minMs: 450,
+      maxMs: 1800
+    }
+  };
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return deepClone(defaultData);
+      const data = JSON.parse(raw);
+      return {
+        ...deepClone(defaultData),
+        ...data,
+        settings: { ...deepClone(defaultData.settings), ...(data.settings||{}) }
+      };
+    }catch(e){
+      return deepClone(defaultData);
+    }
+  }
+  function saveData(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
+  let DATA = loadData();
+
+  /* ---------------------------
+     DOM
+  ----------------------------*/
+  const screens = {
+    start: $("screenStart"),
+    levels: $("screenLevels"),
+    game: $("screenGame")
+  };
+  const pillLevel = $("pillLevel");
+  const pillMode  = $("pillMode");
+
+  const btnStart = $("btnStart");
+  const btnToLevels = $("btnToLevels");
+  const btnBackFromLevels = $("btnBackFromLevels");
+  const btnBackToLevels = $("btnBackToLevels");
+
+  const pickL1 = $("pickL1");
+  const pickL2 = $("pickL2");
+  const pickL3 = $("pickL3");
+
+  const flashBoard = $("flashBoard");
+  const flashSvg = $("flashSvg");
+  const answersEl = $("answers");
+  const scanPadEl = $("scanPad");
+
+  const roundNumEl = $("roundNum");
+  const flashMsEl = $("flashMs");
+  const starsEl = $("stars");
+  const hintPulse = $("hintPulse");
+  const hintText = $("hintText");
+
+  const btnPeek = $("btnPeek");
+
+  const overlay = $("overlay");
+  const hotspot = $("hotspot");
+  const setL1 = $("setL1");
+  const setL2 = $("setL2");
+  const setL3 = $("setL3");
+  const setPeek = $("setPeek");
+  const setMin = $("setMin");
+  const setMax = $("setMax");
+  const valL1 = $("valL1");
+  const valL2 = $("valL2");
+  const valL3 = $("valL3");
+  const valPeek = $("valPeek");
+  const valMin = $("valMin");
+  const valMax = $("valMax");
+  const btnCloseOverlay = $("btnCloseOverlay");
+  const btnResetProgress = $("btnResetProgress");
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove("active"));
+    screens[name].classList.add("active");
+  }
+
+  /* ---------------------------
+     Sound
+  ----------------------------*/
+  let audioCtx = null;
+  function beep(type){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = audioCtx.currentTime;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+
+      o.type = "sine";
+      if(type === "ok") o.frequency.setValueAtTime(740, t);
+      if(type === "no") o.frequency.setValueAtTime(220, t);
+      if(type === "tap") o.frequency.setValueAtTime(520, t);
+
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
+
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + 0.22);
+    }catch(e){}
+  }
+
+  /* ---------------------------
+     Dot patterns
+  ----------------------------*/
+  const P = {
+    tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
+    ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
+    bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
+  };
+  const diceFaces = {
+    1: [P.mc],
+    2: [P.tl, P.br],
+    3: [P.tl, P.mc, P.br],
+    4: [P.tl, P.tr, P.bl, P.br],
+    5: [P.tl, P.tr, P.mc, P.bl, P.br],
+    6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+  };
+
+  function boxesFor(k, ori){
+    if(k === 1){
+      return [{x0:0.12, y0:0.12, x1:0.88, y1:0.88}];
+    }
+    if(k === 2){
+      if(ori === "portrait"){
+        return [
+          {x0:0.20, y0:0.08, x1:0.80, y1:0.48},
+          {x0:0.20, y0:0.52, x1:0.80, y1:0.92}
+        ];
+      }
+      return [
+        {x0:0.10, y0:0.18, x1:0.48, y1:0.82},
+        {x0:0.52, y0:0.18, x1:0.90, y1:0.82}
+      ];
+    }
+    if(ori === "portrait"){
+      return [
+        {x0:0.22, y0:0.06, x1:0.78, y1:0.34},
+        {x0:0.22, y0:0.36, x1:0.78, y1:0.64},
+        {x0:0.22, y0:0.66, x1:0.78, y1:0.94}
+      ];
+    }
+    return [
+      {x0:0.10, y0:0.10, x1:0.48, y1:0.48},
+      {x0:0.52, y0:0.10, x1:0.90, y1:0.48},
+      {x0:0.31, y0:0.52, x1:0.69, y1:0.90}
+    ];
+  }
+
+  function splitForBigNumbers(n){
+    if(n <= 4) return [n];
+    const map = {
+      5: [[3,2],[4,1]],
+      6: [[4,2],[3,3],[5,1]],
+      7: [[4,3],[5,2],[6,1]],
+      8: [[4,4],[5,3],[6,2]],
+      9: [[5,4],[6,3],[4,3,2]]
     };
+    const opts = map[n] || [[n]];
+    const pick = opts[randInt(0, opts.length-1)];
+    return pick.slice().sort((a,b) => b-a);
+  }
 
-    // level maxima volgens jouw afspraak
-    function maxForLevel(level){
-      if(level === 1) return 4;
-      if(level === 2) return 9; // jij wilde level 2 door tot en met 9
-      return 9; // level 3 tot en met 9
+  function dotSetsForGroups(groups){
+    const ori = uiOrientation();
+    const boxes = boxesFor(groups.length, ori);
+    return groups.map((g, i) => ({
+      dots: diceFaces[g] || diceFaces[6],
+      box: boxes[Math.min(i, boxes.length-1)]
+    }));
+  }
+
+  function svgForDots(dotSets, opts = {}){
+    const {
+      dotRadius = 11,
+      dotColor = "rgba(234,240,255,.96)",
+      stroke = "rgba(0,0,0,.25)",
+      strokeW = 1.2,
+      glow = true
+    } = opts;
+
+    const w = 520, h = 380;
+    const r = dotRadius;
+
+    const filter = glow ? `
+      <defs>
+        <filter id="g">
+          <feGaussianBlur stdDeviation="2.3" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>` : "";
+
+    if(!dotSets || dotSets.length === 0){
+      return `
+        <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
+          ${filter}
+        </svg>`;
     }
 
-    // hoeveelheid in deelsetjes, om subitizing te stimuleren
-    // voorbeeld 7 kan 4+3 of 5+2, 9 kan 5+4 of 4+3+2
-    function splitNumber(n){
-      if(n <= 3) return [n];
-      const options = [];
-      if(n === 4) options.push([2,2],[3,1]);
-      if(n === 5) options.push([3,2],[4,1]);
-      if(n === 6) options.push([3,3],[4,2],[5,1]);
-      if(n === 7) options.push([4,3],[5,2],[3,2,2]);
-      if(n === 8) options.push([4,4],[5,3],[3,3,2]);
-      if(n === 9) options.push([5,4],[4,3,2],[3,3,3]);
-      if(options.length === 0) return [n];
-      return options[Math.floor(Math.random() * options.length)];
-    }
-
-    // stippen posities genereren per set, in clusters
-    function generateDotSets(split, orientation){
-      // We gebruiken een 640x480 board, clusters verdelen in "zones"
-      const zonesLandscape = [
-        {x: 160, y: 170}, {x: 480, y: 170}, {x: 320, y: 340}
-      ];
-      const zonesPortrait = [
-        {x: 320, y: 140}, {x: 320, y: 300}, {x: 320, y: 430}
-      ];
-      const zones = orientation === "portrait" ? zonesPortrait : zonesLandscape;
-
-      const sets = [];
-      for(let i=0;i<split.length;i++){
-        const count = split[i];
-        const zone = zones[Math.min(i, zones.length-1)];
-        sets.push({
-          count,
-          cx: zone.x + rand(-40, 40),
-          cy: zone.y + rand(-30, 30),
-          dots: makeClusterDots(count, zone, orientation)
-        });
-      }
-      return sets;
-    }
-
-    function makeClusterDots(count, zone, orientation){
-      const dots = [];
-      const baseR = 12;
-      const spread = (orientation === "portrait") ? 52 : 64;
-
-      // simpele "botte" anti overlap
-      for(let i=0;i<count;i++){
-        let tries = 0;
-        while(tries < 60){
-          const x = zone.x + rand(-spread, spread);
-          const y = zone.y + rand(-spread, spread);
-          const ok = dots.every(d => dist(d.x,d.y,x,y) > baseR * 2.2);
-          if(ok){
-            dots.push({x,y,r: baseR + rand(-1, 2)});
-            break;
-          }
-          tries++;
-        }
-        if(tries >= 60){
-          dots.push({x: zone.x + rand(-spread, spread), y: zone.y + rand(-spread, spread), r: baseR});
-        }
-      }
-      return dots;
-    }
-
-    function rand(a,b){ return Math.round(a + Math.random()*(b-a)); }
-    function dist(x1,y1,x2,y2){ return Math.hypot(x2-x1, y2-y1); }
-
-    function renderDots(svgEl, dotSets){
-      // schoon
-      while(svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
-
-      // zachte achtergrond stipjes
-      const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      bg.setAttribute("x","0"); bg.setAttribute("y","0");
-      bg.setAttribute("width","640"); bg.setAttribute("height","480");
-      bg.setAttribute("fill","transparent");
-      svgEl.appendChild(bg);
-
-      // groepjes tekenen
-      for(const set of dotSets){
-        for(const dot of set.dots){
-          const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-          c.setAttribute("cx", dot.x);
-          c.setAttribute("cy", dot.y);
-          c.setAttribute("r", dot.r);
-          c.setAttribute("fill", "rgba(234,240,255,.92)");
-          c.setAttribute("opacity", "0.98");
-          svgEl.appendChild(c);
-        }
-      }
-    }
-
-    function buildAnswerButtons(maxN){
-      const grid = $("#answersGrid");
-      grid.innerHTML = "";
-
-      const nums = [];
-      for(let i=1;i<=maxN;i++) nums.push(i);
-
-      // maak grid 1..max, kindvriendelijk groot
-      for(const n of nums){
-        const btn = document.createElement("button");
-        btn.className = "cardBtn";
-        btn.type = "button";
-        btn.dataset.value = String(n);
-        btn.innerHTML = `${n}<small>tik</small>`;
-        btn.addEventListener("click", () => submitAnswer(n));
-        grid.appendChild(btn);
-      }
-    }
-
-    function setLevel(level){
-      state.level = level;
-      const maxN = maxForLevel(level);
-      $("#maxN").textContent = String(maxN);
-      buildAnswerButtons(maxN);
-
-      // anti tel alleen voor level 2
-      state.antiTellActive = (level === 2);
-      $("#antiTellHint").textContent = state.antiTellActive
-        ? "Level 2: kaart is kort zichtbaar"
-        : "Kaart blijft zichtbaar";
-
-      newCard();
-    }
-
-    function setOrientation(next){
-      state.orientation = next;
-      $("#oriLabel").textContent = (next === "portrait") ? "staand" : "liggend";
-      // dezelfde kaart opnieuw tekenen in nieuwe layout
-      if(state.currentDotSets){
-        const svg = $("#svgStage");
-        renderDots(svg, state.currentDotSets);
-      }
-    }
-
-    function lockBoardWithCover(locked){
-      state.boardLocked = locked;
-      const cover = $("#coverOverlay");
-      if(locked) cover.classList.add("show");
-      else cover.classList.remove("show");
-    }
-
-    function toast(emoji, text){
-      const t = $("#toast");
-      $("#toastEmoji").textContent = emoji;
-      $("#toastText").textContent = text;
-      t.classList.add("show");
-      clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => t.classList.remove("show"), 900);
-    }
-
-    function updateCounters(){
-      $("#qCount").textContent = String(state.qCount);
-      $("#okCount").textContent = String(state.okCount);
-      $("#noCount").textContent = String(state.noCount);
-    }
-
-    function chooseNumber(){
-      const maxN = maxForLevel(state.level);
-      // kies 1..max, met iets meer gewicht op middenwaardes
-      const pool = [];
-      for(let n=1;n<=maxN;n++){
-        const w = 1 + Math.round((maxN - Math.abs((maxN+1)/2 - n)) / 2);
-        for(let i=0;i<w;i++) pool.push(n);
-      }
-      return pool[Math.floor(Math.random()*pool.length)];
-    }
-
-    function newCard(){
-      try{
-        const svg = $("#svgStage");
-
-        const n = chooseNumber();
-        state.currentAnswer = n;
-
-        const split = splitNumber(n);
-        const dotSets = generateDotSets(split, state.orientation);
-        state.currentDotSets = dotSets;
-
-        renderDots(svg, dotSets);
-
-        state.qCount += 1;
-        updateCounters();
-
-        if(state.antiTellActive){
-          // Kaart even tonen, dan dicht
-          lockBoardWithCover(false);
-          clearTimeout(newCard._timer);
-          newCard._timer = setTimeout(() => lockBoardWithCover(true), state.antiTellMs);
-        } else {
-          lockBoardWithCover(false);
-        }
-
-        hideEndOverlay();
-        clearError();
-
-        debugLine(`Nieuwe kaart: antwoord ${n}, split ${split.join("+")}`);
-      } catch(err){
-        showError("Er ging iets mis bij het maken van een nieuwe kaart: " + (err && err.message ? err.message : err));
-        console.error(err);
-      }
-    }
-
-    function revealBriefly(){
-      if(!state.antiTellActive){
-        // niks speciaals nodig, kaart blijft toch zichtbaar
-        toast("👀","Kijk nog eens");
-        return;
-      }
-      lockBoardWithCover(false);
-      clearTimeout(revealBriefly._timer);
-      revealBriefly._timer = setTimeout(() => lockBoardWithCover(true), state.antiTellMs);
-      toast("👀","Kijk snel");
-    }
-
-    function submitAnswer(n){
-      try{
-        if(state.boardLocked){
-          toast("⛔","Eerst even de kaart tonen");
-          return;
-        }
-
-        const correct = (n === state.currentAnswer);
-        if(correct){
-          state.okCount += 1;
-          updateCounters();
-          toast("😄", `${n} is goed`);
-        } else {
-          state.noCount += 1;
-          updateCounters();
-          toast("😅", `Dat was ${n}, het was ${state.currentAnswer}`);
-        }
-
-        // automatische volgende kaart
-        // level 2 blijft anti tel gelden, dus kaart wordt ook weer kort
-        setTimeout(() => newCard(), 450);
-      } catch(err){
-        showError("Er ging iets mis bij het verwerken van je antwoord: " + (err && err.message ? err.message : err));
-        console.error(err);
-      }
-    }
-
-    function resetAll(){
-      state.qCount = 0;
-      state.okCount = 0;
-      state.noCount = 0;
-      updateCounters();
-      newCard();
-      toast("🔄","Reset");
-    }
-
-    function showEndOverlay(title, text){
-      $("#endTitle").textContent = title;
-      $("#endText").textContent = text;
-      $("#endOverlay").classList.add("show");
-    }
-    function hideEndOverlay(){
-      $("#endOverlay").classList.remove("show");
-    }
-
-    function showError(msg){
-      const b = $("#errorBanner");
-      b.textContent = msg;
-      b.classList.add("show");
-      debugLine("ERROR: " + msg);
-    }
-    function clearError(){
-      const b = $("#errorBanner");
-      b.textContent = "";
-      b.classList.remove("show");
-    }
-
-    // Debug overlay, handig als je zegt: ik zie alleen code of wit scherm
-    function debugLine(s){
-      const dbg = $("#debugBox");
-      const now = new Date();
-      const stamp = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"});
-      dbg.innerHTML = `<b>${stamp}</b> ${escapeHtml(s)}<br>` + dbg.innerHTML;
-    }
-    function escapeHtml(str){
-      return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-    }
-    function toggleDebug(){
-      $("#debugBox").classList.toggle("show");
-    }
-
-    // Init
-    function init(){
-      // Als je dit ziet, dan draait JS echt
-      debugLine("Init ok, scripts draaien");
-
-      // UI
-      $("#levelSel").addEventListener("change", (e) => setLevel(Number(e.target.value)));
-      $("#btnNew").addEventListener("click", () => newCard());
-      $("#btnReset").addEventListener("click", () => resetAll());
-      $("#btnRepeat").addEventListener("click", () => revealBriefly());
-
-      $("#btnShowCard").addEventListener("click", () => {
-        // toon kaart, en bij level 2 sluit hij vanzelf weer
-        revealBriefly();
+    const circles = [];
+    dotSets.forEach((set) => {
+      const box = set.box;
+      set.dots.forEach(([x,y]) => {
+        const X = (box.x0 + x*(box.x1-box.x0)) * w;
+        const Y = (box.y0 + y*(box.y1-box.y0)) * h;
+        circles.push({X,Y});
       });
-
-      $("#btnToggleOrientation").addEventListener("click", () => {
-        const next = (state.orientation === "landscape") ? "portrait" : "landscape";
-        setOrientation(next);
-        toast("📐", next === "portrait" ? "Staand" : "Liggend");
-      });
-
-      // lange tik rechts onder debug aan of uit
-      let pressTimer = null;
-      document.addEventListener("pointerdown", (e) => {
-        if(e.clientX > window.innerWidth - 90 && e.clientY > window.innerHeight - 90){
-          pressTimer = setTimeout(() => toggleDebug(), 520);
-        }
-      });
-      document.addEventListener("pointerup", () => { clearTimeout(pressTimer); pressTimer = null; });
-
-      // startwaarden
-      setOrientation("landscape");
-      setLevel(2); // standaard level 2
-      updateCounters();
-    }
-
-    // als er iets buiten onze try catch faalt
-    window.addEventListener("error", (e) => {
-      showError("Scriptfout: " + (e.message || "onbekend"));
     });
 
-    if(document.readyState === "loading"){
-      document.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
+    const cs = circles.map(c => `
+      <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${r}"
+        fill="${dotColor}"
+        fill-opacity="0.88"
+        stroke="${stroke}" stroke-width="${strokeW}"
+        ${glow ? `filter="url(#g)"` : "" }
+      />`).join("");
+
+    return `
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
+        ${filter}
+        ${cs}
+      </svg>`;
+  }
+
+  function setBoard(svgHtml){
+    flashSvg.innerHTML = svgHtml;
+  }
+
+  function showHint(text){
+    hintText.textContent = text;
+    hintPulse.classList.add("show");
+    setTimeout(() => hintPulse.classList.remove("show"), 650);
+  }
+
+  /* ---------------------------
+     Game engine
+  ----------------------------*/
+  let GAME = null;
+
+  function maxForLevel(level){
+    if(level === 1) return 4;
+    return 9;
+  }
+
+  function newGame(level){
+    clearErr();
+
+    const s = DATA.settings;
+    const startMs = (level === 1) ? s.l1Start : (level === 2 ? s.l2Start : s.l3Start);
+
+    GAME = {
+      level,
+      flashMs: clamp(startMs, s.minMs, s.maxMs),
+      round: 1,
+      streak: 0,
+      stars: 0,
+      locked: false,
+      phase: "ready",
+      current: null,
+      wrongCountThisItem: 0,
+      peekTimer: null
+    };
+
+    pillLevel.textContent = String(level);
+    pillMode.textContent = "klaar";
+
+    renderStars();
+    updateMeter();
+    buildScanPad();
+    buildNextRound();
+  }
+
+  function updateMeter(){
+    roundNumEl.textContent = String(GAME.round);
+    flashMsEl.textContent = String(Math.round(GAME.flashMs));
+  }
+
+  function renderStars(){
+    const nodes = [...starsEl.querySelectorAll(".star")];
+    nodes.forEach((n, i) => n.classList.toggle("on", i < GAME.stars));
+  }
+
+  function clearAnswers(){
+    answersEl.innerHTML = "";
+  }
+
+  function makeItem(level){
+    const cap = maxForLevel(level);
+    const n = randInt(1, cap);
+
+    if(level === 1){
+      const groups = [n];
+      const dotSets = dotSetsForGroups(groups);
+      return {
+        correct: n,
+        groups,
+        flash: () => svgForDots(dotSets),
+        optionSvg: (v) => svgForDots(dotSetsForGroups([v]), {dotRadius:12, glow:false})
+      };
     }
-  </script>
+
+    const groups = splitForBigNumbers(n);
+    const dotSets = dotSetsForGroups(groups);
+
+    return {
+      correct: n,
+      groups,
+      flash: () => svgForDots(dotSets),
+      optionSvg: (v) => {
+        const og = splitForBigNumbers(v);
+        return svgForDots(dotSetsForGroups(og), {dotRadius:12, glow:false});
+      }
+    };
+  }
+
+  async function buildNextRound(){
+    clearErr();
+    clearAnswers();
+    answersEl.classList.remove("hide");
+    flashBoard.classList.remove("shake");
+    hintPulse.classList.remove("show");
+
+    GAME.phase = "ready";
+    GAME.locked = true;
+    pillMode.textContent = "kijk";
+
+    btnPeek.classList.toggle("show", GAME.level === 2);
+
+    scanPadEl.classList.toggle("show", GAME.level === 3);
+    answersEl.style.display = (GAME.level === 3) ? "none" : "grid";
+
+    GAME.current = makeItem(GAME.level);
+    GAME.wrongCountThisItem = 0;
+
+    setBoard(svgForDots([], {glow:false}));
+    await wait(420);
+
+    await doFlashAndAsk();
+  }
+
+  async function doFlashAndAsk(){
+    GAME.phase = "flash";
+    setBoard(GAME.current.flash());
+    await wait(GAME.flashMs);
+
+    setBoard(svgForDots([], {glow:false}));
+    await wait(280);
+
+    GAME.phase = "recall";
+    pillMode.textContent = (GAME.level === 3) ? "kies" : "kies";
+
+    if(GAME.level === 3){
+      GAME.locked = false;
+      return;
+    }
+
+    renderAnswerButtons();
+    if(GAME.level === 2){
+      peekAnswersOnce();
+    }
+    GAME.locked = false;
+  }
+
+  function buildOptions(correct, cap){
+    const options = new Set([correct]);
+    const deltas = [-3,-2,-1,1,2,3];
+    while(options.size < 3){
+      const d = deltas[randInt(0, deltas.length-1)];
+      const v = clamp(correct + d, 1, cap);
+      options.add(v);
+    }
+    return shuffle([...options]);
+  }
+
+  function renderAnswerButtons(){
+    const correct = GAME.current.correct;
+    const cap = maxForLevel(GAME.level);
+    const arr = buildOptions(correct, cap);
+
+    answersEl.innerHTML = "";
+    arr.forEach(v => {
+      const btn = document.createElement("button");
+      btn.className = "ansBtn";
+      btn.setAttribute("aria-label", "antwoord");
+      btn.dataset.value = String(v);
+
+      if(GAME.level === 2){
+        btn.classList.add("closed");
+        btn.innerHTML = `
+          <div class="cardInner">
+            <div class="cardFace cardFront">
+              <div style="width:100%; height:100%;">${GAME.current.optionSvg(v)}</div>
+            </div>
+            <div class="cardFace cardBack">
+              <div class="backMark">?</div>
+            </div>
+          </div>`;
+      }else{
+        btn.innerHTML = `<div style="width:100%; height:100%;">${GAME.current.optionSvg(v)}</div>`;
+      }
+
+      btn.addEventListener("click", () => onPickAnswer(btn, v));
+      answersEl.appendChild(btn);
+    });
+  }
+
+  function openAnswerCards(){
+    const btns = [...answersEl.querySelectorAll(".ansBtn")];
+    btns.forEach(b => b.classList.remove("closed"));
+  }
+  function closeAnswerCards(){
+    const btns = [...answersEl.querySelectorAll(".ansBtn")];
+    btns.forEach(b => b.classList.add("closed"));
+  }
+
+  function peekAnswersOnce(){
+    if(GAME.level !== 2) return;
+    clearTimeout(GAME.peekTimer);
+    openAnswerCards();
+    GAME.peekTimer = setTimeout(() => {
+      closeAnswerCards();
+    }, DATA.settings.l2Peek);
+  }
+
+  btnPeek.addEventListener("click", () => {
+    if(!GAME || GAME.level !== 2) return;
+    if(GAME.phase !== "recall") return;
+    beep("tap");
+    peekAnswersOnce();
+  });
+
+  function buildScanPad(){
+    scanPadEl.innerHTML = "";
+    for(let n=1;n<=9;n++){
+      const b = document.createElement("button");
+      b.className = "scanBtn";
+      b.textContent = String(n);
+      b.addEventListener("click", () => onPickAnswer(b, n, true));
+      scanPadEl.appendChild(b);
+    }
+  }
+
+  async function onPickAnswer(btn, value, isScanPad=false){
+    if(!GAME || GAME.locked) return;
+    if(GAME.phase !== "recall") return;
+
+    GAME.locked = true;
+
+    const correct = GAME.current.correct;
+
+    if(value === correct){
+      beep("ok");
+      btn.classList.add("correct");
+      GAME.streak += 1;
+      GAME.stars = Math.min(5, GAME.stars + 1);
+      renderStars();
+
+      if(GAME.streak >= 3){
+        GAME.flashMs = clamp(GAME.flashMs - 100, DATA.settings.minMs, DATA.settings.maxMs);
+        GAME.streak = 0;
+      }
+
+      pillMode.textContent = "goed";
+      setBoard(GAME.current.flash());
+      await wait(520);
+      setBoard(svgForDots([], {glow:false}));
+
+      GAME.round += 1;
+      updateMeter();
+
+      if(GAME.round > 10){
+        showScreen("levels");
+        pillMode.textContent = "klaar";
+        return;
+      }
+
+      await buildNextRound();
+      return;
+    }
+
+    beep("no");
+    btn.classList.add("wrong");
+    flashBoard.classList.add("shake");
+    GAME.streak = 0;
+    GAME.wrongCountThisItem += 1;
+
+    GAME.flashMs = clamp(GAME.flashMs + 200, DATA.settings.minMs, DATA.settings.maxMs);
+    updateMeter();
+
+    pillMode.textContent = "nog eens";
+    await wait(260);
+    flashBoard.classList.remove("shake");
+
+    if(GAME.wrongCountThisItem === 1){
+      showHint("kijk nog eens");
+      setBoard(GAME.current.flash());
+      await wait(Math.min(DATA.settings.maxMs, GAME.flashMs + 250));
+      setBoard(svgForDots([], {glow:false}));
+      await wait(280);
+
+      if(GAME.level === 3){
+        GAME.locked = false;
+        pillMode.textContent = "kies";
+        return;
+      }
+
+      renderAnswerButtons();
+      if(GAME.level === 2) peekAnswersOnce();
+      GAME.locked = false;
+      pillMode.textContent = "kies";
+      return;
+    }
+
+    if(GAME.level === 1){
+      showHint("rustig");
+      setBoard(GAME.current.flash());
+      await wait(Math.min(DATA.settings.maxMs, GAME.flashMs + 350));
+      setBoard(svgForDots([], {glow:false}));
+      await wait(280);
+
+      renderAnswerButtons();
+      GAME.locked = false;
+      pillMode.textContent = "kies";
+      return;
+    }
+
+    // Level 2 and 3, guided look: biggest group first, then full
+    const groups = (GAME.current.groups || []).slice().sort((a,b) => b-a);
+    const big = groups[0] || 1;
+    const rest = groups.slice(1);
+    showHint("eerst groot, dan erbij");
+
+    const step1 = svgForDots(dotSetsForGroups([big]), {glow:true});
+    setBoard(step1);
+    await wait(650);
+
+    const step2 = GAME.current.flash();
+    setBoard(step2);
+    await wait(800);
+
+    setBoard(svgForDots([], {glow:false}));
+    await wait(280);
+
+    if(GAME.level === 3){
+      GAME.locked = false;
+      pillMode.textContent = "kies";
+      return;
+    }
+
+    renderAnswerButtons();
+    if(GAME.level === 2) peekAnswersOnce();
+    GAME.locked = false;
+    pillMode.textContent = "kies";
+  }
+
+  /* ---------------------------
+     Settings overlay
+  ----------------------------*/
+  function syncVals(){
+    valL1.textContent = String(DATA.settings.l1Start);
+    valL2.textContent = String(DATA.settings.l2Start);
+    valL3.textContent = String(DATA.settings.l3Start);
+    valPeek.textContent = String(DATA.settings.l2Peek);
+    valMin.textContent = String(DATA.settings.minMs);
+    valMax.textContent = String(DATA.settings.maxMs);
+  }
+
+  function openSettings(){
+    setL1.value = DATA.settings.l1Start;
+    setL2.value = DATA.settings.l2Start;
+    setL3.value = DATA.settings.l3Start;
+    setPeek.value = DATA.settings.l2Peek;
+    setMin.value = DATA.settings.minMs;
+    setMax.value = DATA.settings.maxMs;
+    syncVals();
+    overlay.classList.add("show");
+  }
+  function closeSettings(){ overlay.classList.remove("show"); }
+
+  function commitSettings(){
+    DATA.settings.l1Start = Number(setL1.value);
+    DATA.settings.l2Start = Number(setL2.value);
+    DATA.settings.l3Start = Number(setL3.value);
+    DATA.settings.l2Peek = Number(setPeek.value);
+    DATA.settings.minMs = Number(setMin.value);
+    DATA.settings.maxMs = Number(setMax.value);
+
+    if(DATA.settings.minMs > DATA.settings.maxMs){
+      const tmp = DATA.settings.minMs;
+      DATA.settings.minMs = DATA.settings.maxMs;
+      DATA.settings.maxMs = tmp;
+    }
+
+    saveData();
+    syncVals();
+  }
+
+  [setL1,setL2,setL3,setPeek,setMin,setMax].forEach(el => {
+    el.addEventListener("input", commitSettings);
+  });
+
+  btnCloseOverlay.addEventListener("click", () => {
+    beep("tap");
+    closeSettings();
+  });
+  overlay.addEventListener("click", (e) => {
+    if(e.target === overlay) closeSettings();
+  });
+
+  btnResetProgress.addEventListener("click", () => {
+    beep("tap");
+    DATA = deepClone(defaultData);
+    saveData();
+    syncVals();
+    closeSettings();
+    showScreen("start");
+    pillMode.textContent = "klaar";
+    setBoard(svgForDots([], {glow:false}));
+  });
+
+  let pressTimer = null;
+  hotspot.addEventListener("touchstart", startPress, {passive:true});
+  hotspot.addEventListener("mousedown", startPress);
+  hotspot.addEventListener("touchend", endPress);
+  hotspot.addEventListener("mouseup", endPress);
+  hotspot.addEventListener("mouseleave", endPress);
+
+  function startPress(){
+    pressTimer = setTimeout(() => openSettings(), 650);
+  }
+  function endPress(){
+    if(pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+  }
+
+  /* ---------------------------
+     Navigation
+  ----------------------------*/
+  btnStart.addEventListener("click", () => {
+    beep("tap");
+    showScreen("levels");
+  });
+  btnToLevels.addEventListener("click", () => {
+    beep("tap");
+    showScreen("levels");
+  });
+  btnBackFromLevels.addEventListener("click", () => {
+    beep("tap");
+    showScreen("start");
+    pillMode.textContent = "klaar";
+  });
+  btnBackToLevels.addEventListener("click", () => {
+    beep("tap");
+    showScreen("levels");
+    pillMode.textContent = "klaar";
+  });
+
+  pickL1.addEventListener("click", () => {
+    beep("tap");
+    showScreen("game");
+    newGame(1);
+  });
+  pickL2.addEventListener("click", () => {
+    beep("tap");
+    showScreen("game");
+    newGame(2);
+  });
+  pickL3.addEventListener("click", () => {
+    beep("tap");
+    showScreen("game");
+    newGame(3);
+  });
+
+  /* ---------------------------
+     Init and safety
+  ----------------------------*/
+  window.addEventListener("error", (e) => {
+    showErr("Er ging iets mis, open dit bestand in een browser, niet in een editor.");
+    console.error(e);
+  });
+
+  syncVals();
+  clearErr();
+  setBoard(svgForDots([], {glow:false}));
+
+})();
+</script>
 </body>
 </html>
