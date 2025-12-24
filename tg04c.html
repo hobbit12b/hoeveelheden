@@ -13,27 +13,26 @@
       --brand:#e58c74;
       --text:#6f6b68;
 
-      --dashW:6px;
-      --dashLen:18px;
-      --dashGap:12px;
-
-      --line: rgba(245,180,152,0.85);
-      --lineSoft: rgba(245,180,152,0.55);
+      /* exact zoals referentie */
+      --midLine: rgba(245,180,152,0.85);
 
       --card-radius:28px;
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      --slideMs: 980ms;
-      --slideDelay: 140ms;
+      --slideMs: 1180ms;
       --ease: cubic-bezier(.22,.61,.35,1);
 
-      --maskSize: 56px;
-      --maskFade: 26px;
+      /* mask vrijwel nul, zodat er geen witte balk ontstaat */
+      --maskSize: 0px;
+      --maskFade: 0px;
 
       --pressDown: 2px;
 
       --wrongFill: rgba(248, 197, 197, 0.85);
       --wrongBorder: rgba(229, 140, 116, 0.45);
+
+      --correctFill: rgba(210, 244, 214, 0.92);
+      --correctBorder: rgba(144, 204, 152, 0.70);
 
       --flashMs: 650;
     }
@@ -81,14 +80,15 @@
       position: relative;
       overflow:hidden;
       min-height: 0;
+      transition: background 140ms ease;
     }
 
-    /* Middenlijn weer gestippeld */
+    /* middenlijn positie exact zoals Tellen en scannen */
     @media (orientation: landscape){
-      .scan-surface{ border-left: var(--dashW) dashed var(--line); }
+      .scan-surface{ border-left: 6px dashed var(--midLine); }
     }
     @media (orientation: portrait){
-      .scan-surface{ border-top: var(--dashW) dashed var(--line); }
+      .scan-surface{ border-top: 6px dashed var(--midLine); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -152,7 +152,7 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: 6px solid var(--line);
+      border: 6px solid rgba(245,180,152,0.85);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -171,18 +171,22 @@
       height: 100%;
       border-radius: 26px;
       background:#ffffff;
-      border: 2px solid var(--lineSoft);
+      border: 2px solid rgba(245,180,152,0.55);
       display:flex;
       align-items:center;
       justify-content:center;
       overflow:hidden;
       position:relative;
     }
+
+    /* portrait: flitsbord 10% kleiner zodat randen netjes blijven */
     @media (orientation: portrait){
       .flashBoard{
         width: min(520px, 90%);
         height: auto;
         aspect-ratio: 1.5 / 1;
+        transform: scale(0.90);
+        transform-origin: center;
       }
     }
 
@@ -204,12 +208,12 @@
       z-index: 10;
     }
 
-    /* ruimte zodat masker niets “afsnijdt” in rust */
+    /* geen extra padding meer, anders ontstaat witte balk */
     @media (orientation: landscape){
-      .scanStage{ padding-left: calc(18px + var(--maskSize)); }
+      .scanStage{ padding-left: 18px; }
     }
     @media (orientation: portrait){
-      .scanStage{ padding-top: calc(18px + var(--maskSize)); }
+      .scanStage{ padding-top: 18px; }
     }
 
     .answersWrap{
@@ -217,7 +221,7 @@
       max-width: 560px;
     }
 
-    /* Landscape: onder elkaar, gecentreerd */
+    /* landscape onder elkaar */
     .answers{
       display:grid;
       grid-template-columns: 1fr;
@@ -226,7 +230,7 @@
       align-items:center;
     }
 
-    /* Portrait: naast elkaar */
+    /* portrait naast elkaar */
     @media (orientation: portrait){
       .answers{
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -240,7 +244,7 @@
       border:none;
       background:#ffffff;
       border-radius: 22px;
-      border: 3px solid var(--line);
+      border: 3px solid rgba(245,180,152,0.85);
       box-shadow: 0 12px 24px rgba(0,0,0,0.10);
       cursor:pointer;
 
@@ -257,8 +261,8 @@
     }
 
     @media (orientation: landscape){
-      .answersWrap{ width: min(380px, 92%); }
-      .ansBtn{ width: clamp(92px, 13vw, 142px); }
+      .answersWrap{ width: min(360px, 92%); }
+      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
     }
 
     .ansBtn:active{
@@ -266,10 +270,10 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.10);
     }
 
-    .ansBtn.pressBounce{ animation: pressBounce 260ms var(--ease) 1; }
+    .ansBtn.pressBounce{ animation: pressBounce 280ms var(--ease) 1; }
     @keyframes pressBounce{
       0%{ transform: translateY(0); }
-      40%{ transform: translateY(var(--pressDown)); }
+      42%{ transform: translateY(var(--pressDown)); }
       100%{ transform: translateY(0); }
     }
 
@@ -278,55 +282,15 @@
       border-color: var(--wrongBorder);
     }
 
+    .ansBtn.correctHold{
+      background: var(--correctFill);
+      border-color: var(--correctBorder);
+    }
+
     .answersHidden{ opacity:0; pointer-events:none; }
 
-    /* Masker op middenlijn, wit vlak plus fade, vangt schaduw */
-    .midMask{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      z-index: 50;
-    }
-    @media (orientation: landscape){
-      .midMask::before{
-        content:"";
-        position:absolute;
-        left: calc(-1 * var(--dashW));
-        top:0;
-        width: var(--maskSize);
-        height: 100%;
-        background: #fff;
-      }
-      .midMask::after{
-        content:"";
-        position:absolute;
-        left: calc(-1 * var(--dashW) + var(--maskSize));
-        top:0;
-        width: var(--maskFade);
-        height:100%;
-        background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0) 100%);
-      }
-    }
-    @media (orientation: portrait){
-      .midMask::before{
-        content:"";
-        position:absolute;
-        left: 0;
-        top: calc(-1 * var(--dashW));
-        width: 100%;
-        height: var(--maskSize);
-        background: #fff;
-      }
-      .midMask::after{
-        content:"";
-        position:absolute;
-        left:0;
-        top: calc(-1 * var(--dashW) + var(--maskSize));
-        width:100%;
-        height: var(--maskFade);
-        background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 100%);
-      }
-    }
+    /* masker: nul, dus geen witte balk */
+    .midMask{ display:none; }
 
     .startOverlay{
       position:fixed;
@@ -489,7 +453,6 @@
       <div class="answersWrap" id="answersWrap">
         <div class="answers answersHidden" id="answers"></div>
       </div>
-      <div class="midMask" aria-hidden="true"></div>
     </div>
   </section>
 
@@ -552,8 +515,6 @@
       const answersEl = document.getElementById("answers");
       const scanArea = document.getElementById("scanArea");
 
-      const cssRoot = document.documentElement;
-
       /* WebAudio beep */
       let audioCtx = null;
       function beep(type){
@@ -574,7 +535,7 @@
         }catch(e){}
       }
 
-      /* Dots, stabiel, niet spiegelen */
+      /* Dots */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -645,12 +606,8 @@
         return arr;
       }
 
-      function hideAnswers(){
-        answersEl.classList.add("answersHidden");
-      }
-      function showAnswers(){
-        answersEl.classList.remove("answersHidden");
-      }
+      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
       function renderAnswers(correct, onPick){
         const arr = buildOptions(correct);
@@ -660,7 +617,6 @@
           const btn = document.createElement("button");
           btn.className = "ansBtn";
           btn.type = "button";
-          btn.dataset.value = String(v);
 
           btn.addEventListener("pointerdown", () => {
             btn.classList.remove("pressBounce");
@@ -684,15 +640,15 @@
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
 
-        const maskSize = parseFloat(getComputedStyle(cssRoot).getPropertyValue("--maskSize")) || 56;
-        const extra = maskSize + 22;
+        /* exact vanaf de stippellijn, dus geen extra mask marge */
+        const extra = 10;
 
         if(isPortrait()){
-          const seamY = a.top; /* horizontale middenlijn */
+          const seamY = a.top; // stippellijn ligt hier
           const dy = -((b.bottom - seamY) + extra);
           return { x: 0, y: dy };
         }else{
-          const seamX = a.left; /* verticale middenlijn */
+          const seamX = a.left; // stippellijn ligt hier
           const dx = -((b.right - seamX) + extra);
           return { x: dx, y: 0 };
         }
@@ -701,9 +657,9 @@
       function sortedButtonsForExit(btns){
         const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
         if(isPortrait()){
-          rects.sort((u,v) => v.r.left - u.r.left);  /* rechts, midden, links */
+          rects.sort((u,v) => v.r.left - u.r.left);
         }else{
-          rects.sort((u,v) => v.r.top - u.r.top);    /* onder, midden, boven */
+          rects.sort((u,v) => v.r.top - u.r.top);
         }
         return rects.map(x => x.b);
       }
@@ -724,8 +680,8 @@
         showAnswers();
         await raf();
 
-        const ms = parseFloat(getComputedStyle(cssRoot).getPropertyValue("--slideMs")) || 980;
-        const easing = getComputedStyle(cssRoot).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
+        const ms = 1180;
+        const easing = "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
           btn.animate(
@@ -733,11 +689,11 @@
               { transform: btn.style.transform, opacity: 0 },
               { transform: "translate(0px, 0px)", opacity: 1 }
             ],
-            { duration: ms, easing, fill: "forwards", delay: i * 90 }
+            { duration: ms, easing, fill: "forwards", delay: i * 95 }
           );
         });
 
-        await wait(ms + 90*(btns.length-1) + 60);
+        await wait(ms + 95*(btns.length-1) + 60);
 
         btns.forEach(btn => {
           btn.style.transform = "translate(0px, 0px)";
@@ -748,8 +704,8 @@
       async function animateOutButtons(btns, staggerMs){
         if(!btns.length) return;
 
-        const ms = parseFloat(getComputedStyle(cssRoot).getPropertyValue("--slideMs")) || 980;
-        const easing = getComputedStyle(cssRoot).getPropertyValue("--ease") || "cubic-bezier(.22,.61,.35,1)";
+        const ms = 1180;
+        const easing = "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
           const v = slideVectorForButton(btn);
@@ -767,7 +723,7 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
-      /* Game flow */
+      /* Game */
       let started = false;
       let locked = false;
       let flashMs = Number(flashMsRange.value);
@@ -809,12 +765,16 @@
         if(value === correct){
           beep("ok");
 
+          btn.classList.add("correctHold");
+
           setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
           await wait(520);
           dissolveBoard(260);
 
           const exitOrder = sortedButtonsForExit(all);
           await animateOutButtons(exitOrder, 140);
+
+          btn.classList.remove("correctHold");
 
           hideAnswers();
           all.forEach(b => b.style.pointerEvents = "");
@@ -824,32 +784,27 @@
           return;
         }
 
-        /* FOUT: jouw 5 stappen */
+        /* fout */
         beep("no");
 
         const notChosen = all.filter(b => b !== btn);
         const chosen = btn;
 
-        /* 1) niet gekozen weg, gekozen blijft en kleurt pastel rood */
         chosen.classList.add("wrongHold");
         await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-        /* 2) in vraagvenster direct het juiste antwoord, daarna dissolve */
         setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
-        await wait(1200); /* 1 tot 2 tellen, hier 1.2s */
+        await wait(1200);
         dissolveBoard(320);
 
-        /* 3) verkeerde antwoordknop schuift weg */
         await wait(120);
         await animateOutButtons([chosen], 0);
         chosen.classList.remove("wrongHold");
 
         hideAnswers();
 
-        /* 4) korte wachttijd, daarna flitskaart in vraagkader */
         await wait(240);
 
-        /* 5) antwoordknoppen schuiven in beeld (nieuwe ronde) */
         all.forEach(b => b.style.pointerEvents = "");
         nextRound();
       }
@@ -871,6 +826,7 @@
       });
 
       newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
       testWrongBtn.addEventListener("click", async () => {
         beep("tap");
         if(!started || locked) return;
@@ -878,6 +834,7 @@
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(btns[0]) await onPick(btns[0], wrong);
       });
+
       testGoodBtn.addEventListener("click", async () => {
         beep("tap");
         if(!started || locked) return;
@@ -914,7 +871,7 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
-      /* Reflow guard, voorkomt “schok” na draaien */
+      /* Reflow guard */
       let reflowTimer = null;
       function onReflow(){
         if(!started) return;
