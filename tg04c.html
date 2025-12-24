@@ -22,7 +22,7 @@
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      --slideDur: 340ms;
+      --slideDur: 360ms;
       --slideGap: 115ms;
     }
 
@@ -181,12 +181,12 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: 4px solid rgba(245,180,152,0.70);
+      border: 4px solid rgba(245,180,152,0.70); /* altijd neutraal */
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: hidden;
-      transition: background 160ms ease, border-color 160ms ease;
+      transition: background 160ms ease;
       display:grid;
       place-items:center;
       padding: 18px;
@@ -196,10 +196,11 @@
       .gameCard{ height: min(420px, 34vh); }
     }
 
-    body.phaseFlash .gameCard{ border-color: rgba(229,140,116,0.88); }
-    body.phaseChoose .gameCard{ border-color: rgba(245,180,152,0.88); }
-    body.phaseFeedbackGood .gameCard{ border-color: rgba(46,196,122,0.82); }
-    body.phaseFeedbackWrong .gameCard{ border-color: rgba(255,91,122,0.80); }
+    /* fase kleuren: subtiel via schaduw, niet via rand */
+    body.phaseFlash .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(229,140,116,0.18) inset; }
+    body.phaseChoose .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(245,180,152,0.16) inset; }
+    body.phaseFeedbackGood .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(46,196,122,0.16) inset; }
+    body.phaseFeedbackWrong .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(255,91,122,0.14) inset; }
 
     .gameCard.shake{ animation: wiggle 220ms ease; }
     @keyframes wiggle{
@@ -209,44 +210,45 @@
       100%{ transform: translateX(0); }
     }
 
-    /* voorbeeld venster: altijd neutrale rand, nooit rood */
     .flashBoard{
       width: min(520px, 88%);
       aspect-ratio: 1.35 / 1;
       border-radius: 26px;
       background: rgba(255,255,255,0.92);
-      border: 2px solid rgba(245,180,152,0.45); /* neutraal */
+      border: 2px solid rgba(245,180,152,0.45); /* altijd neutraal */
       display:flex;
       align-items:center;
       justify-content:center;
       position:relative;
       overflow:hidden;
       box-shadow: 0 14px 26px rgba(0,0,0,0.06);
+      outline: none;
     }
     .flashSvg{ width:100%; height:100%; }
 
-    /* rechterpaneel */
     .rightInner{
       position:absolute;
       inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 26px;
+      padding: 0; /* padding gaat naar maskViewport zodat cliprand exact op middenlijn kan liggen */
     }
 
-    /*
-      Belangrijk:
-      We clippen NIET op het hele paneel, maar precies op de helft die zichtbaar mag zijn.
-      - landscape: alleen het rechter deel (rechts van de middenlijn) mag zichtbaar zijn
-      - portrait: alleen het onderste deel (onder de middenlijn) mag zichtbaar zijn
-      Hierdoor verdwijnen knoppen écht "achter de middenlijn".
-    */
     .maskViewport{
       position: relative;
       width: 100%;
       height: 100%;
       overflow: hidden;
+      padding: 26px;
+    }
+
+    /* cruciaal: geen padding aan de middenlijn kant */
+    @media (orientation: landscape){
+      .maskViewport{ padding: 26px 26px 26px 0; } /* geen padding links, cliprand is de middenlijn */
+    }
+    @media (orientation: portrait){
+      .maskViewport{ padding: 0 26px 26px 26px; } /* geen padding boven, cliprand is de middenlijn */
     }
 
     .answersSurface{
@@ -255,23 +257,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 0;
       will-change: transform;
-    }
-
-    /* landscape: start op x=0 (in rechterpaneel), schuiven naar links: we laten clip naar rechts intact */
-    @media (orientation: landscape){
-      .maskViewport{
-        /* de hele right is al rechts van middenlijn, dus dit klopt als clip */
-        overflow: hidden;
-      }
-    }
-
-    /* portrait: start op y=0 in onderpaneel, schuiven omhoog: clip blijft onder */
-    @media (orientation: portrait){
-      .maskViewport{
-        overflow: hidden;
-      }
     }
 
     .rightWrap{
@@ -354,19 +340,6 @@
       0%{ opacity:0; transform: translate3d(0,12px,0) scale(0.985); }
       70%{ opacity:1; transform: translate3d(0,-2px,0) scale(1.01); }
       100%{ opacity:1; transform: translate3d(0,0,0) scale(1); }
-    }
-
-    /* schuiven per knop, maskViewport zorgt dat het achter de middenlijn verdwijnt */
-    .ansBtn.slideLeft{ animation: slideLeft var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
-    .ansBtn.slideUp{ animation: slideUp var(--slideDur) cubic-bezier(.2,.9,.2,1) forwards !important; }
-
-    @keyframes slideLeft{
-      from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(-160%,0,0); opacity: 1; }
-    }
-    @keyframes slideUp{
-      from{ transform: translate3d(0,0,0); opacity: 1; }
-      to{ transform: translate3d(0,-160%,0); opacity: 1; }
     }
 
     .startOverlay{
@@ -607,7 +580,7 @@
       </div>
 
       <div class="tuneHint">
-        Spiegeling staat nu uit. Variatie is uitgeschakeld, zodat patronen altijd dezelfde oriëntatie houden.
+        Spiegeling staat uit. Patronen houden dezelfde oriëntatie.
       </div>
     </div>
   </div>
@@ -621,13 +594,7 @@
       const choose = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
-      const msFromCssVar = (name, fallback) => {
-        const raw = (getComputedStyle(document.documentElement).getPropertyValue(name) || "").trim();
-        const n = parseFloat(raw);
-        return Number.isFinite(n) ? n : fallback;
-      };
-
-      const LS_KEY = "slimkijken_subitize_v4";
+      const LS_KEY = "slimkijken_subitize_v5";
       const defaultData = {
         level: 1,
         l1Max: 4,
@@ -685,6 +652,7 @@
       const flashSvg = document.getElementById("flashSvg");
       const answerGrid = document.getElementById("answerGrid");
       const gameCard = document.getElementById("gameCard");
+      const maskViewport = document.getElementById("maskViewport");
 
       const hudLevel = document.getElementById("hudLevel");
       const hudMs = document.getElementById("hudMs");
@@ -749,9 +717,7 @@
         return `<svg viewBox="0 0 520 380" width="100%" height="100%" aria-hidden="true"></svg>`;
       }
 
-      /* ---------------------------
-         Patronen: NO MIRROR, NO ROTATION, NO JITTER
-      ----------------------------*/
+      /* patronen, geen spiegeling, geen rotatie */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -802,7 +768,6 @@
       }
 
       function svgLevel2(sum, glow=false, radius=14){
-        // stabiele split: grootste links, kleinste rechts, NO random
         const big = Math.min(6, Math.max(2, Math.ceil(sum/2)));
         const small = sum - big;
         const bb = Math.max(big, small);
@@ -810,12 +775,9 @@
 
         const left = (diceFaces[bb] || []).map(([x,y]) => [x * 0.46 + 0.10, y * 0.64 + 0.18]);
         const right = (diceFaces[ss] || []).map(([x,y]) => [x * 0.46 + 0.52, y * 0.64 + 0.18]);
-        return { svg: svgForDots(left.concat(right), { dotRadius: radius, glow }), meta: {bb, ss} };
+        return svgForDots(left.concat(right), { dotRadius: radius, glow });
       }
 
-      /* ---------------------------
-         Options + flow
-      ----------------------------*/
       function computeCap(){
         if (DATA.level === 1) return clamp(DATA.l1Max, 3, 6);
         return 9;
@@ -857,7 +819,7 @@
 
           let innerSvg = "";
           if (DATA.level === 1) innerSvg = svgLevel1(v, false, 14);
-          else innerSvg = svgLevel2(v, false, 14).svg;
+          else innerSvg = svgLevel2(v, false, 14);
 
           btn.innerHTML = `<div style="width:100%; height:100%;">${innerSvg}</div>`;
           btn.addEventListener("click", () => onPick(btn, v));
@@ -889,10 +851,6 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
-      function slideAxisClass(){
-        return isPortrait() ? "slideUp" : "slideLeft";
-      }
-
       function orderButtonsForSlide(){
         const btns = [...answerGrid.querySelectorAll(".ansBtn")];
         const items = btns.map(b => {
@@ -901,33 +859,50 @@
         });
 
         if (!isPortrait()){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));   // rechts, midden, links
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));   /* rechts, midden, links */
         } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));   // onder, midden, boven
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));   /* onder, midden, boven */
         }
         return items.map(x => x.b);
       }
 
       async function slideOutAnswers(){
-        const axis = slideAxisClass();
         const ordered = orderButtonsForSlide();
-        const dur = msFromCssVar("--slideDur", 340);
-        const gap = msFromCssVar("--slideGap", 115);
+        const dur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideDur")) || 360;
+        const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slideGap")) || 115;
 
-        ordered.forEach(b => {
+        const view = maskViewport.getBoundingClientRect();
+        const extra = 18;
+
+        for (const b of ordered){
           b.style.pointerEvents = "none";
-          b.classList.remove("reveal","slideLeft","slideUp");
-          b.style.animationDelay = "0ms";
-        });
-
-        void answerGrid.offsetHeight;
+          b.classList.remove("reveal");
+        }
 
         for (let i = 0; i < ordered.length; i++){
-          ordered[i].classList.add(axis);
+          const b = ordered[i];
+          const r = b.getBoundingClientRect();
+
+          if (!isPortrait()){
+            /* landscape, naar links, volledig over de cliprand */
+            const dx = -((r.right - view.left) + extra);
+            b.animate(
+              [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${dx}px,0,0)` }],
+              { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
+            );
+          } else {
+            /* portrait, omhoog, volledig over de cliprand */
+            const dy = -((r.bottom - view.top) + extra);
+            b.animate(
+              [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(0,${dy}px,0)` }],
+              { duration: dur, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
+            );
+          }
+
           await wait(gap);
         }
 
-        await wait(dur);
+        await wait(dur + 10);
       }
 
       function pickCorrect(){
@@ -938,12 +913,11 @@
 
       function emptyBoard(){ flashSvg.innerHTML = emptySvg(); }
 
-      async function showCorrectExample(){
-        // altijd neutraal: flashBoard heeft vaste neutrale border
+      function showCorrectExample(glowOn){
         if (DATA.level === 1){
-          flashSvg.innerHTML = svgLevel1(CURRENT.correct, true, 14);
+          flashSvg.innerHTML = svgLevel1(CURRENT.correct, !!glowOn, 14);
         } else {
-          flashSvg.innerHTML = svgLevel2(CURRENT.correct, true, 14).svg;
+          flashSvg.innerHTML = svgLevel2(CURRENT.correct, !!glowOn, 14);
         }
       }
 
@@ -962,7 +936,7 @@
         CURRENT.correct = pickCorrect();
 
         setPhase("phaseFlash");
-        await showCorrectExample();
+        showCorrectExample(true);
         await wait(CURRENT.flashMs);
 
         emptyBoard();
@@ -986,13 +960,13 @@
           setPhase("phaseFeedbackGood");
           btn.classList.add("correct");
 
-          // kort voorbeeld, neutraal
-          await showCorrectExample();
+          /* korte bevestiging in het midden */
+          setPhase("phaseFlash");
+          showCorrectExample(true);
           await wait(420);
 
           emptyBoard();
 
-          // schuiven achter middenlijn
           await slideOutAnswers();
 
           showAnswers(false);
@@ -1008,7 +982,7 @@
           return;
         }
 
-        // fout
+        /* fout */
         beep("no");
         setPhase("phaseFeedbackWrong");
         btn.classList.add("wrong");
@@ -1022,14 +996,15 @@
         saveData();
         updateHud();
 
-        // jouw keuze langer laten staan
+        /* jouw keuze langer laten staan */
         await wait(950);
 
-        // juist voorbeeld tonen
-        await showCorrectExample();
+        /* nu pas het voorbeeld tonen, zonder rode rand context */
+        setPhase("phaseFlash");
+        showCorrectExample(true);
         await wait(1000);
 
-        // opnieuw
+        /* opnieuw */
         showAnswers(false);
         await wait(220);
 
@@ -1037,7 +1012,7 @@
         await wait(240);
 
         setPhase("phaseFlash");
-        await showCorrectExample();
+        showCorrectExample(true);
         await wait(clamp(CURRENT.flashMs + 260, DATA.flashMin, DATA.flashMax));
 
         emptyBoard();
@@ -1050,9 +1025,7 @@
         CURRENT.locked = false;
       }
 
-      /* ---------------------------
-         Instellingen UI
-      ----------------------------*/
+      /* instellingen */
       function syncTuneUI(){
         levelRange.value = String(DATA.level);
         levelValue.textContent = String(DATA.level);
@@ -1193,7 +1166,7 @@
         if (e.target === startOverlay) startGame();
       });
 
-      // init
+      /* init */
       flashSvg.innerHTML = emptySvg();
       showAnswers(false);
       setPhase(null);
