@@ -2,1202 +2,1113 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Slim Kijken</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Slim kijken</title>
+
   <style>
     :root{
-      --bg1:#0b1220;
-      --bg2:#111b33;
-      --card:#16244a;
-      --card2:#0f1a37;
-      --ink:#eaf0ff;
-      --muted:#a8b6e6;
-      --ok:#46e38a;
-      --no:#ff5b7a;
-      --accent:#7aa7ff;
-      --shadow: 0 18px 50px rgba(0,0,0,.35);
-      --r:22px;
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --text:#6f6b68;
+
+      --midLine: rgba(245,180,152,0.85);
+
+      --card-radius:28px;
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+
+      --pressDown: 2px;
+
+      --wrongFill: rgba(248, 197, 197, 0.85);
+      --wrongBorder: rgba(229, 140, 116, 0.45);
+
+      --correctFill: rgba(210, 244, 214, 0.92);
+      --correctBorder: rgba(144, 204, 152, 0.70);
+
+      --activeFill: rgba(229, 140, 116, 0.18);
     }
-    *{box-sizing:border-box}
-    body{
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body{
+      height:100%;
       margin:0;
-      min-height:100vh;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--ink);
-      background: radial-gradient(1200px 700px at 20% 20%, #1a2a5a 0%, var(--bg1) 45%, #070b14 100%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .app{
-      width:min(980px, 100%);
-      min-height:min(650px, 92vh);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:28px;
-      box-shadow:var(--shadow);
-      position:relative;
+      padding:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
       overflow:hidden;
     }
+
+    body{
+      display:grid;
+      grid-template-columns: 58fr 42fr;
+      height: 100%;
+    }
+    @media (orientation: portrait){
+      body{
+        grid-template-columns: 1fr;
+        grid-template-rows: 54fr 46fr;
+      }
+    }
+
+    .left{
+      background: var(--bg-left);
+      padding: 28px 26px 22px 26px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+    }
+
+    .scan-surface{
+      background:#ffffff;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+      transition: background 140ms ease;
+    }
+
+    @media (orientation: landscape){
+      .scan-surface{ border-left: 6px dashed var(--midLine); }
+    }
+    @media (orientation: portrait){
+      .scan-surface{ border-top: 6px dashed var(--midLine); }
+      .left{ padding: 22px; gap: 16px; }
+    }
+
     .topbar{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      padding:16px 18px;
-      background: linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,0));
-    }
-    .brand{
-      display:flex; gap:10px; align-items:center;
-      font-weight:700; letter-spacing:.2px;
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 14px;
-      border-radius:999px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--muted);
-      font-weight:650;
-      font-size:14px;
-    }
-    .pill b{color:var(--ink)}
-    .content{
-      padding:18px;
-      display:flex;
-      flex-direction:column;
-      gap:16px;
-      height:calc(100% - 62px);
-    }
-    .screen{
-      flex:1;
-      display:none;
-      gap:16px;
-      align-items:stretch;
-    }
-    .screen.active{display:flex}
-    .panel{
-      background: rgba(15,26,55,.70);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:var(--r);
-      padding:18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.22);
-    }
-    .panel h1{
-      margin:0 0 10px 0;
-      font-size:34px;
-      line-height:1.05;
-      letter-spacing:.2px;
-    }
-    .panel p{
-      margin:0;
-      color:var(--muted);
-      font-size:16px;
-      line-height:1.35;
-    }
-    .bigCenter{
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
-      gap:18px;
-      padding:30px;
-    }
-    .cta{
-      width:min(420px, 95%);
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      align-items:center;
-    }
-    button{
-      border:none;
-      cursor:pointer;
-      outline:none;
-      font: inherit;
-      color:inherit;
-      background:none;
-    }
-    .btnPrimary{
-      width:100%;
-      padding:18px 18px;
-      border-radius:18px;
-      background: linear-gradient(135deg, rgba(122,167,255,1), rgba(122,167,255,.65));
-      color:#06102b;
-      font-weight:900;
-      letter-spacing:.2px;
-      box-shadow: 0 14px 30px rgba(122,167,255,.18);
-      transition: transform .08s ease;
-    }
-    .btnPrimary:active{transform: scale(.98)}
-    .btnGhost{
-      width:100%;
-      padding:14px 16px;
-      border-radius:18px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--ink);
-      font-weight:850;
-      transition: transform .08s ease;
-    }
-    .btnGhost:active{transform: scale(.98)}
-    .btnGhost[disabled]{
-      opacity:.45;
-      cursor:not-allowed;
-      transform:none;
-    }
-    .levelGrid{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:14px;
-      width:min(720px, 100%);
-    }
-    .levelCard{
-      padding:16px;
-      border-radius:22px;
-      background: rgba(255,255,255,.07);
-      border:1px solid rgba(255,255,255,.12);
-      text-align:left;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .levelCard .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .levelCard .title{
-      font-size:20px;
-      font-weight:900;
-      letter-spacing:.2px;
-    }
-    .tag{
-      padding:8px 10px;
-      border-radius:999px;
-      background: rgba(0,0,0,.25);
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--muted);
-      font-weight:800;
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .tag.ok{color:rgba(70,227,138,.95); border-color:rgba(70,227,138,.35)}
-    .tag.lock{color:rgba(255,255,255,.65)}
-    .mini{
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.3;
+      gap: 18px;
+      flex: 0 0 auto;
     }
 
-    /* Game layout */
-    .gameWrap{
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
+    .homeBtn,
+    .tuneBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+      font-size: 30px;
+      line-height: 1;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
-    .arena{
-      flex:1;
-      border-radius:26px;
-      background: radial-gradient(900px 520px at 50% 20%, rgba(122,167,255,.20), rgba(0,0,0,0) 60%),
-                  linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.10);
-      position:relative;
-      overflow:hidden;
+    .homeBtn:active,
+    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+
+    .homeBtn svg{ width: 42px; height: 42px; display:block; }
+
+    .titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.1vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:16px;
+      min-height: 64px;
+      width: min(660px, 100%);
+      text-transform: lowercase;
     }
+
+    .content{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+      min-height: 0;
+    }
+
+    .gameCard{
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
+      border: 6px solid rgba(245,180,152,0.85);
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      position:relative;
+      overflow: hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+    }
+    @media (orientation: portrait){
+      .gameCard{ height: min(420px, 34vh); }
+    }
+
     .flashBoard{
-      width:min(520px, 88%);
-      aspect-ratio: 1.35 / 1;
-      border-radius:26px;
-      background: rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.12);
+      width: 100%;
+      height: 100%;
+      border-radius: 26px;
+      background:#ffffff;
+      border: 2px solid rgba(245,180,152,0.55);
       display:flex;
       align-items:center;
       justify-content:center;
-      position:relative;
       overflow:hidden;
+      position:relative;
     }
-    .flashBoard::after{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      background: radial-gradient(420px 240px at 50% 20%, rgba(255,255,255,.12), rgba(0,0,0,0) 70%);
-      pointer-events:none;
+
+    @media (orientation: portrait){
+      .flashBoard{
+        width: min(520px, 90%);
+        height: auto;
+        aspect-ratio: 1.5 / 1;
+        transform: scale(0.90);
+        transform-origin: center;
+      }
     }
-    .hintPulse{
+
+    .flashSvg{
+      width: 100%;
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .scanStage{
       position:absolute;
       inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      pointer-events:none;
-      opacity:0;
-      transition: opacity .15s ease;
+      padding: 18px;
+      z-index: 10;
     }
-    .hintPulse.show{opacity:1}
-    .hintBubble{
-      padding:10px 14px;
-      border-radius:999px;
-      background: rgba(255,255,255,.12);
-      border:1px solid rgba(255,255,255,.16);
-      color:rgba(255,255,255,.90);
-      font-weight:900;
-      letter-spacing:.2px;
-      font-size:14px;
-      backdrop-filter: blur(6px);
+
+    .answersWrap{
+      width: min(560px, 92%);
+      max-width: 560px;
     }
 
     .answers{
       display:grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap:12px;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      justify-items:center;
+      align-items:center;
     }
+
+    @media (orientation: portrait){
+      .answers{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .answersWrap{ width: min(640px, 92%); }
+    }
+
     .ansBtn{
-      border-radius:22px;
-      background: rgba(255,255,255,.07);
-      border:1px solid rgba(255,255,255,.12);
-      padding:14px;
-      min-height:130px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      transition: transform .08s ease, border-color .18s ease, background .18s ease;
-    }
-    .ansBtn:active{transform: scale(.985)}
-    .ansBtn.correct{
-      background: rgba(70,227,138,.12);
-      border-color: rgba(70,227,138,.45);
-    }
-    .ansBtn.wrong{
-      background: rgba(255,91,122,.12);
-      border-color: rgba(255,91,122,.45);
-    }
+      appearance:none;
+      border:none;
+      background:#ffffff;
+      border-radius: 22px;
+      border: 3px solid rgba(245,180,152,0.85);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+      cursor:pointer;
 
-    .footerRow{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
-    }
-    .meter{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      color:var(--muted);
-      font-weight:850;
-      font-size:14px;
-    }
-    .stars{
-      display:flex; gap:6px; align-items:center;
-    }
-    .star{
-      width:14px; height:14px;
-      border-radius:50%;
-      background: rgba(255,255,255,.12);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.20);
-    }
-    .star.on{
-      background: rgba(122,167,255,.95);
-      border-color: rgba(122,167,255,.65);
-    }
-    .backBtn{
-      padding:10px 12px;
-      border-radius:14px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      font-weight:900;
-    }
-
-    /* Hidden settings overlay */
-    .overlay{
-      position:absolute;
-      inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-    }
-    .overlay.show{display:flex}
-    .settings{
-      width:min(680px, 100%);
-      border-radius:26px;
-      background: rgba(15,26,55,.92);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow:var(--shadow);
-      padding:18px;
-    }
-    .settings h2{
-      margin:0 0 10px 0;
-      font-size:22px;
-      font-weight:950;
-    }
-    .grid2{
       display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:12px;
+      place-items:center;
+      padding: 10px;
+
+      aspect-ratio: 1 / 1;
+      width: 100%;
+
+      transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
+      transform: translateZ(0);
+      will-change: transform, opacity;
+      position: relative;
+      overflow: hidden;
     }
-    label{
+
+    @media (orientation: landscape){
+      .answersWrap{ width: min(360px, 92%); }
+      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+    }
+
+    .ansBtn:active{
+      transform: translateY(var(--pressDown));
+      box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+    }
+
+    .ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
+    @keyframes pressBounce{
+      0%{ transform: translateY(0); }
+      42%{ transform: translateY(var(--pressDown)); }
+      100%{ transform: translateY(0); }
+    }
+
+    .ansBtn.wrongHold{
+      background: var(--wrongFill);
+      border-color: var(--wrongBorder);
+    }
+
+    .ansBtn.correctHold{
+      background: var(--correctFill);
+      border-color: var(--correctBorder);
+    }
+
+    .answersHidden{ opacity:0; pointer-events:none; }
+
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.55);
+      backdrop-filter: blur(2px);
       display:flex;
-      flex-direction:column;
-      gap:6px;
-      color:var(--muted);
-      font-weight:800;
-      font-size:14px;
-    }
-    input[type="range"]{
-      width:100%;
-    }
-    .settings .row{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
       align-items:center;
-      margin-top:12px;
+      justify-content:center;
+      z-index: 999;
+      padding: 24px;
     }
-    .smallBtn{
-      padding:12px 14px;
-      border-radius:16px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      font-weight:900;
+    .startCard{
+      width: min(620px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align:center;
+    }
+    .startCard h1{
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #4d4a48;
+      text-transform: lowercase;
+    }
+    .startCard p{
+      margin: 0 0 14px 0;
+      color: rgba(77,74,72,0.82);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+    .levelRow{
+      display:flex;
+      gap: 10px;
+      justify-content:center;
+      flex-wrap: wrap;
+      margin: 12px 0 16px 0;
+    }
+    .pillBtn{
+      appearance:none;
+      border:none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.10);
+      background: #f8c3b0;
+      color: #4d4a48;
+      font-size: 16px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1), background 160ms ease;
+      min-width: 150px;
+    }
+    .pillBtn:active{ transform: translateY(1px) scale(0.99); }
+    .pillBtn.isActive{
+      background: var(--activeFill);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
     }
 
-    /* Dot rendering helpers */
-    .svgWrap{width:100%; height:100%; position:relative; z-index:2;}
-    .shake{
-      animation: shake .22s linear 1;
+    .startBtn{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
-    @keyframes shake{
-      0%{transform: translateX(0)}
-      25%{transform: translateX(-6px)}
-      50%{transform: translateX(6px)}
-      75%{transform: translateX(-4px)}
-      100%{transform: translateX(0)}
+    .startBtn:active{ transform: translateY(1px) scale(0.99); }
+
+    /* Instellingenpaneel */
+    .tunePanel{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(560px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 1200;
+      color: #4d4a48;
+    }
+    .tunePanel.hidden{ display:none; }
+    .tuneHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .tuneTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .tuneClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .tuneClose:active{ transform: translateY(1px) scale(0.99); }
+
+    .tuneSection{
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top:2px solid rgba(245,180,152,0.45);
     }
 
-    /* Corner hotspot for settings */
-    .hotspot{
-      position:absolute;
-      top:0;
-      right:0;
-      width:52px;
-      height:52px;
-      opacity:0;
+    .tuneRow{
+      display:grid;
+      grid-template-columns: 170px 1fr 84px;
+      gap: 10px;
+      align-items:center;
+      margin: 10px 0;
+    }
+    @media (max-width: 520px){
+      .tuneRow{ grid-template-columns: 130px 1fr 70px; }
     }
 
-    @media (max-width: 720px){
-      .answers{grid-template-columns: 1fr; }
-      .ansBtn{min-height:110px}
-      .levelGrid{grid-template-columns: 1fr}
-      .panel h1{font-size:30px}
+    .tuneLabel{
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      text-transform: lowercase;
     }
+    .tuneValue{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 13px;
+      text-align:right;
+      color: rgba(77,74,72,0.86);
+    }
+    .tuneRow input[type="range"]{ width: 100%; }
+
+    .tuneButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .tuneBtnSmall{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      font-size: 14px;
+    }
+    .tuneBtnSmall.secondary{
+      background:#f8c3b0;
+      color:#4d4a48;
+    }
+    .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+
+    .levelButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .levelBtn{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      color:#4d4a48;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.10);
+      font-size: 14px;
+      min-width: 110px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1), background 160ms ease;
+    }
+    .levelBtn:active{ transform: translateY(1px) scale(0.99); }
+    .levelBtn.isActive{ background: var(--activeFill); }
+
+    /* Level 2 en 3 kaart gedrag */
+    .cardWrap{
+      width:100%;
+      height:100%;
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+    }
+    .cardBack{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      background:#f8c3b0;
+      font-size:32px;
+    }
+    .cardFront{
+      width:100%;
+      height:100%;
+      display:none;
+      place-items:center;
+      background:#ffffff;
+    }
+    .ansBtn.cardOpen .cardFront{ display:grid; }
+    .ansBtn.cardOpen .cardBack{ display:none; }
   </style>
 </head>
-<body>
-  <div class="app" id="app">
-    <div class="hotspot" id="hotspot" title=""></div>
 
+<body>
+  <section class="left" aria-label="Spel">
     <div class="topbar">
-      <div class="brand">
-        <div class="pill"><b>👀</b> Slim Kijken</div>
-      </div>
-      <div class="pill" id="statusPill"><span>Level</span> <b id="pillLevel">1</b> <span>•</span> <span id="pillMode">klaar</span></div>
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
+          <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
+          <path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
+      <div class="titlePill" id="titlePill">slim kijken</div>
     </div>
 
     <div class="content">
-      <!-- START -->
-      <div class="screen active" id="screenStart">
-        <div class="panel bigCenter">
-          <h1>Kijk, onthoud, kies</h1>
-          <p>Je ziet stippen heel kort. Daarna kies je wat je zag.</p>
-          <div class="cta">
-            <button class="btnPrimary" id="btnStart">Start ▶</button>
-            <button class="btnGhost" id="btnToLevels">Levels</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- LEVELS -->
-      <div class="screen" id="screenLevels">
-        <div class="panel bigCenter" style="gap:14px;">
-          <h1>Kies een level</h1>
-          <p>Level 1 is snel herkennen. Level 2 is slim doortellen met twee groepjes.</p>
-
-          <div class="levelGrid">
-            <button class="levelCard" id="pickL1">
-              <div class="row">
-                <div class="title">Level 1</div>
-                <div class="tag ok" id="tagL1">open</div>
-              </div>
-              <div class="mini">Dobbelsteenpatronen, 1 tot en met 6.</div>
-            </button>
-
-            <button class="levelCard" id="pickL2">
-              <div class="row">
-                <div class="title">Level 2</div>
-                <div class="tag lock" id="tagL2">slot</div>
-              </div>
-              <div class="mini">Twee groepjes, bijvoorbeeld 3 en 2. Eerst grootste groep, daarna erbij.</div>
-            </button>
-          </div>
-
-          <div class="cta" style="max-width:420px;">
-            <button class="btnGhost" id="btnBackFromLevels">Terug</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- GAME -->
-      <div class="screen" id="screenGame">
-        <div class="gameWrap">
-          <div class="arena">
-            <div class="flashBoard" id="flashBoard" aria-label="flitsbord">
-              <div class="svgWrap" id="flashSvg"></div>
-              <div class="hintPulse" id="hintPulse"><div class="hintBubble" id="hintText">kijk</div></div>
-            </div>
-          </div>
-
-          <div class="answers" id="answers">
-            <!-- answer buttons injected -->
-          </div>
-
-          <div class="footerRow">
-            <div class="meter">
-              <span>Ronde</span>
-              <b id="roundNum">1</b>
-              <span>•</span>
-              <span>Tijd</span>
-              <b id="flashMs">800</b><span>ms</span>
-            </div>
-
-            <div class="stars" id="stars" aria-label="voortgang">
-              <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
-            </div>
-
-            <button class="backBtn" id="btnBackToLevels">Levels</button>
-          </div>
+      <div class="gameCard" id="gameCard" aria-label="Vraagvak">
+        <div class="flashBoard" id="flashBoard">
+          <div class="flashSvg" id="flashSvg"></div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- SETTINGS OVERLAY (long press top right corner) -->
-    <div class="overlay" id="overlay">
-      <div class="settings">
-        <h2>Instellingen</h2>
-        <div class="grid2">
-          <label>
-            Starttijd Level 1 (ms)
-            <input type="range" min="500" max="1200" step="50" id="setL1" />
-            <span id="valL1"></span>
-          </label>
-          <label>
-            Starttijd Level 2 (ms)
-            <input type="range" min="700" max="1600" step="50" id="setL2" />
-            <span id="valL2"></span>
-          </label>
-          <label>
-            Max tijd (ms)
-            <input type="range" min="1200" max="2400" step="50" id="setMax" />
-            <span id="valMax"></span>
-          </label>
-          <label>
-            Min tijd (ms)
-            <input type="range" min="350" max="900" step="50" id="setMin" />
-            <span id="valMin"></span>
-          </label>
-        </div>
-        <div class="row">
-          <button class="smallBtn" id="btnReset">Reset voortgang</button>
-          <button class="smallBtn" id="btnCloseOverlay">Sluiten</button>
-        </div>
+  <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
+    <div class="scanStage">
+      <div class="answersWrap" id="answersWrap">
+        <div class="answers answersHidden" id="answers"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <h1>tik om te starten</h1>
+      <p>Je ziet stippen heel kort, daarna kies je wat je zag.</p>
+
+      <div class="levelRow" aria-label="Kies level">
+        <button class="pillBtn" id="startLevel1" type="button">Level 1, dobbel</button>
+        <button class="pillBtn" id="startLevel2" type="button">Level 2, 1 tot 4</button>
+        <button class="pillBtn" id="startLevel3" type="button">Level 3, 1 tot 6</button>
+      </div>
+
+      <button class="startBtn" id="startBtn" type="button">Start</button>
+    </div>
+  </div>
+
+  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">instellingen</div>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
+    </div>
+
+    <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
+      <div class="levelButtons">
+        <button class="levelBtn" id="levelBtn1" type="button">level 1</button>
+        <button class="levelBtn" id="levelBtn2" type="button">level 2</button>
+        <button class="levelBtn" id="levelBtn3" type="button">level 3</button>
+      </div>
+      <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
+        level 2 en 3, antwoord is kort zichtbaar
+      </div>
+    </div>
+
+    <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">flitstijd</div>
+        <input type="range" id="flashMsRange" min="350" max="1400" step="50" value="650" />
+        <div class="tuneValue" id="flashMsValue">650</div>
+      </div>
+    </div>
+
+    <div class="tuneSection" style="padding-top:12px;">
+      <div class="tuneButtons">
+        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
     </div>
   </div>
 
-<script>
-(() => {
-  "use strict";
+  <script>
+    (() => {
+      "use strict";
 
-  /* ---------------------------
-     State and persistence
-  ----------------------------*/
-  const LS_KEY = "slimkijken_v1";
-  const defaultData = {
-    unlockedL2: false,
-    playedL1Once: false,
-    settings: {
-      l1Start: 800,
-      l2Start: 1200,
-      minMs: 500,
-      maxMs: 2000
-    },
-    logs: [] // lightweight process log
-  };
+      const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+      const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
 
-  function loadData(){
-    try{
-      const raw = localStorage.getItem(LS_KEY);
-      if(!raw) return structuredClone(defaultData);
-      const data = JSON.parse(raw);
-      // merge shallow
-      return {
-        ...structuredClone(defaultData),
-        ...data,
-        settings: { ...structuredClone(defaultData.settings), ...(data.settings||{}) }
+      const startOverlay = document.getElementById("startOverlay");
+      const startBtn = document.getElementById("startBtn");
+
+      const startLevel1 = document.getElementById("startLevel1");
+      const startLevel2 = document.getElementById("startLevel2");
+      const startLevel3 = document.getElementById("startLevel3");
+
+      const titlePill = document.getElementById("titlePill");
+
+      const homeBtn = document.getElementById("homeBtn");
+      const tuneBtn = document.getElementById("tuneBtn");
+      const tunePanel = document.getElementById("tunePanel");
+      const tuneClose = document.getElementById("tuneClose");
+
+      const levelBtn1 = document.getElementById("levelBtn1");
+      const levelBtn2 = document.getElementById("levelBtn2");
+      const levelBtn3 = document.getElementById("levelBtn3");
+
+      const flashMsRange = document.getElementById("flashMsRange");
+      const flashMsValue = document.getElementById("flashMsValue");
+
+      const newRoundBtn = document.getElementById("newRoundBtn");
+      const testWrongBtn = document.getElementById("testWrongBtn");
+      const testGoodBtn = document.getElementById("testGoodBtn");
+
+      const flashSvg = document.getElementById("flashSvg");
+      const answersEl = document.getElementById("answers");
+      const scanArea = document.getElementById("scanArea");
+
+      /* Timing knoppen animatie */
+      const WAIT_BEFORE_IN_MS = 0;
+      const IN_DUR_MS = 800;
+      const OUT_DUR_MS = 750;
+
+      /* Level 2 en 3, korte zichtfase voor antwoorden */
+      const PREVIEW_GAP_MS = 160;
+      const PREVIEW_MS = 600;
+
+      /* Flits instelbaar */
+      let flashMs = Number(flashMsRange.value);
+
+      /* Level */
+      let LEVEL = 1;
+
+      function setLevel(n){
+        LEVEL = n;
+
+        const setActive = (btn, ok) => btn.classList.toggle("isActive", !!ok);
+        setActive(levelBtn1, LEVEL === 1);
+        setActive(levelBtn2, LEVEL === 2);
+        setActive(levelBtn3, LEVEL === 3);
+
+        setActive(startLevel1, LEVEL === 1);
+        setActive(startLevel2, LEVEL === 2);
+        setActive(startLevel3, LEVEL === 3);
+
+        const label = (LEVEL === 1) ? "slim kijken, level 1" : (LEVEL === 2) ? "slim kijken, level 2" : "slim kijken, level 3";
+        titlePill.textContent = label;
+      }
+
+      function maxForLevel(){
+        if(LEVEL === 1) return 6;
+        if(LEVEL === 2) return 4;
+        return 6;
+      }
+
+      function usesAnswerCards(){
+        return LEVEL === 2 || LEVEL === 3;
+      }
+
+      /* WebAudio beep */
+      let audioCtx = null;
+      function beep(type){
+        try{
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          const t = audioCtx.currentTime;
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = "sine";
+          if(type === "ok") o.frequency.setValueAtTime(740, t);
+          if(type === "no") o.frequency.setValueAtTime(220, t);
+          if(type === "tap") o.frequency.setValueAtTime(520, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(t); o.stop(t + 0.22);
+        }catch(e){}
+      }
+
+      /* Dots basis */
+      const P = {
+        tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
+        ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
+        bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
       };
-    }catch(e){
-      return structuredClone(defaultData);
-    }
-  }
-  function saveData(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
+      const diceFaces = {
+        1: [P.mc],
+        2: [P.tl, P.br],
+        3: [P.tl, P.mc, P.br],
+        4: [P.tl, P.tr, P.bl, P.br],
+        5: [P.tl, P.tr, P.mc, P.bl, P.br],
+        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+      };
 
-  let DATA = loadData();
-
-  /* ---------------------------
-     DOM
-  ----------------------------*/
-  const screens = {
-    start: document.getElementById("screenStart"),
-    levels: document.getElementById("screenLevels"),
-    game: document.getElementById("screenGame")
-  };
-  const statusPill = document.getElementById("statusPill");
-  const pillLevel = document.getElementById("pillLevel");
-  const pillMode  = document.getElementById("pillMode");
-
-  const btnStart = document.getElementById("btnStart");
-  const btnToLevels = document.getElementById("btnToLevels");
-  const btnBackFromLevels = document.getElementById("btnBackFromLevels");
-  const btnBackToLevels = document.getElementById("btnBackToLevels");
-
-  const pickL1 = document.getElementById("pickL1");
-  const pickL2 = document.getElementById("pickL2");
-  const tagL2 = document.getElementById("tagL2");
-
-  const flashBoard = document.getElementById("flashBoard");
-  const flashSvg = document.getElementById("flashSvg");
-  const answersEl = document.getElementById("answers");
-
-  const roundNumEl = document.getElementById("roundNum");
-  const flashMsEl = document.getElementById("flashMs");
-  const starsEl = document.getElementById("stars");
-  const hintPulse = document.getElementById("hintPulse");
-  const hintText = document.getElementById("hintText");
-
-  const overlay = document.getElementById("overlay");
-  const hotspot = document.getElementById("hotspot");
-  const setL1 = document.getElementById("setL1");
-  const setL2 = document.getElementById("setL2");
-  const setMin = document.getElementById("setMin");
-  const setMax = document.getElementById("setMax");
-  const valL1 = document.getElementById("valL1");
-  const valL2 = document.getElementById("valL2");
-  const valMin = document.getElementById("valMin");
-  const valMax = document.getElementById("valMax");
-  const btnCloseOverlay = document.getElementById("btnCloseOverlay");
-  const btnReset = document.getElementById("btnReset");
-
-  function showScreen(name){
-    Object.values(screens).forEach(s => s.classList.remove("active"));
-    screens[name].classList.add("active");
-  }
-
-  function updateLevelLockUI(){
-    if(DATA.unlockedL2){
-      pickL2.disabled = false;
-      tagL2.textContent = "open";
-      tagL2.classList.remove("lock");
-      tagL2.classList.add("ok");
-    }else{
-      pickL2.disabled = true;
-      tagL2.textContent = "slot";
-      tagL2.classList.add("lock");
-      tagL2.classList.remove("ok");
-    }
-  }
-
-  /* ---------------------------
-     Sound via WebAudio
-  ----------------------------*/
-  let audioCtx = null;
-  function beep(type){
-    try{
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      const t = audioCtx.currentTime;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-
-      o.type = "sine";
-      if(type === "ok") o.frequency.setValueAtTime(740, t);
-      if(type === "no") o.frequency.setValueAtTime(220, t);
-      if(type === "tap") o.frequency.setValueAtTime(520, t);
-
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
-
-      o.connect(g);
-      g.connect(audioCtx.destination);
-      o.start(t);
-      o.stop(t + 0.22);
-    }catch(e){}
-  }
-
-  /* ---------------------------
-     Patterns
-     We render dots as SVG circles in a 3x3 grid area for clarity.
-     Level 1 uses standard dice faces (1..6).
-     Level 2 uses two clusters. Each cluster itself is a dice face (1..6),
-     placed left and right. The sum is the answer.
-  ----------------------------*/
-
-  // Dot positions in a 3x3 grid, normalized 0..1
-  const P = {
-    tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
-    ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
-    bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
-  };
-
-  const diceFaces = {
-    1: [P.mc],
-    2: [P.tl, P.br],
-    3: [P.tl, P.mc, P.br],
-    4: [P.tl, P.tr, P.bl, P.br],
-    5: [P.tl, P.tr, P.mc, P.bl, P.br],
-    6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
-  };
-
-  function svgForDots(dotSets, opts = {}){
-    const {
-      dotRadius = 10,
-      dotColor = "rgba(234,240,255,.96)",
-      stroke = "rgba(0,0,0,.25)",
-      strokeW = 1.2,
-      glow = true,
-      highlight = null // index of dotSets to highlight, else null
-    } = opts;
-
-    const w = 520, h = 380;
-    const r = dotRadius;
-
-    // dotSets is array of { dots: [[x,y],...], box: {x0,y0,x1,y1} } in normalized coords
-    // We convert each dot to absolute coords inside its box.
-    const circles = [];
-    dotSets.forEach((set, idx) => {
-      const box = set.box;
-      const isHi = highlight === idx;
-      const alpha = highlight === null ? 1 : (isHi ? 1 : 0.22);
-      set.dots.forEach(([x,y]) => {
-        const X = (box.x0 + x*(box.x1-box.x0)) * w;
-        const Y = (box.y0 + y*(box.y1-box.y0)) * h;
-        circles.push({X,Y,alpha,hi:isHi});
-      });
-    });
-
-    const filter = glow ? `
-      <defs>
-        <filter id="g">
-          <feGaussianBlur stdDeviation="2.3" result="b"/>
-          <feMerge>
-            <feMergeNode in="b"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>` : "";
-
-    const cs = circles.map(c => `
-      <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${r}"
-        fill="${dotColor}"
-        fill-opacity="${(0.88*c.alpha).toFixed(3)}"
-        stroke="${stroke}" stroke-width="${strokeW}"
-        ${glow ? `filter="url(#g)"` : "" }
-      />`).join("");
-
-    return `
-      <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
-        ${filter}
-        ${cs}
-      </svg>`;
-  }
-
-  function patternLevel1(n){
-    // single set, full box
-    return [{
-      dots: diceFaces[n],
-      box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
-    }];
-  }
-
-  function patternLevel2(a, b){
-    // two sets in left and right boxes, both use dice face layouts
-    return [
-      { dots: diceFaces[a], box:{x0:0.10, y0:0.18, x1:0.48, y1:0.82} },
-      { dots: diceFaces[b], box:{x0:0.52, y0:0.18, x1:0.90, y1:0.82} }
-    ];
-  }
-
-  /* ---------------------------
-     Game engine
-  ----------------------------*/
-  let GAME = null;
-
-  function newGame(level){
-    const s = DATA.settings;
-
-    const startMs = (level === 1) ? s.l1Start : s.l2Start;
-
-    GAME = {
-      level,
-      flashMs: clamp(startMs, s.minMs, s.maxMs),
-      round: 1,
-      streak: 0,          // correct in a row
-      stars: 0,           // 0..5
-      locked: false,      // to prevent double taps
-      phase: "ready",     // ready, flash, recall, feedback
-      current: null,      // { correct, renderFlash, renderOpt, meta }
-      wrongCountThisItem: 0
-    };
-
-    pillLevel.textContent = String(level);
-    pillMode.textContent = "klaar";
-
-    renderStars();
-    updateMeter();
-    buildNextRound();
-  }
-
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-  function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
-
-  function updateMeter(){
-    roundNumEl.textContent = String(GAME.round);
-    flashMsEl.textContent = String(Math.round(GAME.flashMs));
-  }
-
-  function renderStars(){
-    const nodes = [...starsEl.querySelectorAll(".star")];
-    nodes.forEach((n, i) => n.classList.toggle("on", i < GAME.stars));
-  }
-
-  function clearAnswers(){
-    answersEl.innerHTML = "";
-  }
-
-  function showHint(text){
-    hintText.textContent = text;
-    hintPulse.classList.add("show");
-    setTimeout(() => hintPulse.classList.remove("show"), 700);
-  }
-
-  function setBoard(svgHtml){
-    flashSvg.innerHTML = svgHtml;
-  }
-
-  async function buildNextRound(){
-    clearAnswers();
-    flashBoard.classList.remove("shake");
-    hintPulse.classList.remove("show");
-
-    GAME.phase = "ready";
-    GAME.locked = true;
-    pillMode.textContent = "kijk";
-
-    // create item
-    let item;
-    if(GAME.level === 1){
-      const n = randInt(1, 6);
-      item = makeItemLevel1(n);
-    }else{
-      item = makeItemLevel2();
-    }
-    GAME.current = item;
-    GAME.wrongCountThisItem = 0;
-
-    // quiet moment before flash
-    setBoard(svgForDots([], {glow:false})); // empty
-    await wait(500);
-
-    await doFlashAndAsk();
-  }
-
-  function makeItemLevel1(n){
-    const correct = n;
-    const dotSets = patternLevel1(n);
-    const flash = () => svgForDots(dotSets);
-    const option = () => svgForDots(patternLevel1(n), {dotRadius:11, glow:false});
-    return { correct, flash, option, meta:{n} };
-  }
-
-  function makeItemLevel2(){
-    // pick two groups with sum up to 7 (kleuter-proof)
-    // ensure a is the largest group for learning, a >= b
-    const a = randInt(2, 5);
-    const b = randInt(1, Math.min(3, 7 - a));
-    const big = Math.max(a,b);
-    const small = Math.min(a,b);
-    const correct = big + small;
-
-    const dotSets = patternLevel2(big, small);
-    const flash = () => svgForDots(dotSets);
-    const option = (x,y) => svgForDots(patternLevel2(x,y), {dotRadius:11, glow:false});
-    return { correct, flash, option, meta:{big, small} };
-  }
-
-  async function doFlashAndAsk(){
-    GAME.phase = "flash";
-    // show flash
-    setBoard(GAME.current.flash());
-    await wait(GAME.flashMs);
-
-    // forced empty moment
-    setBoard(svgForDots([], {glow:false}));
-    await wait(320);
-
-    // build answers
-    GAME.phase = "recall";
-    pillMode.textContent = "kies";
-    renderAnswerButtons();
-
-    GAME.locked = false;
-  }
-
-  function renderAnswerButtons(){
-    const correct = GAME.current.correct;
-
-    // create plausible distractors: within +-2 and within 1..7
-    const options = new Set([correct]);
-    const cap = (GAME.level === 1) ? 6 : 7;
-
-    while(options.size < 3){
-      const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
-      const v = clamp(correct + delta, 1, cap);
-      options.add(v);
-    }
-    const arr = shuffle([...options]);
-
-    answersEl.innerHTML = "";
-    arr.forEach(v => {
-      const btn = document.createElement("button");
-      btn.className = "ansBtn";
-      btn.setAttribute("aria-label", "antwoord");
-      btn.addEventListener("click", () => onPickAnswer(btn, v));
-
-      // render option image
-      let svg;
-      if(GAME.level === 1){
-        svg = svgForDots(patternLevel1(v), {dotRadius:12, glow:false});
-      }else{
-        // Show as two groupjes that sum to v, but keep it simple:
-        // We choose a stable split with largest group first, using dice faces 1..6
-        const big = Math.min(6, Math.max(2, Math.ceil(v/2)));
-        const small = v - big;
-        const bb = Math.max(big, small);
-        const ss = Math.min(big, small);
-        svg = svgForDots(patternLevel2(bb, ss), {dotRadius:12, glow:false});
+      function patternLevel1(n){
+        return [{
+          dots: diceFaces[n],
+          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+        }];
       }
 
-      btn.innerHTML = `<div style="width:100%; height:100%;">${svg}</div>`;
-      answersEl.appendChild(btn);
-    });
-  }
+      /* Level 2 en 3 vaste structuren */
+      const L = {
+        a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
+        d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65]
+      };
 
-  function shuffle(a){
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  }
+      const level23Faces = {
+        1: [L.b],
+        2: [L.a, L.f],
+        3: [L.a, L.b, L.f],
+        4: [L.a, L.c, L.d, L.f],
+        5: [L.a, L.b, L.c, L.d, L.f],      /* 3 boven en 2 onder */
+        6: [L.a, L.b, L.c, L.d, L.e, L.f]   /* 3 plus 3 */
+      };
 
-  async function onPickAnswer(btn, value){
-    if(GAME.locked) return;
-    GAME.locked = true;
-
-    const correct = GAME.current.correct;
-    const now = Date.now();
-
-    if(value === correct){
-      beep("ok");
-      btn.classList.add("correct");
-      GAME.streak += 1;
-
-      // stars: every correct answer adds progress, but a small celebration at 5
-      GAME.stars = Math.min(5, GAME.stars + 1);
-      renderStars();
-
-      // adaptive speed: after 3 correct in a row, slightly faster
-      if(GAME.streak >= 3){
-        GAME.flashMs = clamp(GAME.flashMs - 100, DATA.settings.minMs, DATA.settings.maxMs);
-        GAME.streak = 0;
+      function patternLevel23(n){
+        return [{
+          dots: level23Faces[n],
+          box: {x0:0.12, y0:0.18, x1:0.88, y1:0.82}
+        }];
       }
 
-      // show only the amount briefly (no text)
-      setBoard(GAME.current.flash());
-      pillMode.textContent = "goed";
-      await wait(550);
+      function patternForLevel(n){
+        return (LEVEL === 1) ? patternLevel1(n) : patternLevel23(n);
+      }
 
-      logEvent({t:now, level:GAME.level, ok:true, correct, chosen:value, flashMs:GAME.flashMs, help:false});
+      function svgForDots(dotSets, opts = {}){
+        const { dotRadius = 14, dotColor = "rgba(25,25,25,.92)" } = opts;
+        const w = 520, h = 380;
 
-      // unlock level 2 after finishing 5 stars in level 1 at least once
-      if(GAME.level === 1){
-        DATA.playedL1Once = true;
-        if(GAME.stars >= 5){
-          DATA.unlockedL2 = true;
+        const circles = [];
+        dotSets.forEach(set => {
+          const b = set.box;
+          set.dots.forEach(([x,y]) => {
+            const X = (b.x0 + x*(b.x1-b.x0)) * w;
+            const Y = (b.y0 + y*(b.y1-b.y0)) * h;
+            circles.push({X,Y});
+          });
+        });
+
+        const cs = circles.map(c => `
+          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" />
+        `).join("");
+
+        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${cs}</svg>`;
+      }
+
+      function setBoard(html){ flashSvg.innerHTML = html; }
+      function clearBoard(){ setBoard(svgForDots([], {dotRadius: 1})); }
+
+      function dissolveBoard(ms){
+        flashSvg.style.transition = `opacity ${ms}ms ease`;
+        flashSvg.style.opacity = "0";
+        setTimeout(() => {
+          clearBoard();
+          flashSvg.style.transition = "";
+          flashSvg.style.opacity = "1";
+        }, ms + 40);
+      }
+
+      function buildOptions(correct){
+        const cap = maxForLevel();
+        const options = new Set([correct]);
+
+        while(options.size < 3){
+          const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
+          options.add(clamp(correct + delta, 1, cap));
         }
-        saveData();
-        updateLevelLockUI();
+
+        const arr = [...options];
+        for(let i=arr.length-1;i>0;i--){
+          const j = Math.floor(Math.random()*(i+1));
+          [arr[i],arr[j]] = [arr[j],arr[i]];
+        }
+        return arr;
       }
 
-      // next round
-      GAME.round += 1;
-      updateMeter();
+      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      // keep sessions short and sweet: after 10 rounds, go back to levels
-      if(GAME.round > 10){
-        showScreen("levels");
-        pillMode.textContent = "klaar";
-        return;
+      function renderAnswers(correct, onPick){
+        const arr = buildOptions(correct);
+        answersEl.innerHTML = "";
+
+        arr.forEach(v => {
+          const btn = document.createElement("button");
+          btn.className = "ansBtn";
+          btn.type = "button";
+
+          btn.addEventListener("pointerdown", () => {
+            btn.classList.remove("pressBounce");
+            void btn.offsetWidth;
+            btn.classList.add("pressBounce");
+          }, {passive:true});
+
+          btn.addEventListener("click", () => onPick(btn, v));
+
+          const svg = svgForDots(patternForLevel(v), {dotRadius: 12});
+
+          if(usesAnswerCards()){
+            btn.innerHTML = `
+              <div class="cardWrap">
+                <div class="cardBack">🐝</div>
+                <div class="cardFront">${svg}</div>
+              </div>
+            `;
+          }else{
+            btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
+          }
+
+          answersEl.appendChild(btn);
+        });
       }
 
-      await buildNextRound();
-      return;
-    }
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
 
-    // wrong
-    beep("no");
-    btn.classList.add("wrong");
-    flashBoard.classList.add("shake");
-    GAME.streak = 0;
-    GAME.wrongCountThisItem += 1;
+      function slideVectorForButton(btn){
+        const b = btn.getBoundingClientRect();
+        const a = scanArea.getBoundingClientRect();
+        const extra = 10;
 
-    logEvent({t:now, level:GAME.level, ok:false, correct, chosen:value, flashMs:GAME.flashMs, help: (GAME.wrongCountThisItem>=2)});
+        if(isPortrait()){
+          const seamY = a.top;
+          const dy = -((b.bottom - seamY) + extra);
+          return { x: 0, y: dy };
+        }else{
+          const seamX = a.left;
+          const dx = -((b.right - seamX) + extra);
+          return { x: dx, y: 0 };
+        }
+      }
 
-    // adapt slower
-    GAME.flashMs = clamp(GAME.flashMs + 200, DATA.settings.minMs, DATA.settings.maxMs);
-    updateMeter();
+      function sortedButtonsForExit(btns){
+        const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
+        if(isPortrait()){
+          rects.sort((u,v) => v.r.left - u.r.left);
+        }else{
+          rects.sort((u,v) => v.r.top - u.r.top);
+        }
+        return rects.map(x => x.b);
+      }
 
-    pillMode.textContent = "nog eens";
+      async function animateInButtons(){
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
 
-    await wait(350);
-    flashBoard.classList.remove("shake");
+        hideAnswers();
+        await raf(); await raf();
 
-    // help protocol:
-    // first wrong: show full again a bit longer, then ask again
-    // second wrong: show guided look: largest group first, then add the rest
-    if(GAME.wrongCountThisItem === 1){
-      showHint("kijk nog eens");
-      setBoard(GAME.current.flash());
-      await wait(Math.min(DATA.settings.maxMs, GAME.flashMs + 250));
-      setBoard(svgForDots([], {glow:false}));
-      await wait(320);
+        btns.forEach(btn => {
+          const v = slideVectorForButton(btn);
+          btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
+          btn.style.opacity = "0";
+        });
 
-      // rebuild answers
-      renderAnswerButtons();
-      GAME.locked = false;
-      pillMode.textContent = "kies";
-      return;
-    }
+        showAnswers();
+        await raf();
 
-    // second wrong or more, guided look
-    if(GAME.level === 1){
-      // Level 1 guided look: just repeat slightly longer, no per-dot animation
-      showHint("rustig kijken");
-      setBoard(GAME.current.flash());
-      await wait(Math.min(DATA.settings.maxMs, GAME.flashMs + 350));
-      setBoard(svgForDots([], {glow:false}));
-      await wait(320);
-      renderAnswerButtons();
-      GAME.locked = false;
-      pillMode.textContent = "kies";
-      return;
-    }
+        const easing = "cubic-bezier(.22,.61,.35,1)";
 
-    // Level 2 guided look: biggest group first, then add
-    const big = GAME.current.meta.big;
-    const small = GAME.current.meta.small;
+        btns.forEach((btn, i) => {
+          btn.animate(
+            [
+              { transform: btn.style.transform, opacity: 0 },
+              { transform: "translate(0px, 0px)", opacity: 1 }
+            ],
+            { duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
+          );
+        });
 
-    showHint("eerst groot, dan erbij");
+        await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
 
-    // Step 1: show only biggest group on the left, then add the other
-    const step1 = svgForDots(
-      [{dots: diceFaces[big], box:{x0:0.10, y0:0.18, x1:0.48, y1:0.82}}],
-      {glow:true}
-    );
-    setBoard(step1);
-    await wait(650);
+        btns.forEach(btn => {
+          btn.style.transform = "translate(0px, 0px)";
+          btn.style.opacity = "1";
+        });
+      }
 
-    // Step 2: show both groups
-    const step2 = svgForDots(patternLevel2(big, small), {glow:true});
-    setBoard(step2);
-    await wait(800);
+      async function animateOutButtons(btns, staggerMs){
+        if(!btns.length) return;
 
-    // empty and choose again
-    setBoard(svgForDots([], {glow:false}));
-    await wait(320);
+        const easing = "cubic-bezier(.22,.61,.35,1)";
 
-    renderAnswerButtons();
-    GAME.locked = false;
-    pillMode.textContent = "kies";
-  }
+        btns.forEach((btn, i) => {
+          const v = slideVectorForButton(btn);
+          btn.animate(
+            [
+              { transform: "translate(0px, 0px)", opacity: 1 },
+              { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
+            ],
+            { duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+          );
+        });
 
-  function logEvent(e){
-    // keep it small
-    DATA.logs.push(e);
-    if(DATA.logs.length > 250) DATA.logs.splice(0, DATA.logs.length - 250);
-    saveData();
-  }
+        await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
 
-  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+        btns.forEach(btn => { btn.style.opacity = "0"; });
+      }
 
-  /* ---------------------------
-     Navigation
-  ----------------------------*/
-  btnStart.addEventListener("click", () => {
-    beep("tap");
-    showScreen("levels");
-    updateLevelLockUI();
-  });
+      /* Game */
+      let started = false;
+      let locked = false;
+      let correct = 1;
 
-  btnToLevels.addEventListener("click", () => {
-    beep("tap");
-    showScreen("levels");
-    updateLevelLockUI();
-  });
+      async function previewCards(){
+        if(!usesAnswerCards()) return;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
 
-  btnBackFromLevels.addEventListener("click", () => {
-    beep("tap");
-    showScreen("start");
-    pillMode.textContent = "klaar";
-  });
+        await wait(PREVIEW_GAP_MS);
+        btns.forEach(b => b.classList.add("cardOpen"));
+        await wait(PREVIEW_MS);
+        btns.forEach(b => b.classList.remove("cardOpen"));
+        await wait(120);
+      }
 
-  btnBackToLevels.addEventListener("click", () => {
-    beep("tap");
-    showScreen("levels");
-    pillMode.textContent = "klaar";
-    updateLevelLockUI();
-  });
+      async function flashAndAsk(){
+        locked = true;
 
-  pickL1.addEventListener("click", () => {
-    beep("tap");
-    showScreen("game");
-    newGame(1);
-  });
+        hideAnswers();
+        answersEl.innerHTML = "";
+        clearBoard();
 
-  pickL2.addEventListener("click", () => {
-    if(!DATA.unlockedL2) return;
-    beep("tap");
-    showScreen("game");
-    newGame(2);
-  });
+        await wait(160);
 
-  /* ---------------------------
-     Hidden settings via long press
-  ----------------------------*/
-  let pressTimer = null;
-  hotspot.addEventListener("touchstart", startPress, {passive:true});
-  hotspot.addEventListener("mousedown", startPress);
-  hotspot.addEventListener("touchend", endPress);
-  hotspot.addEventListener("mouseup", endPress);
-  hotspot.addEventListener("mouseleave", endPress);
+        const pat = patternForLevel(correct);
+        setBoard(svgForDots(pat, {dotRadius: 16}));
+        await wait(flashMs);
 
-  function startPress(){
-    pressTimer = setTimeout(() => {
-      openSettings();
-    }, 650);
-  }
-  function endPress(){
-    if(pressTimer) clearTimeout(pressTimer);
-    pressTimer = null;
-  }
+        clearBoard();
+        await wait(260);
 
-  function openSettings(){
-    // sync sliders
-    setL1.value = DATA.settings.l1Start;
-    setL2.value = DATA.settings.l2Start;
-    setMin.value = DATA.settings.minMs;
-    setMax.value = DATA.settings.maxMs;
-    syncVals();
-    overlay.classList.add("show");
-  }
+        renderAnswers(correct, onPick);
+        await wait(WAIT_BEFORE_IN_MS);
+        await animateInButtons();
 
-  function closeSettings(){
-    overlay.classList.remove("show");
-  }
+        await previewCards();
 
-  function syncVals(){
-    valL1.textContent = String(DATA.settings.l1Start);
-    valL2.textContent = String(DATA.settings.l2Start);
-    valMin.textContent = String(DATA.settings.minMs);
-    valMax.textContent = String(DATA.settings.maxMs);
-  }
+        locked = false;
+      }
 
-  function commitSettings(){
-    DATA.settings.l1Start = Number(setL1.value);
-    DATA.settings.l2Start = Number(setL2.value);
-    DATA.settings.minMs = Number(setMin.value);
-    DATA.settings.maxMs = Number(setMax.value);
+      function nextRound(){
+        correct = randInt(1, maxForLevel());
+        flashAndAsk();
+      }
 
-    // ensure min <= max
-    if(DATA.settings.minMs > DATA.settings.maxMs){
-      const tmp = DATA.settings.minMs;
-      DATA.settings.minMs = DATA.settings.maxMs;
-      DATA.settings.maxMs = tmp;
-    }
+      async function onPick(btn, value){
+        if(!started || locked) return;
+        locked = true;
 
-    saveData();
-    syncVals();
-  }
+        const all = [...answersEl.querySelectorAll(".ansBtn")];
+        all.forEach(b => b.style.pointerEvents = "none");
 
-  [setL1,setL2,setMin,setMax].forEach(el => {
-    el.addEventListener("input", () => {
-      commitSettings();
-    });
-  });
+        if(usesAnswerCards()){
+          btn.classList.add("cardOpen");
+          await wait(140);
+        }
 
-  btnCloseOverlay.addEventListener("click", () => {
-    beep("tap");
-    closeSettings();
-  });
+        if(value === correct){
+          beep("ok");
+          btn.classList.add("correctHold");
 
-  overlay.addEventListener("click", (e) => {
-    if(e.target === overlay) closeSettings();
-  });
+          setBoard(svgForDots(patternForLevel(correct), {dotRadius: 16}));
+          await wait(520);
+          dissolveBoard(260);
 
-  btnReset.addEventListener("click", () => {
-    beep("tap");
-    DATA = structuredClone(defaultData);
-    saveData();
-    updateLevelLockUI();
-    closeSettings();
-    showScreen("start");
-    pillMode.textContent = "klaar";
-  });
+          const exitOrder = sortedButtonsForExit(all);
+          await animateOutButtons(exitOrder, 140);
 
-  /* ---------------------------
-     Init
-  ----------------------------*/
-  updateLevelLockUI();
-  syncVals();
+          btn.classList.remove("correctHold");
+          if(usesAnswerCards()) btn.classList.remove("cardOpen");
 
-  // ensure game does not start with stale board
-  setBoard(svgForDots([], {glow:false}));
+          hideAnswers();
+          all.forEach(b => b.style.pointerEvents = "");
+          await wait(160);
 
-})();
-</script>
+          nextRound();
+          return;
+        }
+
+        beep("no");
+
+        const notChosen = all.filter(b => b !== btn);
+        const chosen = btn;
+
+        chosen.classList.add("wrongHold");
+        await animateOutButtons(sortedButtonsForExit(notChosen), 120);
+
+        setBoard(svgForDots(patternForLevel(correct), {dotRadius: 16}));
+        await wait(1200);
+        dissolveBoard(320);
+
+        await wait(120);
+        await animateOutButtons([chosen], 0);
+
+        chosen.classList.remove("wrongHold");
+        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
+
+        hideAnswers();
+        await wait(240);
+
+        all.forEach(b => b.style.pointerEvents = "");
+        nextRound();
+      }
+
+      /* Settings UI */
+      function syncUI(){
+        flashMsValue.textContent = String(flashMs);
+      }
+
+      function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
+      function closeTune(){ tunePanel.classList.add("hidden"); }
+
+      tuneBtn.addEventListener("click", () => {
+        beep("tap");
+        if(tunePanel.classList.contains("hidden")) openTune();
+        else closeTune();
+      });
+      tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+
+      flashMsRange.addEventListener("input", () => {
+        flashMs = Number(flashMsRange.value);
+        syncUI();
+      });
+
+      levelBtn1.addEventListener("click", () => { beep("tap"); setLevel(1); if(started) nextRound(); });
+      levelBtn2.addEventListener("click", () => { beep("tap"); setLevel(2); if(started) nextRound(); });
+      levelBtn3.addEventListener("click", () => { beep("tap"); setLevel(3); if(started) nextRound(); });
+
+      newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
+      testWrongBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(!started || locked) return;
+        const cap = maxForLevel();
+        const wrong = (correct === cap) ? 1 : correct + 1;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) await onPick(btns[0], wrong);
+      });
+
+      testGoodBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(!started || locked) return;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) await onPick(btns[0], correct);
+      });
+
+      /* Start */
+      function startGame(){
+        if(started) return;
+        started = true;
+        startOverlay.style.display = "none";
+        syncUI();
+        nextRound();
+      }
+
+      function setStartChoice(n){
+        setLevel(n);
+      }
+
+      startLevel1.addEventListener("click", () => { beep("tap"); setStartChoice(1); });
+      startLevel2.addEventListener("click", () => { beep("tap"); setStartChoice(2); });
+      startLevel3.addEventListener("click", () => { beep("tap"); setStartChoice(3); });
+
+      startBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        beep("tap");
+        startGame();
+      });
+
+      startOverlay.addEventListener("click", (e) => {
+        if(e.target === startOverlay){
+          beep("tap");
+          startGame();
+        }
+      });
+
+      homeBtn.addEventListener("click", () => {
+        beep("tap");
+        try{ window.location.href = "index.html"; }catch(e){}
+      });
+
+      /* Reflow guard */
+      let reflowTimer = null;
+      function onReflow(){
+        if(!started) return;
+        if(reflowTimer) clearTimeout(reflowTimer);
+        reflowTimer = setTimeout(async () => {
+          locked = true;
+          hideAnswers();
+          answersEl.innerHTML = "";
+          clearBoard();
+          await wait(120);
+          renderAnswers(correct, onPick);
+          await wait(WAIT_BEFORE_IN_MS);
+          await animateInButtons();
+          await previewCards();
+          locked = false;
+        }, 220);
+      }
+      window.addEventListener("resize", onReflow);
+      window.addEventListener("orientationchange", onReflow);
+
+      /* Init */
+      clearBoard();
+      syncUI();
+      setLevel(1);
+    })();
+  </script>
 </body>
 </html>
