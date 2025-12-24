@@ -14,7 +14,8 @@
       --text:#6f6b68;
 
       --card-radius:28px;
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+      --shadowCard: 0 10px 22px rgba(0,0,0,0.08);
+      --shadowBtn: 0 18px 30px rgba(0,0,0,0.11);
 
       --divider: rgba(245,180,152,0.55);
       --border: rgba(245,180,152,0.70);
@@ -22,13 +23,26 @@
       --ok: rgba(46,196,122,0.95);
       --no: rgba(255,91,122,0.95);
 
-      --slideOutDur: 560ms;
-      --slideOutGap: 140ms;
-      --slideInDur: 440ms;
-      --slideInGap: 120ms;
+      /* richtingslogica komt uit CSS, JS leest dit uit */
+      --dir-x: -1;         /* landscape: naar links */
+      --dir-y:  0;
+      --is-portrait: 0;
+
+      --slideOutDur: 680ms;
+      --slideOutGap: 170ms;
+      --slideInDur: 560ms;
+      --slideInGap: 150ms;
 
       --easeSoft: cubic-bezier(0.42, 0, 0.58, 1);
       --easeOutSoft: cubic-bezier(0.18, 0.85, 0.22, 1);
+    }
+
+    @media (orientation: portrait){
+      :root{
+        --dir-x: 0;         /* portrait: omhoog */
+        --dir-y: -1;
+        --is-portrait: 1;
+      }
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -74,21 +88,22 @@
       position: relative;
       min-height: 0;
       overflow:hidden;
+      clip-path: inset(0);
     }
 
-    /* middellijn als overlay, ligt precies op de scheiding */
-    .right::after{
-      content:"";
+    /* zichtbare middenlijn, geen masker rand */
+    .divider{
       position:absolute;
       pointer-events:none;
       background: var(--divider);
-      z-index: 200;
+      z-index: 300;
+      left:0; top:0;
     }
     @media (orientation: landscape){
-      .right::after{ left:0; top:0; bottom:0; width:6px; }
+      .divider{ width:6px; height:100%; }
     }
     @media (orientation: portrait){
-      .right::after{ left:0; right:0; top:0; height:6px; }
+      .divider{ width:100%; height:6px; }
     }
 
     .topbar{
@@ -126,7 +141,7 @@
       font-weight: 900;
       font-size: clamp(22px, 2.1vw, 34px);
       letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.08);
       line-height: 1;
       display:flex;
       align-items:center;
@@ -134,47 +149,6 @@
       min-height: 64px;
       width: min(660px, 100%);
       text-transform: lowercase;
-    }
-
-    .hud{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .hudPill{
-      padding: 10px 14px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.85);
-      border: 2px solid rgba(245,180,152,0.55);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.06);
-      font-weight: 900;
-      color: rgba(77,74,72,0.88);
-      text-transform: lowercase;
-      font-size: 14px;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-    }
-
-    .stars{
-      display:flex;
-      gap: 8px;
-      align-items:center;
-    }
-    .star{
-      width: 14px;
-      height: 14px;
-      border-radius: 99px;
-      background: rgba(245,180,152,0.28);
-      border: 2px solid rgba(245,180,152,0.55);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);
-    }
-    .star.on{
-      background: rgba(229,140,116,0.95);
-      border-color: rgba(229,140,116,0.75);
     }
 
     .content{
@@ -192,7 +166,7 @@
       background: #ffffff;
       border: 4px solid var(--border);
       border-radius: var(--card-radius);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      box-shadow: var(--shadowCard);
       position:relative;
       overflow: hidden;
       display:grid;
@@ -204,10 +178,10 @@
       .gameCard{ height: min(420px, 34vh); }
     }
 
-    body.phaseFlash .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(229,140,116,0.18) inset; }
-    body.phaseChoose .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(245,180,152,0.16) inset; }
-    body.phaseFeedbackGood .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(46,196,122,0.16) inset; }
-    body.phaseFeedbackWrong .gameCard{ box-shadow: 0 10px 22px rgba(0,0,0,0.08), 0 0 0 6px rgba(255,91,122,0.14) inset; }
+    body.phaseFlash .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(229,140,116,0.18) inset; }
+    body.phaseChoose .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(245,180,152,0.16) inset; }
+    body.phaseFeedbackGood .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(46,196,122,0.16) inset; }
+    body.phaseFeedbackWrong .gameCard{ box-shadow: var(--shadowCard), 0 0 0 6px rgba(255,91,122,0.14) inset; }
 
     .gameCard.shake{ animation: wiggle 240ms ease; }
     @keyframes wiggle{
@@ -242,13 +216,18 @@
       z-index: 10;
     }
 
+    /* dit is de echte clip, inclusief box shadow tijdens transform animaties */
     .maskViewport{
       position: relative;
       width: 100%;
       height: 100%;
       overflow: hidden;
+      clip-path: inset(0);
+      contain: paint;
       padding: 26px;
       z-index: 10;
+      will-change: transform;
+      transform: translateZ(0);
     }
 
     .answersSurface{
@@ -294,7 +273,7 @@
       border: 4px solid rgba(245,180,152,0.78);
       background: rgba(255,255,255,0.98);
       border-radius: 22px;
-      box-shadow: 0 18px 30px rgba(0,0,0,0.11);
+      box-shadow: var(--shadowBtn);
       padding: 14px;
       min-height: 130px;
       display:flex;
@@ -306,16 +285,12 @@
       position:relative;
       overflow:hidden;
       will-change: transform, opacity;
+      backface-visibility: hidden;
     }
 
     .ansBtn:active{
       transform: translate3d(0,2px,0) scale(0.985);
       box-shadow: 0 14px 26px rgba(0,0,0,0.10);
-    }
-
-    /* tijdens animatie geen schaduw, voorkomt “lekken” bij de middellijn */
-    body.answersAnimating .ansBtn{
-      box-shadow: none !important;
     }
 
     .ansBtn.correct{
@@ -347,7 +322,7 @@
       width: min(600px, 92vw);
       background: #ffffff;
       border-radius: 24px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.08);
       padding: 22px 20px;
       text-align:center;
     }
@@ -479,14 +454,6 @@
       <div class="titlePill">slim kijken</div>
     </div>
 
-    <div class="hud">
-      <div class="hudPill"><span>level</span> <b id="hudLevel">1</b> <span>•</span> <span>tijd</span> <b id="hudMs">800</b><span>ms</span></div>
-      <div class="hudPill"><span>ronde</span> <b id="hudRound">1</b></div>
-      <div class="stars" id="stars" aria-label="Sterren">
-        <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
-      </div>
-    </div>
-
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Flitskaart">
         <div class="flashBoard" id="flashBoard">
@@ -497,6 +464,8 @@
   </section>
 
   <section class="right" aria-label="Antwoorden">
+    <div class="divider" aria-hidden="true"></div>
+
     <div class="rightInner">
       <div class="maskViewport" id="maskViewport">
         <div class="answersSurface">
@@ -574,10 +543,17 @@
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
 
       const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      const cssMs = (name, fallback) => {
+      const cssNum = (name, fallback) => {
         const raw = cssVar(name);
         const n = Number(String(raw).replace("ms","").trim());
         return Number.isFinite(n) ? n : fallback;
+      };
+
+      const getDir = () => {
+        const dx = Number(cssVar("--dir-x")) || 0;
+        const dy = Number(cssVar("--dir-y")) || 0;
+        const portrait = (Number(cssVar("--is-portrait")) || 0) === 1;
+        return { dx, dy, portrait };
       };
 
       const clone = (obj) => {
@@ -585,27 +561,13 @@
         return JSON.parse(JSON.stringify(obj));
       };
 
-      function isPortraitNow(){
-        try{
-          if (window.matchMedia){
-            const mq = window.matchMedia("(orientation: portrait)");
-            if (mq && typeof mq.matches === "boolean") return mq.matches;
-          }
-        }catch(e){}
-        const vv = window.visualViewport;
-        const w = vv ? vv.width : window.innerWidth;
-        const h = vv ? vv.height : window.innerHeight;
-        return h >= w;
-      }
-
-      const LS_KEY = "slimkijken_subitize_v9";
+      const LS_KEY = "slimkijken_subitize_v10";
       const defaultData = {
         level: 1,
         l1Max: 4,
         flashStart: 800,
         flashMin: 450,
         flashMax: 1600,
-        stars: 0,
         streak: 0,
         round: 1
       };
@@ -658,11 +620,6 @@
       const gameCard = document.getElementById("gameCard");
       const maskViewport = document.getElementById("maskViewport");
 
-      const hudLevel = document.getElementById("hudLevel");
-      const hudMs = document.getElementById("hudMs");
-      const hudRound = document.getElementById("hudRound");
-      const starsEl = document.getElementById("stars");
-
       let audioCtx = null;
       function beep(type){
         try{
@@ -697,16 +654,6 @@
         document.body.classList.toggle("answersHidden", !show);
       }
 
-      function setAnimating(on){
-        document.body.classList.toggle("answersAnimating", !!on);
-      }
-
-      function setStars(n){
-        DATA.stars = clamp(n, 0, 5);
-        const nodes = [...starsEl.querySelectorAll(".star")];
-        nodes.forEach((s, i) => s.classList.toggle("on", i < DATA.stars));
-      }
-
       const CURRENT = {
         started: false,
         locked: false,
@@ -714,12 +661,6 @@
         correct: 1,
         cap: 4
       };
-
-      function updateHud(){
-        hudLevel.textContent = String(DATA.level);
-        hudRound.textContent = String(DATA.round);
-        hudMs.textContent = String(Math.round(CURRENT.flashMs));
-      }
 
       function emptySvg(){
         return `<svg viewBox="0 0 520 380" width="100%" height="100%" aria-hidden="true"></svg>`;
@@ -821,8 +762,6 @@
           CURRENT.flashMs = clamp(CURRENT.flashMs - 70, DATA.flashMin, DATA.flashMax);
           DATA.streak = 0;
         }
-        setStars((DATA.stars || 0) + 1);
-        if (DATA.stars >= 5) setStars(0);
       }
 
       function updateAdaptiveOnWrong(){
@@ -868,10 +807,12 @@
           return { b, left: r.left, top: r.top };
         });
 
-        if (!isPortraitNow()){
-          items.sort((a,c) => (c.left - a.left) || (a.top - c.top)); /* rechts, midden, links */
+        const { portrait } = getDir();
+
+        if (!portrait){
+          items.sort((a,c) => (c.left - a.left) || (a.top - c.top));  // rechts, midden, links
         } else {
-          items.sort((a,c) => (c.top - a.top) || (c.left - a.left)); /* onder, midden, boven */
+          items.sort((a,c) => (c.top - a.top) || (c.left - a.left));  // onder, midden, boven
         }
         return items.map(x => x.b);
       }
@@ -883,53 +824,53 @@
       function getOutVector(btn){
         const view = maskViewport.getBoundingClientRect();
         const r = btn.getBoundingClientRect();
-        const extra = 60;
+        const extra = 70;
 
-        if (!isPortraitNow()){
-          const dx = -((view.width + r.width) + extra);
-          return { x: dx, y: 0 };
-        } else {
-          const dy = -((view.height + r.height) + extra);
-          return { x: 0, y: dy };
-        }
+        const { dx, dy } = getDir();
+
+        const magX = (view.width + r.width) + extra;
+        const magY = (view.height + r.height) + extra;
+
+        return { x: dx * magX, y: dy * magY };
       }
 
       async function slideOutAnswers(){
         const ordered = orderButtonsForSlideOut();
-        const dur = cssMs("--slideOutDur", 560);
-        const gap = cssMs("--slideOutGap", 140);
+        const dur = cssNum("--slideOutDur", 680);
+        const gap = cssNum("--slideOutGap", 170);
         const ease = cssVar("--easeOutSoft") || "cubic-bezier(0.18, 0.85, 0.22, 1)";
 
-        setAnimating(true);
         ordered.forEach(b => b.style.pointerEvents = "none");
 
         for (let i = 0; i < ordered.length; i++){
           const b = ordered[i];
           const v = getOutVector(b);
 
-          b.animate(
+          const anim = b.animate(
             [
               { transform: "translate3d(0,0,0)", opacity: 1 },
-              { transform: `translate3d(${v.x*0.65}px,${v.y*0.65}px,0)`, opacity: 0.96 },
+              { transform: `translate3d(${v.x*0.70}px,${v.y*0.70}px,0)`, opacity: 0.98 },
               { transform: `translate3d(${v.x}px,${v.y}px,0)`, opacity: 0.92 }
             ],
             { duration: dur, easing: ease, fill: "forwards" }
           );
 
+          anim.onfinish = () => {
+            b.style.transform = `translate3d(${v.x}px,${v.y}px,0)`;
+            b.style.opacity = "0";
+          };
+
           await wait(gap);
         }
 
-        await wait(dur + 30);
-        setAnimating(false);
+        await wait(dur + 40);
       }
 
       async function slideInAnswers(){
         const ordered = orderButtonsForSlideIn();
-        const dur = cssMs("--slideInDur", 440);
-        const gap = cssMs("--slideInGap", 120);
+        const dur = cssNum("--slideInDur", 560);
+        const gap = cssNum("--slideInGap", 150);
         const ease = cssVar("--easeSoft") || "cubic-bezier(0.42, 0, 0.58, 1)";
-
-        setAnimating(true);
 
         ordered.forEach(b => {
           const out = getOutVector(b);
@@ -949,34 +890,31 @@
 
           b.style.visibility = "visible";
 
-          b.animate(
+          const anim = b.animate(
             [
               { transform: `translate3d(${out.x}px,${out.y}px,0)`, opacity: 0 },
-              { transform: `translate3d(${out.x*0.25}px,${out.y*0.25}px,0)`, opacity: 0.92 },
+              { transform: `translate3d(${out.x*0.25}px,${out.y*0.25}px,0)`, opacity: 0.94 },
               { transform: "translate3d(0,0,0)", opacity: 1 }
             ],
             { duration: dur, easing: ease, fill: "forwards" }
           );
 
+          anim.onfinish = () => {
+            b.style.transform = "translate3d(0,0,0)";
+            b.style.opacity = "1";
+            b.style.visibility = "visible";
+            b.style.pointerEvents = "auto";
+          };
+
           await wait(gap);
         }
 
-        await wait(dur + 40);
-
-        ordered.forEach(b => {
-          b.style.transform = "translate3d(0,0,0)";
-          b.style.opacity = "1";
-          b.style.visibility = "visible";
-          b.style.pointerEvents = "auto";
-        });
-
-        setAnimating(false);
+        await wait(dur + 60);
       }
 
       async function doRound(){
         CURRENT.locked = true;
         applySettingsToCurrent();
-        updateHud();
 
         showAnswers(false);
         clearAnswers();
@@ -1028,7 +966,6 @@
           updateAdaptiveOnCorrect();
           DATA.round += 1;
           saveData();
-          updateHud();
 
           await wait(140);
           await doRound();
@@ -1046,17 +983,15 @@
 
         updateAdaptiveOnWrong();
         saveData();
-        updateHud();
 
-        /* eerst jouw keuze groot laten zien */
         await wait(520);
+
         setPhase("phaseFlash");
         showExampleForValue(value, false);
-        await wait(650);
+        await wait(680);
 
-        /* daarna het juiste voorbeeld */
         showExampleForValue(correct, true);
-        await wait(900);
+        await wait(920);
 
         emptyBoard();
         await slideOutAnswers();
@@ -1122,7 +1057,6 @@
         saveData();
         syncTuneUI();
         applySettingsToCurrent();
-        updateHud();
       }
 
       function openTunePanel(){
@@ -1166,13 +1100,8 @@
         saveData();
 
         CURRENT.flashMs = DATA.flashStart;
-        DATA.round = 1;
-        DATA.stars = 0;
-        DATA.streak = 0;
 
         syncTuneUI();
-        setStars(0);
-        updateHud();
       });
 
       testSlideBtn.addEventListener("click", async () => {
@@ -1210,11 +1139,8 @@
         CURRENT.flashMs = DATA.flashStart;
         DATA.round = 1;
         DATA.streak = 0;
-        setStars(0);
 
         applySettingsToCurrent();
-        updateHud();
-
         doRound();
       }
 
@@ -1237,19 +1163,16 @@
           b.style.visibility = "visible";
           b.style.pointerEvents = "auto";
         });
-        setAnimating(false);
       }
 
       window.addEventListener("resize", () => { hardResetTransforms(); });
-      window.addEventListener("orientationchange", () => { setTimeout(hardResetTransforms, 250); });
+      window.addEventListener("orientationchange", () => { setTimeout(hardResetTransforms, 220); });
 
       flashSvg.innerHTML = emptySvg();
       showAnswers(false);
       setPhase(null);
 
       applySettingsToCurrent();
-      setStars(DATA.stars || 0);
-      updateHud();
       syncTuneUI();
     })();
   </script>
