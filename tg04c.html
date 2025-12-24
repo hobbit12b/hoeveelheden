@@ -5,22 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Slim Kijken, subiteren</title>
+  <title>Slim kijken</title>
 
   <style>
     :root{
+      /* kleuren uit jouw tellen en scannen */
       --bg-left:#fdeeea;
       --brand:#e58c74;
       --text:#6f6b68;
 
       --dash-w:4px;
       --card-radius:28px;
-      --scale: 1;
-
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
-      --ok:#46e38a;
-      --no:#ff5b7a;
+      --border: rgba(245,180,152,0.85);
+      --tile: #ffffff;
+      --tile-ink: #4d4a48;
+      --muted: rgba(77,74,72,0.70);
+
+      --ok: rgba(46,196,122,0.95);
+      --no: rgba(255,91,122,0.95);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -67,14 +71,14 @@
       position: relative;
       overflow:hidden;
       min-height: 0;
-      transition: background 120ms ease;
+      transition: background 140ms ease;
     }
 
     @media (orientation: landscape){
-      .right{ border-left: 6px dashed rgba(245,180,152,0.85); }
+      .right{ border-left: 6px dashed var(--border); }
     }
     @media (orientation: portrait){
-      .right{ border-top: 6px dashed rgba(245,180,152,0.85); }
+      .right{ border-top: 6px dashed var(--border); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -103,14 +107,13 @@
     }
     .homeBtn:active,
     .tuneBtn:active{ transform: scale(0.98); }
-    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
 
     .titlePill{
       padding: 18px 44px;
       border-radius: 22px;
       background: var(--brand);
       color: #ffffff;
-      font-weight: 800;
+      font-weight: 900;
       font-size: clamp(22px, 2.1vw, 34px);
       letter-spacing: 0.3px;
       box-shadow: var(--shadow);
@@ -136,64 +139,66 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border: var(--dash-w) dashed var(--border);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
       overflow: hidden;
-      transition: background 160ms ease;
+      transition: background 160ms ease, transform 120ms ease;
       display:grid;
       place-items:center;
+      padding: 18px;
     }
 
     .gameCard.flashWrong{ background: #fde1e1; }
-    .gameCard.flashGood{ background: #e8fff1; }
+    .gameCard.shake{ animation: wiggle 220ms ease; }
 
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
 
-    /* Board for dots */
-    .board{
-      width: min(520px, 92%);
+    @keyframes wiggle{
+      0%{ transform: translateX(0); }
+      28%{ transform: translateX(-6px); }
+      58%{ transform: translateX(5px); }
+      100%{ transform: translateX(0); }
+    }
+
+    /* board inner */
+    .flashBoard{
+      width: min(520px, 88%);
       aspect-ratio: 1.35 / 1;
-      border-radius: 22px;
-      background: rgba(253,238,234,0.35);
+      border-radius: 26px;
+      background: rgba(255,255,255,0.92);
       border: 2px solid rgba(245,180,152,0.55);
       display:flex;
       align-items:center;
       justify-content:center;
       position:relative;
       overflow:hidden;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.08);
     }
-    .board::after{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      background: radial-gradient(420px 240px at 50% 20%, rgba(255,255,255,.22), rgba(0,0,0,0) 70%);
-      pointer-events:none;
-    }
-    .svgWrap{ width:100%; height:100%; position:relative; z-index:2; }
+    .flashSvg{ width:100%; height:100%; }
 
-    /* Right side UI */
+    /* Right panel */
     .scanOverlay{
       position:absolute;
       inset: 0;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 22px;
-      pointer-events:none;
+      padding: 28px;
+      z-index: 5;
     }
 
     .scanUI{
-      width: min(560px, 94%);
+      width: min(720px, 92%);
       display:flex;
       flex-direction:column;
       align-items:center;
       gap: 14px;
       text-align:center;
-      transform: translateY(-6px);
+      transform: translateY(-8px);
     }
 
     .miniTile{
@@ -214,11 +219,12 @@
 
     .scanTitle{
       font-size: clamp(22px, 2vw, 34px);
-      font-weight: 800;
+      font-weight: 900;
       color: #7b7876;
       margin-top: 6px;
       text-transform: lowercase;
     }
+
     .scanSub{
       font-size: clamp(16px, 1.3vw, 20px);
       color: rgba(123,120,118,0.75);
@@ -226,104 +232,91 @@
       text-transform: lowercase;
     }
 
-    .choices{
-      width: min(620px, 100%);
+    /* Answer grid */
+    .answerGrid{
+      width: min(780px, 92%);
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      pointer-events:auto;
+      gap: 18px;
       margin-top: 6px;
+      transition: opacity 120ms ease, transform 120ms ease;
     }
 
-    .choiceBtn{
+    @media (max-width: 860px){
+      .answerGrid{ grid-template-columns: 1fr; }
+    }
+
+    /* "fase look": antwoorden weg */
+    .phaseLook .answerGrid{
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+    }
+
+    /* "fase choose": zichtbaar */
+    .phaseChoose .answerGrid{
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    /* tegel look */
+    .ansBtn{
+      appearance:none;
+      border: 4px solid var(--border);
+      background: rgba(255,255,255,0.94);
       border-radius: 22px;
-      background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-      padding: 12px;
-      min-height: 120px;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.10);
+      padding: 14px;
+      min-height: 130px;
       display:flex;
       align-items:center;
       justify-content:center;
-      transition: transform 80ms ease, background 160ms ease, border-color 160ms ease;
+      cursor:pointer;
+
+      transform: translateY(0) scale(1);
+      transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease;
       position:relative;
       overflow:hidden;
-      cursor:pointer;
-    }
-    .choiceBtn:active{ transform: scale(0.985); }
-
-    /* Level 2 anti tel: cards flip closed after short peek */
-    .cardInner{
-      width:100%;
-      height:100%;
-      position:relative;
-      transform-style:preserve-3d;
-      transition: transform .38s ease;
-    }
-    .cardFace{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      backface-visibility:hidden;
-    }
-    .cardBack{
-      transform: rotateY(180deg);
-      background: rgba(253,238,234,0.75);
-      border-radius:18px;
-      border: 2px dashed rgba(245,180,152,0.85);
-    }
-    .backMark{
-      font-weight: 950;
-      font-size: 44px;
-      color: rgba(111,107,104,0.85);
-    }
-    .choiceBtn.closed .cardInner{ transform: rotateY(180deg); }
-
-    .choiceBtn.good{
-      background: rgba(70,227,138,.16);
-      border-color: rgba(70,227,138,.55);
-    }
-    .choiceBtn.bad{
-      background: rgba(255,91,122,.14);
-      border-color: rgba(255,91,122,.55);
     }
 
-    .peekBtnRow{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      justify-content:center;
-      pointer-events:auto;
-      margin-top: 2px;
-    }
-    .peekBtn{
-      appearance:none;
-      border:none;
-      background: #f8c3b0;
-      color:#4d4a48;
-      font-weight: 900;
-      padding: 10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-      display:none;
-      align-items:center;
-      gap: 8px;
-    }
-    .peekBtn.show{ display:inline-flex; }
-    .peekBtn:active{ transform: scale(0.99); }
-
-    .right.wrong{ animation: wiggle 220ms ease; }
-    @keyframes wiggle{
-      0%{ transform: translateX(0); }
-      28%{ transform: translateX(-6px); }
-      58%{ transform: translateX(5px); }
-      100%{ transform: translateX(0); }
+    .ansBtn:hover{
+      box-shadow: 0 18px 34px rgba(0,0,0,0.12);
     }
 
-    /* Start overlay and tune panel borrowed look */
+    .ansBtn:active{
+      transform: translateY(2px) scale(0.985);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.10);
+    }
+
+    .ansBtn:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 6px rgba(229,140,116,0.25), 0 18px 34px rgba(0,0,0,0.12);
+      border-color: rgba(229,140,116,0.95);
+    }
+
+    .ansBtn.correct{
+      border-color: var(--ok);
+      background: rgba(46,196,122,0.10);
+    }
+    .ansBtn.wrong{
+      border-color: var(--no);
+      background: rgba(255,91,122,0.10);
+    }
+
+    /* "nu mag je kiezen" binnenkom animatie per kaart */
+    .ansBtn.reveal{
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+      animation: popIn 220ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
+    @keyframes popIn{
+      0%{ opacity:0; transform: translateY(12px) scale(0.985); }
+      70%{ opacity:1; transform: translateY(-2px) scale(1.01); }
+      100%{ opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    /* start overlay */
     .startOverlay{
       position:fixed;
       inset:0;
@@ -335,6 +328,7 @@
       z-index: 999;
       padding: 24px;
     }
+
     .startCard{
       width: min(560px, 92vw);
       background: #ffffff;
@@ -343,141 +337,98 @@
       padding: 22px 20px;
       text-align:center;
     }
+
     .startCard h1{
       margin: 0 0 10px 0;
       font-size: 28px;
       color: #4d4a48;
       text-transform: lowercase;
     }
+
     .startCard p{
       margin: 0 0 16px 0;
       color: rgba(77,74,72,0.82);
       font-size: 18px;
       line-height: 1.35;
     }
+
     .startBtn{
       appearance:none;
       border:none;
       background: var(--brand);
       color:#fff;
-      font-weight: 800;
+      font-weight: 900;
       padding: 14px 18px;
       border-radius: 18px;
       font-size: 18px;
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      text-transform: lowercase;
     }
     .startBtn:active{ transform: scale(0.99); }
 
-    .tunePanel{
-      position: fixed;
-      right: 18px;
+    /* kleine fase hint (geen tekst overload, alleen subtiel) */
+    .phasePill{
+      position:absolute;
+      left: 24px;
       bottom: 18px;
-      width: min(540px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.98);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
-      padding: 14px 14px 12px 14px;
-      z-index: 1200;
-      color: #4d4a48;
-    }
-    .tunePanel.hidden{ display:none; }
-    .tuneHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .tuneTitle{
-      font-weight: 900;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      text-transform: lowercase;
-    }
-    .tuneClose{
-      appearance:none;
-      border:none;
-      background:#f8c3b0;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.85);
+      border: 2px solid rgba(245,180,152,0.55);
+      border-radius: 999px;
       padding: 10px 12px;
       font-weight: 900;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-    }
-    .tuneClose:active{ transform: scale(0.99); }
-    .tuneRow{
-      display:grid;
-      grid-template-columns: 160px 1fr 84px;
-      gap: 10px;
-      align-items:center;
-      margin: 8px 0;
-    }
-    .tuneLabel{
-      font-weight: 800;
-      font-size: 13px;
-      color: rgba(77,74,72,0.86);
+      color: rgba(77,74,72,0.82);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
       text-transform: lowercase;
-    }
-    .tuneValue{
-      font-variant-numeric: tabular-nums;
-      font-weight: 900;
       font-size: 13px;
-      text-align:right;
-      color: rgba(77,74,72,0.86);
+      display:flex;
+      gap: 8px;
+      align-items:center;
     }
-    .tuneRow input[type="range"]{ width: 100%; }
-    .tuneHint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: rgba(77,74,72,0.68);
-      line-height: 1.35;
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background: rgba(229,140,116,0.75);
     }
-
-    @media (max-width: 420px){
-      .choices{ grid-template-columns: 1fr; }
-      .choiceBtn{ min-height: 96px; }
-      .homeBtn, .tuneBtn{ width:64px; height:64px; }
-    }
+    .phaseLook .dot{ background: rgba(120,171,255,0.95); }
+    .phaseChoose .dot{ background: rgba(229,140,116,0.95); }
   </style>
 </head>
 
-<body>
-  <section class="left" aria-label="Opdracht">
+<body class="phaseLook">
+  <section class="left" aria-label="Opgave">
     <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar menu" type="button">
-        <img src="home.png" alt="Home" />
-      </button>
-
+      <button class="homeBtn" id="homeBtn" aria-label="Naar begin" type="button">🏠</button>
       <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
       <div class="titlePill">slim kijken</div>
     </div>
 
     <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Kijkkaart">
-        <div class="board" id="board" aria-label="Stippenbord">
-          <div class="svgWrap" id="svgWrap"></div>
+      <div class="gameCard" id="gameCard" aria-label="Flitskaart">
+        <div class="flashBoard" id="flashBoard">
+          <div class="flashSvg" id="flashSvg"></div>
+        </div>
+
+        <div class="phasePill" aria-hidden="true">
+          <span class="dot"></span>
+          <span id="phaseText">kijk</span>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="right" id="right" aria-label="Antwoordvak">
+  <section class="right" aria-label="Antwoordvak">
     <div class="scanOverlay">
       <div class="scanUI">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
         </div>
 
-        <div class="scanTitle" id="uiTitle">Kijk naar de stippen.</div>
-        <div class="scanSub" id="uiSub">Kies wat je zag.</div>
+        <div class="scanTitle" id="scanTitle">kijk naar de stippen</div>
+        <div class="scanSub" id="scanSub">kies wat je zag</div>
 
-        <div class="choices" id="choices"></div>
-
-        <div class="peekBtnRow">
-          <button class="peekBtn" id="peekBtn" type="button"><span>👀</span><span>kort kijken</span></button>
-        </div>
+        <div class="answerGrid" id="answerGrid" aria-label="Antwoorden"></div>
       </div>
     </div>
   </section>
@@ -485,484 +436,293 @@
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>tik om te starten</h1>
-      <p>Je ziet stippen heel kort. Daarna kies je de juiste kaart.</p>
-      <button class="startBtn" id="startBtn" type="button">Start</button>
-    </div>
-  </div>
-
-  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
-    </div>
-
-    <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">spel</div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">level</div>
-        <input type="range" id="levelRange" min="1" max="3" step="1" value="1" />
-        <div class="tuneValue" id="levelValue">1</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">flitstijd (ms)</div>
-        <input type="range" id="flashRange" min="350" max="1600" step="50" value="800" />
-        <div class="tuneValue" id="flashValue">800</div>
-      </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">kaart open (ms), level 2</div>
-        <input type="range" id="peekRange" min="450" max="1400" step="50" value="900" />
-        <div class="tuneValue" id="peekValue">900</div>
-      </div>
-
-      <div class="tuneHint" id="hintText">
-        Level 1: 1 tot en met 4. Level 2: 1 tot en met 9 met dichtklappen. Level 3: 1 tot en met 9 zonder dichtklappen.
-      </div>
+      <p>Je ziet stippen heel kort, daarna kies je wat je zag.</p>
+      <button class="startBtn" id="startBtn" type="button">start</button>
     </div>
   </div>
 
   <script>
-    // Tiny helpers
-    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-    const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
-    const wait = (ms) => new Promise(r => setTimeout(r, ms));
+    (() => {
+      "use strict";
 
-    // DOM
-    const homeBtn = document.getElementById('homeBtn');
-    const tuneBtn = document.getElementById('tuneBtn');
-    const tunePanel = document.getElementById('tunePanel');
-    const tuneClose = document.getElementById('tuneClose');
+      const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+      const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
 
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
+      // DOM
+      const startOverlay = document.getElementById("startOverlay");
+      const startBtn = document.getElementById("startBtn");
+      const homeBtn = document.getElementById("homeBtn");
+      const tuneBtn = document.getElementById("tuneBtn");
 
-    const svgWrap = document.getElementById('svgWrap');
-    const gameCard = document.getElementById('gameCard');
-    const right = document.getElementById('right');
-    const choices = document.getElementById('choices');
-    const peekBtn = document.getElementById('peekBtn');
+      const flashSvg = document.getElementById("flashSvg");
+      const answerGrid = document.getElementById("answerGrid");
+      const scanTitle = document.getElementById("scanTitle");
+      const scanSub = document.getElementById("scanSub");
+      const gameCard = document.getElementById("gameCard");
+      const phaseText = document.getElementById("phaseText");
 
-    const uiTitle = document.getElementById('uiTitle');
-    const uiSub = document.getElementById('uiSub');
-
-    const levelRange = document.getElementById('levelRange');
-    const flashRange = document.getElementById('flashRange');
-    const peekRange = document.getElementById('peekRange');
-    const levelValue = document.getElementById('levelValue');
-    const flashValue = document.getElementById('flashValue');
-    const peekValue = document.getElementById('peekValue');
-
-    // Persist
-    const LS_KEY = 'slimkijken_layout_v1';
-    const defaults = {
-      level: 1,
-      flashMs: 800,
-      peekMs: 900
-    };
-    function loadState(){
-      try{
-        const raw = localStorage.getItem(LS_KEY);
-        if(!raw) return { ...defaults };
-        const s = JSON.parse(raw);
-        return {
-          level: clamp(Number(s.level ?? defaults.level), 1, 3),
-          flashMs: clamp(Number(s.flashMs ?? defaults.flashMs), 350, 1600),
-          peekMs: clamp(Number(s.peekMs ?? defaults.peekMs), 450, 1400)
-        };
-      }catch(e){
-        return { ...defaults };
-      }
-    }
-    function saveState(){
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }catch(e){}
-    }
-    let STATE = loadState();
-
-    function syncUI(){
-      levelRange.value = String(STATE.level);
-      flashRange.value = String(STATE.flashMs);
-      peekRange.value = String(STATE.peekMs);
-      levelValue.textContent = String(STATE.level);
-      flashValue.textContent = String(STATE.flashMs);
-      peekValue.textContent = String(STATE.peekMs);
-
-      peekBtn.classList.toggle('show', STATE.level === 2);
-    }
-
-    // Sound (tiny beeps)
-    let audioCtx = null;
-    function beep(type){
-      try{
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        const t = audioCtx.currentTime;
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = "sine";
-        o.frequency.setValueAtTime(type === 'ok' ? 740 : type === 'tap' ? 520 : 220, t);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-        o.connect(g);
-        g.connect(audioCtx.destination);
-        o.start(t);
-        o.stop(t + 0.18);
-      }catch(e){}
-    }
-
-    // Dots
-    const P = {
-      tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
-      ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
-      bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
-    };
-    const diceFaces = {
-      1: [P.mc],
-      2: [P.tl, P.br],
-      3: [P.tl, P.mc, P.br],
-      4: [P.tl, P.tr, P.bl, P.br],
-      5: [P.tl, P.tr, P.mc, P.bl, P.br],
-      6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
-    };
-
-    function orientation(){
-      return (window.innerHeight > window.innerWidth) ? 'portrait' : 'landscape';
-    }
-
-    function boxesFor(k){
-      const ori = orientation();
-      if(k === 1){
-        return [{x0:0.12, y0:0.12, x1:0.88, y1:0.88}];
-      }
-      if(k === 2){
-        if(ori === 'portrait'){
-          return [
-            {x0:0.20, y0:0.08, x1:0.80, y1:0.48},
-            {x0:0.20, y0:0.52, x1:0.80, y1:0.92}
-          ];
-        }
-        return [
-          {x0:0.10, y0:0.18, x1:0.48, y1:0.82},
-          {x0:0.52, y0:0.18, x1:0.90, y1:0.82}
-        ];
-      }
-      // 3 groups
-      if(ori === 'portrait'){
-        return [
-          {x0:0.22, y0:0.06, x1:0.78, y1:0.34},
-          {x0:0.22, y0:0.36, x1:0.78, y1:0.64},
-          {x0:0.22, y0:0.66, x1:0.78, y1:0.94}
-        ];
-      }
-      return [
-        {x0:0.10, y0:0.10, x1:0.48, y1:0.48},
-        {x0:0.52, y0:0.10, x1:0.90, y1:0.48},
-        {x0:0.31, y0:0.52, x1:0.69, y1:0.90}
-      ];
-    }
-
-    function splitFor(n){
-      if(n <= 4) return [n];
-      const map = {
-        5: [[3,2],[4,1]],
-        6: [[4,2],[3,3],[5,1]],
-        7: [[4,3],[5,2],[6,1]],
-        8: [[4,4],[5,3],[6,2]],
-        9: [[5,4],[6,3],[4,3,2]]
+      // simpele settings (later kun je dit aan jouw overlay koppelen)
+      const SETTINGS = {
+        flashMsStart: 800,
+        minMs: 450,
+        maxMs: 1600
       };
-      const opts = map[n] || [[n]];
-      return opts[randInt(0, opts.length-1)].slice().sort((a,b)=>b-a);
-    }
 
-    function dotSetsForGroups(groups){
-      const boxes = boxesFor(groups.length);
-      return groups.map((g, i) => ({
-        dots: diceFaces[g] || diceFaces[6],
-        box: boxes[Math.min(i, boxes.length-1)]
-      }));
-    }
+      // geluidjes zonder bestanden, klein en betrouwbaar
+      let audioCtx = null;
+      function beep(type){
+        try{
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          const t = audioCtx.currentTime;
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
 
-    function svgForDots(dotSets, opts = {}){
-      const {
-        dotRadius = 11,
-        dotColor = "rgba(111,107,104,.92)",
-        stroke = "rgba(255,255,255,.55)",
-        strokeW = 1.2,
-        glow = false
-      } = opts;
+          o.type = "sine";
+          if(type === "ok") o.frequency.setValueAtTime(740, t);
+          if(type === "no") o.frequency.setValueAtTime(220, t);
+          if(type === "tap") o.frequency.setValueAtTime(520, t);
 
-      const w = 520, h = 380;
-      const filter = glow ? `
-        <defs>
-          <filter id="g">
-            <feGaussianBlur stdDeviation="2.0" result="b"/>
-            <feMerge>
-              <feMergeNode in="b"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>` : "";
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
 
-      if(!dotSets || dotSets.length === 0){
-        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">${filter}</svg>`;
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.start(t);
+          o.stop(t + 0.22);
+        }catch(e){}
       }
 
-      const circles = [];
-      dotSets.forEach(set => {
-        const box = set.box;
-        set.dots.forEach(([x,y]) => {
+      function setPhase(name){
+        document.body.classList.remove("phaseLook","phaseChoose","phaseFeedback");
+        document.body.classList.add(name);
+        phaseText.textContent = (name === "phaseChoose") ? "kies" : "kijk";
+      }
+
+      // Dots in 3x3 grid
+      const P = {
+        tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
+        ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
+        bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
+      };
+
+      const diceFaces = {
+        1: [P.mc],
+        2: [P.tl, P.br],
+        3: [P.tl, P.mc, P.br],
+        4: [P.tl, P.tr, P.bl, P.br],
+        5: [P.tl, P.tr, P.mc, P.bl, P.br],
+        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+      };
+
+      function svgForDots(n, opts = {}){
+        const {
+          dotRadius = 12,
+          dotColor = "rgba(77,74,72,0.80)",
+          glow = false
+        } = opts;
+
+        const w = 520, h = 380;
+        const dots = diceFaces[n] || [];
+        const box = {x0:0.12, y0:0.12, x1:0.88, y1:0.88};
+
+        const filter = glow ? `
+          <defs>
+            <filter id="g">
+              <feGaussianBlur stdDeviation="2.2" result="b"/>
+              <feMerge>
+                <feMergeNode in="b"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>` : "";
+
+        const circles = dots.map(([x,y]) => {
           const X = (box.x0 + x*(box.x1-box.x0)) * w;
           const Y = (box.y0 + y*(box.y1-box.y0)) * h;
-          circles.push({X,Y});
-        });
-      });
+          return `
+            <circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="${dotRadius}"
+              fill="${dotColor}"
+              ${glow ? `filter="url(#g)"` : "" }
+            />`;
+        }).join("");
 
-      const cs = circles.map(c => `
-        <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}"
-          fill="${dotColor}" fill-opacity="0.92"
-          stroke="${stroke}" stroke-width="${strokeW}"
-          ${glow ? `filter="url(#g)"` : "" }
-        />`).join("");
-
-      return `
-        <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
-          ${filter}
-          ${cs}
-        </svg>`;
-    }
-
-    function setBoard(svg){ svgWrap.innerHTML = svg; }
-
-    // Game logic
-    let started = false;
-    let locked = false;
-    let current = null; // { correct, groups }
-    let wrongCount = 0;
-    let peekTimer = null;
-
-    function maxForLevel(level){
-      if(level === 1) return 4;
-      return 9;
-    }
-
-    function makeRound(){
-      const cap = maxForLevel(STATE.level);
-      const n = randInt(1, cap);
-      const groups = (STATE.level === 1) ? [n] : splitFor(n);
-      return { correct:n, groups };
-    }
-
-    function buildOptions(correct){
-      const cap = maxForLevel(STATE.level);
-      const opts = new Set([correct]);
-      const deltas = [-3,-2,-1,1,2,3];
-      while(opts.size < 3){
-        const v = clamp(correct + deltas[randInt(0,deltas.length-1)], 1, cap);
-        opts.add(v);
+        return `
+          <svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true" role="img">
+            ${filter}
+            ${circles}
+          </svg>`;
       }
-      return Array.from(opts).sort(() => Math.random() - 0.5);
-    }
 
-    function clearChoiceStates(){
-      [...choices.querySelectorAll('.choiceBtn')].forEach(b => {
-        b.classList.remove('good','bad');
-      });
-      right.classList.remove('wrong');
-    }
+      function emptySvg(){
+        return `<svg viewBox="0 0 520 380" width="100%" height="100%" aria-hidden="true"></svg>`;
+      }
 
-    function flashCard(kind){
-      gameCard.classList.remove('flashWrong','flashGood');
-      void gameCard.offsetHeight;
-      gameCard.classList.add(kind === 'good' ? 'flashGood' : 'flashWrong');
-      setTimeout(() => gameCard.classList.remove('flashWrong','flashGood'), 220);
-    }
+      function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-    function wiggleRight(){
-      right.classList.remove('wrong');
-      void right.offsetHeight;
-      right.classList.add('wrong');
-      setTimeout(() => right.classList.remove('wrong'), 240);
-    }
+      // Game state
+      let started = false;
+      let locked = false;
+      let flashMs = SETTINGS.flashMsStart;
+      let currentCorrect = 1;
+      let wrongCount = 0;
 
-    function openCards(){
-      if(STATE.level !== 2) return;
-      [...choices.querySelectorAll('.choiceBtn')].forEach(b => b.classList.remove('closed'));
-    }
-    function closeCards(){
-      if(STATE.level !== 2) return;
-      [...choices.querySelectorAll('.choiceBtn')].forEach(b => b.classList.add('closed'));
-    }
+      function buildOptions(correct){
+        // 3 opties, cap 6
+        const cap = 6;
+        const opts = new Set([correct]);
+        while(opts.size < 3){
+          const delta = [-2,-1,1,2][randInt(0,3)];
+          opts.add(clamp(correct + delta, 1, cap));
+        }
+        // shuffle
+        const arr = [...opts];
+        for(let i=arr.length-1;i>0;i--){
+          const j = Math.floor(Math.random()*(i+1));
+          [arr[i],arr[j]] = [arr[j],arr[i]];
+        }
+        return arr;
+      }
 
-    function peekCards(){
-      if(STATE.level !== 2) return;
-      clearTimeout(peekTimer);
-      openCards();
-      peekTimer = setTimeout(() => closeCards(), STATE.peekMs);
-    }
+      function clearAnswers(){
+        answerGrid.innerHTML = "";
+      }
 
-    function renderChoices(){
-      choices.innerHTML = '';
-      const optionValues = buildOptions(current.correct);
+      function renderAnswersWithReveal(options){
+        clearAnswers();
 
-      optionValues.forEach(v => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'choiceBtn';
-        btn.setAttribute('aria-label', 'antwoord');
+        options.forEach((v, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ansBtn reveal";
+          btn.style.animationDelay = `${idx * 90}ms`;
+          btn.setAttribute("aria-label", `antwoord ${v}`);
 
-        const groups = (STATE.level === 1) ? [v] : splitFor(v);
-        const svg = svgForDots(dotSetsForGroups(groups), { dotRadius: 12, glow:false });
+          btn.innerHTML = `<div style="width:100%; height:100%;">${svgForDots(v, {dotRadius:12})}</div>`;
 
-        if(STATE.level === 2){
-          btn.classList.add('closed');
-          btn.innerHTML = `
-            <div class="cardInner">
-              <div class="cardFace cardFront"><div style="width:100%; height:100%;">${svg}</div></div>
-              <div class="cardFace cardBack"><div class="backMark">?</div></div>
-            </div>`;
-        }else{
-          btn.innerHTML = `<div style="width:100%; height:100%;">${svg}</div>`;
+          btn.addEventListener("click", () => onPick(btn, v));
+          answerGrid.appendChild(btn);
+        });
+      }
+
+      async function doRound(){
+        locked = true;
+        wrongCount = 0;
+
+        scanTitle.textContent = "kijk naar de stippen";
+        scanSub.textContent = "wacht even";
+
+        setPhase("phaseLook");
+        clearAnswers();                 // extra zekerheid, geen oude knoppen zichtbaar
+        flashSvg.innerHTML = emptySvg();
+        await wait(320);
+
+        currentCorrect = randInt(1,6);
+
+        // flits
+        flashSvg.innerHTML = svgForDots(currentCorrect, {dotRadius:14, glow:true});
+        await wait(flashMs);
+
+        // leeg moment
+        flashSvg.innerHTML = emptySvg();
+        await wait(320);
+
+        // nu pas keuzes opbouwen en tonen
+        scanTitle.textContent = "kijk naar de stippen";
+        scanSub.textContent = "kies wat je zag";
+
+        const options = buildOptions(currentCorrect);
+        renderAnswersWithReveal(options);
+
+        setPhase("phaseChoose");
+        locked = false;
+      }
+
+      async function onPick(btn, value){
+        if (!started || locked) return;
+        locked = true;
+
+        const correct = currentCorrect;
+
+        if (value === correct){
+          beep("ok");
+          btn.classList.add("correct");
+
+          // korte bevestiging zonder tekst te stapelen
+          flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
+          await wait(420);
+          flashSvg.innerHTML = emptySvg();
+
+          // iets sneller na goede reeks kan later, nu simpel
+          flashMs = clamp(flashMs - 60, SETTINGS.minMs, SETTINGS.maxMs);
+
+          await wait(220);
+          await doRound();
+          return;
         }
 
-        btn.addEventListener('click', () => pickAnswer(btn, v));
-        choices.appendChild(btn);
+        // fout
+        beep("no");
+        btn.classList.add("wrong");
+        gameCard.classList.remove("shake");
+        void gameCard.offsetHeight;
+        gameCard.classList.add("shake");
+
+        wrongCount += 1;
+        flashMs = clamp(flashMs + 140, SETTINGS.minMs, SETTINGS.maxMs);
+
+        // anti tel maatregel light: even opnieuw flitsen, antwoorden weer weg
+        await wait(220);
+
+        setPhase("phaseLook");
+        clearAnswers();
+
+        flashSvg.innerHTML = svgForDots(correct, {dotRadius:14, glow:true});
+        await wait(Math.min(SETTINGS.maxMs, flashMs + 220));
+
+        flashSvg.innerHTML = emptySvg();
+        await wait(280);
+
+        // opnieuw antwoorden tonen, weer dat "nu mag je kiezen" gevoel
+        const options = buildOptions(correct);
+        renderAnswersWithReveal(options);
+        setPhase("phaseChoose");
+        locked = false;
+      }
+
+      function startGame(){
+        if (started) return;
+        started = true;
+        startOverlay.style.display = "none";
+        beep("tap");
+        doRound();
+      }
+
+      // controls
+      startBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); startGame(); });
+      startOverlay.addEventListener("click", (e) => { if (e.target === startOverlay) startGame(); });
+
+      homeBtn.addEventListener("click", () => {
+        // in single file: gewoon terug naar start overlay
+        beep("tap");
+        started = false;
+        locked = true;
+        clearAnswers();
+        flashSvg.innerHTML = emptySvg();
+        setPhase("phaseLook");
+        startOverlay.style.display = "flex";
       });
 
-      peekBtn.classList.toggle('show', STATE.level === 2);
-      if(STATE.level === 2) peekCards();
-    }
+      tuneBtn.addEventListener("click", () => {
+        // nu nog minimal, later kan ik jouw lange press of panel toevoegen
+        beep("tap");
+        flashMs = SETTINGS.flashMsStart;
+      });
 
-    async function startRound(){
-      locked = true;
-      wrongCount = 0;
-      clearChoiceStates();
-
-      uiTitle.textContent = 'Kijk naar de stippen.';
-      uiSub.textContent = 'Kies wat je zag.';
-
-      current = makeRound();
-
-      setBoard(svgForDots([], {glow:false}));
-      await wait(350);
-
-      setBoard(svgForDots(dotSetsForGroups(current.groups), {dotRadius: 12, glow:false}));
-      await wait(STATE.flashMs);
-
-      setBoard(svgForDots([], {glow:false}));
-      await wait(260);
-
-      renderChoices();
-      locked = false;
-    }
-
-    async function pickAnswer(btn, value){
-      if(!started || locked) return;
-      locked = true;
-
-      clearChoiceStates();
-
-      if(value === current.correct){
-        beep('ok');
-        btn.classList.add('good');
-        flashCard('good');
-
-        setBoard(svgForDots(dotSetsForGroups(current.groups), {dotRadius: 12, glow:false}));
-        await wait(520);
-        setBoard(svgForDots([], {glow:false}));
-
-        await wait(120);
-        await startRound();
-        return;
-      }
-
-      beep('no');
-      btn.classList.add('bad');
-      flashCard('bad');
-      wiggleRight();
-
-      wrongCount += 1;
-
-      // hulp, minimalistisch, geen tekstlawine
-      if(wrongCount >= 2){
-        setBoard(svgForDots(dotSetsForGroups(current.groups), {dotRadius: 12, glow:false}));
-        await wait(Math.min(1600, STATE.flashMs + 450));
-        setBoard(svgForDots([], {glow:false}));
-        await wait(260);
-        renderChoices();
-      }
-
-      locked = false;
-    }
-
-    // Settings
-    function openTunePanel(){
-      tunePanel.classList.remove('hidden');
-    }
-    function closeTunePanel(){
-      tunePanel.classList.add('hidden');
-    }
-
-    function applySettings(){
-      STATE.level = clamp(Number(levelRange.value), 1, 3);
-      STATE.flashMs = clamp(Number(flashRange.value), 350, 1600);
-      STATE.peekMs = clamp(Number(peekRange.value), 450, 1400);
-      saveState();
-      syncUI();
-    }
-
-    levelRange.addEventListener('input', applySettings);
-    flashRange.addEventListener('input', applySettings);
-    peekRange.addEventListener('input', applySettings);
-
-    // Navigation
-    tuneBtn.addEventListener('click', () => {
-      beep('tap');
-      if(tunePanel.classList.contains('hidden')) openTunePanel();
-      else closeTunePanel();
-    });
-    tuneClose.addEventListener('click', () => { beep('tap'); closeTunePanel(); });
-
-    peekBtn.addEventListener('click', () => {
-      if(!started || locked) return;
-      beep('tap');
-      if(STATE.level === 2) peekCards();
-    });
-
-    startBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      begin();
-    });
-    startOverlay.addEventListener('click', (e) => {
-      if(e.target === startOverlay) begin();
-    });
-
-    function begin(){
-      if(started) return;
-      started = true;
-      startOverlay.style.display = 'none';
-      // ensure audio context can start on iOS
-      beep('tap');
-      startRound();
-    }
-
-    homeBtn.addEventListener('click', () => {
-      try { window.location.href = 'index.html'; } catch(e){}
-    });
-
-    window.addEventListener('orientationchange', () => {
-      // re-render current layout of dots and options so boxes match orientation
-      setTimeout(() => {
-        if(!started || !current) return;
-        setBoard(svgForDots(dotSetsForGroups(current.groups), {dotRadius:12, glow:false}));
-        renderChoices();
-      }, 260);
-    });
-
-    // Init
-    syncUI();
-    setBoard(svgForDots([], {glow:false}));
+      // init
+      flashSvg.innerHTML = emptySvg();
+      setPhase("phaseLook");
+    })();
   </script>
 </body>
 </html>
