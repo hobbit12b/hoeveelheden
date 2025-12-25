@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GIF laten lopen, pixels per frame</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 24px; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .panel {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      background: #fff;
+    }
+    .row { display: grid; grid-template-columns: 220px 1fr 90px; gap: 12px; align-items: center; }
+    label { font-weight: 600; }
+    input[type="range"] { width: 100%; }
+    .value { font-variant-numeric: tabular-nums; text-align: right; opacity: .8; }
+    .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e6e6e6;
+      background: #f7f7f7;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:active { transform: translateY(1px); }
+    .hint { opacity: .75; line-height: 1.4; }
+    .stage {
+      margin-top: 16px;
+      border-radius: 16px;
+      border: 1px solid #e6e6e6;
+      overflow: hidden;
+      background: linear-gradient(#ffffff, #fafafa);
+    }
+    canvas { display: block; width: 100%; height: 340px; }
+    .small { font-size: 14px; opacity: .8; }
+    .fileRow { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .badge { padding: 6px 10px; border-radius: 999px; background: #f2f2f2; border: 1px solid #e6e6e6; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin: 0 0 10px;">GIF laten lopen, pixels per frame</h1>
+    <p class="hint" style="margin: 0 0 16px;">
+      Verplaatsing gebeurt per gif frame. Jij schuift de pixels per frame en de schaal, tot het precies “loopt”.
+    </p>
+
+    <div class="panel">
+      <div class="fileRow">
+        <span class="badge" id="status">Nog niet geladen</span>
+        <input id="file" type="file" accept="image/gif" />
+        <span class="small">Tip: zet je gif naast dit bestand als kuikenloopt.gif, dan laadt hij automatisch.</span>
+      </div>
+
+      <div class="row">
+        <label for="pxPerFrame">Pixels naar rechts per frame</label>
+        <input id="pxPerFrame" type="range" min="0" max="30" step="0.1" value="3" />
+        <div class="value"><span id="pxVal">3.0</span> px</div>
+      </div>
+
+      <div class="row">
+        <label for="scale">Grootte</label>
+        <input id="scale" type="range" min="0.2" max="6" step="0.05" value="2" />
+        <div class="value"><span id="scaleVal">2.00</span>×</div>
+      </div>
+
+      <div class="row">
+        <label for="speed">Afspeelsnelheid</label>
+        <input id="speed" type="range" min="0.25" max="2.5" step="0.05" value="1" />
+        <div class="value"><span id="speedVal">1.00</span>×</div>
+      </div>
+
+      <div class="buttons">
+        <button id="toggle">Pauze</button>
+        <button id="reset">Reset positie</button>
+        <button id="wrap">Wrap aan</button>
+      </div>
+
+      <div class="small" id="meta">Frame info verschijnt na laden</div>
+    </div>
+
+    <div class="stage">
+      <canvas id="c"></canvas>
+    </div>
+  </div>
+
+  <script type="module">
+    import { parseGIF, decompressFrames } from "https://unpkg.com/gifuct-js@2.0.2/dist/gifuct-esm.js";
+
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+
+    const statusEl = document.getElementById("status");
+    const metaEl = document.getElementById("meta");
+
+    const fileInput = document.getElementById("file");
+    const pxSlider = document.getElementById("pxPerFrame");
+    const scaleSlider = document.getElementById("scale");
+    const speedSlider = document.getElementById("speed");
+
+    const pxVal = document.getElementById("pxVal");
+    const scaleVal = document.getElementById("scaleVal");
+    const speedVal = document.getElementById("speedVal");
+
+    const toggleBtn = document.getElementById("toggle");
+    const resetBtn = document.getElementById("reset");
+    const wrapBtn = document.getElementById("wrap");
+
+    let frames = [];
+    let frameIndex = 0;
+
+    let playing = true;
+    let wrapAround = true;
+
+    let pxPerFrame = Number(pxSlider.value);
+    let scale = Number(scaleSlider.value);
+    let speed = Number(speedSlider.value);
+
+    let x = 0;
+    let groundY = 0;
+
+    let gifW = 0;
+    let gifH = 0;
+
+    const frameCanvas = document.createElement("canvas");
+    const frameCtx = frameCanvas.getContext("2d");
+
+    let timer = null;
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function resize() {
+      const cssW = canvas.clientWidth;
+      const cssH = canvas.clientHeight;
+
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      groundY = cssH - 22;
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    function updateReadouts() {
+      pxVal.textContent = pxPerFrame.toFixed(1);
+      scaleVal.textContent = scale.toFixed(2);
+      speedVal.textContent = speed.toFixed(2);
+    }
+
+    pxSlider.addEventListener("input", () => {
+      pxPerFrame = Number(pxSlider.value);
+      updateReadouts();
+    });
+
+    scaleSlider.addEventListener("input", () => {
+      scale = Number(scaleSlider.value);
+      updateReadouts();
+    });
+
+    speedSlider.addEventListener("input", () => {
+      speed = Number(speedSlider.value);
+      updateReadouts();
+    });
+
+    toggleBtn.addEventListener("click", () => {
+      playing = !playing;
+      toggleBtn.textContent = playing ? "Pauze" : "Start";
+      if (playing) tick();
+      else stopTimer();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      x = 0;
+      frameIndex = 0;
+      drawOnce();
+    });
+
+    wrapBtn.addEventListener("click", () => {
+      wrapAround = !wrapAround;
+      wrapBtn.textContent = wrapAround ? "Wrap aan" : "Wrap uit";
+    });
+
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const buf = await file.arrayBuffer();
+      await loadFromArrayBuffer(buf, file.name);
+    });
+
+    function stopTimer() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }
+
+    function clearStage() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.fillStyle = "rgba(0,0,0,.06)";
+      ctx.fillRect(0, groundY, w, 2);
+    }
+
+    function drawFrameToOffscreen(frame) {
+      const imageData = new ImageData(frame.patch, gifW, gifH);
+      frameCtx.putImageData(imageData, 0, 0);
+    }
+
+    function drawOnce() {
+      if (!frames.length) return;
+      clearStage();
+
+      const fw = gifW * scale;
+      const fh = gifH * scale;
+
+      const y = groundY - fh;
+
+      drawFrameToOffscreen(frames[frameIndex]);
+      ctx.drawImage(frameCanvas, x, y, fw, fh);
+    }
+
+    function nextDelayMs(frame) {
+      const raw = frame.delay ?? 10;
+      const delayHundredths = raw <= 1 ? 10 : raw;
+      const ms = delayHundredths * 10;
+      return Math.max(10, ms / speed);
+    }
+
+    function tick() {
+      stopTimer();
+      if (!playing || !frames.length) return;
+
+      drawOnce();
+
+      x += pxPerFrame;
+
+      const fw = gifW * scale;
+      const stageW = canvas.clientWidth;
+
+      if (wrapAround && x > stageW + fw) x = -fw;
+
+      const frame = frames[frameIndex];
+      frameIndex = (frameIndex + 1) % frames.length;
+
+      timer = setTimeout(tick, nextDelayMs(frame));
+    }
+
+    async function loadFromArrayBuffer(buf, label) {
+      setStatus("Bezig met laden");
+      stopTimer();
+
+      const gif = parseGIF(buf);
+      const out = decompressFrames(gif, true);
+
+      if (!out?.length) {
+        setStatus("Geen frames gevonden");
+        return;
+      }
+
+      frames = out;
+
+      gifW = out[0].dims?.width ?? 0;
+      gifH = out[0].dims?.height ?? 0;
+
+      if (!gifW || !gifH) {
+        setStatus("Afmetingen onbekend");
+        return;
+      }
+
+      frameCanvas.width = gifW;
+      frameCanvas.height = gifH;
+
+      x = 0;
+      frameIndex = 0;
+
+      const avgDelay = Math.round(out.reduce((a, f) => a + (f.delay ?? 10), 0) / out.length);
+      metaEl.textContent = `Bestand: ${label}, frames: ${out.length}, basismaat: ${gifW} × ${gifH}, gemiddelde delay: ${avgDelay} (honderdsten)`;
+      setStatus("Geladen");
+
+      drawOnce();
+      if (playing) tick();
+    }
+
+    updateReadouts();
+
+    // Auto load als er een gif naast staat
+    (async () => {
+      try {
+        const res = await fetch("./kuikenloopt.gif");
+        if (!res.ok) throw new Error("fetch failed");
+        const buf = await res.arrayBuffer();
+        await loadFromArrayBuffer(buf, "kuikenloopt.gif");
+      } catch {
+        setStatus("Kies een gif via de knop");
+      }
+    })();
+  </script>
+</body>
+</html>
