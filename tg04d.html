@@ -169,18 +169,19 @@
       overflow:hidden;
       position:relative;
 
-      /* vaste verhouding, voorkomt platdrukken */
+      /* vaste verhouding, zodat stippen niet plat worden */
       aspect-ratio: 520 / 380;
     }
 
-    /* ✅ FIX: portrait iPad, hoogte blijft binnen het vak, breedte wordt smaller */
+    /* Portret: hoogte weer “normaal”, maar venster smaller */
     @media (orientation: portrait){
       .flashBoard{
         height: 100%;
         width: auto;
-        max-width: 86%;
+        max-width: min(430px, 86%);
         margin: 0 auto;
-        aspect-ratio: 520 / 380;
+        transform: none;
+        transform-origin: center;
       }
     }
 
@@ -191,7 +192,6 @@
       align-items:center;
       justify-content:center;
     }
-
     .flashSvg svg{
       width: 100%;
       height: 100%;
@@ -644,7 +644,7 @@
       const IN_DUR_MS = 800;
       const OUT_DUR_MS = 750;
 
-      /* Kaarten: langer open en klikbaar tijdens het openen */
+      /* Kaarten: openklap, maar klik mag zodra kaart open gaat */
       const PREVIEW_GAP_MS = 120;
       const PREVIEW_MS = 1700;
 
@@ -678,11 +678,12 @@
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
       }
 
+      /* Level bereik, level 4 krijgt eerst alleen 5 erbij */
       function maxForLevel(){
         if(LEVEL === 1) return 4;
         if(LEVEL === 2) return 4;
         if(LEVEL === 3) return 4;
-        if(LEVEL === 4) return 6;
+        if(LEVEL === 4) return 5;
         return 6; /* level 5 */
       }
 
@@ -722,7 +723,7 @@
         }catch(e){}
       }
 
-      /* Dobbelpunten (level 1 en 2, en als vaste antwoordpatronen 1-4) */
+      /* Dobbelpunten voor level 1 en 2, 1 tot en met 4 */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -732,82 +733,79 @@
         1: [P.mc],
         2: [P.tl, P.br],
         3: [P.tl, P.mc, P.br],
-        4: [P.tl, P.tr, P.bl, P.br],
-        5: [P.tl, P.tr, P.mc, P.bl, P.br],
-        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+        4: [P.tl, P.tr, P.bl, P.br]
       };
-
-      function patternDice(n){
+      function patternDice14(n){
         return [{
           dots: diceFaces[n],
           box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
         }];
       }
 
-      /* Basispunten voor variaties (level 3 en verder) */
-      const L = {
-        a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
-        d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
-        m:[0.50,0.50],
-        r:[0.86,0.50], /* extra stip rechts */
-        l:[0.14,0.50]  /* extra stip links (optioneel) */
-      };
-
-      const V = {
-        l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
-        r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
-      };
-
-      /* Variaties 1-4 voor level 3 (minder dobbelsteenachtig, sluit aan bij jouw voorbeeld) */
-      const VARS_1TO4 = {
+      /*
+        Variaties zoals in dobbelstenen.zip
+        coördinaten zijn genormaliseerd (0 tot 1) op het hele vlak
+      */
+      const ZIP = {
         1: [
-          [L.m],
-          [L.b],
-          [L.e]
+          [[0.5, 0.5]],
+          [[0.5, 0.32]],
+          [[0.5, 0.68]]
         ],
         2: [
-          [L.a, L.c],
-          [L.b, L.e],
-          [L.a, L.f]
+          [[0.2630,0.2904],[0.7369,0.7202]], /* 2a */
+          [[0.2469,0.4723],[0.7505,0.4723]], /* 2b */
+          [[0.4827,0.2656],[0.4942,0.7323]], /* 2c */
+          [[0.2859,0.7336],[0.7139,0.2641]]  /* 2d */
         ],
         3: [
-          [L.a, L.b, L.c],     /* 3 op rij */
-          [L.a, L.m, L.f],     /* diagonaal met midden */
-          [L.a, L.d, L.f]      /* driehoek */
+          [[0.2387,0.2641],[0.4987,0.4987],[0.7460,0.7584]], /* 3a */
+          [[0.7449,0.2432],[0.2286,0.2433],[0.2286,0.7679]], /* 3b */
+          [[0.4885,0.1982],[0.4885,0.4842],[0.4885,0.7709]], /* 3c */
+          [[0.1662,0.4885],[0.4888,0.4885],[0.8109,0.4885]]  /* 3d */
         ],
         4: [
-          [L.a, L.c, L.d, L.f], /* hoeken (komt voor, maar niet de enige) */
-          [L.a, L.b, L.c, L.m], /* 3 boven + 1 midden */
-          [L.a, L.d, L.f, L.b]  /* 3 links + 1 rechts midden */
+          [[0.2452,0.2558],[0.7523,0.2558],[0.2452,0.7416],[0.7523,0.7416]], /* 4a */
+          [[0.1764,0.2686],[0.4990,0.2686],[0.8210,0.2686],[0.4988,0.7289]], /* 4b */
+          [[0.2346,0.1973],[0.2346,0.4878],[0.7628,0.4838],[0.2347,0.8002]]  /* 4c */
+        ],
+        5: [
+          [[0.2452,0.2433],[0.7523,0.2434],[0.4987,0.5110],[0.2452,0.7541],[0.7523,0.7541]], /* 5a */
+          [[0.1925,0.2474],[0.5151,0.2473],[0.8371,0.2473],[0.1925,0.7501],[0.5148,0.7502]], /* 5b */
+          [[0.3200,0.1974],[0.6775,0.3014],[0.3199,0.4878],[0.6776,0.6959],[0.3200,0.8001]]  /* 5c */
+        ],
+        6: [
+          [[0.2452,0.2195],[0.7523,0.2195],[0.2452,0.4987],[0.7523,0.4987],[0.2452,0.7779],[0.7523,0.7779]], /* 6a */
+          [[0.2195,0.2452],[0.4988,0.2451],[0.7780,0.2452],[0.2195,0.7523],[0.4988,0.7523],[0.7780,0.7523]]  /* 6b */
         ]
       };
 
-      /* Variaties 5-6 (chunked) voor level 4-5 */
-      const VARS_5 = [
-        [L.a, L.b, L.c, L.d, L.e],      /* 3 + 2 */
-        [L.a, L.c, L.d, L.f, L.m],      /* 4 hoeken + midden */
-        [L.a, L.c, L.d, L.f, L.b]       /* 4 + 1 */
-      ];
-      const VARS_6 = [
-        [L.a, L.b, L.c, L.d, L.e, L.f], /* 3 + 3 horizontaal */
-        [V.l1, V.l2, V.l3, V.r1, V.r2, V.r3], /* 3 + 3 verticaal */
-        [L.a, L.c, L.m, L.d, L.f, L.r]  /* 5 als dobbel + 1 rechts */
-      ];
+      function patternZip(n, variantIndex){
+        const arr = ZIP[n] || [];
+        const idx = clamp(variantIndex, 0, Math.max(0, arr.length - 1));
+        const dots = arr[idx] || [];
+        return [{ dots, box:{x0:0.0, y0:0.0, x1:1.0, y1:1.0} }];
+      }
 
       function allowedVariantCountQuestion(n){
-        if(LEVEL === 1) return 1;
-        if(LEVEL === 2) return 1;
-        if(LEVEL === 3) return (n<=4) ? 3 : 0;
+        if(LEVEL === 1) return 1;              /* dobbel */
+        if(LEVEL === 2) return 1;              /* dobbel */
+        if(LEVEL === 3){
+          if(n === 1) return 3;
+          if(n >= 2 && n <= 4) return 4;       /* 2a t/m 2d, 3a t/m 3d, 4a t/m 4c (3 varianten), clamp regelt */
+          return 0;
+        }
         if(LEVEL === 4){
-          if(n<=4) return 3;
-          if(n===5) return 2;
-          if(n===6) return 3;
+          if(n === 1) return 3;
+          if(n >= 2 && n <= 4) return 4;
+          if(n === 5) return 3;                /* 5a 5b 5c */
           return 0;
         }
         if(LEVEL === 5){
-          if(n<=4) return 3;
-          if(n===5) return 3;
-          if(n===6) return 3;
+          if(n === 1) return 3;
+          if(n >= 2 && n <= 4) return 4;
+          if(n === 5) return 3;
+          if(n === 6) return 2;                /* 6a 6b */
           return 0;
         }
         return 1;
@@ -820,58 +818,46 @@
       }
 
       function patternQuestion(n, variantIndex){
-        if(LEVEL === 1) return patternDice(n);
-        if(LEVEL === 2) return patternDice(n);
+        if(LEVEL === 1) return patternDice14(n);
+        if(LEVEL === 2) return patternDice14(n);
 
+        /* level 3 tot en met 5: variaties uit de zip */
+        if(n === 1) return patternZip(1, variantIndex);
+
+        /* level 3: alleen 2 tot en met 4 */
         if(LEVEL === 3){
-          const arr = VARS_1TO4[n] || [];
-          const dots = arr[clamp(variantIndex, 0, arr.length-1)] || [];
-          return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          return patternZip(n, variantIndex);
         }
 
+        /* level 4: 2 tot en met 5 */
         if(LEVEL === 4){
-          if(n<=4){
-            const arr = VARS_1TO4[n] || [];
-            const dots = arr[clamp(variantIndex, 0, 2)] || [];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===5){
-            const dots = VARS_5[clamp(variantIndex, 0, 1)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===6){
-            const dots = VARS_6[clamp(variantIndex, 0, 2)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
+          return patternZip(n, variantIndex);
         }
 
+        /* level 5: 2 tot en met 6 */
         if(LEVEL === 5){
-          if(n<=4){
-            const arr = VARS_1TO4[n] || [];
-            const dots = arr[clamp(variantIndex, 0, 2)] || [];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===5){
-            const dots = VARS_5[clamp(variantIndex, 0, 2)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===6){
-            const dots = VARS_6[clamp(variantIndex, 0, 2)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
+          return patternZip(n, variantIndex);
         }
 
-        return patternDice(n);
+        return patternDice14(n);
       }
 
+      /* Antwoordpatronen: vast en rustig, wel zoals je zip uitstraling */
       function patternAnswer(n){
-        if(n <= 4){
-          return patternDice(n);
+        if(LEVEL === 1){
+          return patternDice14(n);
         }
-        if(n === 5){
-          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        if(LEVEL === 2){
+          return patternDice14(n); /* level 2 idem dobbel 1-4 */
         }
-        return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+
+        /* level 3+ antwoordkaart: kies vaste variant per getal */
+        if(n === 1) return patternZip(1, 0);
+        if(n === 2) return patternZip(2, 0);   /* 2a */
+        if(n === 3) return patternZip(3, 0);   /* 3a */
+        if(n === 4) return patternZip(4, 1);   /* 4b, lijkt op jouw voorbeeld met 3 boven en 1 onder */
+        if(n === 5) return patternZip(5, 0);   /* 5a */
+        return patternZip(6, 0);               /* 6a */
       }
 
       function svgForDots(dotSets, opts = {}){
@@ -1041,7 +1027,7 @@
               </div>
             `;
           }else{
-            const svg = svgForDots(patternDice(v), {dotRadius: 12});
+            const svg = svgForDots(patternDice14(v), {dotRadius: 12});
             btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
           }
 
@@ -1049,7 +1035,7 @@
         });
       }
 
-      /* Preview: kaarten klappen om, maar klikken mag meteen zodra de eerste kaart open gaat */
+      /* Preview: open 1 voor 1, klik mag zodra eerste kaart open is */
       let previewToken = 0;
 
       async function previewCardsNonBlocking(){
@@ -1103,6 +1089,7 @@
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
 
+        /* vanaf hier mag je klikken, ook tijdens het openklappen */
         locked = false;
         previewCardsNonBlocking();
       }
