@@ -644,7 +644,9 @@
 
       /* Kaarten iets langer open */
       const PREVIEW_GAP_MS = 170;
-      const PREVIEW_MS = 1650;
+      const PREVIEW_MS = 1500;
+
+      const PREVIEW_STAGGER_MS = 260;
 
       /* Flits instelbaar */
       let flashMs = Number(flashMsRange.value);
@@ -977,7 +979,7 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
-      function renderAnswers(correct, onPick){
+            function renderAnswers(correct, onPick){
         const arr = buildOptions(correct);
         answersEl.innerHTML = "";
 
@@ -998,15 +1000,16 @@
             const svg = svgForDots(patternLevel1(v), {dotRadius: 12});
             btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
           }else{
+            // Antwoordkaarten tonen óók hoeveelheden (stippen), geen cijfers.
+            // De correcte kaart krijgt dezelfde variant als de vraagkaart, zodat het klopt wat je net zag.
+            const vi = (v === correct) ? questionVariantIndex : pickVariantIndexForNumber(v);
+            const svg = svgForDots(patternLevel235(v, vi), {dotRadius: 12});
+            btn.dataset.vi = String(vi);
+
             btn.innerHTML = `
               <div class="cardWrap">
                 <div class="cardBack">🐝</div>
-                <div class="cardFront">
-                  <div style="display:grid; place-items:center;">
-                    <div class="digitFront" aria-label="cijfer">${v}</div>
-                    <div class="digitHint">tik</div>
-                  </div>
-                </div>
+                <div class="cardFront">${svg}</div>
               </div>
             `;
           }
@@ -1015,19 +1018,31 @@
         });
       }
 
-      async function previewCards(){
+      async function previewCards(runId){
         if(!usesAnswerCards()) return;
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
 
         await wait(PREVIEW_GAP_MS);
-        btns.forEach(b => b.classList.add("cardOpen"));
+
+        // Kaarten klappen één voor één open, zodat kinderen al kunnen klikken zodra een kaart zichtbaar is.
+        for(let i=0;i<btns.length;i++){
+          if(runId !== previewRunId) return;
+          btns[i].classList.add("cardOpen");
+          await wait(PREVIEW_STAGGER_MS);
+        }
+
+        if(runId !== previewRunId) return;
+
         await wait(PREVIEW_MS);
+
+        if(runId !== previewRunId) return;
         btns.forEach(b => b.classList.remove("cardOpen"));
-        await wait(140);
+        await wait(120);
       }
 
       /* Game */
+      let previewRunId = 0;
       let started = false;
       let locked = false;
       let correct = 1;
@@ -1058,9 +1073,10 @@
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
 
-        await previewCards();
-
+        // Ontgrendel zodat kinderen al kunnen klikken zodra een kaart openklapt
+        const myPreviewId = ++previewRunId;
         locked = false;
+        previewCards(myPreviewId);
       }
 
       function nextRound(){
@@ -1073,10 +1089,15 @@
         if(!started || locked) return;
         locked = true;
 
+        // Stop lopende preview (omklappen) meteen zodra er gekozen is
+        previewRunId++; 
+
         const all = [...answersEl.querySelectorAll(".ansBtn")];
         all.forEach(b => b.style.pointerEvents = "none");
 
         if(usesAnswerCards()){
+          // Sluit eventuele previews van andere kaarten meteen
+          all.forEach(b => { if(b !== btn) b.classList.remove("cardOpen"); });
           btn.classList.add("cardOpen");
           await wait(240);
         }
@@ -1234,8 +1255,10 @@
           renderAnswers(correct, onPick);
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
-          await previewCards();
+
+          const myPreviewId = ++previewRunId;
           locked = false;
+          previewCards(myPreviewId);
         }, 220);
       }
       window.addEventListener("resize", onReflow);
