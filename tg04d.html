@@ -188,6 +188,24 @@
       justify-content:center;
     }
 
+    .flashSvg svg{
+          width: 100%;
+          height: 100%;
+          max-width: 100%;
+          max-height: 100%;
+        }
+        /* Zorg dat het vraagvenster niet ‘platgedrukt’ wordt */
+        .flashBoard{
+          aspect-ratio: 520 / 380;
+        }
+        @media (orientation: portrait){
+          .flashBoard{
+            width: min(520px, 90%);
+            height: auto;
+            transform: none;
+          }
+        }
+    
     .scanStage{
       position:absolute;
       inset:0;
@@ -477,7 +495,12 @@
       place-items:center;
       background:#f8c3b0;
       font-size:32px;
+      background-image: url("vogeltje_achterkantkaart.png");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
     }
+
     .cardFront{
       width:100%;
       height:100%;
@@ -877,7 +900,7 @@
           <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" />
         `).join("");
 
-        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${cs}</svg>`;
+        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cs}</svg>`;
       }
 
       function setBoard(html){ flashSvg.innerHTML = html; }
@@ -1021,7 +1044,7 @@
             const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
             btn.innerHTML = `
               <div class="cardWrap">
-                <div class="cardBack">🐝</div>
+                <div class="cardBack" aria-hidden="true"></div>
                 <div class="cardFront">${svg}</div>
               </div>
             `;
