@@ -168,15 +168,19 @@
       justify-content:center;
       overflow:hidden;
       position:relative;
+
+      /* vaste verhouding, voorkomt platdrukken */
+      aspect-ratio: 520 / 380;
     }
 
+    /* ✅ FIX: portrait iPad, hoogte blijft binnen het vak, breedte wordt smaller */
     @media (orientation: portrait){
       .flashBoard{
-        width: min(520px, 90%);
-        height: auto;
-        aspect-ratio: 1.5 / 1;
-        transform: scale(0.90);
-        transform-origin: center;
+        height: 100%;
+        width: auto;
+        max-width: 86%;
+        margin: 0 auto;
+        aspect-ratio: 520 / 380;
       }
     }
 
@@ -189,23 +193,13 @@
     }
 
     .flashSvg svg{
-          width: 100%;
-          height: 100%;
-          max-width: 100%;
-          max-height: 100%;
-        }
-        /* Zorg dat het vraagvenster niet ‘platgedrukt’ wordt */
-        .flashBoard{
-          aspect-ratio: 520 / 380;
-        }
-        @media (orientation: portrait){
-          .flashBoard{
-            width: min(520px, 90%);
-            height: auto;
-            transform: none;
-          }
-        }
-    
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      display:block;
+    }
+
     .scanStage{
       position:absolute;
       inset:0;
@@ -783,8 +777,8 @@
         ],
         4: [
           [L.a, L.c, L.d, L.f], /* hoeken (komt voor, maar niet de enige) */
-          [L.a, L.b, L.c, L.m], /* 3 boven + 1 midden (zoals je afbeelding) */
-          [L.a, L.d, L.f, L.b]  /* 3 links + 1 rechts midden (zoals je afbeelding) */
+          [L.a, L.b, L.c, L.m], /* 3 boven + 1 midden */
+          [L.a, L.d, L.f, L.b]  /* 3 links + 1 rechts midden */
         ]
       };
 
@@ -792,7 +786,7 @@
       const VARS_5 = [
         [L.a, L.b, L.c, L.d, L.e],      /* 3 + 2 */
         [L.a, L.c, L.d, L.f, L.m],      /* 4 hoeken + midden */
-        [L.a, L.c, L.d, L.f, L.b]       /* 4 + 1 (extra boven midden) */
+        [L.a, L.c, L.d, L.f, L.b]       /* 4 + 1 */
       ];
       const VARS_6 = [
         [L.a, L.b, L.c, L.d, L.e, L.f], /* 3 + 3 horizontaal */
@@ -801,19 +795,19 @@
       ];
 
       function allowedVariantCountQuestion(n){
-        if(LEVEL === 1) return 1;                  /* dobbel */
-        if(LEVEL === 2) return 1;                  /* dobbel */
-        if(LEVEL === 3) return (n<=4) ? 3 : 0;     /* variaties 1-4 */
+        if(LEVEL === 1) return 1;
+        if(LEVEL === 2) return 1;
+        if(LEVEL === 3) return (n<=4) ? 3 : 0;
         if(LEVEL === 4){
           if(n<=4) return 3;
-          if(n===5) return 2;  /* 3+2, 4 hoeken + midden */
+          if(n===5) return 2;
           if(n===6) return 3;
           return 0;
         }
         if(LEVEL === 5){
           if(n<=4) return 3;
-          if(n===5) return 3;  /* + 4+1 */
-          if(n===6) return 3;  /* incl 5+1 variant */
+          if(n===5) return 3;
+          if(n===6) return 3;
           return 0;
         }
         return 1;
@@ -870,16 +864,14 @@
         return patternDice(n);
       }
 
-      /* Antwoordpatronen: bewust rustig en herkenbaar (geen cijfers, wel stippen) */
       function patternAnswer(n){
         if(n <= 4){
           return patternDice(n);
         }
-        /* 5 en 6: vaste chunked variant voor de antwoordknoppen */
         if(n === 5){
-          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }]; /* 4 hoeken + midden */
+          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
         }
-        return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }]; /* 3 + 3 horizontaal */
+        return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
       }
 
       function svgForDots(dotSets, opts = {}){
@@ -1067,7 +1059,6 @@
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
 
-        /* open 1 voor 1 zodat je al kunt klikken zodra een kaart iets laat zien */
         await wait(PREVIEW_GAP_MS);
 
         for(let i=0;i<btns.length;i++){
@@ -1091,7 +1082,7 @@
 
       async function flashAndAsk(){
         locked = true;
-        previewToken++; /* stop lopende preview */
+        previewToken++;
 
         answersEl.classList.add("answersHidden");
         answersEl.innerHTML = "";
@@ -1112,11 +1103,8 @@
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
 
-        /* vanaf hier mag je klikken, ook tijdens het openklappen */
         locked = false;
         previewCardsNonBlocking();
-
-        return;
       }
 
       function nextRound(){
@@ -1129,7 +1117,7 @@
         if(!started || locked) return;
 
         locked = true;
-        previewToken++; /* stop preview direct */
+        previewToken++;
 
         const all = [...answersEl.querySelectorAll(".ansBtn")];
         all.forEach(b => b.style.pointerEvents = "none");
