@@ -13,18 +13,10 @@
       --brand:#e58c74;
       --text:#6f6b68;
 
-      /* exact zoals referentie */
       --midLine: rgba(245,180,152,0.85);
 
       --card-radius:28px;
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
-
-      --slideMs: 1180ms;
-      --ease: cubic-bezier(.22,.61,.35,1);
-
-      /* mask vrijwel nul, zodat er geen witte balk ontstaat */
-      --maskSize: 0px;
-      --maskFade: 0px;
 
       --pressDown: 2px;
 
@@ -34,7 +26,7 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      --flashMs: 650;
+      --activeFill: rgba(229, 140, 116, 0.18);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -83,7 +75,6 @@
       transition: background 140ms ease;
     }
 
-    /* middenlijn positie exact zoals Tellen en scannen */
     @media (orientation: landscape){
       .scan-surface{ border-left: 6px dashed var(--midLine); }
     }
@@ -114,7 +105,7 @@
       flex: 0 0 auto;
       font-size: 30px;
       line-height: 1;
-      transition: transform 140ms var(--ease);
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
     .homeBtn:active,
     .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
@@ -179,7 +170,6 @@
       position:relative;
     }
 
-    /* portrait: flitsbord 10% kleiner zodat randen netjes blijven */
     @media (orientation: portrait){
       .flashBoard{
         width: min(520px, 90%);
@@ -208,20 +198,11 @@
       z-index: 10;
     }
 
-    /* geen extra padding meer, anders ontstaat witte balk */
-    @media (orientation: landscape){
-      .scanStage{ padding-left: 18px; }
-    }
-    @media (orientation: portrait){
-      .scanStage{ padding-top: 18px; }
-    }
-
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
     }
 
-    /* landscape onder elkaar */
     .answers{
       display:grid;
       grid-template-columns: 1fr;
@@ -230,7 +211,6 @@
       align-items:center;
     }
 
-    /* portrait naast elkaar */
     @media (orientation: portrait){
       .answers{
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -255,9 +235,11 @@
       aspect-ratio: 1 / 1;
       width: 100%;
 
-      transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), background 220ms var(--ease), border-color 220ms var(--ease);
+      transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
       transform: translateZ(0);
       will-change: transform, opacity;
+      position: relative;
+      overflow: hidden;
     }
 
     @media (orientation: landscape){
@@ -270,7 +252,7 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.10);
     }
 
-    .ansBtn.pressBounce{ animation: pressBounce 280ms var(--ease) 1; }
+    .ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
     @keyframes pressBounce{
       0%{ transform: translateY(0); }
       42%{ transform: translateY(var(--pressDown)); }
@@ -289,9 +271,6 @@
 
     .answersHidden{ opacity:0; pointer-events:none; }
 
-    /* masker: nul, dus geen witte balk */
-    .midMask{ display:none; }
-
     .startOverlay{
       position:fixed;
       inset:0;
@@ -304,7 +283,7 @@
       padding: 24px;
     }
     .startCard{
-      width: min(560px, 92vw);
+      width: min(740px, 92vw);
       background: #ffffff;
       border-radius: 24px;
       box-shadow: var(--shadow);
@@ -318,23 +297,50 @@
       text-transform: lowercase;
     }
     .startCard p{
-      margin: 0 0 16px 0;
+      margin: 0 0 14px 0;
       color: rgba(77,74,72,0.82);
       font-size: 18px;
       line-height: 1.35;
     }
+    .levelRow{
+      display:flex;
+      gap: 10px;
+      justify-content:center;
+      flex-wrap: wrap;
+      margin: 12px 0 16px 0;
+    }
+    .pillBtn{
+      appearance:none;
+      border:none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.10);
+      background: #f8c3b0;
+      color: #4d4a48;
+      font-size: 16px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1), background 160ms ease;
+      min-width: 170px;
+    }
+    .pillBtn:active{ transform: translateY(1px) scale(0.99); }
+    .pillBtn.isActive{
+      background: var(--activeFill);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+    }
+
     .startBtn{
       appearance:none;
       border:none;
       background: var(--brand);
       color:#fff;
-      font-weight: 800;
+      font-weight: 900;
       padding: 14px 18px;
       border-radius: 18px;
       font-size: 18px;
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      transition: transform 140ms var(--ease);
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
@@ -342,7 +348,7 @@
       position: fixed;
       right: 18px;
       bottom: 18px;
-      width: min(520px, calc(100vw - 36px));
+      width: min(620px, calc(100vw - 36px));
       background: rgba(255,255,255,0.98);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -376,13 +382,24 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
     }
     .tuneClose:active{ transform: translateY(1px) scale(0.99); }
+
+    .tuneSection{
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top:2px solid rgba(245,180,152,0.45);
+    }
+
     .tuneRow{
       display:grid;
-      grid-template-columns: 140px 1fr 84px;
+      grid-template-columns: 170px 1fr 84px;
       gap: 10px;
       align-items:center;
-      margin: 8px 0;
+      margin: 10px 0;
     }
+    @media (max-width: 520px){
+      .tuneRow{ grid-template-columns: 130px 1fr 70px; }
+    }
+
     .tuneLabel{
       font-weight: 800;
       font-size: 13px;
@@ -397,6 +414,7 @@
       color: rgba(77,74,72,0.86);
     }
     .tuneRow input[type="range"]{ width: 100%; }
+
     .tuneButtons{
       display:flex;
       gap: 10px;
@@ -420,6 +438,70 @@
       color:#4d4a48;
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+
+    .levelButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .levelBtn{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      color:#4d4a48;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.10);
+      font-size: 14px;
+      min-width: 94px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1), background 160ms ease;
+    }
+    .levelBtn:active{ transform: translateY(1px) scale(0.99); }
+    .levelBtn.isActive{ background: var(--activeFill); }
+
+    .cardWrap{
+      width:100%;
+      height:100%;
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+    }
+    .cardBack{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      background:#f8c3b0;
+      font-size:32px;
+    }
+    .cardFront{
+      width:100%;
+      height:100%;
+      display:none;
+      place-items:center;
+      background:#ffffff;
+    }
+    .ansBtn.cardOpen .cardFront{ display:grid; }
+    .ansBtn.cardOpen .cardBack{ display:none; }
+
+    .digitFront{
+      font-weight: 950;
+      font-size: clamp(46px, 6vw, 78px);
+      line-height: 1;
+      color: rgba(35,35,35,0.92);
+      letter-spacing: 0.5px;
+    }
+    .digitHint{
+      font-size: 12px;
+      font-weight: 900;
+      opacity: 0.55;
+      margin-top: 6px;
+      text-transform: lowercase;
+    }
   </style>
 </head>
 
@@ -436,7 +518,7 @@
       </button>
 
       <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
-      <div class="titlePill">slim kijken</div>
+      <div class="titlePill" id="titlePill">slim kijken</div>
     </div>
 
     <div class="content">
@@ -460,6 +542,15 @@
     <div class="startCard">
       <h1>tik om te starten</h1>
       <p>Je ziet stippen heel kort, daarna kies je wat je zag.</p>
+
+      <div class="levelRow" aria-label="Kies level">
+        <button class="pillBtn" id="startLevel1" type="button">level 1</button>
+        <button class="pillBtn" id="startLevel2" type="button">level 2</button>
+        <button class="pillBtn" id="startLevel3" type="button">level 3</button>
+        <button class="pillBtn" id="startLevel4" type="button">level 4</button>
+        <button class="pillBtn" id="startLevel5" type="button">level 5</button>
+      </div>
+
       <button class="startBtn" id="startBtn" type="button">Start</button>
     </div>
   </div>
@@ -470,15 +561,31 @@
       <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
     </div>
 
-    <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flitstijd</div>
+    <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
+      <div class="levelButtons">
+        <button class="levelBtn" id="levelBtn1" type="button">1</button>
+        <button class="levelBtn" id="levelBtn2" type="button">2</button>
+        <button class="levelBtn" id="levelBtn3" type="button">3</button>
+        <button class="levelBtn" id="levelBtn4" type="button">4</button>
+        <button class="levelBtn" id="levelBtn5" type="button">5</button>
+      </div>
+      <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
+        level 2 tot en met 5: antwoordkaarten klappen kort open, met cijfers
+      </div>
+    </div>
+
+    <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
 
       <div class="tuneRow">
-        <div class="tuneLabel">ms</div>
-        <input type="range" id="flashMsRange" min="350" max="1400" step="50" value="650" />
-        <div class="tuneValue" id="flashMsValue">650</div>
+        <div class="tuneLabel">flitstijd</div>
+        <input type="range" id="flashMsRange" min="650" max="2600" step="50" value="1250" />
+        <div class="tuneValue" id="flashMsValue">1250</div>
       </div>
+    </div>
 
+    <div class="tuneSection" style="padding-top:12px;">
       <div class="tuneButtons">
         <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
@@ -493,16 +600,31 @@
 
       const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
       const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
 
       const startOverlay = document.getElementById("startOverlay");
       const startBtn = document.getElementById("startBtn");
 
+      const startLevel1 = document.getElementById("startLevel1");
+      const startLevel2 = document.getElementById("startLevel2");
+      const startLevel3 = document.getElementById("startLevel3");
+      const startLevel4 = document.getElementById("startLevel4");
+      const startLevel5 = document.getElementById("startLevel5");
+
+      const titlePill = document.getElementById("titlePill");
+
       const homeBtn = document.getElementById("homeBtn");
       const tuneBtn = document.getElementById("tuneBtn");
       const tunePanel = document.getElementById("tunePanel");
       const tuneClose = document.getElementById("tuneClose");
+
+      const levelBtn1 = document.getElementById("levelBtn1");
+      const levelBtn2 = document.getElementById("levelBtn2");
+      const levelBtn3 = document.getElementById("levelBtn3");
+      const levelBtn4 = document.getElementById("levelBtn4");
+      const levelBtn5 = document.getElementById("levelBtn5");
 
       const flashMsRange = document.getElementById("flashMsRange");
       const flashMsValue = document.getElementById("flashMsValue");
@@ -514,6 +636,69 @@
       const flashSvg = document.getElementById("flashSvg");
       const answersEl = document.getElementById("answers");
       const scanArea = document.getElementById("scanArea");
+
+      /* Timing knoppen animatie */
+      const WAIT_BEFORE_IN_MS = 0;
+      const IN_DUR_MS = 800;
+      const OUT_DUR_MS = 750;
+
+      /* Kaarten iets langer open */
+      const PREVIEW_GAP_MS = 170;
+      const PREVIEW_MS = 1650;
+
+      /* Flits instelbaar */
+      let flashMs = Number(flashMsRange.value);
+
+      /* Level */
+      let LEVEL = 1;
+
+      function usesAnswerCards(){
+        return LEVEL >= 2;
+      }
+
+      function setLevel(n){
+        LEVEL = n;
+
+        const setActive = (btn, ok) => btn.classList.toggle("isActive", !!ok);
+
+        setActive(levelBtn1, LEVEL === 1);
+        setActive(levelBtn2, LEVEL === 2);
+        setActive(levelBtn3, LEVEL === 3);
+        setActive(levelBtn4, LEVEL === 4);
+        setActive(levelBtn5, LEVEL === 5);
+
+        setActive(startLevel1, LEVEL === 1);
+        setActive(startLevel2, LEVEL === 2);
+        setActive(startLevel3, LEVEL === 3);
+        setActive(startLevel4, LEVEL === 4);
+        setActive(startLevel5, LEVEL === 5);
+
+        titlePill.textContent = `slim kijken, level ${LEVEL}`;
+      }
+
+      function maxForLevel(){
+        if(LEVEL === 1) return 4;
+        if(LEVEL === 2) return 4;
+        if(LEVEL === 3) return 4;
+        if(LEVEL === 4) return 6;
+        return 6;
+      }
+
+      /* Minder vaak 1 */
+      function pickNumberWeighted(cap){
+        const w1 = 0.28;
+        const weights = [];
+        for(let i=1;i<=cap;i++){
+          weights.push(i === 1 ? w1 : 1);
+        }
+        const sum = weights.reduce((a,b) => a + b, 0);
+        let r = Math.random() * sum;
+        for(let i=0;i<weights.length;i++){
+          r -= weights[i];
+          if(r <= 0) return i + 1;
+        }
+        return cap;
+      }
 
       /* WebAudio beep */
       let audioCtx = null;
@@ -535,7 +720,7 @@
         }catch(e){}
       }
 
-      /* Dots */
+      /* Level 1, dobbelpunten, 1 tot en met 4 */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -545,15 +730,109 @@
         1: [P.mc],
         2: [P.tl, P.br],
         3: [P.tl, P.mc, P.br],
-        4: [P.tl, P.tr, P.bl, P.br],
-        5: [P.tl, P.tr, P.mc, P.bl, P.br],
-        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+        4: [P.tl, P.tr, P.bl, P.br]
       };
-
       function patternLevel1(n){
         return [{
           dots: diceFaces[n],
           box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+        }];
+      }
+
+      /* Basispunten voor level 2 tot en met 5 */
+      const L = {
+        a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
+        d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
+        m:[0.50,0.50],
+        r:[0.86,0.50]
+      };
+
+      /* 2 kolommen en 3 rijen, voor 6 als 3 en 3 verticaal */
+      const V = {
+        l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
+        r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
+      };
+
+      /* Variants per hoeveelheid */
+      const VARS = {
+        1: [
+          [L.m],
+          [L.b],
+          [L.e]
+        ],
+        2: [
+          [L.b, L.e],
+          [L.a, L.f],
+          [L.a, L.c]
+        ],
+        3: [
+          [L.a, L.m, L.f],
+          [L.a, L.b, L.c],
+          [L.d, L.e, L.m]
+        ],
+        4: [
+          [L.a, L.c, L.d, L.f],
+          [L.a, L.b, L.d, L.e],
+          [L.b, L.c, L.e, L.f]
+        ],
+        5: [
+          /* 3 plus 2 */
+          [L.a, L.b, L.c, L.d, L.e],
+          /* 4 hoeken en midden */
+          [L.a, L.c, L.d, L.f, L.m],
+          /* 4 plus 1, extra optie blijft klaarstaan voor later */
+          [L.a, L.c, L.d, L.f, L.m]
+        ],
+        6: [
+          /* 3 en 3 horizontaal */
+          [L.a, L.b, L.c, L.d, L.e, L.f],
+          /* 3 en 3 verticaal */
+          [V.l1, V.l2, V.l3, V.r1, V.r2, V.r3],
+          /* 5 als dobbelsteen, plus rechts nog een stip */
+          [L.a, L.c, L.m, L.d, L.f, L.r]
+        ]
+      };
+
+      function allowedVariantCount(n){
+        if(LEVEL === 2){
+          return (n <= 4) ? 1 : 0;
+        }
+        if(LEVEL === 3){
+          return (n <= 4) ? 3 : 0;
+        }
+        if(LEVEL === 4){
+          if(n <= 4) return 3;
+          if(n === 5) return 2;
+          if(n === 6) return 3;
+          return 0;
+        }
+        if(LEVEL === 5){
+          if(n <= 4) return 3;
+          if(n === 5) return 2;
+          if(n === 6) return 3;
+          return 0;
+        }
+        return 0;
+      }
+
+      function getVariantDots(n, variantIndex){
+        const arr = VARS[n] || [];
+        if(!arr.length) return [];
+        const idx = clamp(variantIndex, 0, arr.length - 1);
+        return arr[idx];
+      }
+
+      function pickVariantIndexForNumber(n){
+        const k = allowedVariantCount(n);
+        if(k <= 1) return 0;
+        return randInt(0, k - 1);
+      }
+
+      function patternLevel235(n, variantIndex){
+        const dots = getVariantDots(n, variantIndex);
+        return [{
+          dots,
+          box: {x0:0.12, y0:0.18, x1:0.88, y1:0.82}
         }];
       }
 
@@ -592,12 +871,14 @@
       }
 
       function buildOptions(correct){
-        const cap = 6;
+        const cap = maxForLevel();
         const options = new Set([correct]);
+
         while(options.size < 3){
-          const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
+          const delta = pick([ -2, -1, 1, 2 ]);
           options.add(clamp(correct + delta, 1, cap));
         }
+
         const arr = [...options];
         for(let i=arr.length-1;i>0;i--){
           const j = Math.floor(Math.random()*(i+1));
@@ -609,29 +890,6 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      function renderAnswers(correct, onPick){
-        const arr = buildOptions(correct);
-        answersEl.innerHTML = "";
-
-        arr.forEach(v => {
-          const btn = document.createElement("button");
-          btn.className = "ansBtn";
-          btn.type = "button";
-
-          btn.addEventListener("pointerdown", () => {
-            btn.classList.remove("pressBounce");
-            void btn.offsetWidth;
-            btn.classList.add("pressBounce");
-          }, {passive:true});
-
-          btn.addEventListener("click", () => onPick(btn, v));
-
-          const svg = svgForDots(patternLevel1(v), {dotRadius: 12});
-          btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
-          answersEl.appendChild(btn);
-        });
-      }
-
       function isPortrait(){
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
@@ -639,16 +897,14 @@
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
-
-        /* exact vanaf de stippellijn, dus geen extra mask marge */
         const extra = 10;
 
         if(isPortrait()){
-          const seamY = a.top; // stippellijn ligt hier
+          const seamY = a.top;
           const dy = -((b.bottom - seamY) + extra);
           return { x: 0, y: dy };
         }else{
-          const seamX = a.left; // stippellijn ligt hier
+          const seamX = a.left;
           const dx = -((b.right - seamX) + extra);
           return { x: dx, y: 0 };
         }
@@ -680,7 +936,6 @@
         showAnswers();
         await raf();
 
-        const ms = 1180;
         const easing = "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
@@ -689,11 +944,11 @@
               { transform: btn.style.transform, opacity: 0 },
               { transform: "translate(0px, 0px)", opacity: 1 }
             ],
-            { duration: ms, easing, fill: "forwards", delay: i * 95 }
+            { duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
           );
         });
 
-        await wait(ms + 95*(btns.length-1) + 60);
+        await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
 
         btns.forEach(btn => {
           btn.style.transform = "translate(0px, 0px)";
@@ -704,7 +959,6 @@
       async function animateOutButtons(btns, staggerMs){
         if(!btns.length) return;
 
-        const ms = 1180;
         const easing = "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
@@ -714,44 +968,104 @@
               { transform: "translate(0px, 0px)", opacity: 1 },
               { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
             ],
-            { duration: ms, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+            { duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
           );
         });
 
-        await wait(ms + (staggerMs ?? 140)*(btns.length-1) + 80);
+        await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
 
         btns.forEach(btn => { btn.style.opacity = "0"; });
+      }
+
+      function renderAnswers(correct, onPick){
+        const arr = buildOptions(correct);
+        answersEl.innerHTML = "";
+
+        arr.forEach(v => {
+          const btn = document.createElement("button");
+          btn.className = "ansBtn";
+          btn.type = "button";
+
+          btn.addEventListener("pointerdown", () => {
+            btn.classList.remove("pressBounce");
+            void btn.offsetWidth;
+            btn.classList.add("pressBounce");
+          }, {passive:true});
+
+          btn.addEventListener("click", () => onPick(btn, v));
+
+          if(LEVEL === 1){
+            const svg = svgForDots(patternLevel1(v), {dotRadius: 12});
+            btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
+          }else{
+            btn.innerHTML = `
+              <div class="cardWrap">
+                <div class="cardBack">🐝</div>
+                <div class="cardFront">
+                  <div style="display:grid; place-items:center;">
+                    <div class="digitFront" aria-label="cijfer">${v}</div>
+                    <div class="digitHint">tik</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          answersEl.appendChild(btn);
+        });
+      }
+
+      async function previewCards(){
+        if(!usesAnswerCards()) return;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
+
+        await wait(PREVIEW_GAP_MS);
+        btns.forEach(b => b.classList.add("cardOpen"));
+        await wait(PREVIEW_MS);
+        btns.forEach(b => b.classList.remove("cardOpen"));
+        await wait(140);
       }
 
       /* Game */
       let started = false;
       let locked = false;
-      let flashMs = Number(flashMsRange.value);
       let correct = 1;
+      let questionVariantIndex = 0;
 
       async function flashAndAsk(){
         locked = true;
 
-        hideAnswers();
+        answersEl.classList.add("answersHidden");
         answersEl.innerHTML = "";
         clearBoard();
 
         await wait(160);
 
-        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        if(LEVEL === 1){
+          setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        }else{
+          questionVariantIndex = pickVariantIndexForNumber(correct);
+          setBoard(svgForDots(patternLevel235(correct, questionVariantIndex), {dotRadius: 16}));
+        }
+
         await wait(flashMs);
 
         clearBoard();
         await wait(260);
 
         renderAnswers(correct, onPick);
+        await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
+
+        await previewCards();
 
         locked = false;
       }
 
       function nextRound(){
-        correct = randInt(1,6);
+        const cap = maxForLevel();
+        correct = pickNumberWeighted(cap);
         flashAndAsk();
       }
 
@@ -762,21 +1076,31 @@
         const all = [...answersEl.querySelectorAll(".ansBtn")];
         all.forEach(b => b.style.pointerEvents = "none");
 
+        if(usesAnswerCards()){
+          btn.classList.add("cardOpen");
+          await wait(240);
+        }
+
         if(value === correct){
           beep("ok");
-
           btn.classList.add("correctHold");
 
-          setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
-          await wait(520);
-          dissolveBoard(260);
+          if(LEVEL === 1){
+            setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+          }else{
+            setBoard(svgForDots(patternLevel235(correct, questionVariantIndex), {dotRadius: 16}));
+          }
+
+          await wait(620);
+          dissolveBoard(280);
 
           const exitOrder = sortedButtonsForExit(all);
           await animateOutButtons(exitOrder, 140);
 
           btn.classList.remove("correctHold");
+          if(usesAnswerCards()) btn.classList.remove("cardOpen");
 
-          hideAnswers();
+          answersEl.classList.add("answersHidden");
           all.forEach(b => b.style.pointerEvents = "");
           await wait(160);
 
@@ -784,7 +1108,6 @@
           return;
         }
 
-        /* fout */
         beep("no");
 
         const notChosen = all.filter(b => b !== btn);
@@ -793,24 +1116,34 @@
         chosen.classList.add("wrongHold");
         await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
-        await wait(1200);
-        dissolveBoard(320);
+        if(LEVEL === 1){
+          setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        }else{
+          setBoard(svgForDots(patternLevel235(correct, questionVariantIndex), {dotRadius: 16}));
+        }
 
-        await wait(120);
+        await wait(1400);
+        dissolveBoard(340);
+
+        await wait(140);
         await animateOutButtons([chosen], 0);
+
         chosen.classList.remove("wrongHold");
+        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
 
-        hideAnswers();
-
+        answersEl.classList.add("answersHidden");
         await wait(240);
 
         all.forEach(b => b.style.pointerEvents = "");
         nextRound();
       }
 
-      /* Settings */
-      function openTune(){ tunePanel.classList.remove("hidden"); }
+      /* Settings UI */
+      function syncUI(){
+        flashMsValue.textContent = String(flashMs);
+      }
+
+      function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
       function closeTune(){ tunePanel.classList.add("hidden"); }
 
       tuneBtn.addEventListener("click", () => {
@@ -822,15 +1155,22 @@
 
       flashMsRange.addEventListener("input", () => {
         flashMs = Number(flashMsRange.value);
-        flashMsValue.textContent = String(flashMs);
+        syncUI();
       });
+
+      levelBtn1.addEventListener("click", () => { beep("tap"); setLevel(1); if(started) nextRound(); });
+      levelBtn2.addEventListener("click", () => { beep("tap"); setLevel(2); if(started) nextRound(); });
+      levelBtn3.addEventListener("click", () => { beep("tap"); setLevel(3); if(started) nextRound(); });
+      levelBtn4.addEventListener("click", () => { beep("tap"); setLevel(4); if(started) nextRound(); });
+      levelBtn5.addEventListener("click", () => { beep("tap"); setLevel(5); if(started) nextRound(); });
 
       newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
 
       testWrongBtn.addEventListener("click", async () => {
         beep("tap");
         if(!started || locked) return;
-        const wrong = correct === 6 ? 1 : correct + 1;
+        const cap = maxForLevel();
+        const wrong = (correct === cap) ? 1 : correct + 1;
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(btns[0]) await onPick(btns[0], wrong);
       });
@@ -847,10 +1187,19 @@
         if(started) return;
         started = true;
         startOverlay.style.display = "none";
-        flashMs = Number(flashMsRange.value);
-        flashMsValue.textContent = String(flashMs);
+        syncUI();
         nextRound();
       }
+
+      function setStartChoice(n){
+        setLevel(n);
+      }
+
+      startLevel1.addEventListener("click", () => { beep("tap"); setStartChoice(1); });
+      startLevel2.addEventListener("click", () => { beep("tap"); setStartChoice(2); });
+      startLevel3.addEventListener("click", () => { beep("tap"); setStartChoice(3); });
+      startLevel4.addEventListener("click", () => { beep("tap"); setStartChoice(4); });
+      startLevel5.addEventListener("click", () => { beep("tap"); setStartChoice(5); });
 
       startBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -878,12 +1227,14 @@
         if(reflowTimer) clearTimeout(reflowTimer);
         reflowTimer = setTimeout(async () => {
           locked = true;
-          hideAnswers();
+          answersEl.classList.add("answersHidden");
           answersEl.innerHTML = "";
           clearBoard();
           await wait(120);
           renderAnswers(correct, onPick);
+          await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
+          await previewCards();
           locked = false;
         }, 220);
       }
@@ -892,7 +1243,8 @@
 
       /* Init */
       clearBoard();
-      flashMsValue.textContent = String(flashMsRange.value);
+      syncUI();
+      setLevel(1);
     })();
   </script>
 </body>
