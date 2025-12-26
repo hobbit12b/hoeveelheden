@@ -275,8 +275,8 @@
 
         <div class="row">
           <div class="label">tick einde procent</div>
-          <input type="range" id="tickEndRange" min="65" max="100" step="0.1" value="90.0">
-          <div class="value" id="tickEndValue">90.0</div>
+          <input type="range" id="tickEndRange" min="0" max="100" step="0.1" value="75.0">
+          <div class="value" id="tickEndValue">75.0</div>
         </div>
 
         <div class="row">
@@ -291,7 +291,7 @@
           <div class="value" id="anchorFineYValue">0</div>
         </div>
 
-        <p class="hint">levels staan gelijkmatig verdeeld tussen start en einde procent, per level schuift hij exact één streepje</p>
+        <p class="hint">levels staan gelijkmatig verdeeld tussen start en einde procent, per level schuift hij één streepje</p>
       </div>
 
       <div class="section">
@@ -516,8 +516,6 @@
       function hidePanel(){ panel.classList.add("hidden"); }
 
       openPanelBtn.addEventListener("click", () => showPanel());
-      panelClose.addEventListener("click", () => showPanel() && hidePanel());
-
       panelClose.addEventListener("click", () => hidePanel());
 
       function deactivateAll(){
@@ -531,6 +529,19 @@
         const clone = el.cloneNode(false);
         parent.replaceChild(clone, el);
         return clone;
+      }
+
+      function ensureTickOrder(){
+        const start = Number(tickStartRange.value);
+        const end = Number(tickEndRange.value);
+        const minGap = 0.5;
+
+        if(end < start + minGap){
+          tickEndRange.value = String(start + minGap);
+        }
+        if(start > Number(tickEndRange.value) - minGap){
+          tickStartRange.value = String(Number(tickEndRange.value) - minGap);
+        }
       }
 
       function currentTickPercentForLevel(level){
@@ -589,6 +600,8 @@
       }
 
       function syncValues(){
+        ensureTickOrder();
+
         levelValue.textContent = String(LEVEL);
 
         tickStartValue.textContent = Number(tickStartRange.value).toFixed(1);
@@ -622,7 +635,7 @@
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_v1";
+      const STORAGE_KEY = "chick_timeline_tester_v2";
 
       function snapshot(){
         return {
@@ -709,7 +722,7 @@
         levelRange.value = "1";
 
         tickStartRange.value = "9.4";
-        tickEndRange.value = "90.0";
+        tickEndRange.value = "75.0";
         anchorFineXRange.value = "0";
         anchorFineYRange.value = "0";
 
@@ -778,8 +791,8 @@
 
         const allOk = ok1 && ok2 && ok3 && ok4;
 
-        statusText.textContent = allOk ? "klaar" : "klaar";
-        statusSub.textContent = allOk ? "je kunt testen" : "sommige assets laden niet, controleer bestandsnamen";
+        statusText.textContent = "klaar";
+        statusSub.textContent = allOk ? "je kunt testen" : "controleer bestandsnamen als je niets ziet";
 
         testUpBtn.disabled = false;
         testDownBtn.disabled = false;
@@ -820,7 +833,6 @@
 
           await wait(dur);
           try{ if(anim) anim.cancel(); }catch(e){}
-
         }else{
           setState("down");
           chickDown = restartGif(chickDown);
