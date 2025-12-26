@@ -33,7 +33,6 @@
       height:100%;
     }
 
-    /* Tijdlijn rechtsboven */
     .progressTimeline{
       position:absolute;
       top: 14px;
@@ -52,7 +51,6 @@
       object-fit: contain;
     }
 
-    /* Anchor schuift over de echte zichtbare content van levels.png */
     .progressChickAnchor{
       position:absolute;
       bottom: -10px;
@@ -76,7 +74,7 @@
     }
     .chickLayer.active{ opacity: 1; }
 
-    .stillLayer{ z-index: 1; }
+    .stillLayer{ z-index: 3; } /* png altijd boven canvas, wisselen met opacity */
     .animLayer{ z-index: 2; }
 
     #animCanvas{ opacity:0; }
@@ -93,7 +91,6 @@
       .chickLayer{ width: 78px; }
     }
 
-    /* Open knop */
     .openPanelBtn{
       position:absolute;
       left: 14px;
@@ -110,7 +107,6 @@
       backdrop-filter: blur(6px);
     }
 
-    /* Panel */
     .panel{
       position:absolute;
       left: 14px;
@@ -206,10 +202,6 @@
       background: rgba(245,180,152,0.95);
       color:#2f2c2a;
     }
-    .btn:disabled{
-      opacity: 0.55;
-      cursor:not-allowed;
-    }
 
     .pill{
       display:inline-flex;
@@ -248,17 +240,9 @@
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
 
       <div class="progressChickAnchor" id="chickAnchor">
-        <img
-          class="chickLayer stillLayer active"
-          id="stillImg"
-          src="ballerina_still.png"
-          alt=""
-          draggable="false"
-        >
-
+        <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
         <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
         <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
-
         <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
       </div>
     </div>
@@ -457,7 +441,7 @@
           <button class="btn" id="testDownBtn" type="button">test terug</button>
         </div>
 
-        <p class="hint">still is uit tijdens animatie, wissel pas na het eerste echte frame, level springt pas na laatste frame</p>
+        <p class="hint">png blijft staan tot eerste echte frame na play, aan het einde png eroverheen zonder leeg frame</p>
       </div>
     </div>
   </div>
@@ -551,12 +535,10 @@
       const testUpBtn = $("testUpBtn");
       const testDownBtn = $("testDownBtn");
 
-      /* Levels 1 t/m 9, nooit daarbuiten */
       const LEVEL_MIN = 1;
       const LEVEL_MAX = 9;
       let LEVEL = clamp(Number(levelRange.value), LEVEL_MIN, LEVEL_MAX);
 
-      /* Calibratie blijft jouw goede set: level 1 tot en met 5 */
       const CALIB_MIN = 1;
       const CALIB_MAX = 5;
 
@@ -597,8 +579,8 @@
       }
 
       function tickPercentForLevel(level){
-        const start = Number(tickStartRange.value); /* hoort bij level 1 */
-        const end = Number(tickEndRange.value);     /* hoort bij level 5 */
+        const start = Number(tickStartRange.value);
+        const end = Number(tickEndRange.value);
         const denom = Math.max(1, (CALIB_MAX - CALIB_MIN));
         const step = (end - start) / denom;
         const p = start + step * (level - CALIB_MIN);
@@ -643,11 +625,9 @@
       function showOnlyStill(){
         stillImg.classList.add("active");
         animCanvas.classList.remove("active");
-        clearCanvas();
       }
 
-      function showCanvasOnly(){
-        stillImg.classList.remove("active");
+      function showCanvas(){
         animCanvas.classList.add("active");
       }
 
@@ -664,12 +644,9 @@
         const t = Number(whiteThreshRange.value);
         const img = ctx.getImageData(0, 0, animCanvas.width, animCanvas.height);
         const d = img.data;
-
         for(let i = 0; i < d.length; i += 4){
           const r = d[i], g = d[i+1], b = d[i+2];
-          if(r >= t && g >= t && b >= t){
-            d[i+3] = 0;
-          }
+          if(r >= t && g >= t && b >= t) d[i+3] = 0;
         }
         ctx.putImageData(img, 0, 0);
       }
@@ -764,85 +741,6 @@
         });
       }
 
-      async function prewarmVideo(videoEl, startSec){
-        const ok = await ensureReady(videoEl);
-        if(!ok) return false;
-        stopVideo(videoEl);
-        await seekTo(videoEl, startSec);
-        return true;
-      }
-
-      async function playSegmentOnCanvas(videoEl, cfg){
-        cancelXAnim();
-
-        const ready = await ensureReady(videoEl);
-        if(!ready) return false;
-
-        const { start, end, durMs } = cfg.times;
-
-        stopVideo(videoEl);
-
-        const seekOk = await seekTo(videoEl, start);
-        if(!seekOk) return false;
-
-        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
-
-        /* Eerst een echt frame tekenen terwijl de png nog zichtbaar is */
-        const drew = drawFrame(videoEl);
-        if(!drew) return false;
-
-        /* Nu pas wisselen, zodat er geen leeg moment is */
-        showCanvasOnly();
-        await raf();
-
-        xAnim = animCanvas.animate(
-          [
-            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
-            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
-          ],
-          { duration: durMs, easing: "linear", fill: "forwards" }
-        );
-
-        try{
-          await videoEl.play();
-        }catch(e){
-          cancelXAnim();
-          return false;
-        }
-
-        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
-
-        if(useRVFC){
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              videoEl.requestVideoFrameCallback(step);
-            };
-            videoEl.requestVideoFrameCallback(step);
-          });
-        }else{
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-          });
-        }
-
-        try{ videoEl.pause(); }catch(e){}
-        cancelXAnim();
-        return true;
-      }
-
       function applyTransformsIdle(){
         stillImg.style.transform = tStill();
       }
@@ -902,7 +800,6 @@
         downScaleValue.textContent = Number(downScaleRange.value).toFixed(2);
 
         whiteThreshValue.textContent = String(whiteThreshRange.value);
-
         returnPanelValue.textContent = returnPanelRange.value === "1" ? "aan" : "uit";
 
         refreshAllFrameBounds();
@@ -911,7 +808,127 @@
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_canvas_mp4_v3_level1_9_no_gap";
+      /* Anti flits: png blijft totdat we een frame NA play hebben getekend */
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+        cancelXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const { start, end, durMs } = cfg.times;
+
+        stopVideo(videoEl);
+
+        /* canvas niet clearen vlak voor start, dat kan flits geven */
+        await seekTo(videoEl, start);
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+        /* Start playback */
+        let playingOk = true;
+        try{
+          await videoEl.play();
+        }catch(e){
+          playingOk = false;
+        }
+        if(!playingOk) return false;
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        /* Wacht expliciet op het eerste frame dat binnenkomt tijdens play */
+        const gotFirstFrame = await new Promise(resolve => {
+          let done = false;
+
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            resolve(ok);
+          };
+
+          const maxWait = setTimeout(() => finish(false), 900);
+
+          if(useRVFC){
+            const step = () => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          }else{
+            const onTime = () => {
+              const ok = drawFrame(videoEl);
+              videoEl.removeEventListener("timeupdate", onTime);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.addEventListener("timeupdate", onTime, { once:true });
+
+            /* fallback extra zekerheid */
+            requestAnimationFrame(() => {
+              if(done) return;
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }
+        });
+
+        if(!gotFirstFrame){
+          try{ videoEl.pause(); }catch(e){}
+          return false;
+        }
+
+        /* Nu pas wisselen: eerst canvas zichtbaar, daarna png weg */
+        showCanvas();
+        stillImg.classList.remove("active");
+        await raf();
+
+        xAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: durMs, easing: "linear", fill: "forwards" }
+        );
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        cancelXAnim();
+
+        /* Einde: eerst png terug, daarna pas eventueel canvas opschonen */
+        stillImg.classList.add("active");
+        await raf();
+        animCanvas.classList.remove("active");
+        /* canvas bewust niet direct clearen, zodat er nooit een leeg frame is */
+        return true;
+      }
+
+      let LEVEL_STORE_KEY = "chick_timeline_tester_canvas_mp4_v4_no_flash_1_9";
 
       function snapshot(){
         return {
@@ -984,11 +1001,11 @@
       }
 
       function save(){
-        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); }catch(e){}
+        try{ localStorage.setItem(LEVEL_STORE_KEY, JSON.stringify(snapshot())); }catch(e){}
       }
       function load(){
         try{
-          const raw = localStorage.getItem(STORAGE_KEY);
+          const raw = localStorage.getItem(LEVEL_STORE_KEY);
           if(!raw) return false;
           applySnap(JSON.parse(raw));
           return true;
@@ -1043,6 +1060,8 @@
         const toLevel = clamp(direction === "up" ? fromLevel + 1 : fromLevel - 1, LEVEL_MIN, LEVEL_MAX);
 
         setAnchorToLevel(fromLevel);
+
+        /* Start altijd met png zichtbaar */
         showOnlyStill();
 
         const cfg = (direction === "up")
@@ -1066,11 +1085,9 @@
         stopVideo(upVid);
         stopVideo(downVid);
 
-        const played = await playSegmentOnCanvas(cfg.video, cfg);
+        const played = await playSegmentOnCanvasNoFlash(cfg.video, cfg);
 
-        /* Meteen terug naar png zodra animatie klaar is */
-        showOnlyStill();
-
+        /* Na afloop is png al teruggezet */
         if(played){
           LEVEL = toLevel;
           levelRange.value = String(LEVEL);
@@ -1116,19 +1133,7 @@
           setStatus("klaar", "je kunt testen");
         }
 
-        showOnlyStill();
         refreshAllFrameBounds();
-
-        /* Prewarm seek naar startframes, scheelt de eerste hapering */
-        const upStartSec = Number(upStartFrameRange.value) / Math.max(1, Number(upFpsRange.value));
-        const downStartSec = Number(downStartFrameRange.value) / Math.max(1, Number(downFpsRange.value));
-
-        try{
-          await Promise.all([
-            prewarmVideo(upVid, upStartSec),
-            prewarmVideo(downVid, downStartSec)
-          ]);
-        }catch(e){}
       }
 
       const inputs = [
@@ -1174,6 +1179,7 @@
 
         stillImg.style.transform = tStill();
         showOnlyStill();
+        clearCanvas();
 
         LEVEL = clamp(LEVEL, LEVEL_MIN, LEVEL_MAX);
         levelRange.value = String(LEVEL);
