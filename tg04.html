@@ -46,6 +46,8 @@
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
+      position: relative;
+      overflow:hidden;
     }
     @media (orientation: portrait){
       body{
@@ -63,6 +65,7 @@
       position: relative;
       overflow:hidden;
       min-height: 0;
+      z-index: 1;
     }
 
     .scan-surface{
@@ -71,6 +74,7 @@
       overflow:hidden;
       min-height: 0;
       transition: background 140ms ease;
+      z-index: 1;
     }
 
     @media (orientation: landscape){
@@ -86,6 +90,8 @@
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .homeBtn,
@@ -135,6 +141,8 @@
       justify-content:center;
       padding: 10px 6px;
       min-height: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .gameCard{
@@ -195,15 +203,31 @@
       position:absolute;
       inset:0;
       display:flex;
-      align-items:center;
+      align-items:flex-end;
       justify-content:center;
-      padding: 18px;
+      padding: 18px 18px 24px 18px;
       z-index: 10;
     }
 
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-end;
+    }
+
+    /* LANDSCAPE: forceer altijd lage eindpositie */
+    @media (orientation: landscape){
+      .scanStage{
+        align-items:flex-end;
+        padding-bottom: 28px;
+      }
+      .answersWrap{
+        width: min(420px, 92%);
+        max-width: 420px;
+        align-items:flex-end;
+      }
     }
 
     .answers{
@@ -212,6 +236,7 @@
       gap: 14px;
       justify-items:center;
       align-items:center;
+      width:100%;
     }
 
     @media (orientation: portrait){
@@ -220,6 +245,10 @@
         gap: 12px;
       }
       .answersWrap{ width: min(640px, 92%); }
+      .scanStage{
+        align-items:center;
+        padding: 18px;
+      }
     }
 
     .ansBtn{
@@ -246,8 +275,7 @@
     }
 
     @media (orientation: landscape){
-      .answersWrap{ width: min(360px, 92%); }
-      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+      .ansBtn{ width: clamp(92px, 10.8vw, 124px); }
     }
 
     .ansBtn:active{
@@ -445,16 +473,22 @@
     .ansBtn.cardOpen .cardFront{ display:grid; }
     .ansBtn.cardOpen .cardBack{ display:none; }
 
-    /* tijdlijn */
-    .progressTimeline{
-      position:absolute;
-      inset:auto;
-      z-index: 950;
+    /* 1 groep tijdlijn, bovenop alles, kan over links heen */
+    .timelineOverlay{
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      z-index: 1600;
       pointer-events:none;
       user-select:none;
       transform-origin: 0 0;
       will-change: transform;
+    }
 
+    .progressTimeline{
+      position:absolute;
       top: calc(14px + env(safe-area-inset-top));
       right: calc(14px + env(safe-area-inset-right));
       width: min(520px, 58vw);
@@ -508,7 +542,7 @@
       .chickLayer{ width: 78px; }
     }
 
-    /* calibration panel */
+    /* kalibratie paneel */
     .calPanel{
       position: fixed;
       left: 18px;
@@ -519,7 +553,7 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1250;
+      z-index: 1650;
       color: #4d4a48;
     }
     .calPanel.hidden{ display:none; }
@@ -580,7 +614,6 @@
       line-height: 1.3;
       text-transform: lowercase;
     }
-
   </style>
 </head>
 
@@ -615,8 +648,11 @@
         <div class="answers answersHidden" id="answers"></div>
       </div>
     </div>
+  </section>
 
-    <div class="progressTimeline" aria-hidden="true" id="timeline">
+  <!-- 1 overlay groep voor de hele tijdlijn -->
+  <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
+    <div class="progressTimeline" id="timeline">
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
       <div class="progressChickAnchor" id="chickAnchor">
         <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
@@ -625,7 +661,7 @@
         <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
       </div>
     </div>
-  </section>
+  </div>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
@@ -667,6 +703,7 @@
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
         <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
+
       <div class="tuneButtons" style="margin-top:10px;">
         <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
       </div>
@@ -685,36 +722,36 @@
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">positie x</div>
-      <input type="range" id="tlX" min="-320" max="320" step="1" value="0" />
-      <div class="tuneValue" id="tlXv">0</div>
+      <div class="tuneLabel">groep x</div>
+      <input type="range" id="gX" min="-600" max="600" step="1" value="0" />
+      <div class="tuneValue" id="gXv">0</div>
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">positie y</div>
-      <input type="range" id="tlY" min="-320" max="320" step="1" value="0" />
-      <div class="tuneValue" id="tlYv">0</div>
+      <div class="tuneLabel">groep y</div>
+      <input type="range" id="gY" min="-600" max="600" step="1" value="0" />
+      <div class="tuneValue" id="gYv">0</div>
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">schaal</div>
-      <input type="range" id="tlS" min="0.50" max="2.00" step="0.01" value="1.00" />
-      <div class="tuneValue" id="tlSv">1.00</div>
+      <div class="tuneLabel">groep schaal</div>
+      <input type="range" id="gS" min="0.50" max="2.00" step="0.01" value="1.00" />
+      <div class="tuneValue" id="gSv">1.00</div>
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">lijn hoogte</div>
-      <input type="range" id="chickLineY" min="-80" max="80" step="1" value="-10" />
-      <div class="tuneValue" id="chickLineYv">-10</div>
+      <div class="tuneLabel">kuiken lijn</div>
+      <input type="range" id="lineY" min="-120" max="120" step="1" value="-10" />
+      <div class="tuneValue" id="lineYv">-10</div>
     </div>
 
     <div class="tuneButtons">
-      <button class="tuneBtnSmall secondary" id="tlResetBtn" type="button">reset</button>
-      <button class="tuneBtnSmall" id="tlSaveBtn" type="button">opslaan</button>
+      <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
+      <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
     </div>
 
     <div class="hintLine">
-      tip: lijn hoogte zet het kuikentje exact op de lijn, met een klein negatieve waarde staat hij meestal goed
+      alles is één groep, x y schaal verplaatst en schaalt levels png, het kuiken, de png en de canvas animatie samen
     </div>
   </div>
 
@@ -727,7 +764,6 @@
       const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
-
       const $ = (id) => document.getElementById(id);
 
       const startOverlay = $("startOverlay");
@@ -755,23 +791,24 @@
       const tabLandscape = $("tabLandscape");
       const tabPortrait = $("tabPortrait");
 
-      const tlX = $("tlX");
-      const tlY = $("tlY");
-      const tlS = $("tlS");
-      const chickLineY = $("chickLineY");
+      const gX = $("gX");
+      const gY = $("gY");
+      const gS = $("gS");
+      const lineY = $("lineY");
 
-      const tlXv = $("tlXv");
-      const tlYv = $("tlYv");
-      const tlSv = $("tlSv");
-      const chickLineYv = $("chickLineYv");
+      const gXv = $("gXv");
+      const gYv = $("gYv");
+      const gSv = $("gSv");
+      const lineYv = $("lineYv");
 
-      const tlResetBtn = $("tlResetBtn");
-      const tlSaveBtn = $("tlSaveBtn");
+      const gResetBtn = $("gResetBtn");
+      const gSaveBtn = $("gSaveBtn");
 
       const flashSvg = $("flashSvg");
       const answersEl = $("answers");
       const scanArea = $("scanArea");
 
+      const timelineOverlay = $("timelineOverlay");
       const timeline = $("timeline");
       const levelsImg = $("levelsImg");
       const chickAnchor = $("chickAnchor");
@@ -781,33 +818,26 @@
       const animCanvas = $("animCanvas");
       const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
 
-      /* timing knoppen animatie */
       const WAIT_BEFORE_IN_MS = 0;
       const IN_DUR_MS = 800;
       const OUT_DUR_MS = 750;
 
-      /* kaarten */
       const PREVIEW_GAP_MS = 120;
       const PREVIEW_MS = 1700;
 
       let flashMs = Number(flashMsRange.value);
 
-      /* Level spel, nu 1..5, later 6..9 */
       let LEVEL = 1;
 
-      /* Progressie */
       let streakGood = 0;
       let streakBad = 0;
 
-      function usesAnswerCards(){
-        return LEVEL >= 2;
-      }
+      function usesAnswerCards(){ return LEVEL >= 2; }
 
       function setLevel(n){
         LEVEL = clamp(n, 1, 5);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        syncTimelineLabel();
       }
 
       function maxForLevel(){
@@ -821,9 +851,7 @@
       function pickNumberWeighted(cap){
         const w1 = 0.30;
         const weights = [];
-        for(let i=1;i<=cap;i++){
-          weights.push(i === 1 ? w1 : 1);
-        }
+        for(let i=1;i<=cap;i++) weights.push(i === 1 ? w1 : 1);
         const sum = weights.reduce((a,b) => a + b, 0);
         let r = Math.random() * sum;
         for(let i=0;i<weights.length;i++){
@@ -833,7 +861,6 @@
         return cap;
       }
 
-      /* audio */
       let audioCtx = null;
       function beep(type){
         try{
@@ -854,7 +881,6 @@
         }catch(e){}
       }
 
-      /* dobbel */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -868,15 +894,10 @@
         5: [P.tl, P.tr, P.mc, P.bl, P.br],
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
-
       function patternDice(n){
-        return [{
-          dots: diceFaces[n],
-          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
-        }];
+        return [{ dots: diceFaces[n], box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88} }];
       }
 
-      /* basispunten voor variaties */
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
         d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
@@ -884,19 +905,16 @@
         r:[0.86,0.50],
         l:[0.14,0.50]
       };
-
       const V = {
         l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
         r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
       };
-
       const VARS_1TO4 = {
         1: [[L.m],[L.b],[L.e]],
         2: [[L.a, L.c],[L.b, L.e],[L.a, L.f]],
         3: [[L.a, L.b, L.c],[L.a, L.m, L.f],[L.a, L.d, L.f]],
         4: [[L.a, L.c, L.d, L.f],[L.a, L.b, L.c, L.m],[L.a, L.d, L.f, L.b]]
       };
-
       const VARS_5 = [
         [L.a, L.b, L.c, L.d, L.e],
         [L.a, L.c, L.d, L.f, L.m],
@@ -926,7 +944,6 @@
         }
         return 1;
       }
-
       function pickVariantIndexForQuestion(n){
         const k = allowedVariantCountQuestion(n);
         if(k <= 1) return 0;
@@ -1034,9 +1051,7 @@
             if(options.size >= 3) break;
           }
 
-          while(options.size < 3){
-            options.add(randInt(1, cap));
-          }
+          while(options.size < 3) options.add(randInt(1, cap));
 
           const arr = [...options];
           for(let i=arr.length-1;i>0;i--){
@@ -1067,6 +1082,7 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
+      /* belangrijk: start positie voor in animatie altijd vanaf dezelfde lage eindpositie */
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
@@ -1180,9 +1196,7 @@
         });
       }
 
-      /* preview */
       let previewToken = 0;
-
       async function previewCardsNonBlocking(){
         if(!usesAnswerCards()) return;
         const myToken = ++previewToken;
@@ -1205,44 +1219,38 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* tijdlijn kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_calib_v1";
-
+      /* tijdlijn groepskalibratie */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v2";
       const DEFAULT_CALIB = {
         landscape: { x: 0, y: 0, s: 1.00 },
         portrait:  { x: 0, y: 0, s: 1.00 },
-        chickLineY: -10
+        lineY: -10
       };
 
       let calib = loadCalib() || structuredClone(DEFAULT_CALIB);
 
-      function saveCalib(){
-        try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
-      }
       function loadCalib(){
         try{
           const raw = localStorage.getItem(TL_STORE_KEY);
           if(!raw) return null;
           return JSON.parse(raw);
-        }catch(e){
-          return null;
-        }
+        }catch(e){ return null; }
+      }
+      function saveCalib(){
+        try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
       }
 
-      function activeModeKey(){
-        return isPortrait() ? "portrait" : "landscape";
-      }
+      function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
 
-      function applyTimelineTransform(){
-        if(!timeline) return;
+      function applyTimelineGroupTransform(){
+        if(!timelineOverlay) return;
         const k = activeModeKey();
         const c = calib[k] || DEFAULT_CALIB[k];
-        timeline.style.transform =
-          `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
+        timelineOverlay.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
-      /* levels png mapping */
+      /* levels mapping */
       const TL_LEVEL_MIN = 1;
       const TL_LEVEL_MAX = 9;
 
@@ -1261,7 +1269,7 @@
       let chickXAnim = null;
 
       function timelineReady(){
-        return timeline && levelsImg && chickAnchor && stillImg;
+        return timelineOverlay && timeline && levelsImg && chickAnchor && stillImg;
       }
 
       function getContainedRect(img){
@@ -1300,24 +1308,20 @@
         const parent = timeline.getBoundingClientRect();
         const xLocal = xAbs - parent.left;
 
-        const lineY = Number(calib.chickLineY ?? DEFAULT_CALIB.chickLineY);
+        const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
 
         if(opts.noTransition){
           const prev = chickAnchor.style.transition;
           chickAnchor.style.transition = "none";
           chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${lineY}px)`;
+          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
           chickAnchor.offsetHeight;
           chickAnchor.style.transition = prev || "";
           return;
         }
 
         chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${lineY}px)`;
-      }
-
-      function syncTimelineLabel(){
-        /* hier kun je later eventueel tekst in timeline tonen, nu alleen hook */
+        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
       }
 
       function cancelChickXAnim(){
@@ -1330,7 +1334,6 @@
         stillImg.classList.add("active");
         if(animCanvas) animCanvas.classList.remove("active");
       }
-
       function showCanvas(){
         if(animCanvas) animCanvas.classList.add("active");
       }
@@ -1372,7 +1375,6 @@
 
       async function ensureReady(videoEl){
         if(videoEl.readyState >= 2) return true;
-
         return await new Promise(resolve => {
           let done = false;
 
@@ -1454,11 +1456,7 @@
         animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
 
         let playingOk = true;
-        try{
-          await videoEl.play();
-        }catch(e){
-          playingOk = false;
-        }
+        try{ await videoEl.play(); }catch(e){ playingOk = false; }
         if(!playingOk) return false;
 
         const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
@@ -1501,13 +1499,12 @@
         stillImg.classList.remove("active");
         await raf();
 
-        const timesMs = times.durMs;
         chickXAnim = animCanvas.animate(
           [
             { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
             { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
           ],
-          { duration: timesMs, easing: "linear", fill: "forwards" }
+          { duration: times.durMs, easing: "linear", fill: "forwards" }
         );
 
         if(useRVFC){
@@ -1557,6 +1554,7 @@
 
         stopVideo(upVid);
         stopVideo(downVid);
+
         showOnlyStill();
 
         const dir = toLevel > fromLevel ? "up" : "down";
@@ -1565,7 +1563,7 @@
 
         await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        /* belangrijk: direct op eindpunt zonder zichtbaar schuiven */
+        /* direct op eindpunt, zonder zichtbaar schuiven */
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1578,11 +1576,11 @@
       function initTimeline(){
         if(!timelineReady()) return;
 
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
         showOnlyStill();
 
         const apply = () => {
-          applyTimelineTransform();
+          applyTimelineGroupTransform();
           setAnchorToLevel(LEVEL, { noTransition: true });
         };
 
@@ -1598,16 +1596,13 @@
         window.addEventListener("orientationchange", apply);
       }
 
-      /* game */
+      /* Game loop */
       let started = false;
       let locked = false;
       let correct = 1;
       let questionVariantIndex = 0;
 
-      function resetStreaks(){
-        streakGood = 0;
-        streakBad = 0;
-      }
+      function resetStreaks(){ streakGood = 0; streakBad = 0; }
 
       async function handleAutoLevelOnGood(){
         streakGood += 1;
@@ -1744,7 +1739,7 @@
         nextRound();
       }
 
-      /* Settings UI */
+      /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
@@ -1783,7 +1778,7 @@
         if(btns[0]) await onPick(btns[0], correct);
       });
 
-      /* calibration UI */
+      /* calibration ui */
       let calMode = "landscape";
 
       function setCalMode(mode){
@@ -1795,39 +1790,31 @@
 
       function loadSlidersFromCalib(){
         const c = calib[calMode] || DEFAULT_CALIB[calMode];
-        tlX.value = String(c.x ?? 0);
-        tlY.value = String(c.y ?? 0);
-        tlS.value = String((c.s ?? 1.0).toFixed(2));
-
-        chickLineY.value = String(calib.chickLineY ?? DEFAULT_CALIB.chickLineY);
-
+        gX.value = String(c.x ?? 0);
+        gY.value = String(c.y ?? 0);
+        gS.value = String((c.s ?? 1.0).toFixed(2));
+        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
         syncCalNumbers();
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
       }
 
       function syncCalNumbers(){
-        tlXv.textContent = String(tlX.value);
-        tlYv.textContent = String(tlY.value);
-        tlSv.textContent = Number(tlS.value).toFixed(2);
-        chickLineYv.textContent = String(chickLineY.value);
+        gXv.textContent = String(gX.value);
+        gYv.textContent = String(gY.value);
+        gSv.textContent = Number(gS.value).toFixed(2);
+        lineYv.textContent = String(lineY.value);
       }
 
       function writeSlidersToCalib(){
-        calib[calMode] = {
-          x: Number(tlX.value),
-          y: Number(tlY.value),
-          s: Number(tlS.value)
-        };
-        calib.chickLineY = Number(chickLineY.value);
+        calib[calMode] = { x: Number(gX.value), y: Number(gY.value), s: Number(gS.value) };
+        calib.lineY = Number(lineY.value);
       }
 
       function openCal(){
         calPanel.classList.remove("hidden");
         setCalMode(calMode);
       }
-      function closeCal(){
-        calPanel.classList.add("hidden");
-      }
+      function closeCal(){ calPanel.classList.add("hidden"); }
 
       openCalBtn.addEventListener("click", () => { beep("tap"); openCal(); });
       calClose.addEventListener("click", () => { beep("tap"); closeCal(); });
@@ -1835,28 +1822,29 @@
       tabLandscape.addEventListener("click", () => { beep("tap"); setCalMode("landscape"); });
       tabPortrait.addEventListener("click", () => { beep("tap"); setCalMode("portrait"); });
 
-      [tlX, tlY, tlS, chickLineY].forEach(el => el.addEventListener("input", () => {
+      [gX, gY, gS, lineY].forEach(el => el.addEventListener("input", () => {
         writeSlidersToCalib();
         syncCalNumbers();
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
       }));
 
-      tlResetBtn.addEventListener("click", () => {
+      gResetBtn.addEventListener("click", () => {
         beep("tap");
         calib = structuredClone(DEFAULT_CALIB);
         setCalMode(calMode);
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
         saveCalib();
       });
 
-      tlSaveBtn.addEventListener("click", () => {
+      gSaveBtn.addEventListener("click", () => {
         beep("tap");
         writeSlidersToCalib();
         saveCalib();
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
         setAnchorToLevel(LEVEL, { noTransition: true });
       });
 
+      /* start */
       function startGame(){
         if(started) return;
         started = true;
@@ -1867,7 +1855,7 @@
         startOverlay.style.display = "none";
         syncUI();
 
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
         setAnchorToLevel(LEVEL, { noTransition: true });
         showOnlyStill();
 
@@ -1900,16 +1888,29 @@
       syncUI();
       initTimeline();
 
-      applyTimelineTransform();
+      applyTimelineGroupTransform();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
 
       function onAnyResize(){
-        applyTimelineTransform();
+        applyTimelineGroupTransform();
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
       window.addEventListener("resize", onAnyResize);
       window.addEventListener("orientationchange", onAnyResize);
+
+      /* default: laad sliders in achtergrond, maar open panel niet */
+      function bootCalib(){
+        if(!calib) calib = structuredClone(DEFAULT_CALIB);
+        const k = activeModeKey();
+        const c = calib[k] || DEFAULT_CALIB[k];
+        gX.value = String(c.x ?? 0);
+        gY.value = String(c.y ?? 0);
+        gS.value = String((c.s ?? 1.0).toFixed(2));
+        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
+        syncCalNumbers();
+      }
+      bootCalib();
     })();
   </script>
 </body>
