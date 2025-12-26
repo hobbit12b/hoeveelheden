@@ -252,7 +252,7 @@
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
 
       <div class="progressChickAnchor" id="chickAnchor">
-        <!-- Still basislaag -->
+        <!-- Still is basislaag -->
         <img
           class="chickLayer stillLayer active"
           id="stillImg"
@@ -287,8 +287,8 @@
 
         <div class="row">
           <div class="label">huidig level</div>
-          <input type="range" id="levelRange" min="0" max="9" step="1" value="5">
-          <div class="value" id="levelValue">5</div>
+          <input type="range" id="levelRange" min="1" max="5" step="1" value="1">
+          <div class="value" id="levelValue">1</div>
         </div>
 
         <div class="row">
@@ -558,14 +558,10 @@
       const testUpBtn = $("testUpBtn");
       const testDownBtn = $("testDownBtn");
 
-      /* Levels 0 t/m 9, nooit daarbuiten */
-      const LEVEL_MIN = 0;
-      const LEVEL_MAX = 9;
-      let LEVEL = clamp(Number(levelRange.value), LEVEL_MIN, LEVEL_MAX);
-
-      /* Calibratie blijft zoals jij hem goed had: level 1 tot en met 5 */
-      const CALIB_MIN = 1;
-      const CALIB_MAX = 5;
+      let LEVEL = 1;
+      const LEVEL_MIN = 1;
+      const LEVEL_MAX = 5;
+      const TICK_COUNT = LEVEL_MAX;
 
       let playing = false;
       let xAnim = null;
@@ -603,19 +599,12 @@
         return { left: box.left + padX, top: box.top + padY, width: drawW, height: drawH };
       }
 
-      function tickPercentForLevel(level){
-        const start = Number(tickStartRange.value); /* hoort bij level 1 */
-        const end = Number(tickEndRange.value);     /* hoort bij level 5 */
-        const denom = Math.max(1, (CALIB_MAX - CALIB_MIN));
-        const step = (end - start) / denom;
-        const p = start + step * (level - CALIB_MIN);
-        return clamp(p, 0, 100);
-      }
-
       function currentTickXForLevel(level){
-        const p = tickPercentForLevel(clamp(level, LEVEL_MIN, LEVEL_MAX)) / 100;
+        const start = Number(tickStartRange.value) / 100;
+        const end = Number(tickEndRange.value) / 100;
+        const t = (clamp(level, LEVEL_MIN, LEVEL_MAX) - 1) / (TICK_COUNT - 1);
         const content = getContainedRect(levelsImg);
-        return content.left + (content.width * p);
+        return content.left + (content.width * (start + (end - start) * t));
       }
 
       function setAnchorToLevel(level){
@@ -654,7 +643,6 @@
       }
 
       function showAnimCanvas(){
-        /* Tijdens animatie moet png niet zichtbaar zijn */
         stillImg.classList.remove("active");
         animCanvas.classList.add("active");
       }
@@ -874,7 +862,7 @@
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_canvas_mp4_v2_level0_9";
+      const STORAGE_KEY = "chick_timeline_tester_canvas_mp4_v1";
 
       function snapshot(){
         return {
@@ -912,7 +900,7 @@
       function applySnap(s){
         if(!s) return;
 
-        LEVEL = clamp(Number(s.LEVEL ?? levelRange.value), LEVEL_MIN, LEVEL_MAX);
+        LEVEL = clamp(Number(s.LEVEL || 1), LEVEL_MIN, LEVEL_MAX);
         levelRange.value = String(LEVEL);
 
         tickStartRange.value = String(s.tickStart ?? tickStartRange.value);
@@ -961,9 +949,8 @@
       }
 
       function resetDefaults(){
-        /* Jouw juiste waarden */
-        LEVEL = 5;
-        levelRange.value = "5";
+        LEVEL = 1;
+        levelRange.value = "1";
 
         tickStartRange.value = "8.1";
         tickEndRange.value = "49.7";
@@ -1007,6 +994,7 @@
         const toLevel = clamp(direction === "up" ? fromLevel + 1 : fromLevel - 1, LEVEL_MIN, LEVEL_MAX);
 
         setAnchorToLevel(fromLevel);
+
         showOnlyStill();
 
         const cfg = (direction === "up")
