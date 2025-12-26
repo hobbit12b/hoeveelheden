@@ -25,10 +25,6 @@
 
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
-
-      --activeFill: rgba(229, 140, 116, 0.18);
-
-      --qShift: 0px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -139,9 +135,15 @@
       justify-content:center;
       padding: 10px 6px;
       min-height: 0;
+    }
 
-      transform: translateY(var(--qShift, 0px));
-      transition: transform 220ms ease;
+    /* Belangrijk: in landscape staat het vraagvak vast onder de topbar */
+    @media (orientation: landscape){
+      .left .content{
+        align-items:flex-start;
+        justify-content:flex-start;
+        padding-top: 10px;
+      }
     }
 
     .gameCard{
@@ -158,8 +160,17 @@
       justify-content:center;
       padding: 18px;
     }
+
+    /* Stabilere hoogte op iOS, voorkomt springende vh */
+    @supports (height: 1svh){
+      .gameCard{ height: min(520px, 58svh); }
+    }
+
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
+      @supports (height: 1svh){
+        .gameCard{ height: min(420px, 34svh); }
+      }
     }
 
     .flashBoard{
@@ -230,6 +241,7 @@
       .answersWrap{ width: min(640px, 92%); }
     }
 
+    /* Basis knop */
     .ansBtn{
       appearance:none;
       border:none;
@@ -238,14 +250,11 @@
       border: 3px solid rgba(245,180,152,0.85);
       box-shadow: 0 12px 24px rgba(0,0,0,0.10);
       cursor:pointer;
-
       display:grid;
       place-items:center;
       padding: 10px;
-
       aspect-ratio: 1 / 1;
       width: 100%;
-
       transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
       transform: translateZ(0);
       will-change: transform, opacity;
@@ -282,7 +291,7 @@
 
     .answersHidden{ opacity:0; pointer-events:none; }
 
-    /* kaarten, hele knop draait mee */
+    /* Kaarten, hele knop draait mee */
     .ansBtn.cardBtn{
       background: transparent;
       border: none;
@@ -329,6 +338,7 @@
       box-shadow: 0 12px 24px rgba(0,0,0,0.10);
     }
 
+    /* Dicht: kuiken */
     .cardBack{
       background:#f8c3b0;
       background-image: url("vogeltje_achterkantkaart.png");
@@ -339,6 +349,7 @@
       -webkit-transform: rotateY(0deg);
     }
 
+    /* Open: hoeveelheden */
     .cardFront{
       background:#ffffff;
       transform: rotateY(180deg);
@@ -621,9 +632,6 @@
       const flashSvg = document.getElementById("flashSvg");
       const answersEl = document.getElementById("answers");
       const scanArea = document.getElementById("scanArea");
-
-      const leftContent = document.querySelector(".left .content");
-      const flashBoardEl = document.getElementById("flashBoard");
 
       const WAIT_BEFORE_IN_MS = 0;
       const IN_DUR_MS = 800;
@@ -930,40 +938,6 @@
         return rects.map(x => x.b);
       }
 
-      /* belangrijk: nooit naar beneden, alleen opwaarts (anker boven) */
-      let topAnchorShift = 0; /* dit is de meest negatieve shift die we ooit hebben gezet */
-
-      function alignQuestionToMiddleAnswerUpOnly(){
-        if(!leftContent || !flashBoardEl) return;
-
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns.length < 2){
-          leftContent.style.setProperty("--qShift", `${topAnchorShift}px`);
-          return;
-        }
-
-        const midBtn = btns[Math.floor(btns.length / 2)];
-        const b = midBtn.getBoundingClientRect();
-        const f = flashBoardEl.getBoundingClientRect();
-
-        const btnCY = b.top + b.height / 2;
-        const boardCY = f.top + f.height / 2;
-
-        let dy = btnCY - boardCY;
-
-        const maxShift = 140;
-        dy = clamp(dy, -maxShift, maxShift);
-
-        /* alleen omhoog toestaan: dy mag 0 of negatief zijn */
-        dy = Math.min(0, dy);
-
-        /* anker: we onthouden de hoogste positie (meest negatief) */
-        topAnchorShift = Math.min(topAnchorShift, dy);
-
-        /* altijd het anker gebruiken, zodat hij nooit terug zakt */
-        leftContent.style.setProperty("--qShift", `${topAnchorShift}px`);
-      }
-
       async function animateInButtons(){
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
@@ -998,8 +972,6 @@
           btn.style.transform = "translate(0px, 0px)";
           btn.style.opacity = "1";
         });
-
-        alignQuestionToMiddleAnswerUpOnly();
       }
 
       async function animateOutButtons(btns, staggerMs){
@@ -1130,7 +1102,7 @@
 
         answersEl.classList.add("answersHidden");
         answersEl.innerHTML = "";
-        setBoard(svgForDots([], {dotRadius: 1}));
+        clearBoard();
 
         await wait(160);
 
@@ -1140,15 +1112,12 @@
 
         await wait(flashMs);
 
-        setBoard(svgForDots([], {dotRadius: 1}));
+        clearBoard();
         await wait(260);
 
         renderAnswers(correct, onPick);
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
-
-        /* opnieuw, maar nog steeds alleen omhoog */
-        alignQuestionToMiddleAnswerUpOnly();
 
         locked = false;
         previewCardsNonBlocking();
@@ -1314,14 +1283,11 @@
           previewToken++;
           answersEl.classList.add("answersHidden");
           answersEl.innerHTML = "";
-          setBoard(svgForDots([], {dotRadius: 1}));
+          clearBoard();
           await wait(120);
           renderAnswers(correct, onPick);
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
-
-          alignQuestionToMiddleAnswerUpOnly();
-
           locked = false;
           previewCardsNonBlocking();
         }, 220);
@@ -1329,16 +1295,10 @@
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
-      setBoard(svgForDots([], {dotRadius: 1}));
+      clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
-
-      /* startpositie vastleggen */
-      if(leftContent){
-        leftContent.style.setProperty("--qShift", "0px");
-        topAnchorShift = 0;
-      }
     })();
   </script>
 </body>
