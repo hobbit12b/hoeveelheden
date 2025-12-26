@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Kuiken tijdlijn tester</title>
+  <title>Kuiken tijdlijn tester mp4</title>
 
   <style>
     :root{
@@ -33,7 +33,6 @@
       height:100%;
     }
 
-    /* Tijdlijn rechtsboven */
     .progressTimeline{
       position:absolute;
       top: 14px;
@@ -52,7 +51,6 @@
       object-fit: contain;
     }
 
-    /* Anchor schuift over de echte zichtbare content van levels.png */
     .progressChickAnchor{
       position:absolute;
       bottom: -10px;
@@ -62,7 +60,7 @@
       pointer-events:none;
     }
 
-    .progressChickState{
+    .chickLayer{
       position:absolute;
       left:0;
       bottom:0;
@@ -70,19 +68,19 @@
       height: auto;
       opacity: 0;
       pointer-events:none;
-      will-change: transform, opacity;
       transform-origin: 50% 100%;
+      will-change: transform, opacity;
     }
 
-    /* Still blijft onder de animatie zichtbaar om flits te voorkomen */
-    .progressChickState.stillLayer{
-      z-index: 1;
-    }
-    .progressChickState.animLayer{
-      z-index: 2;
-    }
+    .chickLayer.active{ opacity: 1; }
 
-    .progressChickState.active{ opacity: 1; }
+    .stillLayer{ z-index: 1; }
+    .animLayer{ z-index: 2; }
+
+    video.chickLayer{
+      background: transparent;
+      display:block;
+    }
 
     @media (orientation: portrait){
       .progressTimeline{
@@ -92,10 +90,9 @@
         height: 100px;
       }
       .progressChickAnchor{ width: 78px; height: 78px; }
-      .progressChickState{ width: 78px; }
+      .chickLayer{ width: 78px; }
     }
 
-    /* Open knop */
     .openPanelBtn{
       position:absolute;
       left: 14px;
@@ -112,12 +109,11 @@
       backdrop-filter: blur(6px);
     }
 
-    /* Panel */
     .panel{
       position:absolute;
       left: 14px;
       bottom: 14px;
-      width: min(720px, calc(100vw - 28px));
+      width: min(760px, calc(100vw - 28px));
       max-height: min(78vh, 860px);
       overflow:auto;
       background: var(--panelBg);
@@ -162,13 +158,13 @@
 
     .row{
       display:grid;
-      grid-template-columns: 190px 1fr 90px;
+      grid-template-columns: 200px 1fr 95px;
       gap: 10px;
       align-items:center;
       margin: 10px 0;
     }
     @media (max-width: 560px){
-      .row{ grid-template-columns: 140px 1fr 70px; }
+      .row{ grid-template-columns: 145px 1fr 80px; }
     }
 
     .label{
@@ -184,6 +180,7 @@
       text-align:right;
       color: rgba(77,74,72,0.88);
     }
+
     input[type="range"]{ width:100%; }
 
     .buttons{
@@ -248,16 +245,43 @@
 
     <div class="progressTimeline" aria-hidden="true" id="timeline">
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
+
       <div class="progressChickAnchor" id="chickAnchor">
-        <img class="progressChickState stillLayer active" id="chickStill" src="ballerina_still.gif" alt="">
-        <img class="progressChickState animLayer" id="chickUp" src="ballerina_springt.gif" alt="">
-        <img class="progressChickState animLayer" id="chickDown" src="ballerina_terug.gif" alt="">
+        <!-- Still is altijd de basislaag -->
+        <video
+          class="chickLayer stillLayer active"
+          id="stillVid"
+          src="ballerina_still.mp4"
+          muted
+          playsinline
+          preload="auto"
+          loop
+        ></video>
+
+        <!-- Anim overlays, alleen zichtbaar tijdens play -->
+        <video
+          class="chickLayer animLayer"
+          id="upVid"
+          src="ballerina_springt.mp4"
+          muted
+          playsinline
+          preload="auto"
+        ></video>
+
+        <video
+          class="chickLayer animLayer"
+          id="downVid"
+          src="ballerina_terug.mp4"
+          muted
+          playsinline
+          preload="auto"
+        ></video>
       </div>
     </div>
 
     <div class="panel" id="panel" role="dialog" aria-label="Testpanel">
       <div class="panelHeader">
-        <div class="panelTitle">tijdlijn kuiken tester</div>
+        <div class="panelTitle">tijdlijn kuiken tester mp4</div>
         <button class="panelClose" id="panelClose" type="button">sluit</button>
       </div>
 
@@ -300,11 +324,11 @@
           <div class="value" id="anchorFineYValue">0</div>
         </div>
 
-        <p class="hint">ticks worden verdeeld binnen de echte zichtbare levels afbeelding, dus zonder onzichtbare padding</p>
+        <p class="hint">ticks worden berekend binnen de echte zichtbare content van levels.png, dus zonder de padding van object fit contain</p>
       </div>
 
       <div class="section">
-        <div class="panelTitle" style="font-size:16px;">stil</div>
+        <div class="panelTitle" style="font-size:16px;">still</div>
 
         <div class="row">
           <div class="label">schaal</div>
@@ -326,18 +350,36 @@
       </div>
 
       <div class="section">
-        <div class="panelTitle" style="font-size:16px;">vooruit</div>
+        <div class="panelTitle" style="font-size:16px;">vooruit mp4 segment en x beweging</div>
 
         <div class="row">
-          <div class="label">schaal</div>
-          <input type="range" id="upScaleRange" min="0.30" max="2.00" step="0.05" value="1.00">
-          <div class="value" id="upScaleValue">1.00</div>
+          <div class="label">fps</div>
+          <input type="range" id="upFpsRange" min="10" max="60" step="1" value="30">
+          <div class="value" id="upFpsValue">30</div>
         </div>
 
         <div class="row">
-          <div class="label">positie x</div>
-          <input type="range" id="upXRange" min="-200" max="200" step="1" value="0">
-          <div class="value" id="upXValue">0</div>
+          <div class="label">eerste frame</div>
+          <input type="range" id="upStartFrameRange" min="0" max="600" step="1" value="0">
+          <div class="value" id="upStartFrameValue">0</div>
+        </div>
+
+        <div class="row">
+          <div class="label">laatste frame</div>
+          <input type="range" id="upEndFrameRange" min="1" max="600" step="1" value="27">
+          <div class="value" id="upEndFrameValue">27</div>
+        </div>
+
+        <div class="row">
+          <div class="label">x start</div>
+          <input type="range" id="upXStartRange" min="-250" max="250" step="1" value="0">
+          <div class="value" id="upXStartValue">0</div>
+        </div>
+
+        <div class="row">
+          <div class="label">x einde</div>
+          <input type="range" id="upXEndRange" min="-250" max="250" step="1" value="0">
+          <div class="value" id="upXEndValue">0</div>
         </div>
 
         <div class="row">
@@ -347,37 +389,45 @@
         </div>
 
         <div class="row">
-          <div class="label">x start anim</div>
-          <input type="range" id="upAnimStartXRange" min="-200" max="200" step="1" value="0">
-          <div class="value" id="upAnimStartXValue">0</div>
+          <div class="label">schaal</div>
+          <input type="range" id="upScaleRange" min="0.30" max="2.00" step="0.05" value="1.00">
+          <div class="value" id="upScaleValue">1.00</div>
         </div>
 
-        <div class="row">
-          <div class="label">x einde anim</div>
-          <input type="range" id="upAnimEndXRange" min="-200" max="200" step="1" value="0">
-          <div class="value" id="upAnimEndXValue">0</div>
-        </div>
-
-        <div class="row">
-          <div class="label">duur vooruit</div>
-          <input type="range" id="upDurRange" min="100" max="4000" step="50" value="900">
-          <div class="value" id="upDurValue">900</div>
-        </div>
+        <p class="hint">alleen x wordt geïnterpoleerd van start naar einde, de mp4 zelf loopen we niet</p>
       </div>
 
       <div class="section">
-        <div class="panelTitle" style="font-size:16px;">terug</div>
+        <div class="panelTitle" style="font-size:16px;">terug mp4 segment en x beweging</div>
 
         <div class="row">
-          <div class="label">schaal</div>
-          <input type="range" id="downScaleRange" min="0.30" max="2.00" step="0.05" value="1.00">
-          <div class="value" id="downScaleValue">1.00</div>
+          <div class="label">fps</div>
+          <input type="range" id="downFpsRange" min="10" max="60" step="1" value="30">
+          <div class="value" id="downFpsValue">30</div>
         </div>
 
         <div class="row">
-          <div class="label">positie x</div>
-          <input type="range" id="downXRange" min="-200" max="200" step="1" value="0">
-          <div class="value" id="downXValue">0</div>
+          <div class="label">eerste frame</div>
+          <input type="range" id="downStartFrameRange" min="0" max="600" step="1" value="0">
+          <div class="value" id="downStartFrameValue">0</div>
+        </div>
+
+        <div class="row">
+          <div class="label">laatste frame</div>
+          <input type="range" id="downEndFrameRange" min="1" max="600" step="1" value="27">
+          <div class="value" id="downEndFrameValue">27</div>
+        </div>
+
+        <div class="row">
+          <div class="label">x start</div>
+          <input type="range" id="downXStartRange" min="-250" max="250" step="1" value="0">
+          <div class="value" id="downXStartValue">0</div>
+        </div>
+
+        <div class="row">
+          <div class="label">x einde</div>
+          <input type="range" id="downXEndRange" min="-250" max="250" step="1" value="0">
+          <div class="value" id="downXEndValue">0</div>
         </div>
 
         <div class="row">
@@ -387,32 +437,14 @@
         </div>
 
         <div class="row">
-          <div class="label">x start anim</div>
-          <input type="range" id="downAnimStartXRange" min="-200" max="200" step="1" value="0">
-          <div class="value" id="downAnimStartXValue">0</div>
-        </div>
-
-        <div class="row">
-          <div class="label">x einde anim</div>
-          <input type="range" id="downAnimEndXRange" min="-200" max="200" step="1" value="0">
-          <div class="value" id="downAnimEndXValue">0</div>
-        </div>
-
-        <div class="row">
-          <div class="label">duur terug</div>
-          <input type="range" id="downDurRange" min="100" max="4000" step="50" value="900">
-          <div class="value" id="downDurValue">900</div>
+          <div class="label">schaal</div>
+          <input type="range" id="downScaleRange" min="0.30" max="2.00" step="0.05" value="1.00">
+          <div class="value" id="downScaleValue">1.00</div>
         </div>
       </div>
 
       <div class="section">
         <div class="panelTitle" style="font-size:16px;">test</div>
-
-        <div class="row">
-          <div class="label">interpoleer x</div>
-          <input type="range" id="interpRange" min="0" max="1" step="1" value="0">
-          <div class="value" id="interpValue">uit</div>
-        </div>
 
         <div class="row">
           <div class="label">panel terug na afloop</div>
@@ -431,7 +463,7 @@
           <button class="btn" id="testDownBtn" type="button" disabled>test terug</button>
         </div>
 
-        <p class="hint">panel verdwijnt direct, animatie start op frame 1, still springt pas op het einde één tick</p>
+        <p class="hint">still blijft altijd zichtbaar, animatie overlay komt alleen als hij kan spelen, level springt pas na laatste frame</p>
       </div>
     </div>
   </div>
@@ -454,11 +486,11 @@
 
       const timeline = $("timeline");
       const levelsImg = $("levelsImg");
-
       const chickAnchor = $("chickAnchor");
-      let chickStill = $("chickStill");
-      let chickUp = $("chickUp");
-      let chickDown = $("chickDown");
+
+      const stillVid = $("stillVid");
+      const upVid = $("upVid");
+      const downVid = $("downVid");
 
       const levelRange = $("levelRange");
       const levelValue = $("levelValue");
@@ -480,34 +512,36 @@
       const stillYRange = $("stillYRange");
       const stillYValue = $("stillYValue");
 
-      const upScaleRange = $("upScaleRange");
-      const upScaleValue = $("upScaleValue");
-      const upXRange = $("upXRange");
-      const upXValue = $("upXValue");
+      const upFpsRange = $("upFpsRange");
+      const upFpsValue = $("upFpsValue");
+      const upStartFrameRange = $("upStartFrameRange");
+      const upStartFrameValue = $("upStartFrameValue");
+      const upEndFrameRange = $("upEndFrameRange");
+      const upEndFrameValue = $("upEndFrameValue");
+      const upXStartRange = $("upXStartRange");
+      const upXStartValue = $("upXStartValue");
+      const upXEndRange = $("upXEndRange");
+      const upXEndValue = $("upXEndValue");
       const upYRange = $("upYRange");
       const upYValue = $("upYValue");
-      const upAnimStartXRange = $("upAnimStartXRange");
-      const upAnimStartXValue = $("upAnimStartXValue");
-      const upAnimEndXRange = $("upAnimEndXRange");
-      const upAnimEndXValue = $("upAnimEndXValue");
-      const upDurRange = $("upDurRange");
-      const upDurValue = $("upDurValue");
+      const upScaleRange = $("upScaleRange");
+      const upScaleValue = $("upScaleValue");
 
-      const downScaleRange = $("downScaleRange");
-      const downScaleValue = $("downScaleValue");
-      const downXRange = $("downXRange");
-      const downXValue = $("downXValue");
+      const downFpsRange = $("downFpsRange");
+      const downFpsValue = $("downFpsValue");
+      const downStartFrameRange = $("downStartFrameRange");
+      const downStartFrameValue = $("downStartFrameValue");
+      const downEndFrameRange = $("downEndFrameRange");
+      const downEndFrameValue = $("downEndFrameValue");
+      const downXStartRange = $("downXStartRange");
+      const downXStartValue = $("downXStartValue");
+      const downXEndRange = $("downXEndRange");
+      const downXEndValue = $("downXEndValue");
       const downYRange = $("downYRange");
       const downYValue = $("downYValue");
-      const downAnimStartXRange = $("downAnimStartXRange");
-      const downAnimStartXValue = $("downAnimStartXValue");
-      const downAnimEndXRange = $("downAnimEndXRange");
-      const downAnimEndXValue = $("downAnimEndXValue");
-      const downDurRange = $("downDurRange");
-      const downDurValue = $("downDurValue");
+      const downScaleRange = $("downScaleRange");
+      const downScaleValue = $("downScaleValue");
 
-      const interpRange = $("interpRange");
-      const interpValue = $("interpValue");
       const returnPanelRange = $("returnPanelRange");
       const returnPanelValue = $("returnPanelValue");
 
@@ -523,10 +557,10 @@
       const TICK_COUNT = LEVEL_MAX;
 
       let playing = false;
+      let xAnim = null;
 
       function showPanel(){ panel.classList.remove("hidden"); }
       function hidePanel(){ panel.classList.add("hidden"); }
-
       openPanelBtn.addEventListener("click", () => showPanel());
       panelClose.addEventListener("click", () => hidePanel());
 
@@ -534,93 +568,28 @@
         const start = Number(tickStartRange.value);
         const end = Number(tickEndRange.value);
         const minGap = 0.5;
-
-        if(end < start + minGap){
-          tickEndRange.value = String(start + minGap);
-        }
-        if(start > Number(tickEndRange.value) - minGap){
-          tickStartRange.value = String(Number(tickEndRange.value) - minGap);
-        }
-      }
-
-      function restartGif(el){
-        const parent = el.parentElement;
-        const clone = el.cloneNode(false);
-        clone.className = el.className;
-        clone.style.cssText = el.style.cssText;
-        parent.replaceChild(clone, el);
-        return clone;
-      }
-
-      function deactivateAnim(){
-        chickUp.classList.remove("active");
-        chickDown.classList.remove("active");
-      }
-
-      function setStillVisible(visible){
-        if(visible) chickStill.classList.add("active");
-        else chickStill.classList.remove("active");
-      }
-
-      function setAnimState(state){
-        deactivateAnim();
-        if(state === "up") chickUp.classList.add("active");
-        if(state === "down") chickDown.classList.add("active");
-      }
-
-      function tStill(){
-        const s = Number(stillScaleRange.value);
-        const x = Number(stillXRange.value);
-        const y = Number(stillYRange.value);
-        return `translate(${x}px, ${y}px) scale(${s})`;
-      }
-      function tUp(extraX){
-        const s = Number(upScaleRange.value);
-        const x = Number(upXRange.value) + Number(extraX || 0);
-        const y = Number(upYRange.value);
-        return `translate(${x}px, ${y}px) scale(${s})`;
-      }
-      function tDown(extraX){
-        const s = Number(downScaleRange.value);
-        const x = Number(downXRange.value) + Number(extraX || 0);
-        const y = Number(downYRange.value);
-        return `translate(${x}px, ${y}px) scale(${s})`;
-      }
-
-      function applyTransformsIdle(){
-        chickStill.style.transform = tStill();
-        chickUp.style.transform = tUp(Number(upAnimStartXRange.value));
-        chickDown.style.transform = tDown(Number(downAnimStartXRange.value));
+        if(end < start + minGap) tickEndRange.value = String(start + minGap);
+        if(start > Number(tickEndRange.value) - minGap) tickStartRange.value = String(Number(tickEndRange.value) - minGap);
       }
 
       function getContainedRect(img){
         const box = img.getBoundingClientRect();
         const iw = img.naturalWidth || 1;
         const ih = img.naturalHeight || 1;
-
         const scale = Math.min(box.width / iw, box.height / ih);
         const drawW = iw * scale;
         const drawH = ih * scale;
-
         const padX = (box.width - drawW) / 2;
         const padY = (box.height - drawH) / 2;
-
-        return {
-          left: box.left + padX,
-          top: box.top + padY,
-          width: drawW,
-          height: drawH
-        };
+        return { left: box.left + padX, top: box.top + padY, width: drawW, height: drawH };
       }
 
       function currentTickXForLevel(level){
         const start = Number(tickStartRange.value) / 100;
         const end = Number(tickEndRange.value) / 100;
         const t = (clamp(level, LEVEL_MIN, LEVEL_MAX) - 1) / (TICK_COUNT - 1);
-
         const content = getContainedRect(levelsImg);
-        const x = content.left + (content.width * (start + (end - start) * t));
-        return x;
+        return content.left + (content.width * (start + (end - start) * t));
       }
 
       function setAnchorToLevel(level){
@@ -635,11 +604,38 @@
         chickAnchor.style.transform = `translateX(-50%) translate(${fineX}px, ${fineY}px)`;
       }
 
+      function tStill(){
+        const s = Number(stillScaleRange.value);
+        const x = Number(stillXRange.value);
+        const y = Number(stillYRange.value);
+        return `translate(${x}px, ${y}px) scale(${s})`;
+      }
+
+      function tAnim(scale, x, y){
+        return `translate(${x}px, ${y}px) scale(${scale})`;
+      }
+
+      function showOnlyStill(){
+        stillVid.classList.add("active");
+        upVid.classList.remove("active");
+        downVid.classList.remove("active");
+      }
+
+      function applyTransformsIdle(){
+        stillVid.style.transform = tStill();
+        const upS = Number(upScaleRange.value);
+        const upY = Number(upYRange.value);
+        upVid.style.transform = tAnim(upS, Number(upXStartRange.value), upY);
+
+        const downS = Number(downScaleRange.value);
+        const downY = Number(downYRange.value);
+        downVid.style.transform = tAnim(downS, Number(downXStartRange.value), downY);
+      }
+
       function syncValues(){
         ensureTickOrder();
 
         levelValue.textContent = String(LEVEL);
-
         tickStartValue.textContent = Number(tickStartRange.value).toFixed(1);
         tickEndValue.textContent = Number(tickEndRange.value).toFixed(1);
 
@@ -650,28 +646,29 @@
         stillXValue.textContent = String(stillXRange.value);
         stillYValue.textContent = String(stillYRange.value);
 
-        upScaleValue.textContent = Number(upScaleRange.value).toFixed(2);
-        upXValue.textContent = String(upXRange.value);
+        upFpsValue.textContent = String(upFpsRange.value);
+        upStartFrameValue.textContent = String(upStartFrameRange.value);
+        upEndFrameValue.textContent = String(upEndFrameRange.value);
+        upXStartValue.textContent = String(upXStartRange.value);
+        upXEndValue.textContent = String(upXEndRange.value);
         upYValue.textContent = String(upYRange.value);
-        upAnimStartXValue.textContent = String(upAnimStartXRange.value);
-        upAnimEndXValue.textContent = String(upAnimEndXRange.value);
-        upDurValue.textContent = String(upDurRange.value);
+        upScaleValue.textContent = Number(upScaleRange.value).toFixed(2);
 
-        downScaleValue.textContent = Number(downScaleRange.value).toFixed(2);
-        downXValue.textContent = String(downXRange.value);
+        downFpsValue.textContent = String(downFpsRange.value);
+        downStartFrameValue.textContent = String(downStartFrameRange.value);
+        downEndFrameValue.textContent = String(downEndFrameRange.value);
+        downXStartValue.textContent = String(downXStartRange.value);
+        downXEndValue.textContent = String(downXEndRange.value);
         downYValue.textContent = String(downYRange.value);
-        downAnimStartXValue.textContent = String(downAnimStartXRange.value);
-        downAnimEndXValue.textContent = String(downAnimEndXRange.value);
-        downDurValue.textContent = String(downDurRange.value);
+        downScaleValue.textContent = Number(downScaleRange.value).toFixed(2);
 
-        interpValue.textContent = interpRange.value === "1" ? "aan" : "uit";
         returnPanelValue.textContent = returnPanelRange.value === "1" ? "aan" : "uit";
 
         setAnchorToLevel(LEVEL);
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_v3";
+      const STORAGE_KEY = "chick_timeline_tester_mp4_v1";
 
       function snapshot(){
         return {
@@ -685,21 +682,22 @@
           stillX: stillXRange.value,
           stillY: stillYRange.value,
 
-          upScale: upScaleRange.value,
-          upX: upXRange.value,
+          upFps: upFpsRange.value,
+          upStartFrame: upStartFrameRange.value,
+          upEndFrame: upEndFrameRange.value,
+          upXStart: upXStartRange.value,
+          upXEnd: upXEndRange.value,
           upY: upYRange.value,
-          upAnimStartX: upAnimStartXRange.value,
-          upAnimEndX: upAnimEndXRange.value,
-          upDur: upDurRange.value,
+          upScale: upScaleRange.value,
 
-          downScale: downScaleRange.value,
-          downX: downXRange.value,
+          downFps: downFpsRange.value,
+          downStartFrame: downStartFrameRange.value,
+          downEndFrame: downEndFrameRange.value,
+          downXStart: downXStartRange.value,
+          downXEnd: downXEndRange.value,
           downY: downYRange.value,
-          downAnimStartX: downAnimStartXRange.value,
-          downAnimEndX: downAnimEndXRange.value,
-          downDur: downDurRange.value,
+          downScale: downScaleRange.value,
 
-          interp: interpRange.value,
           returnPanel: returnPanelRange.value
         };
       }
@@ -719,21 +717,22 @@
         stillXRange.value = String(s.stillX ?? stillXRange.value);
         stillYRange.value = String(s.stillY ?? stillYRange.value);
 
-        upScaleRange.value = String(s.upScale ?? upScaleRange.value);
-        upXRange.value = String(s.upX ?? upXRange.value);
+        upFpsRange.value = String(s.upFps ?? upFpsRange.value);
+        upStartFrameRange.value = String(s.upStartFrame ?? upStartFrameRange.value);
+        upEndFrameRange.value = String(s.upEndFrame ?? upEndFrameRange.value);
+        upXStartRange.value = String(s.upXStart ?? upXStartRange.value);
+        upXEndRange.value = String(s.upXEnd ?? upXEndRange.value);
         upYRange.value = String(s.upY ?? upYRange.value);
-        upAnimStartXRange.value = String(s.upAnimStartX ?? upAnimStartXRange.value);
-        upAnimEndXRange.value = String(s.upAnimEndX ?? upAnimEndXRange.value);
-        upDurRange.value = String(s.upDur ?? upDurRange.value);
+        upScaleRange.value = String(s.upScale ?? upScaleRange.value);
 
-        downScaleRange.value = String(s.downScale ?? downScaleRange.value);
-        downXRange.value = String(s.downX ?? downXRange.value);
+        downFpsRange.value = String(s.downFps ?? downFpsRange.value);
+        downStartFrameRange.value = String(s.downStartFrame ?? downStartFrameRange.value);
+        downEndFrameRange.value = String(s.downEndFrame ?? downEndFrameRange.value);
+        downXStartRange.value = String(s.downXStart ?? downXStartRange.value);
+        downXEndRange.value = String(s.downXEnd ?? downXEndRange.value);
         downYRange.value = String(s.downY ?? downYRange.value);
-        downAnimStartXRange.value = String(s.downAnimStartX ?? downAnimStartXRange.value);
-        downAnimEndXRange.value = String(s.downAnimEndX ?? downAnimEndXRange.value);
-        downDurRange.value = String(s.downDur ?? downDurRange.value);
+        downScaleRange.value = String(s.downScale ?? downScaleRange.value);
 
-        interpRange.value = String(s.interp ?? interpRange.value);
         returnPanelRange.value = String(s.returnPanel ?? returnPanelRange.value);
 
         syncValues();
@@ -766,21 +765,22 @@
         stillXRange.value = "0";
         stillYRange.value = "0";
 
-        upScaleRange.value = "1.00";
-        upXRange.value = "0";
+        upFpsRange.value = "30";
+        upStartFrameRange.value = "0";
+        upEndFrameRange.value = "27";
+        upXStartRange.value = "0";
+        upXEndRange.value = "0";
         upYRange.value = "0";
-        upAnimStartXRange.value = "0";
-        upAnimEndXRange.value = "0";
-        upDurRange.value = "900";
+        upScaleRange.value = "1.00";
 
-        downScaleRange.value = "1.00";
-        downXRange.value = "0";
+        downFpsRange.value = "30";
+        downStartFrameRange.value = "0";
+        downEndFrameRange.value = "27";
+        downXStartRange.value = "0";
+        downXEndRange.value = "0";
         downYRange.value = "0";
-        downAnimStartXRange.value = "0";
-        downAnimEndXRange.value = "0";
-        downDurRange.value = "900";
+        downScaleRange.value = "1.00";
 
-        interpRange.value = "0";
         returnPanelRange.value = "1";
 
         syncValues();
@@ -792,9 +792,9 @@
         tickStartRange, tickEndRange,
         anchorFineXRange, anchorFineYRange,
         stillScaleRange, stillXRange, stillYRange,
-        upScaleRange, upXRange, upYRange, upAnimStartXRange, upAnimEndXRange, upDurRange,
-        downScaleRange, downXRange, downYRange, downAnimStartXRange, downAnimEndXRange, downDurRange,
-        interpRange, returnPanelRange
+        upFpsRange, upStartFrameRange, upEndFrameRange, upXStartRange, upXEndRange, upYRange, upScaleRange,
+        downFpsRange, downStartFrameRange, downEndFrameRange, downXStartRange, downXEndRange, downYRange, downScaleRange,
+        returnPanelRange
       ].forEach(el => el.addEventListener("input", () => {
         LEVEL = clamp(Number(levelRange.value), LEVEL_MIN, LEVEL_MAX);
         syncValues();
@@ -804,36 +804,6 @@
       saveBtn.addEventListener("click", () => save());
       loadBtn.addEventListener("click", () => load());
 
-      async function preloadImage(src){
-        return new Promise(resolve => {
-          const img = new Image();
-          img.onload = async () => {
-            try{ if(img.decode) await img.decode(); }catch(e){}
-            resolve(true);
-          };
-          img.onerror = () => resolve(false);
-          img.src = src;
-        });
-      }
-
-      async function warmup(){
-        statusText.textContent = "laden";
-        statusSub.textContent = "assets worden klaar gezet";
-
-        const ok1 = await preloadImage("levels.png");
-        const ok2 = await preloadImage("ballerina_still.gif");
-        const ok3 = await preloadImage("ballerina_springt.gif");
-        const ok4 = await preloadImage("ballerina_terug.gif");
-
-        const allOk = ok1 && ok2 && ok3 && ok4;
-
-        statusText.textContent = "klaar";
-        statusSub.textContent = allOk ? "je kunt testen" : "controleer bestandsnamen als je niets ziet";
-
-        testUpBtn.disabled = false;
-        testDownBtn.disabled = false;
-      }
-
       function hidePanelImmediately(){
         panel.style.display = "none";
         panel.offsetHeight;
@@ -841,76 +811,134 @@
         hidePanel();
       }
 
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+        try{ v.currentTime = 0; }catch(e){}
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const s = Math.max(0, Number(startFrame) / Math.max(1, Number(fps)));
+        const e = Math.max(s + (1 / Math.max(1, Number(fps))), Number(endFrame) / Math.max(1, Number(fps)));
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      function cancelXAnim(){
+        try{ if(xAnim) xAnim.cancel(); }catch(e){}
+        xAnim = null;
+      }
+
+      async function playSegmentWithX(videoEl, cfg){
+        const { start, end, durMs } = cfg.times;
+
+        cancelXAnim();
+
+        videoEl.classList.add("active");
+
+        videoEl.style.transform = tAnim(cfg.scale, cfg.xStart, cfg.y);
+
+        await raf();
+
+        xAnim = videoEl.animate(
+          [{ transform: tAnim(cfg.scale, cfg.xStart, cfg.y) }, { transform: tAnim(cfg.scale, cfg.xEnd, cfg.y) }],
+          { duration: durMs, easing: "linear", fill: "forwards" }
+        );
+
+        let canPlay = true;
+        try{
+          videoEl.pause();
+          videoEl.currentTime = start;
+        }catch(e){
+          canPlay = false;
+        }
+
+        if(!canPlay){
+          videoEl.classList.remove("active");
+          return false;
+        }
+
+        try{
+          await videoEl.play();
+        }catch(e){
+          videoEl.classList.remove("active");
+          return false;
+        }
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              if(videoEl.currentTime >= end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const onTime = () => {
+              if(videoEl.currentTime >= end || videoEl.ended){
+                videoEl.removeEventListener("timeupdate", onTime);
+                resolve(true);
+              }
+            };
+            videoEl.addEventListener("timeupdate", onTime);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        return true;
+      }
+
       async function playOnce(direction){
         if(playing) return;
         playing = true;
 
         const returnPanel = returnPanelRange.value === "1";
-        const interp = interpRange.value === "1";
 
         const fromLevel = LEVEL;
         const toLevel = clamp(direction === "up" ? fromLevel + 1 : fromLevel - 1, LEVEL_MIN, LEVEL_MAX);
 
         setAnchorToLevel(fromLevel);
 
-        setStillVisible(true);
+        showOnlyStill();
 
-        if(direction === "up"){
-          chickUp = restartGif(chickUp);
-          chickUp.classList.add("progressChickState", "animLayer");
-          chickUp.style.transform = tUp(Number(upAnimStartXRange.value));
+        const v = direction === "up" ? upVid : downVid;
 
-          setAnimState("up");
+        stopVideo(upVid);
+        stopVideo(downVid);
 
-          await raf();
+        const cfg = (direction === "up")
+          ? {
+              scale: Number(upScaleRange.value),
+              y: Number(upYRange.value),
+              xStart: Number(upXStartRange.value),
+              xEnd: Number(upXEndRange.value),
+              times: segmentTimes(upStartFrameRange.value, upEndFrameRange.value, upFpsRange.value)
+            }
+          : {
+              scale: Number(downScaleRange.value),
+              y: Number(downYRange.value),
+              xStart: Number(downXStartRange.value),
+              xEnd: Number(downXEndRange.value),
+              times: segmentTimes(downStartFrameRange.value, downEndFrameRange.value, downFpsRange.value)
+            };
 
-          let anim = null;
-          const startX = Number(upAnimStartXRange.value);
-          const endX = Number(upAnimEndXRange.value);
-          const dur = Number(upDurRange.value);
+        const played = await playSegmentWithX(v, cfg);
 
-          if(interp){
-            anim = chickUp.animate(
-              [{ transform: tUp(startX) }, { transform: tUp(endX) }],
-              { duration: dur, easing: "linear", fill: "forwards" }
-            );
-          }
+        v.classList.remove("active");
+        cancelXAnim();
 
-          await wait(dur);
-          try{ if(anim) anim.cancel(); }catch(e){}
-        }else{
-          chickDown = restartGif(chickDown);
-          chickDown.classList.add("progressChickState", "animLayer");
-          chickDown.style.transform = tDown(Number(downAnimStartXRange.value));
-
-          setAnimState("down");
-
-          await raf();
-
-          let anim = null;
-          const startX = Number(downAnimStartXRange.value);
-          const endX = Number(downAnimEndXRange.value);
-          const dur = Number(downDurRange.value);
-
-          if(interp){
-            anim = chickDown.animate(
-              [{ transform: tDown(startX) }, { transform: tDown(endX) }],
-              { duration: dur, easing: "linear", fill: "forwards" }
-            );
-          }
-
-          await wait(dur);
-          try{ if(anim) anim.cancel(); }catch(e){}
+        if(played){
+          LEVEL = toLevel;
+          levelRange.value = String(LEVEL);
+          setAnchorToLevel(LEVEL);
         }
 
-        LEVEL = toLevel;
-        levelRange.value = String(LEVEL);
-
-        setAnchorToLevel(LEVEL);
-
-        deactivateAnim();
-        chickStill.style.transform = tStill();
-        setStillVisible(true);
+        showOnlyStill();
+        stillVid.style.transform = tStill();
 
         syncValues();
 
@@ -936,22 +964,81 @@
 
       function initResizeBinding(){
         const ro = new ResizeObserver(() => {
-          if(playing) {
-            setAnchorToLevel(LEVEL);
-            return;
-          }
-          syncValues();
+          setAnchorToLevel(LEVEL);
+          applyTransformsIdle();
         });
         ro.observe(timeline);
+      }
+
+      function markOk(){
+        statusText.textContent = "klaar";
+        statusSub.textContent = "je kunt testen";
+        testUpBtn.disabled = false;
+        testDownBtn.disabled = false;
+      }
+
+      async function warmup(){
+        statusText.textContent = "laden";
+        statusSub.textContent = "assets worden klaar gezet";
+
+        const waitCanPlay = (v) => new Promise(resolve => {
+          let done = false;
+          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+          const cleanup = () => {
+            v.removeEventListener("canplaythrough", ok);
+            v.removeEventListener("canplay", ok);
+            v.removeEventListener("error", bad);
+          };
+          v.addEventListener("canplaythrough", ok, { once:true });
+          v.addEventListener("canplay", ok, { once:true });
+          v.addEventListener("error", bad, { once:true });
+        });
+
+        const imgOk = await new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = "levels.png";
+        });
+
+        const sOk = await waitCanPlay(stillVid);
+        const uOk = await waitCanPlay(upVid);
+        const dOk = await waitCanPlay(downVid);
+
+        if(!imgOk){
+          statusText.textContent = "let op";
+          statusSub.textContent = "levels.png niet gevonden";
+        }
+
+        showOnlyStill();
+
+        try{
+          stillVid.muted = true;
+          await stillVid.play();
+        }catch(e){
+          try{ stillVid.pause(); }catch(e2){}
+        }
+
+        if(!sOk){
+          statusText.textContent = "let op";
+          statusSub.textContent = "ballerina_still.mp4 niet gevonden";
+        }
+
+        if(!uOk || !dOk){
+          statusText.textContent = "let op";
+          statusSub.textContent = "vooruit of terug mp4 niet klaar, still blijft zichtbaar";
+        }
+
+        markOk();
       }
 
       function init(){
         const didLoad = load();
         if(!didLoad) resetDefaults();
 
-        chickStill.style.transform = tStill();
-        setStillVisible(true);
-        deactivateAnim();
+        showOnlyStill();
+        stillVid.classList.add("active");
 
         syncValues();
         initResizeBinding();
