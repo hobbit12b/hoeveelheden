@@ -426,7 +426,7 @@
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Kaarten, echte flip (en verder alles hetzelfde) */
+    /* Kaarten, echte flip */
     .cardWrap{
       width:100%;
       height:100%;
@@ -478,20 +478,8 @@
       -webkit-transform: rotateY(180deg);
     }
 
-    /* Tijdlijn rechtsboven, zonder schuif animatie */
+    /* Tijdlijn rechtsboven */
     .progressTimeline{
-      --stillScale: 1;
-      --stillX: 0;
-      --stillY: 0;
-
-      --upScale: 1;
-      --upX: 0;
-      --upY: 0;
-
-      --downScale: 1;
-      --downX: 0;
-      --downY: 0;
-
       position:absolute;
       top: 14px;
       right: 14px;
@@ -526,21 +514,10 @@
       height: auto;
       opacity: 0;
       pointer-events:none;
+      will-change: transform, opacity;
+      transform-origin: 50% 100%;
     }
     .progressChickState.active{ opacity: 1; }
-
-    .progressChickState.still{
-      transform: translate(calc(var(--stillX) * 1px), calc(var(--stillY) * 1px)) scale(var(--stillScale));
-      transform-origin: 50% 100%;
-    }
-    .progressChickState.up{
-      transform: translate(calc(var(--upX) * 1px), calc(var(--upY) * 1px)) scale(var(--upScale));
-      transform-origin: 50% 100%;
-    }
-    .progressChickState.down{
-      transform: translate(calc(var(--downX) * 1px), calc(var(--downY) * 1px)) scale(var(--downScale));
-      transform-origin: 50% 100%;
-    }
 
     @media (orientation: portrait){
       .progressTimeline{
@@ -584,9 +561,9 @@
     <div class="progressTimeline" id="progressTimeline" aria-hidden="true">
       <img class="progressLine" src="levels.png" alt="" />
       <div class="progressChickAnchor" id="progressChickAnchor">
-        <img class="progressChickState still active" id="chickStill" src="ballerina_still.gif" alt="" />
-        <img class="progressChickState up" id="chickUp" src="ballerina_springt.gif" alt="" />
-        <img class="progressChickState down" id="chickDown" src="ballerina_terug.gif" alt="" />
+        <img class="progressChickState active" id="chickStill" src="ballerina_still.gif" alt="" />
+        <img class="progressChickState" id="chickUp" src="ballerina_springt.gif" alt="" />
+        <img class="progressChickState" id="chickDown" src="ballerina_terug.gif" alt="" />
       </div>
     </div>
 
@@ -648,12 +625,12 @@
       </div>
       <div class="tuneRow">
         <div class="tuneLabel">positie x</div>
-        <input type="range" id="stillXRange" min="-120" max="120" step="1" value="0" />
+        <input type="range" id="stillXRange" min="-200" max="200" step="1" value="0" />
         <div class="tuneValue" id="stillXValue">0</div>
       </div>
       <div class="tuneRow">
         <div class="tuneLabel">positie y</div>
-        <input type="range" id="stillYRange" min="-120" max="120" step="1" value="0" />
+        <input type="range" id="stillYRange" min="-200" max="200" step="1" value="0" />
         <div class="tuneValue" id="stillYValue">0</div>
       </div>
 
@@ -665,13 +642,28 @@
       </div>
       <div class="tuneRow">
         <div class="tuneLabel">positie x</div>
-        <input type="range" id="upXRange" min="-120" max="120" step="1" value="0" />
+        <input type="range" id="upXRange" min="-200" max="200" step="1" value="0" />
         <div class="tuneValue" id="upXValue">0</div>
       </div>
       <div class="tuneRow">
         <div class="tuneLabel">positie y</div>
-        <input type="range" id="upYRange" min="-120" max="120" step="1" value="0" />
+        <input type="range" id="upYRange" min="-200" max="200" step="1" value="0" />
         <div class="tuneValue" id="upYValue">0</div>
+      </div>
+      <div class="tuneRow">
+        <div class="tuneLabel">x start anim</div>
+        <input type="range" id="upAnimStartXRange" min="-200" max="200" step="1" value="0" />
+        <div class="tuneValue" id="upAnimStartXValue">0</div>
+      </div>
+      <div class="tuneRow">
+        <div class="tuneLabel">x einde anim</div>
+        <input type="range" id="upAnimEndXRange" min="-200" max="200" step="1" value="0" />
+        <div class="tuneValue" id="upAnimEndXValue">0</div>
+      </div>
+      <div class="tuneRow">
+        <div class="tuneLabel">duur vooruit</div>
+        <input type="range" id="upDurRange" min="100" max="4000" step="50" value="900" />
+        <div class="tuneValue" id="upDurValue">900</div>
       </div>
 
       <div style="font-weight:900; font-size:14px; text-transform: lowercase; margin-top:10px;">terug</div>
@@ -682,29 +674,34 @@
       </div>
       <div class="tuneRow">
         <div class="tuneLabel">positie x</div>
-        <input type="range" id="downXRange" min="-120" max="120" step="1" value="0" />
+        <input type="range" id="downXRange" min="-200" max="200" step="1" value="0" />
         <div class="tuneValue" id="downXValue">0</div>
       </div>
       <div class="tuneRow">
         <div class="tuneLabel">positie y</div>
-        <input type="range" id="downYRange" min="-120" max="120" step="1" value="0" />
+        <input type="range" id="downYRange" min="-200" max="200" step="1" value="0" />
         <div class="tuneValue" id="downYValue">0</div>
       </div>
-
       <div class="tuneRow">
-        <div class="tuneLabel">duur vooruit</div>
-        <input type="range" id="upDurRange" min="100" max="3000" step="50" value="900" />
-        <div class="tuneValue" id="upDurValue">900</div>
+        <div class="tuneLabel">x start anim</div>
+        <input type="range" id="downAnimStartXRange" min="-200" max="200" step="1" value="0" />
+        <div class="tuneValue" id="downAnimStartXValue">0</div>
       </div>
-
+      <div class="tuneRow">
+        <div class="tuneLabel">x einde anim</div>
+        <input type="range" id="downAnimEndXRange" min="-200" max="200" step="1" value="0" />
+        <div class="tuneValue" id="downAnimEndXValue">0</div>
+      </div>
       <div class="tuneRow">
         <div class="tuneLabel">duur terug</div>
-        <input type="range" id="downDurRange" min="100" max="3000" step="50" value="900" />
+        <input type="range" id="downDurRange" min="100" max="4000" step="50" value="900" />
         <div class="tuneValue" id="downDurValue">900</div>
       </div>
 
       <div class="tuneButtons" style="margin-top:10px;">
         <button class="tuneBtnSmall secondary" id="resetChickTuningBtn" type="button">Reset kuiken</button>
+        <button class="tuneBtnSmall secondary" id="testUpAnimBtn" type="button">Test vooruit</button>
+        <button class="tuneBtnSmall secondary" id="testDownAnimBtn" type="button">Test terug</button>
       </div>
     </div>
 
@@ -772,6 +769,12 @@
       const upXValue = document.getElementById("upXValue");
       const upYRange = document.getElementById("upYRange");
       const upYValue = document.getElementById("upYValue");
+      const upAnimStartXRange = document.getElementById("upAnimStartXRange");
+      const upAnimStartXValue = document.getElementById("upAnimStartXValue");
+      const upAnimEndXRange = document.getElementById("upAnimEndXRange");
+      const upAnimEndXValue = document.getElementById("upAnimEndXValue");
+      const upDurRange = document.getElementById("upDurRange");
+      const upDurValue = document.getElementById("upDurValue");
 
       const downScaleRange = document.getElementById("downScaleRange");
       const downScaleValue = document.getElementById("downScaleValue");
@@ -779,21 +782,22 @@
       const downXValue = document.getElementById("downXValue");
       const downYRange = document.getElementById("downYRange");
       const downYValue = document.getElementById("downYValue");
-
-      const upDurRange = document.getElementById("upDurRange");
-      const upDurValue = document.getElementById("upDurValue");
+      const downAnimStartXRange = document.getElementById("downAnimStartXRange");
+      const downAnimStartXValue = document.getElementById("downAnimStartXValue");
+      const downAnimEndXRange = document.getElementById("downAnimEndXRange");
+      const downAnimEndXValue = document.getElementById("downAnimEndXValue");
       const downDurRange = document.getElementById("downDurRange");
       const downDurValue = document.getElementById("downDurValue");
 
       const resetChickTuningBtn = document.getElementById("resetChickTuningBtn");
+      const testUpAnimBtn = document.getElementById("testUpAnimBtn");
+      const testDownAnimBtn = document.getElementById("testDownAnimBtn");
 
       function preloadImage(src){
         return new Promise(resolve => {
           const img = new Image();
           img.onload = async () => {
-            try{
-              if(img.decode) await img.decode();
-            }catch(e){}
+            try{ if(img.decode) await img.decode(); }catch(e){}
             resolve(true);
           };
           img.onerror = () => resolve(false);
@@ -809,13 +813,13 @@
       const IN_DUR_MS = 800;
       const OUT_DUR_MS = 750;
 
-      /* Kaarten, openklappen, klik mag zodra de eerste kaart open is */
+      /* Kaarten, openklappen */
       const PREVIEW_GAP_MS = 120;
 
-      /* Was PREVIEW_MS const, nu instelbaar */
+      /* Kijktijd kaarten */
       let previewMs = previewMsRange ? Number(previewMsRange.value) : 1700;
 
-      /* Flits instelbaar */
+      /* Flits */
       let flashMs = Number(flashMsRange.value);
 
       /* Level */
@@ -1021,7 +1025,7 @@
         return patternDice(n);
       }
 
-      /* Antwoordpatronen: rustig en herkenbaar */
+      /* Antwoordpatronen */
       function patternAnswer(n){
         if(n <= 4){
           return patternDice(n);
@@ -1235,7 +1239,7 @@
         });
       }
 
-      /* Preview, niet blokkerend */
+      /* Preview kaarten */
       let previewToken = 0;
 
       async function previewCardsNonBlocking(){
@@ -1262,93 +1266,212 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* Tijdlijn kuiken, geen schuif, alleen na afloop still verplaatsen */
-      const LEVEL_POS = [9.375, 29.625, 49.25, 70.25, 90];
+      /* Tijdlijn kuiken, still verplaatst na animatie, per level twee streepjes */
+      const TICK_FIRST = 9.375;
+      const TICK_LAST = 90.0;
+      const TICK_COUNT = 9;
+
+      const TICK_POS = Array.from({length: TICK_COUNT}, (_, i) => {
+        return TICK_FIRST + (TICK_LAST - TICK_FIRST) * (i / (TICK_COUNT - 1));
+      });
+
+      function posForLevel(level){
+        const idx = clamp((level - 1) * 2, 0, TICK_COUNT - 1);
+        return TICK_POS[idx];
+      }
+
       let chickLevel = 1;
 
       let upAnimMs = Number(upDurRange.value);
       let downAnimMs = Number(downDurRange.value);
 
-      function restartImg(el){
-        if(!el) return el;
+      let stillScale = Number(stillScaleRange.value);
+      let stillX = Number(stillXRange.value);
+      let stillY = Number(stillYRange.value);
+
+      let upScale = Number(upScaleRange.value);
+      let upX = Number(upXRange.value);
+      let upY = Number(upYRange.value);
+      let upAnimStartX = Number(upAnimStartXRange.value);
+      let upAnimEndX = Number(upAnimEndXRange.value);
+
+      let downScale = Number(downScaleRange.value);
+      let downX = Number(downXRange.value);
+      let downY = Number(downYRange.value);
+      let downAnimStartX = Number(downAnimStartXRange.value);
+      let downAnimEndX = Number(downAnimEndXRange.value);
+
+      function restartGif(el){
         const parent = el.parentElement;
         const clone = el.cloneNode(false);
-        clone.className = el.className;
-        clone.src = el.src;
         parent.replaceChild(clone, el);
         return clone;
       }
 
-      function setChickState(state, restart){
+      function deactivateAllChicks(){
         chickStill.classList.remove("active");
         chickUp.classList.remove("active");
         chickDown.classList.remove("active");
+      }
 
+      function transformFor(state, animX){
+        if(state === "still"){
+          return `translate(${stillX}px, ${stillY}px) scale(${stillScale})`;
+        }
         if(state === "up"){
-          if(restart) chickUp = restartImg(chickUp);
-          chickUp.classList.add("active");
-          return;
+          return `translate(${(upX + animX)}px, ${upY}px) scale(${upScale})`;
         }
-        if(state === "down"){
-          if(restart) chickDown = restartImg(chickDown);
-          chickDown.classList.add("active");
-          return;
-        }
+        return `translate(${(downX + animX)}px, ${downY}px) scale(${downScale})`;
+      }
 
-        if(restart) chickStill = restartImg(chickStill);
-        chickStill.classList.add("active");
+      function applyChickTransforms(){
+        chickStill.style.transform = transformFor("still", 0);
+        chickUp.style.transform = transformFor("up", upAnimStartX);
+        chickDown.style.transform = transformFor("down", downAnimStartX);
       }
 
       function setChickInstant(level){
         chickLevel = level;
-        chickAnchor.style.left = `${LEVEL_POS[level - 1]}%`;
-        setChickState("still", false);
+        chickAnchor.style.left = `${posForLevel(level)}%`;
+        deactivateAllChicks();
+        chickStill.classList.add("active");
+        applyChickTransforms();
+      }
+
+      async function playAnim(state){
+        await assetsReady;
+
+        if(state === "up"){
+          deactivateAllChicks();
+          chickUp = restartGif(chickUp);
+          chickUp.style.transform = transformFor("up", upAnimStartX);
+          chickUp.classList.add("progressChickState");
+          chickUp.classList.add("active");
+
+          await raf();
+
+          const a = chickUp.animate(
+            [
+              { transform: transformFor("up", upAnimStartX) },
+              { transform: transformFor("up", upAnimEndX) }
+            ],
+            { duration: upAnimMs, easing: "linear", fill: "forwards" }
+          );
+
+          try{ await a.finished; }catch(e){}
+          return;
+        }
+
+        if(state === "down"){
+          deactivateAllChicks();
+          chickDown = restartGif(chickDown);
+          chickDown.style.transform = transformFor("down", downAnimStartX);
+          chickDown.classList.add("progressChickState");
+          chickDown.classList.add("active");
+
+          await raf();
+
+          const a = chickDown.animate(
+            [
+              { transform: transformFor("down", downAnimStartX) },
+              { transform: transformFor("down", downAnimEndX) }
+            ],
+            { duration: downAnimMs, easing: "linear", fill: "forwards" }
+          );
+
+          try{ await a.finished; }catch(e){}
+          return;
+        }
       }
 
       async function playLevelAnimAndCommit(toLevel){
         const fromLevel = chickLevel;
         if(fromLevel === toLevel){
-          setChickState("still", false);
+          deactivateAllChicks();
+          chickStill.classList.add("active");
+          applyChickTransforms();
           return;
         }
 
         const goingUp = toLevel > fromLevel;
-
-        setChickState(goingUp ? "up" : "down", true);
-
-        await wait(goingUp ? upAnimMs : downAnimMs);
+        await playAnim(goingUp ? "up" : "down");
 
         chickLevel = toLevel;
-        chickAnchor.style.left = `${LEVEL_POS[toLevel - 1]}%`;
-        setChickState("still", true);
+        chickAnchor.style.left = `${posForLevel(toLevel)}%`;
+
+        deactivateAllChicks();
+        chickStill.classList.add("active");
+        applyChickTransforms();
       }
 
-      function setVar(name, value){
-        progressTimeline.style.setProperty(name, String(value));
+      /* Animatie test, geen verplaatsing, geen level wijziging */
+      async function previewChickAnimOnly(direction){
+        await assetsReady;
+        if(locked) return;
+
+        const prevLocked = locked;
+        const prevAnswersHidden = answersEl.classList.contains("answersHidden");
+        const prevBoardHTML = flashSvg.innerHTML;
+
+        locked = true;
+        previewToken++;
+
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        btns.forEach(b => b.style.pointerEvents = "none");
+
+        answersEl.classList.add("answersHidden");
+        clearBoard();
+
+        await wait(60);
+
+        const prevLeft = chickAnchor.style.left;
+        const prevChickLevel = chickLevel;
+
+        await playAnim(direction === "up" ? "up" : "down");
+
+        chickAnchor.style.left = prevLeft;
+        chickLevel = prevChickLevel;
+
+        deactivateAllChicks();
+        chickStill.classList.add("active");
+        applyChickTransforms();
+
+        flashSvg.innerHTML = prevBoardHTML;
+        if(!prevAnswersHidden) answersEl.classList.remove("answersHidden");
+
+        btns.forEach(b => b.style.pointerEvents = "");
+        locked = prevLocked;
       }
 
+      /* Tuning opslag */
       function saveChickTuning(){
         try{
           const data = {
             stillScale: Number(stillScaleRange.value),
             stillX: Number(stillXRange.value),
             stillY: Number(stillYRange.value),
+
             upScale: Number(upScaleRange.value),
             upX: Number(upXRange.value),
             upY: Number(upYRange.value),
+            upAnimStartX: Number(upAnimStartXRange.value),
+            upAnimEndX: Number(upAnimEndXRange.value),
+            upAnimMs: Number(upDurRange.value),
+
             downScale: Number(downScaleRange.value),
             downX: Number(downXRange.value),
             downY: Number(downYRange.value),
-            upAnimMs: Number(upDurRange.value),
+            downAnimStartX: Number(downAnimStartXRange.value),
+            downAnimEndX: Number(downAnimEndXRange.value),
             downAnimMs: Number(downDurRange.value),
           };
-          localStorage.setItem("slimkijken_chick_tuning_v2", JSON.stringify(data));
+          localStorage.setItem("slimkijken_chick_tuning_v3", JSON.stringify(data));
         }catch(e){}
       }
 
       function loadChickTuning(){
         try{
-          const raw = localStorage.getItem("slimkijken_chick_tuning_v2");
+          const raw = localStorage.getItem("slimkijken_chick_tuning_v3");
           if(!raw) return false;
           const data = JSON.parse(raw);
 
@@ -1359,12 +1482,15 @@
           upScaleRange.value = String(data.upScale ?? 1);
           upXRange.value = String(data.upX ?? 0);
           upYRange.value = String(data.upY ?? 0);
+          upAnimStartXRange.value = String(data.upAnimStartX ?? 0);
+          upAnimEndXRange.value = String(data.upAnimEndX ?? 0);
+          upDurRange.value = String(data.upAnimMs ?? 900);
 
           downScaleRange.value = String(data.downScale ?? 1);
           downXRange.value = String(data.downX ?? 0);
           downYRange.value = String(data.downY ?? 0);
-
-          upDurRange.value = String(data.upAnimMs ?? 900);
+          downAnimStartXRange.value = String(data.downAnimStartX ?? 0);
+          downAnimEndXRange.value = String(data.downAnimEndX ?? 0);
           downDurRange.value = String(data.downAnimMs ?? 900);
 
           return true;
@@ -1374,35 +1500,43 @@
       }
 
       function applyChickTuning(){
-        setVar("--stillScale", Number(stillScaleRange.value).toFixed(2));
-        setVar("--stillX", Number(stillXRange.value));
-        setVar("--stillY", Number(stillYRange.value));
+        stillScale = Number(stillScaleRange.value);
+        stillX = Number(stillXRange.value);
+        stillY = Number(stillYRange.value);
 
-        setVar("--upScale", Number(upScaleRange.value).toFixed(2));
-        setVar("--upX", Number(upXRange.value));
-        setVar("--upY", Number(upYRange.value));
-
-        setVar("--downScale", Number(downScaleRange.value).toFixed(2));
-        setVar("--downX", Number(downXRange.value));
-        setVar("--downY", Number(downYRange.value));
-
-        stillScaleValue.textContent = Number(stillScaleRange.value).toFixed(2);
-        stillXValue.textContent = String(stillXRange.value);
-        stillYValue.textContent = String(stillYRange.value);
-
-        upScaleValue.textContent = Number(upScaleRange.value).toFixed(2);
-        upXValue.textContent = String(upXRange.value);
-        upYValue.textContent = String(upYRange.value);
-
-        downScaleValue.textContent = Number(downScaleRange.value).toFixed(2);
-        downXValue.textContent = String(downXRange.value);
-        downYValue.textContent = String(downYRange.value);
-
+        upScale = Number(upScaleRange.value);
+        upX = Number(upXRange.value);
+        upY = Number(upYRange.value);
+        upAnimStartX = Number(upAnimStartXRange.value);
+        upAnimEndX = Number(upAnimEndXRange.value);
         upAnimMs = Number(upDurRange.value);
+
+        downScale = Number(downScaleRange.value);
+        downX = Number(downXRange.value);
+        downY = Number(downYRange.value);
+        downAnimStartX = Number(downAnimStartXRange.value);
+        downAnimEndX = Number(downAnimEndXRange.value);
         downAnimMs = Number(downDurRange.value);
+
+        stillScaleValue.textContent = stillScale.toFixed(2);
+        stillXValue.textContent = String(stillX);
+        stillYValue.textContent = String(stillY);
+
+        upScaleValue.textContent = upScale.toFixed(2);
+        upXValue.textContent = String(upX);
+        upYValue.textContent = String(upY);
+        upAnimStartXValue.textContent = String(upAnimStartX);
+        upAnimEndXValue.textContent = String(upAnimEndX);
         upDurValue.textContent = String(upAnimMs);
+
+        downScaleValue.textContent = downScale.toFixed(2);
+        downXValue.textContent = String(downX);
+        downYValue.textContent = String(downY);
+        downAnimStartXValue.textContent = String(downAnimStartX);
+        downAnimEndXValue.textContent = String(downAnimEndX);
         downDurValue.textContent = String(downAnimMs);
 
+        applyChickTransforms();
         saveChickTuning();
       }
 
@@ -1414,23 +1548,35 @@
         upScaleRange.value = "1.00";
         upXRange.value = "0";
         upYRange.value = "0";
+        upAnimStartXRange.value = "0";
+        upAnimEndXRange.value = "0";
+        upDurRange.value = "900";
 
         downScaleRange.value = "1.00";
         downXRange.value = "0";
         downYRange.value = "0";
-
-        upDurRange.value = "900";
+        downAnimStartXRange.value = "0";
+        downAnimEndXRange.value = "0";
         downDurRange.value = "900";
 
         applyChickTuning();
       }
 
-      [stillScaleRange, stillXRange, stillYRange, upScaleRange, upXRange, upYRange, downScaleRange, downXRange, downYRange, upDurRange, downDurRange]
-        .forEach(el => el.addEventListener("input", applyChickTuning));
+      [
+        stillScaleRange, stillXRange, stillYRange,
+        upScaleRange, upXRange, upYRange, upAnimStartXRange, upAnimEndXRange, upDurRange,
+        downScaleRange, downXRange, downYRange, downAnimStartXRange, downAnimEndXRange, downDurRange
+      ].forEach(el => el.addEventListener("input", applyChickTuning));
 
-      resetChickTuningBtn.addEventListener("click", () => {
+      resetChickTuningBtn.addEventListener("click", () => { beep("tap"); resetChickTuning(); });
+
+      testUpAnimBtn.addEventListener("click", async () => {
         beep("tap");
-        resetChickTuning();
+        await previewChickAnimOnly("up");
+      });
+      testDownAnimBtn.addEventListener("click", async () => {
+        beep("tap");
+        await previewChickAnimOnly("down");
       });
 
       /* Game */
@@ -1459,7 +1605,6 @@
             beep("level");
 
             answersEl.classList.add("answersHidden");
-            answersEl.innerHTML = "";
             clearBoard();
 
             await wait(60);
@@ -1485,7 +1630,6 @@
             beep("level");
 
             answersEl.classList.add("answersHidden");
-            answersEl.innerHTML = "";
             clearBoard();
 
             await wait(60);
