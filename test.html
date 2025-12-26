@@ -52,14 +52,14 @@
       object-fit: contain;
     }
 
-    /* Anchor die op ticks schuift */
+    /* Anchor schuift over de echte zichtbare content van levels.png */
     .progressChickAnchor{
       position:absolute;
-      left: 10%;
       bottom: -10px;
       transform: translateX(-50%);
       width: 82px;
       height: 82px;
+      pointer-events:none;
     }
 
     .progressChickState{
@@ -73,6 +73,15 @@
       will-change: transform, opacity;
       transform-origin: 50% 100%;
     }
+
+    /* Still blijft onder de animatie zichtbaar om flits te voorkomen */
+    .progressChickState.stillLayer{
+      z-index: 1;
+    }
+    .progressChickState.animLayer{
+      z-index: 2;
+    }
+
     .progressChickState.active{ opacity: 1; }
 
     @media (orientation: portrait){
@@ -237,12 +246,12 @@
   <div class="stage" id="stage">
     <button class="openPanelBtn" id="openPanelBtn" type="button">panel</button>
 
-    <div class="progressTimeline" aria-hidden="true">
-      <img class="progressLine" src="levels.png" alt="">
+    <div class="progressTimeline" aria-hidden="true" id="timeline">
+      <img class="progressLine" id="levelsImg" src="levels.png" alt="">
       <div class="progressChickAnchor" id="chickAnchor">
-        <img class="progressChickState active" id="chickStill" src="ballerina_still.gif" alt="">
-        <img class="progressChickState" id="chickUp" src="ballerina_springt.gif" alt="">
-        <img class="progressChickState" id="chickDown" src="ballerina_terug.gif" alt="">
+        <img class="progressChickState stillLayer active" id="chickStill" src="ballerina_still.gif" alt="">
+        <img class="progressChickState animLayer" id="chickUp" src="ballerina_springt.gif" alt="">
+        <img class="progressChickState animLayer" id="chickDown" src="ballerina_terug.gif" alt="">
       </div>
     </div>
 
@@ -281,17 +290,17 @@
 
         <div class="row">
           <div class="label">anchor fine x</div>
-          <input type="range" id="anchorFineXRange" min="-120" max="120" step="1" value="0">
+          <input type="range" id="anchorFineXRange" min="-200" max="200" step="1" value="0">
           <div class="value" id="anchorFineXValue">0</div>
         </div>
 
         <div class="row">
           <div class="label">anchor fine y</div>
-          <input type="range" id="anchorFineYRange" min="-120" max="120" step="1" value="0">
+          <input type="range" id="anchorFineYRange" min="-200" max="200" step="1" value="0">
           <div class="value" id="anchorFineYValue">0</div>
         </div>
 
-        <p class="hint">levels staan gelijkmatig verdeeld tussen start en einde procent, per level schuift hij één streepje</p>
+        <p class="hint">ticks worden verdeeld binnen de echte zichtbare levels afbeelding, dus zonder onzichtbare padding</p>
       </div>
 
       <div class="section">
@@ -422,7 +431,7 @@
           <button class="btn" id="testDownBtn" type="button" disabled>test terug</button>
         </div>
 
-        <p class="hint">bij test verdwijnt het panel direct, animatie start vanaf frame één, na afloop verplaatst still naar volgend of vorig level</p>
+        <p class="hint">panel verdwijnt direct, animatie start op frame 1, still springt pas op het einde één tick</p>
       </div>
     </div>
   </div>
@@ -442,6 +451,9 @@
 
       const statusText = $("statusText");
       const statusSub = $("statusSub");
+
+      const timeline = $("timeline");
+      const levelsImg = $("levelsImg");
 
       const chickAnchor = $("chickAnchor");
       let chickStill = $("chickStill");
@@ -518,19 +530,6 @@
       openPanelBtn.addEventListener("click", () => showPanel());
       panelClose.addEventListener("click", () => hidePanel());
 
-      function deactivateAll(){
-        chickStill.classList.remove("active");
-        chickUp.classList.remove("active");
-        chickDown.classList.remove("active");
-      }
-
-      function restartGif(el){
-        const parent = el.parentElement;
-        const clone = el.cloneNode(false);
-        parent.replaceChild(clone, el);
-        return clone;
-      }
-
       function ensureTickOrder(){
         const start = Number(tickStartRange.value);
         const end = Number(tickEndRange.value);
@@ -544,20 +543,29 @@
         }
       }
 
-      function currentTickPercentForLevel(level){
-        const start = Number(tickStartRange.value);
-        const end = Number(tickEndRange.value);
-        const t = (clamp(level, LEVEL_MIN, LEVEL_MAX) - 1) / (TICK_COUNT - 1);
-        return start + (end - start) * t;
+      function restartGif(el){
+        const parent = el.parentElement;
+        const clone = el.cloneNode(false);
+        clone.className = el.className;
+        clone.style.cssText = el.style.cssText;
+        parent.replaceChild(clone, el);
+        return clone;
       }
 
-      function setAnchorToLevel(level){
-        const p = currentTickPercentForLevel(level);
-        chickAnchor.style.left = `${p}%`;
+      function deactivateAnim(){
+        chickUp.classList.remove("active");
+        chickDown.classList.remove("active");
+      }
 
-        const fineX = Number(anchorFineXRange.value);
-        const fineY = Number(anchorFineYRange.value);
-        chickAnchor.style.transform = `translateX(-50%) translate(${fineX}px, ${fineY}px)`;
+      function setStillVisible(visible){
+        if(visible) chickStill.classList.add("active");
+        else chickStill.classList.remove("active");
+      }
+
+      function setAnimState(state){
+        deactivateAnim();
+        if(state === "up") chickUp.classList.add("active");
+        if(state === "down") chickDown.classList.add("active");
       }
 
       function tStill(){
@@ -585,18 +593,46 @@
         chickDown.style.transform = tDown(Number(downAnimStartXRange.value));
       }
 
-      function setState(state){
-        deactivateAll();
-        if(state === "still"){
-          chickStill.classList.add("active");
-          chickStill.style.transform = tStill();
-          return;
-        }
-        if(state === "up"){
-          chickUp.classList.add("active");
-          return;
-        }
-        chickDown.classList.add("active");
+      function getContainedRect(img){
+        const box = img.getBoundingClientRect();
+        const iw = img.naturalWidth || 1;
+        const ih = img.naturalHeight || 1;
+
+        const scale = Math.min(box.width / iw, box.height / ih);
+        const drawW = iw * scale;
+        const drawH = ih * scale;
+
+        const padX = (box.width - drawW) / 2;
+        const padY = (box.height - drawH) / 2;
+
+        return {
+          left: box.left + padX,
+          top: box.top + padY,
+          width: drawW,
+          height: drawH
+        };
+      }
+
+      function currentTickXForLevel(level){
+        const start = Number(tickStartRange.value) / 100;
+        const end = Number(tickEndRange.value) / 100;
+        const t = (clamp(level, LEVEL_MIN, LEVEL_MAX) - 1) / (TICK_COUNT - 1);
+
+        const content = getContainedRect(levelsImg);
+        const x = content.left + (content.width * (start + (end - start) * t));
+        return x;
+      }
+
+      function setAnchorToLevel(level){
+        const xAbs = currentTickXForLevel(level);
+        const parent = timeline.getBoundingClientRect();
+        const xLocal = xAbs - parent.left;
+
+        const fineX = Number(anchorFineXRange.value);
+        const fineY = Number(anchorFineYRange.value);
+
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.transform = `translateX(-50%) translate(${fineX}px, ${fineY}px)`;
       }
 
       function syncValues(){
@@ -635,7 +671,7 @@
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_v2";
+      const STORAGE_KEY = "chick_timeline_tester_v3";
 
       function snapshot(){
         return {
@@ -798,6 +834,13 @@
         testDownBtn.disabled = false;
       }
 
+      function hidePanelImmediately(){
+        panel.style.display = "none";
+        panel.offsetHeight;
+        panel.style.display = "";
+        hidePanel();
+      }
+
       async function playOnce(direction){
         if(playing) return;
         playing = true;
@@ -810,20 +853,22 @@
 
         setAnchorToLevel(fromLevel);
 
+        setStillVisible(true);
+
         if(direction === "up"){
-          setState("up");
           chickUp = restartGif(chickUp);
-          chickUp.classList.add("progressChickState", "active");
+          chickUp.classList.add("progressChickState", "animLayer");
+          chickUp.style.transform = tUp(Number(upAnimStartXRange.value));
 
-          const startX = Number(upAnimStartXRange.value);
-          const endX = Number(upAnimEndXRange.value);
-          const dur = Number(upDurRange.value);
-
-          chickUp.style.transform = tUp(startX);
+          setAnimState("up");
 
           await raf();
 
           let anim = null;
+          const startX = Number(upAnimStartXRange.value);
+          const endX = Number(upAnimEndXRange.value);
+          const dur = Number(upDurRange.value);
+
           if(interp){
             anim = chickUp.animate(
               [{ transform: tUp(startX) }, { transform: tUp(endX) }],
@@ -834,19 +879,19 @@
           await wait(dur);
           try{ if(anim) anim.cancel(); }catch(e){}
         }else{
-          setState("down");
           chickDown = restartGif(chickDown);
-          chickDown.classList.add("progressChickState", "active");
+          chickDown.classList.add("progressChickState", "animLayer");
+          chickDown.style.transform = tDown(Number(downAnimStartXRange.value));
 
-          const startX = Number(downAnimStartXRange.value);
-          const endX = Number(downAnimEndXRange.value);
-          const dur = Number(downDurRange.value);
-
-          chickDown.style.transform = tDown(startX);
+          setAnimState("down");
 
           await raf();
 
           let anim = null;
+          const startX = Number(downAnimStartXRange.value);
+          const endX = Number(downAnimEndXRange.value);
+          const dur = Number(downDurRange.value);
+
           if(interp){
             anim = chickDown.animate(
               [{ transform: tDown(startX) }, { transform: tDown(endX) }],
@@ -860,9 +905,13 @@
 
         LEVEL = toLevel;
         levelRange.value = String(LEVEL);
+
         setAnchorToLevel(LEVEL);
 
-        setState("still");
+        deactivateAnim();
+        chickStill.style.transform = tStill();
+        setStillVisible(true);
+
         syncValues();
 
         if(returnPanel){
@@ -871,13 +920,6 @@
         }
 
         playing = false;
-      }
-
-      function hidePanelImmediately(){
-        panel.style.display = "none";
-        panel.offsetHeight;
-        panel.style.display = "";
-        hidePanel();
       }
 
       testUpBtn.addEventListener("click", () => {
@@ -892,11 +934,27 @@
         requestAnimationFrame(() => playOnce("down"));
       });
 
+      function initResizeBinding(){
+        const ro = new ResizeObserver(() => {
+          if(playing) {
+            setAnchorToLevel(LEVEL);
+            return;
+          }
+          syncValues();
+        });
+        ro.observe(timeline);
+      }
+
       function init(){
         const didLoad = load();
         if(!didLoad) resetDefaults();
-        setState("still");
+
+        chickStill.style.transform = tStill();
+        setStillVisible(true);
+        deactivateAnim();
+
         syncValues();
+        initResizeBinding();
         warmup();
       }
 
