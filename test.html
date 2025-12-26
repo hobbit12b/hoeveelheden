@@ -79,12 +79,8 @@
     .stillLayer{ z-index: 1; }
     .animLayer{ z-index: 2; }
 
-    #animCanvas{
-      opacity:0;
-    }
-    #animCanvas.active{
-      opacity:1;
-    }
+    #animCanvas{ opacity:0; }
+    #animCanvas.active{ opacity:1; }
 
     @media (orientation: portrait){
       .progressTimeline{
@@ -252,7 +248,6 @@
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
 
       <div class="progressChickAnchor" id="chickAnchor">
-        <!-- Still is basislaag -->
         <img
           class="chickLayer stillLayer active"
           id="stillImg"
@@ -261,11 +256,9 @@
           draggable="false"
         >
 
-        <!-- Hidden sources voor canvas -->
         <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
         <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
 
-        <!-- Wat je ziet tijdens animatie -->
         <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
       </div>
     </div>
@@ -287,7 +280,7 @@
 
         <div class="row">
           <div class="label">huidig level</div>
-          <input type="range" id="levelRange" min="1" max="5" step="1" value="1">
+          <input type="range" id="levelRange" min="1" max="9" step="1" value="1">
           <div class="value" id="levelValue">1</div>
         </div>
 
@@ -299,8 +292,8 @@
 
         <div class="row">
           <div class="label">tick einde procent</div>
-          <input type="range" id="tickEndRange" min="0" max="100" step="0.1" value="49.7">
-          <div class="value" id="tickEndValue">49.7</div>
+          <input type="range" id="tickEndRange" min="0" max="100" step="0.1" value="48.7">
+          <div class="value" id="tickEndValue">48.7</div>
         </div>
 
         <div class="row">
@@ -464,7 +457,7 @@
           <button class="btn" id="testDownBtn" type="button">test terug</button>
         </div>
 
-        <p class="hint">still is uit tijdens animatie, animatie tekent in canvas met wit transparant, level springt pas na laatste frame</p>
+        <p class="hint">still is uit tijdens animatie, wissel pas na het eerste echte frame, level springt pas na laatste frame</p>
       </div>
     </div>
   </div>
@@ -558,10 +551,14 @@
       const testUpBtn = $("testUpBtn");
       const testDownBtn = $("testDownBtn");
 
-      let LEVEL = 1;
+      /* Levels 1 t/m 9, nooit daarbuiten */
       const LEVEL_MIN = 1;
-      const LEVEL_MAX = 5;
-      const TICK_COUNT = LEVEL_MAX;
+      const LEVEL_MAX = 9;
+      let LEVEL = clamp(Number(levelRange.value), LEVEL_MIN, LEVEL_MAX);
+
+      /* Calibratie blijft jouw goede set: level 1 tot en met 5 */
+      const CALIB_MIN = 1;
+      const CALIB_MAX = 5;
 
       let playing = false;
       let xAnim = null;
@@ -599,12 +596,19 @@
         return { left: box.left + padX, top: box.top + padY, width: drawW, height: drawH };
       }
 
+      function tickPercentForLevel(level){
+        const start = Number(tickStartRange.value); /* hoort bij level 1 */
+        const end = Number(tickEndRange.value);     /* hoort bij level 5 */
+        const denom = Math.max(1, (CALIB_MAX - CALIB_MIN));
+        const step = (end - start) / denom;
+        const p = start + step * (level - CALIB_MIN);
+        return clamp(p, 0, 100);
+      }
+
       function currentTickXForLevel(level){
-        const start = Number(tickStartRange.value) / 100;
-        const end = Number(tickEndRange.value) / 100;
-        const t = (clamp(level, LEVEL_MIN, LEVEL_MAX) - 1) / (TICK_COUNT - 1);
+        const p = tickPercentForLevel(clamp(level, LEVEL_MIN, LEVEL_MAX)) / 100;
         const content = getContainedRect(levelsImg);
-        return content.left + (content.width * (start + (end - start) * t));
+        return content.left + (content.width * p);
       }
 
       function setAnchorToLevel(level){
@@ -642,7 +646,7 @@
         clearCanvas();
       }
 
-      function showAnimCanvas(){
+      function showCanvasOnly(){
         stillImg.classList.remove("active");
         animCanvas.classList.add("active");
       }
@@ -671,10 +675,11 @@
       }
 
       function drawFrame(videoEl){
-        if(!setCanvasSizeToVideo(videoEl)) return;
+        if(!setCanvasSizeToVideo(videoEl)) return false;
         ctx.clearRect(0, 0, animCanvas.width, animCanvas.height);
         ctx.drawImage(videoEl, 0, 0);
         applyChromaKeyWhite();
+        return true;
       }
 
       async function ensureReady(videoEl){
@@ -725,6 +730,48 @@
         return { start: s, end: e, durMs: (e - s) * 1000 };
       }
 
+      async function seekTo(videoEl, timeSec){
+        return await new Promise(resolve => {
+          let done = false;
+
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(ok);
+          };
+
+          const onSeeked = () => finish(true);
+          const onErr = () => finish(false);
+
+          const cleanup = () => {
+            videoEl.removeEventListener("seeked", onSeeked);
+            videoEl.removeEventListener("error", onErr);
+          };
+
+          videoEl.addEventListener("seeked", onSeeked, { once:true });
+          videoEl.addEventListener("error", onErr, { once:true });
+
+          try{
+            videoEl.currentTime = Math.max(0, Number(timeSec) || 0);
+          }catch(e){
+            cleanup();
+            resolve(false);
+            return;
+          }
+
+          setTimeout(() => finish(true), 700);
+        });
+      }
+
+      async function prewarmVideo(videoEl, startSec){
+        const ok = await ensureReady(videoEl);
+        if(!ok) return false;
+        stopVideo(videoEl);
+        await seekTo(videoEl, startSec);
+        return true;
+      }
+
       async function playSegmentOnCanvas(videoEl, cfg){
         cancelXAnim();
 
@@ -735,15 +782,17 @@
 
         stopVideo(videoEl);
 
-        try{
-          videoEl.currentTime = start;
-        }catch(e){
-          return false;
-        }
+        const seekOk = await seekTo(videoEl, start);
+        if(!seekOk) return false;
 
         animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
 
-        showAnimCanvas();
+        /* Eerst een echt frame tekenen terwijl de png nog zichtbaar is */
+        const drew = drawFrame(videoEl);
+        if(!drew) return false;
+
+        /* Nu pas wisselen, zodat er geen leeg moment is */
+        showCanvasOnly();
         await raf();
 
         xAnim = animCanvas.animate(
@@ -862,7 +911,7 @@
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_canvas_mp4_v1";
+      const STORAGE_KEY = "chick_timeline_tester_canvas_mp4_v3_level1_9_no_gap";
 
       function snapshot(){
         return {
@@ -900,7 +949,7 @@
       function applySnap(s){
         if(!s) return;
 
-        LEVEL = clamp(Number(s.LEVEL || 1), LEVEL_MIN, LEVEL_MAX);
+        LEVEL = clamp(Number(s.LEVEL ?? levelRange.value), LEVEL_MIN, LEVEL_MAX);
         levelRange.value = String(LEVEL);
 
         tickStartRange.value = String(s.tickStart ?? tickStartRange.value);
@@ -953,7 +1002,7 @@
         levelRange.value = "1";
 
         tickStartRange.value = "8.1";
-        tickEndRange.value = "49.7";
+        tickEndRange.value = "48.7";
         anchorFineXRange.value = "0";
         anchorFineYRange.value = "0";
 
@@ -994,7 +1043,6 @@
         const toLevel = clamp(direction === "up" ? fromLevel + 1 : fromLevel - 1, LEVEL_MIN, LEVEL_MAX);
 
         setAnchorToLevel(fromLevel);
-
         showOnlyStill();
 
         const cfg = (direction === "up")
@@ -1070,6 +1118,17 @@
 
         showOnlyStill();
         refreshAllFrameBounds();
+
+        /* Prewarm seek naar startframes, scheelt de eerste hapering */
+        const upStartSec = Number(upStartFrameRange.value) / Math.max(1, Number(upFpsRange.value));
+        const downStartSec = Number(downStartFrameRange.value) / Math.max(1, Number(downFpsRange.value));
+
+        try{
+          await Promise.all([
+            prewarmVideo(upVid, upStartSec),
+            prewarmVideo(downVid, downStartSec)
+          ]);
+        }catch(e){}
       }
 
       const inputs = [
@@ -1115,6 +1174,9 @@
 
         stillImg.style.transform = tStill();
         showOnlyStill();
+
+        LEVEL = clamp(LEVEL, LEVEL_MIN, LEVEL_MAX);
+        levelRange.value = String(LEVEL);
 
         syncValues();
         initResizeBinding();
