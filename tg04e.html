@@ -25,6 +25,11 @@
 
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
+
+      --activeFill: rgba(229, 140, 116, 0.18);
+
+      /* landscape alignment helper */
+      --answersShiftY: 0px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -166,15 +171,14 @@
       justify-content:center;
       overflow:hidden;
       position:relative;
+      aspect-ratio: 520 / 380;
     }
 
     @media (orientation: portrait){
       .flashBoard{
-        width: min(520px, 90%);
+        width: min(440px, 92%);
         height: auto;
-        aspect-ratio: 1.5 / 1;
-        transform: scale(0.90);
-        transform-origin: center;
+        transform: none;
       }
     }
 
@@ -184,6 +188,13 @@
       display:flex;
       align-items:center;
       justify-content:center;
+    }
+
+    .flashSvg svg{
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
     }
 
     .scanStage{
@@ -236,6 +247,8 @@
       transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
       transform: translateZ(0);
       will-change: transform, opacity;
+      position: relative;
+      overflow: hidden;
     }
 
     @media (orientation: landscape){
@@ -279,7 +292,7 @@
       padding: 24px;
     }
     .startCard{
-      width: min(560px, 92vw);
+      width: min(740px, 92vw);
       background: #ffffff;
       border-radius: 24px;
       box-shadow: var(--shadow);
@@ -293,17 +306,18 @@
       text-transform: lowercase;
     }
     .startCard p{
-      margin: 0 0 16px 0;
+      margin: 0 0 14px 0;
       color: rgba(77,74,72,0.82);
       font-size: 18px;
       line-height: 1.35;
     }
+
     .startBtn{
       appearance:none;
       border:none;
       background: var(--brand);
       color:#fff;
-      font-weight: 800;
+      font-weight: 900;
       padding: 14px 18px;
       border-radius: 18px;
       font-size: 18px;
@@ -313,12 +327,11 @@
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Instellingenpaneel blijft bestaan, maar zonder sliders voor animatie timing */
     .tunePanel{
       position: fixed;
       right: 18px;
       bottom: 18px;
-      width: min(560px, calc(100vw - 36px));
+      width: min(620px, calc(100vw - 36px));
       background: rgba(255,255,255,0.98);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -408,6 +421,107 @@
       color:#4d4a48;
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+
+    .cardWrap{
+      width:100%;
+      height:100%;
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+    }
+    .cardBack{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      background:#f8c3b0;
+      font-size:32px;
+      background-image: url("vogeltje_achterkantkaart.png");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .cardFront{
+      width:100%;
+      height:100%;
+      display:none;
+      place-items:center;
+      background:#ffffff;
+    }
+    .ansBtn.cardOpen .cardFront{ display:grid; }
+    .ansBtn.cardOpen .cardBack{ display:none; }
+
+    /* landscape: antwoordknoppen automatisch op dezelfde onderlijn als het vragenvak */
+    @media (orientation: landscape){
+      #answersWrap{
+        transform: translateY(var(--answersShiftY, 0px));
+        transition: transform 160ms ease;
+        will-change: transform;
+      }
+    }
+
+    /* voortgangstijdlijn met kuikentje */
+    .progressTimeline{
+      position: fixed;
+      top: calc(14px + env(safe-area-inset-top));
+      right: calc(14px + env(safe-area-inset-right));
+      width: min(520px, 58vw);
+      height: 96px;
+      z-index: 950;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .progressLine{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: contain;
+    }
+
+    .progressChickAnchor{
+      position:absolute;
+      bottom: -10px;
+      transform: translateX(-50%);
+      width: 82px;
+      height: 82px;
+      pointer-events:none;
+      transition: left 520ms cubic-bezier(.22,.61,.35,1);
+    }
+
+    .chickLayer{
+      position:absolute;
+      left:0;
+      bottom:0;
+      width: 82px;
+      height: auto;
+      opacity: 0;
+      pointer-events:none;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+      display:block;
+    }
+    .chickLayer.active{ opacity: 1; }
+
+    .stillLayer{ z-index: 3; }
+    .animLayer{ z-index: 2; }
+
+    #animCanvas{ opacity:0; }
+    #animCanvas.active{ opacity:1; }
+
+    @media (orientation: portrait){
+      .progressTimeline{
+        top: calc(10px + env(safe-area-inset-top));
+        right: calc(10px + env(safe-area-inset-right));
+        width: min(680px, 92vw);
+        height: 100px;
+      }
+      .progressChickAnchor{ width: 78px; height: 78px; }
+      .chickLayer{ width: 78px; }
+    }
   </style>
 </head>
 
@@ -424,7 +538,7 @@
       </button>
 
       <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
-      <div class="titlePill">slim kijken</div>
+      <div class="titlePill" id="titlePill">slim kijken</div>
     </div>
 
     <div class="content">
@@ -444,10 +558,21 @@
     </div>
   </section>
 
+  <!-- voortgangstijdlijn -->
+  <div class="progressTimeline" aria-hidden="true" id="timeline">
+    <img class="progressLine" id="levelsImg" src="levels.png" alt="">
+    <div class="progressChickAnchor" id="chickAnchor">
+      <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+      <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+      <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+      <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+    </div>
+  </div>
+
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>tik om te starten</h1>
-      <p>Je ziet stippen heel kort, daarna kies je wat je zag.</p>
+      <p>Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.</p>
       <button class="startBtn" id="startBtn" type="button">Start</button>
     </div>
   </div>
@@ -459,12 +584,22 @@
     </div>
 
     <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
+      <div style="font-weight:900; font-size:16px; text-transform: lowercase;">
+        huidig level: <span id="tuneLevelValue">1</span>
+      </div>
+      <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
+        level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
+      </div>
+    </div>
+
+    <div class="tuneSection">
       <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
 
       <div class="tuneRow">
         <div class="tuneLabel">flitstijd</div>
-        <input type="range" id="flashMsRange" min="350" max="1400" step="50" value="650" />
-        <div class="tuneValue" id="flashMsValue">650</div>
+        <input type="range" id="flashMsRange" min="300" max="2400" step="50" value="300" />
+        <div class="tuneValue" id="flashMsValue">300</div>
       </div>
     </div>
 
@@ -481,13 +616,24 @@
     (() => {
       "use strict";
 
+      /* pas hier je bestandsnamen aan als ze anders heten */
+      const ASSETS = {
+        levelsImg: "levels.png",
+        stillImg: "ballerina_still.png",
+        upVid: "ballerina_springt.mp4",
+        downVid: "ballerina_terug.mp4"
+      };
+
       const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
       const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
 
       const startOverlay = document.getElementById("startOverlay");
       const startBtn = document.getElementById("startBtn");
+
+      const titlePill = document.getElementById("titlePill");
 
       const homeBtn = document.getElementById("homeBtn");
       const tuneBtn = document.getElementById("tuneBtn");
@@ -496,6 +642,7 @@
 
       const flashMsRange = document.getElementById("flashMsRange");
       const flashMsValue = document.getElementById("flashMsValue");
+      const tuneLevelValue = document.getElementById("tuneLevelValue");
 
       const newRoundBtn = document.getElementById("newRoundBtn");
       const testWrongBtn = document.getElementById("testWrongBtn");
@@ -504,14 +651,85 @@
       const flashSvg = document.getElementById("flashSvg");
       const answersEl = document.getElementById("answers");
       const scanArea = document.getElementById("scanArea");
+      const answersWrap = document.getElementById("answersWrap");
+      const gameCard = document.getElementById("gameCard");
 
-      /* Definitieve timing waarden (geen sliders meer) */
-      const WAIT_BEFORE_IN_MS = 0;  // wachttijd vóór binnenkomst
-      const IN_DUR_MS = 800;        // snelheid binnenschuiven
-      const OUT_DUR_MS = 750;       // snelheid terugschuiven
+      /* Tijdlijn elementen */
+      const timeline = document.getElementById("timeline");
+      const levelsImg = document.getElementById("levelsImg");
+      const chickAnchor = document.getElementById("chickAnchor");
 
-      /* Flits blijft instelbaar (zoals je al had) */
+      const stillImg = document.getElementById("stillImg");
+      const upVid = document.getElementById("upVid");
+      const downVid = document.getElementById("downVid");
+      const animCanvas = document.getElementById("animCanvas");
+      const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
+
+      /* zet assets, zodat je alleen ASSETS hoeft aan te passen */
+      function applyAssetNames(){
+        try{
+          if(levelsImg && ASSETS.levelsImg) levelsImg.src = ASSETS.levelsImg;
+          if(stillImg && ASSETS.stillImg) stillImg.src = ASSETS.stillImg;
+          if(upVid && ASSETS.upVid) upVid.src = ASSETS.upVid;
+          if(downVid && ASSETS.downVid) downVid.src = ASSETS.downVid;
+        }catch(e){}
+      }
+      applyAssetNames();
+
+      /* Timing knoppen animatie */
+      const WAIT_BEFORE_IN_MS = 0;
+      const IN_DUR_MS = 800;
+      const OUT_DUR_MS = 750;
+
+      /* Kaarten, openklappen, klik mag zodra de eerste kaart open is */
+      const PREVIEW_GAP_MS = 120;
+      const PREVIEW_MS = 1700;
+
+      /* Flits instelbaar */
       let flashMs = Number(flashMsRange.value);
+
+      /* Level */
+      let LEVEL = 1;
+
+      /* Progressie */
+      let streakGood = 0;
+      let streakBad = 0;
+
+      function usesAnswerCards(){
+        return LEVEL >= 2;
+      }
+
+      function setLevel(n, opts = {}){
+        LEVEL = clamp(n, 1, 9);
+        titlePill.textContent = `slim kijken, level ${LEVEL}`;
+        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+
+        if(!opts.deferTimeline){
+          setAnchorToLevel(LEVEL);
+        }
+      }
+
+      function maxForLevel(){
+        if(LEVEL === 1) return 4;
+        if(LEVEL <= 3) return 6;
+        return 9;
+      }
+
+      /* Minder vaak 1 */
+      function pickNumberWeighted(cap){
+        const w1 = 0.30;
+        const weights = [];
+        for(let i=1;i<=cap;i++){
+          weights.push(i === 1 ? w1 : 1);
+        }
+        const sum = weights.reduce((a,b) => a + b, 0);
+        let r = Math.random() * sum;
+        for(let i=0;i<weights.length;i++){
+          r -= weights[i];
+          if(r <= 0) return i + 1;
+        }
+        return cap;
+      }
 
       /* WebAudio beep */
       let audioCtx = null;
@@ -525,34 +743,176 @@
           if(type === "ok") o.frequency.setValueAtTime(740, t);
           if(type === "no") o.frequency.setValueAtTime(220, t);
           if(type === "tap") o.frequency.setValueAtTime(520, t);
+          if(type === "level") o.frequency.setValueAtTime(620, t);
           g.gain.setValueAtTime(0.0001, t);
           g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + (type==="ok"?0.12:0.18));
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
           o.connect(g); g.connect(audioCtx.destination);
           o.start(t); o.stop(t + 0.22);
         }catch(e){}
       }
 
-      /* Dots */
+      /* Dobbelpunten, uitgebreid tot en met 9 */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
         bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
       };
+
       const diceFaces = {
         1: [P.mc],
         2: [P.tl, P.br],
         3: [P.tl, P.mc, P.br],
         4: [P.tl, P.tr, P.bl, P.br],
         5: [P.tl, P.tr, P.mc, P.bl, P.br],
-        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br],
+        7: [P.tl, P.tc, P.tr, P.ml, P.mc, P.mr, P.bl],
+        8: [P.tl, P.tc, P.tr, P.ml, P.mr, P.bl, P.bc, P.br],
+        9: [P.tl, P.tc, P.tr, P.ml, P.mc, P.mr, P.bl, P.bc, P.br]
       };
 
-      function patternLevel1(n){
-        return [{
-          dots: diceFaces[n],
-          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
-        }];
+      function patternDice(n){
+        const dots = diceFaces[n] || diceFaces[1];
+        return [{ dots, box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88} }];
+      }
+
+      /* Basispunten voor variaties */
+      const L = {
+        a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
+        d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
+        m:[0.50,0.50],
+        r:[0.86,0.50],
+        l:[0.14,0.50]
+      };
+
+      const V = {
+        l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
+        r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
+      };
+
+      /* Variaties 1-4 */
+      const VARS_1TO4 = {
+        1: [
+          [L.m],
+          [L.b],
+          [L.e]
+        ],
+        2: [
+          [L.a, L.c],
+          [L.b, L.e],
+          [L.a, L.f]
+        ],
+        3: [
+          [L.a, L.b, L.c],
+          [L.a, L.m, L.f],
+          [L.a, L.d, L.f]
+        ],
+        4: [
+          [L.a, L.c, L.d, L.f],
+          [L.a, L.b, L.c, L.m],
+          [L.a, L.d, L.f, L.b]
+        ]
+      };
+
+      const VARS_5 = [
+        [L.a, L.b, L.c, L.d, L.e],
+        [L.a, L.c, L.d, L.f, L.m],
+        [L.a, L.c, L.d, L.f, L.b]
+      ];
+      const VARS_6 = [
+        [L.a, L.b, L.c, L.d, L.e, L.f],
+        [V.l1, V.l2, V.l3, V.r1, V.r2, V.r3],
+        [L.a, L.c, L.m, L.d, L.f, L.r]
+      ];
+
+      function allowedVariantCountQuestion(n){
+        if(LEVEL === 1) return 1;
+        if(LEVEL === 2) return 1;
+
+        if(LEVEL === 3){
+          if(n <= 4) return 3;
+          if(n <= 6) return 2;
+          return 1;
+        }
+
+        if(LEVEL === 4){
+          if(n <= 4) return 3;
+          if(n === 5) return 2;
+          if(n === 6) return 3;
+          return 1;
+        }
+
+        if(LEVEL >= 5){
+          if(n <= 4) return 3;
+          if(n === 5) return 3;
+          if(n === 6) return 3;
+          return 1;
+        }
+
+        return 1;
+      }
+
+      function pickVariantIndexForQuestion(n){
+        const k = allowedVariantCountQuestion(n);
+        if(k <= 1) return 0;
+        return randInt(0, k - 1);
+      }
+
+      function patternQuestion(n, variantIndex){
+        if(LEVEL === 1) return patternDice(n);
+        if(LEVEL === 2) return patternDice(n);
+
+        if(n > 6){
+          return patternDice(n);
+        }
+
+        if(LEVEL === 3){
+          if(n <= 4){
+            const arr = VARS_1TO4[n] || [];
+            const dots = arr[clamp(variantIndex, 0, arr.length-1)] || [];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n === 5){
+            const dots = VARS_5[clamp(variantIndex, 0, 1)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n === 6){
+            const dots = VARS_6[clamp(variantIndex, 0, 1)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+        }
+
+        if(LEVEL >= 4){
+          if(n <= 4){
+            const arr = VARS_1TO4[n] || [];
+            const dots = arr[clamp(variantIndex, 0, 2)] || [];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n === 5){
+            const dots = VARS_5[clamp(variantIndex, 0, 2)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n === 6){
+            const dots = VARS_6[clamp(variantIndex, 0, 2)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+        }
+
+        return patternDice(n);
+      }
+
+      /* Antwoordpatronen, rustig en herkenbaar */
+      function patternAnswer(n){
+        if(n <= 4){
+          return patternDice(n);
+        }
+        if(n === 5){
+          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        }
+        if(n === 6){
+          return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        }
+        return patternDice(n);
       }
 
       function svgForDots(dotSets, opts = {}){
@@ -573,7 +933,7 @@
           <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" />
         `).join("");
 
-        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${cs}</svg>`;
+        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cs}</svg>`;
       }
 
       function setBoard(html){ flashSvg.innerHTML = html; }
@@ -589,13 +949,40 @@
         }, ms + 40);
       }
 
+      /* Antwoordopties */
       function buildOptions(correct){
-        const cap = 6;
+        const cap = maxForLevel();
+
+        if(LEVEL >= 6){
+          const options = new Set([correct]);
+          const candidates = [
+            correct - 1, correct + 1,
+            correct - 2, correct + 2,
+            correct - 3, correct + 3
+          ].map(v => clamp(v, 1, cap));
+
+          for(const c of candidates){
+            options.add(c);
+            if(options.size >= 3) break;
+          }
+          while(options.size < 3){
+            options.add(randInt(1, cap));
+          }
+
+          const arr = [...options];
+          for(let i=arr.length-1;i>0;i--){
+            const j = Math.floor(Math.random()*(i+1));
+            [arr[i],arr[j]] = [arr[j],arr[i]];
+          }
+          return arr;
+        }
+
         const options = new Set([correct]);
         while(options.size < 3){
-          const delta = [ -2, -1, 1, 2 ][randInt(0,3)];
+          const delta = pick([ -2, -1, 1, 2 ]);
           options.add(clamp(correct + delta, 1, cap));
         }
+
         const arr = [...options];
         for(let i=arr.length-1;i>0;i--){
           const j = Math.floor(Math.random()*(i+1));
@@ -606,29 +993,6 @@
 
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
-
-      function renderAnswers(correct, onPick){
-        const arr = buildOptions(correct);
-        answersEl.innerHTML = "";
-
-        arr.forEach(v => {
-          const btn = document.createElement("button");
-          btn.className = "ansBtn";
-          btn.type = "button";
-
-          btn.addEventListener("pointerdown", () => {
-            btn.classList.remove("pressBounce");
-            void btn.offsetWidth;
-            btn.classList.add("pressBounce");
-          }, {passive:true});
-
-          btn.addEventListener("click", () => onPick(btn, v));
-
-          const svg = svgForDots(patternLevel1(v), {dotRadius: 12});
-          btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
-          answersEl.appendChild(btn);
-        });
-      }
 
       function isPortrait(){
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
@@ -658,6 +1022,42 @@
           rects.sort((u,v) => v.r.top - u.r.top);
         }
         return rects.map(x => x.b);
+      }
+
+      /* landscape uitlijning: onderkant onderste knop gelijk met onderkant vragenvak */
+      function applyLandscapeAnswerAlign(){
+        if(!answersWrap || !answersEl || !scanArea || !gameCard) return;
+
+        if(isPortrait()){
+          answersWrap.style.setProperty("--answersShiftY", "0px");
+          return;
+        }
+
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length){
+          answersWrap.style.setProperty("--answersShiftY", "0px");
+          return;
+        }
+
+        const cardRect = gameCard.getBoundingClientRect();
+        const areaRect = scanArea.getBoundingClientRect();
+
+        let groupTop = Infinity;
+        let groupBottom = -Infinity;
+        for(const b of btns){
+          const r = b.getBoundingClientRect();
+          groupTop = Math.min(groupTop, r.top);
+          groupBottom = Math.max(groupBottom, r.bottom);
+        }
+
+        const desiredDy = cardRect.bottom - groupBottom;
+
+        const pad = 18;
+        const minDy = (areaRect.top + pad) - groupTop;
+        const maxDy = (areaRect.bottom - pad) - groupBottom;
+
+        const dy = clamp(desiredDy, minDy, maxDy);
+        answersWrap.style.setProperty("--answersShiftY", `${dy.toFixed(1)}px`);
       }
 
       async function animateInButtons(){
@@ -717,53 +1117,529 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
+      function renderAnswers(correct, onPick){
+        const arr = buildOptions(correct);
+        answersEl.innerHTML = "";
+
+        arr.forEach(v => {
+          const btn = document.createElement("button");
+          btn.className = "ansBtn";
+          btn.type = "button";
+
+          btn.addEventListener("pointerdown", () => {
+            btn.classList.remove("pressBounce");
+            void btn.offsetWidth;
+            btn.classList.add("pressBounce");
+          }, {passive:true});
+
+          btn.addEventListener("click", () => onPick(btn, v));
+
+          if(usesAnswerCards()){
+            const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
+            btn.innerHTML = `
+              <div class="cardWrap">
+                <div class="cardBack" aria-hidden="true"></div>
+                <div class="cardFront">${svg}</div>
+              </div>
+            `;
+          }else{
+            const svg = svgForDots(patternDice(v), {dotRadius: 12});
+            btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
+          }
+
+          answersEl.appendChild(btn);
+        });
+      }
+
+      /* Preview, niet blokkerend */
+      let previewToken = 0;
+
+      async function previewCardsNonBlocking(){
+        if(!usesAnswerCards()) return;
+        const myToken = ++previewToken;
+
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
+
+        await wait(PREVIEW_GAP_MS);
+
+        for(let i=0;i<btns.length;i++){
+          if(previewToken !== myToken) return;
+          btns[i].classList.add("cardOpen");
+          await wait(90);
+        }
+
+        if(previewToken !== myToken) return;
+        await wait(PREVIEW_MS);
+
+        if(previewToken !== myToken) return;
+        btns.forEach(b => b.classList.remove("cardOpen"));
+      }
+
       /* Game */
       let started = false;
       let locked = false;
       let correct = 1;
+      let questionVariantIndex = 0;
+
+      function resetStreaks(){
+        streakGood = 0;
+        streakBad = 0;
+      }
+
+      /* Tijdlijn berekening, gebaseerd op je tester */
+      const TL_LEVEL_MIN = 1;
+      const TL_LEVEL_MAX = 9;
+
+      const TL_CALIB_MIN = 1;
+      const TL_CALIB_MAX = 5;
+
+      const TL_TICK_START = 8.1;
+      const TL_TICK_END = 48.7;
+
+      const TL_FINE_X = 0;
+      const TL_FINE_Y = 0;
+      const TL_WHITE_THRESH = 255;
+
+      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+
+      let chickPlaying = false;
+      let chickXAnim = null;
+
+      function timelineReady(){
+        return timeline && levelsImg && chickAnchor && stillImg;
+      }
+
+      function getContainedRect(img){
+        const box = img.getBoundingClientRect();
+        const iw = img.naturalWidth || 1;
+        const ih = img.naturalHeight || 1;
+        const scale = Math.min(box.width / iw, box.height / ih);
+        const drawW = iw * scale;
+        const drawH = ih * scale;
+        const padX = (box.width - drawW) / 2;
+        const padY = (box.height - drawH) / 2;
+        return { left: box.left + padX, top: box.top + padY, width: drawW, height: drawH };
+      }
+
+      function tickPercentForLevel(level){
+        const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
+        const start = TL_TICK_START;
+        const end = TL_TICK_END;
+
+        const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
+        const step = (end - start) / denom;
+
+        const p = start + step * (lv - TL_CALIB_MIN);
+        return clamp(p, 0, 100);
+      }
+
+      function currentTickXForLevel(level){
+        if(!levelsImg.naturalWidth) return null;
+        const p = tickPercentForLevel(level) / 100;
+        const content = getContainedRect(levelsImg);
+        return content.left + (content.width * p);
+      }
+
+      function setAnchorToLevel(level){
+        if(!timelineReady()) return;
+
+        const xAbs = currentTickXForLevel(level);
+        if(xAbs == null) return;
+
+        const parent = timeline.getBoundingClientRect();
+        const xLocal = xAbs - parent.left;
+
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.transform = `translateX(-50%) translate(${TL_FINE_X}px, ${TL_FINE_Y}px)`;
+      }
+
+      function cancelChickXAnim(){
+        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+        chickXAnim = null;
+      }
+
+      function showOnlyStill(){
+        if(!timelineReady()) return;
+        stillImg.classList.add("active");
+        if(animCanvas) animCanvas.classList.remove("active");
+      }
+
+      function showCanvas(){
+        if(animCanvas) animCanvas.classList.add("active");
+      }
+
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+      }
+
+      function setCanvasSizeToVideo(videoEl){
+        if(!animCanvas) return false;
+        const w = videoEl.videoWidth || 0;
+        const h = videoEl.videoHeight || 0;
+        if(!w || !h) return false;
+        if(animCanvas.width !== w) animCanvas.width = w;
+        if(animCanvas.height !== h) animCanvas.height = h;
+        return true;
+      }
+
+      function applyChromaKeyWhite(){
+        if(!chickCtx || !animCanvas) return;
+        const t = TL_WHITE_THRESH;
+        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+        const d = img.data;
+        for(let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i+1], b = d[i+2];
+          if(r >= t && g >= t && b >= t) d[i+3] = 0;
+        }
+        chickCtx.putImageData(img, 0, 0);
+      }
+
+      function drawFrame(videoEl){
+        if(!chickCtx || !animCanvas) return false;
+        if(!setCanvasSizeToVideo(videoEl)) return false;
+        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+        chickCtx.drawImage(videoEl, 0, 0);
+        applyChromaKeyWhite();
+        return true;
+      }
+
+      async function ensureReady(videoEl){
+        if(videoEl.readyState >= 2) return true;
+
+        return await new Promise(resolve => {
+          let done = false;
+
+          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+          const cleanup = () => {
+            videoEl.removeEventListener("loadeddata", ok);
+            videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("error", bad);
+          };
+
+          videoEl.addEventListener("loadeddata", ok, { once:true });
+          videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("error", bad, { once:true });
+
+          try{ videoEl.load(); }catch(e){}
+
+          setTimeout(() => {
+            cleanup();
+            resolve(videoEl.readyState >= 1);
+          }, 900);
+        });
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const f = Math.max(1, Number(fps));
+        const s = Math.max(0, Number(startFrame) / f);
+        const e = Math.max(s + (1 / f), Number(endFrame) / f);
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      async function seekTo(videoEl, timeSec){
+        return await new Promise(resolve => {
+          let done = false;
+
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(ok);
+          };
+
+          const onSeeked = () => finish(true);
+          const onErr = () => finish(false);
+
+          const cleanup = () => {
+            videoEl.removeEventListener("seeked", onSeeked);
+            videoEl.removeEventListener("error", onErr);
+          };
+
+          videoEl.addEventListener("seeked", onSeeked, { once:true });
+          videoEl.addEventListener("error", onErr, { once:true });
+
+          try{
+            videoEl.currentTime = Math.max(0, Number(timeSec) || 0);
+          }catch(e){
+            cleanup();
+            resolve(false);
+            return;
+          }
+
+          setTimeout(() => finish(true), 700);
+        });
+      }
+
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+        if(!animCanvas || !chickCtx) return false;
+
+        cancelChickXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+
+        stopVideo(videoEl);
+        await seekTo(videoEl, times.start);
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+        let playingOk = true;
+        try{
+          await videoEl.play();
+        }catch(e){
+          playingOk = false;
+        }
+        if(!playingOk) return false;
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        const gotFirstFrame = await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+
+          const maxWait = setTimeout(() => finish(false), 900);
+
+          if(useRVFC){
+            videoEl.requestVideoFrameCallback(() => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }else{
+            const onTime = () => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.addEventListener("timeupdate", onTime, { once:true });
+
+            requestAnimationFrame(() => {
+              if(done) return;
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }
+        });
+
+        if(!gotFirstFrame){
+          try{ videoEl.pause(); }catch(e){}
+          return false;
+        }
+
+        showCanvas();
+        stillImg.classList.remove("active");
+        await raf();
+
+        chickXAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: times.durMs, easing: "linear", fill: "forwards" }
+        );
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        cancelChickXAnim();
+
+        stillImg.classList.add("active");
+        await raf();
+        animCanvas.classList.remove("active");
+
+        return true;
+      }
+
+      async function animateTimeline(fromLevel, toLevel){
+        if(!timelineReady()) return;
+
+        setAnchorToLevel(fromLevel);
+        showOnlyStill();
+
+        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+        if(!hasMp4){
+          setAnchorToLevel(toLevel);
+          try{
+            chickAnchor.animate(
+              [
+                { transform: `translateX(-50%) translate(${TL_FINE_X}px, ${TL_FINE_Y}px) scale(1)` },
+                { transform: `translateX(-50%) translate(${TL_FINE_X}px, ${TL_FINE_Y}px) scale(1.08)` },
+                { transform: `translateX(-50%) translate(${TL_FINE_X}px, ${TL_FINE_Y}px) scale(1)` }
+              ],
+              { duration: 420, easing: "cubic-bezier(.22,.61,.35,1)" }
+            );
+          }catch(e){}
+          return;
+        }
+
+        if(chickPlaying) return;
+        chickPlaying = true;
+
+        stopVideo(upVid);
+        stopVideo(downVid);
+        showOnlyStill();
+
+        const dir = toLevel > fromLevel ? "up" : "down";
+        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+        const vid = dir === "up" ? upVid : downVid;
+
+        await playSegmentOnCanvasNoFlash(vid, cfg);
+
+        setAnchorToLevel(toLevel);
+        showOnlyStill();
+
+        chickPlaying = false;
+      }
+
+      function initTimeline(){
+        if(!timelineReady()) return;
+
+        chickAnchor.style.left = "0px";
+        showOnlyStill();
+
+        const apply = () => setAnchorToLevel(LEVEL);
+
+        if(levelsImg.complete && levelsImg.naturalWidth) apply();
+        else levelsImg.addEventListener("load", apply, { once:true });
+
+        if(typeof ResizeObserver === "function"){
+          const ro = new ResizeObserver(() => apply());
+          ro.observe(timeline);
+        }
+
+        window.addEventListener("resize", apply);
+        window.addEventListener("orientationchange", apply);
+      }
+
+      async function handleAutoLevelOnGood(){
+        streakGood += 1;
+        streakBad = 0;
+
+        if(streakGood >= 5){
+          const before = LEVEL;
+
+          setLevel(LEVEL + 1, { deferTimeline: true });
+          resetStreaks();
+
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }else{
+            setAnchorToLevel(LEVEL);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      async function handleAutoLevelOnBad(){
+        streakBad += 1;
+        streakGood = 0;
+
+        if(streakBad >= 2){
+          const before = LEVEL;
+
+          setLevel(LEVEL - 1, { deferTimeline: true });
+          resetStreaks();
+
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }else{
+            setAnchorToLevel(LEVEL);
+          }
+          return true;
+        }
+        return false;
+      }
 
       async function flashAndAsk(){
         locked = true;
+        previewToken++;
 
-        hideAnswers();
+        answersEl.classList.add("answersHidden");
         answersEl.innerHTML = "";
         clearBoard();
 
         await wait(160);
 
-        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        questionVariantIndex = pickVariantIndexForQuestion(correct);
+        const qPattern = patternQuestion(correct, questionVariantIndex);
+        setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
         await wait(flashMs);
 
         clearBoard();
         await wait(260);
 
         renderAnswers(correct, onPick);
+        await raf();
+        applyLandscapeAnswerAlign();
 
-        /* vaste wachttijd voordat de knoppen binnenschuiven */
         await wait(WAIT_BEFORE_IN_MS);
-
         await animateInButtons();
 
         locked = false;
+        previewCardsNonBlocking();
       }
 
       function nextRound(){
-        correct = randInt(1,6);
+        const cap = maxForLevel();
+        correct = pickNumberWeighted(cap);
         flashAndAsk();
       }
 
       async function onPick(btn, value){
         if(!started || locked) return;
+
         locked = true;
+        previewToken++;
 
         const all = [...answersEl.querySelectorAll(".ansBtn")];
         all.forEach(b => b.style.pointerEvents = "none");
+
+        if(usesAnswerCards()){
+          btn.classList.add("cardOpen");
+          await wait(110);
+        }
 
         if(value === correct){
           beep("ok");
           btn.classList.add("correctHold");
 
-          setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+          const qPattern = patternQuestion(correct, questionVariantIndex);
+          setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
           await wait(520);
           dissolveBoard(260);
 
@@ -771,11 +1647,13 @@
           await animateOutButtons(exitOrder, 140);
 
           btn.classList.remove("correctHold");
+          if(usesAnswerCards()) btn.classList.remove("cardOpen");
 
-          hideAnswers();
+          answersEl.classList.add("answersHidden");
           all.forEach(b => b.style.pointerEvents = "");
           await wait(160);
 
+          await handleAutoLevelOnGood();
           nextRound();
           return;
         }
@@ -788,25 +1666,31 @@
         chosen.classList.add("wrongHold");
         await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-        setBoard(svgForDots(patternLevel1(correct), {dotRadius: 16}));
+        const qPattern = patternQuestion(correct, questionVariantIndex);
+        setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
         await wait(1200);
         dissolveBoard(320);
 
         await wait(120);
         await animateOutButtons([chosen], 0);
+
         chosen.classList.remove("wrongHold");
+        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
 
-        hideAnswers();
-
+        answersEl.classList.add("answersHidden");
         await wait(240);
 
         all.forEach(b => b.style.pointerEvents = "");
+
+        await handleAutoLevelOnBad();
         nextRound();
       }
 
-      /* Settings UI (alleen flits) */
+      /* Settings UI */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
+        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
       }
 
       function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
@@ -829,7 +1713,8 @@
       testWrongBtn.addEventListener("click", async () => {
         beep("tap");
         if(!started || locked) return;
-        const wrong = correct === 6 ? 1 : correct + 1;
+        const cap = maxForLevel();
+        const wrong = (correct === cap) ? 1 : correct + 1;
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(btns[0]) await onPick(btns[0], wrong);
       });
@@ -845,6 +1730,10 @@
       function startGame(){
         if(started) return;
         started = true;
+
+        setLevel(1);
+        resetStreaks();
+
         startOverlay.style.display = "none";
         syncUI();
         nextRound();
@@ -876,14 +1765,20 @@
         if(reflowTimer) clearTimeout(reflowTimer);
         reflowTimer = setTimeout(async () => {
           locked = true;
-          hideAnswers();
+          previewToken++;
+          answersEl.classList.add("answersHidden");
           answersEl.innerHTML = "";
           clearBoard();
           await wait(120);
+
           renderAnswers(correct, onPick);
+          await raf();
+          applyLandscapeAnswerAlign();
+
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
           locked = false;
+          previewCardsNonBlocking();
         }, 220);
       }
       window.addEventListener("resize", onReflow);
@@ -891,7 +1786,12 @@
 
       /* Init */
       clearBoard();
+      setLevel(1);
+      resetStreaks();
       syncUI();
+      initTimeline();
+      setAnchorToLevel(LEVEL);
+      showOnlyStill();
     })();
   </script>
 </body>
