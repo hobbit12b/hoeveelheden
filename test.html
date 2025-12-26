@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Kuiken tijdlijn tester mp4</title>
+  <title>Kuiken tijdlijn tester, mp4 met transparantie via canvas</title>
 
   <style>
     :root{
@@ -33,6 +33,7 @@
       height:100%;
     }
 
+    /* Tijdlijn rechtsboven */
     .progressTimeline{
       position:absolute;
       top: 14px;
@@ -51,6 +52,7 @@
       object-fit: contain;
     }
 
+    /* Anchor schuift over de echte zichtbare content van levels.png */
     .progressChickAnchor{
       position:absolute;
       bottom: -10px;
@@ -70,16 +72,18 @@
       pointer-events:none;
       transform-origin: 50% 100%;
       will-change: transform, opacity;
+      display:block;
     }
-
     .chickLayer.active{ opacity: 1; }
 
     .stillLayer{ z-index: 1; }
     .animLayer{ z-index: 2; }
 
-    video.chickLayer{
-      background: transparent;
-      display:block;
+    #animCanvas{
+      opacity:0;
+    }
+    #animCanvas.active{
+      opacity:1;
     }
 
     @media (orientation: portrait){
@@ -93,6 +97,7 @@
       .chickLayer{ width: 78px; }
     }
 
+    /* Open knop */
     .openPanelBtn{
       position:absolute;
       left: 14px;
@@ -109,11 +114,12 @@
       backdrop-filter: blur(6px);
     }
 
+    /* Panel */
     .panel{
       position:absolute;
       left: 14px;
       bottom: 14px;
-      width: min(760px, calc(100vw - 28px));
+      width: min(820px, calc(100vw - 28px));
       max-height: min(78vh, 860px);
       overflow:auto;
       background: var(--panelBg);
@@ -158,13 +164,13 @@
 
     .row{
       display:grid;
-      grid-template-columns: 200px 1fr 95px;
+      grid-template-columns: 210px 1fr 95px;
       gap: 10px;
       align-items:center;
       margin: 10px 0;
     }
     @media (max-width: 560px){
-      .row{ grid-template-columns: 145px 1fr 80px; }
+      .row{ grid-template-columns: 150px 1fr 80px; }
     }
 
     .label{
@@ -180,7 +186,6 @@
       text-align:right;
       color: rgba(77,74,72,0.88);
     }
-
     input[type="range"]{ width:100%; }
 
     .buttons{
@@ -247,7 +252,7 @@
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
 
       <div class="progressChickAnchor" id="chickAnchor">
-        <!-- Still is altijd de basislaag -->
+        <!-- Still is basislaag -->
         <video
           class="chickLayer stillLayer active"
           id="stillVid"
@@ -258,30 +263,18 @@
           loop
         ></video>
 
-        <!-- Anim overlays, alleen zichtbaar tijdens play -->
-        <video
-          class="chickLayer animLayer"
-          id="upVid"
-          src="ballerina_springt.mp4"
-          muted
-          playsinline
-          preload="auto"
-        ></video>
+        <!-- Hidden sources voor canvas -->
+        <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+        <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
 
-        <video
-          class="chickLayer animLayer"
-          id="downVid"
-          src="ballerina_terug.mp4"
-          muted
-          playsinline
-          preload="auto"
-        ></video>
+        <!-- Wat je ziet tijdens animatie -->
+        <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
       </div>
     </div>
 
     <div class="panel" id="panel" role="dialog" aria-label="Testpanel">
       <div class="panelHeader">
-        <div class="panelTitle">tijdlijn kuiken tester mp4</div>
+        <div class="panelTitle">tijdlijn kuiken tester, mp4</div>
         <button class="panelClose" id="panelClose" type="button">sluit</button>
       </div>
 
@@ -350,10 +343,10 @@
       </div>
 
       <div class="section">
-        <div class="panelTitle" style="font-size:16px;">vooruit mp4 segment en x beweging</div>
+        <div class="panelTitle" style="font-size:16px;">vooruit, mp4 segment en x beweging</div>
 
         <div class="row">
-          <div class="label">fps</div>
+          <div class="label">fps vooruit</div>
           <input type="range" id="upFpsRange" min="10" max="60" step="1" value="30">
           <div class="value" id="upFpsValue">30</div>
         </div>
@@ -393,15 +386,13 @@
           <input type="range" id="upScaleRange" min="0.30" max="2.00" step="0.05" value="1.00">
           <div class="value" id="upScaleValue">1.00</div>
         </div>
-
-        <p class="hint">alleen x wordt geïnterpoleerd van start naar einde, de mp4 zelf loopen we niet</p>
       </div>
 
       <div class="section">
-        <div class="panelTitle" style="font-size:16px;">terug mp4 segment en x beweging</div>
+        <div class="panelTitle" style="font-size:16px;">terug, mp4 segment en x beweging</div>
 
         <div class="row">
-          <div class="label">fps</div>
+          <div class="label">fps terug</div>
           <input type="range" id="downFpsRange" min="10" max="60" step="1" value="30">
           <div class="value" id="downFpsValue">30</div>
         </div>
@@ -444,6 +435,18 @@
       </div>
 
       <div class="section">
+        <div class="panelTitle" style="font-size:16px;">canvas transparantie</div>
+
+        <div class="row">
+          <div class="label">wit drempel</div>
+          <input type="range" id="whiteThreshRange" min="200" max="255" step="1" value="245">
+          <div class="value" id="whiteThreshValue">245</div>
+        </div>
+
+        <p class="hint">hoger betekent agressiever wit verwijderen, als randen rafelig worden, zet hem iets lager</p>
+      </div>
+
+      <div class="section">
         <div class="panelTitle" style="font-size:16px;">test</div>
 
         <div class="row">
@@ -459,11 +462,11 @@
         </div>
 
         <div class="buttons">
-          <button class="btn" id="testUpBtn" type="button" disabled>test vooruit</button>
-          <button class="btn" id="testDownBtn" type="button" disabled>test terug</button>
+          <button class="btn" id="testUpBtn" type="button">test vooruit</button>
+          <button class="btn" id="testDownBtn" type="button">test terug</button>
         </div>
 
-        <p class="hint">still blijft altijd zichtbaar, animatie overlay komt alleen als hij kan spelen, level springt pas na laatste frame</p>
+        <p class="hint">still blijft zichtbaar, animatie tekent in canvas met wit transparant, level springt pas na laatste frame</p>
       </div>
     </div>
   </div>
@@ -491,6 +494,9 @@
       const stillVid = $("stillVid");
       const upVid = $("upVid");
       const downVid = $("downVid");
+
+      const animCanvas = $("animCanvas");
+      const ctx = animCanvas.getContext("2d", { willReadFrequently: true });
 
       const levelRange = $("levelRange");
       const levelValue = $("levelValue");
@@ -542,6 +548,9 @@
       const downScaleRange = $("downScaleRange");
       const downScaleValue = $("downScaleValue");
 
+      const whiteThreshRange = $("whiteThreshRange");
+      const whiteThreshValue = $("whiteThreshValue");
+
       const returnPanelRange = $("returnPanelRange");
       const returnPanelValue = $("returnPanelValue");
 
@@ -561,8 +570,16 @@
 
       function showPanel(){ panel.classList.remove("hidden"); }
       function hidePanel(){ panel.classList.add("hidden"); }
+
       openPanelBtn.addEventListener("click", () => showPanel());
       panelClose.addEventListener("click", () => hidePanel());
+
+      function hidePanelImmediately(){
+        panel.style.display = "none";
+        panel.offsetHeight;
+        panel.style.display = "";
+        hidePanel();
+      }
 
       function ensureTickOrder(){
         const start = Number(tickStartRange.value);
@@ -611,31 +628,205 @@
         return `translate(${x}px, ${y}px) scale(${s})`;
       }
 
-      function tAnim(scale, x, y){
-        return `translate(${x}px, ${y}px) scale(${scale})`;
+      function cancelXAnim(){
+        try{ if(xAnim) xAnim.cancel(); }catch(e){}
+        xAnim = null;
+      }
+
+      function clearCanvas(){
+        cancelXAnim();
+        try{ ctx.clearRect(0, 0, animCanvas.width, animCanvas.height); }catch(e){}
       }
 
       function showOnlyStill(){
         stillVid.classList.add("active");
-        upVid.classList.remove("active");
-        downVid.classList.remove("active");
+        animCanvas.classList.remove("active");
+        clearCanvas();
+      }
+
+      function showAnimCanvas(){
+        animCanvas.classList.add("active");
+      }
+
+      function setCanvasSizeToVideo(videoEl){
+        const w = videoEl.videoWidth || 0;
+        const h = videoEl.videoHeight || 0;
+        if(!w || !h) return false;
+        if(animCanvas.width !== w) animCanvas.width = w;
+        if(animCanvas.height !== h) animCanvas.height = h;
+        return true;
+      }
+
+      function applyChromaKeyWhite(){
+        const t = Number(whiteThreshRange.value);
+        const img = ctx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+        const d = img.data;
+
+        for(let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i+1], b = d[i+2];
+          if(r >= t && g >= t && b >= t){
+            d[i+3] = 0;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+      }
+
+      function drawFrame(videoEl){
+        if(!setCanvasSizeToVideo(videoEl)) return;
+        ctx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+        ctx.drawImage(videoEl, 0, 0);
+        applyChromaKeyWhite();
+      }
+
+      async function ensureReady(videoEl){
+        if(videoEl.readyState >= 2) return true;
+
+        return await new Promise(resolve => {
+          let done = false;
+
+          const ok = () => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(true);
+          };
+          const bad = () => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(false);
+          };
+          const cleanup = () => {
+            videoEl.removeEventListener("loadeddata", ok);
+            videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("error", bad);
+          };
+
+          videoEl.addEventListener("loadeddata", ok, { once:true });
+          videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("error", bad, { once:true });
+
+          try{ videoEl.load(); }catch(e){}
+
+          setTimeout(() => {
+            cleanup();
+            resolve(videoEl.readyState >= 1);
+          }, 900);
+        });
+      }
+
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const f = Math.max(1, Number(fps));
+        const s = Math.max(0, Number(startFrame) / f);
+        const e = Math.max(s + (1 / f), Number(endFrame) / f);
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      async function playSegmentOnCanvas(videoEl, cfg){
+        cancelXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const { start, end, durMs } = cfg.times;
+
+        stopVideo(videoEl);
+
+        try{
+          videoEl.currentTime = start;
+        }catch(e){
+          return false;
+        }
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+        showAnimCanvas();
+
+        await raf();
+
+        xAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: durMs, easing: "linear", fill: "forwards" }
+        );
+
+        try{
+          await videoEl.play();
+        }catch(e){
+          cancelXAnim();
+          return false;
+        }
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        cancelXAnim();
+        return true;
       }
 
       function applyTransformsIdle(){
         stillVid.style.transform = tStill();
-        const upS = Number(upScaleRange.value);
-        const upY = Number(upYRange.value);
-        upVid.style.transform = tAnim(upS, Number(upXStartRange.value), upY);
+      }
 
-        const downS = Number(downScaleRange.value);
-        const downY = Number(downYRange.value);
-        downVid.style.transform = tAnim(downS, Number(downXStartRange.value), downY);
+      function setFrameSliderBoundsFor(videoEl, fpsRangeEl, startRangeEl, endRangeEl){
+        const fps = Math.max(1, Number(fpsRangeEl.value));
+        const dur = Number(videoEl.duration || 0);
+        if(!dur || !isFinite(dur)) return;
+
+        const maxFrame = Math.max(1, Math.floor(dur * fps) - 1);
+
+        startRangeEl.max = String(maxFrame);
+        endRangeEl.max = String(maxFrame);
+
+        if(Number(endRangeEl.value) > maxFrame) endRangeEl.value = String(maxFrame);
+        if(Number(startRangeEl.value) > maxFrame) startRangeEl.value = String(Math.max(0, maxFrame - 1));
+
+        if(Number(endRangeEl.value) <= Number(startRangeEl.value)){
+          endRangeEl.value = String(Math.min(maxFrame, Number(startRangeEl.value) + 1));
+        }
+      }
+
+      function refreshAllFrameBounds(){
+        setFrameSliderBoundsFor(upVid, upFpsRange, upStartFrameRange, upEndFrameRange);
+        setFrameSliderBoundsFor(downVid, downFpsRange, downStartFrameRange, downEndFrameRange);
       }
 
       function syncValues(){
         ensureTickOrder();
 
         levelValue.textContent = String(LEVEL);
+
         tickStartValue.textContent = Number(tickStartRange.value).toFixed(1);
         tickEndValue.textContent = Number(tickEndRange.value).toFixed(1);
 
@@ -662,13 +853,17 @@
         downYValue.textContent = String(downYRange.value);
         downScaleValue.textContent = Number(downScaleRange.value).toFixed(2);
 
+        whiteThreshValue.textContent = String(whiteThreshRange.value);
+
         returnPanelValue.textContent = returnPanelRange.value === "1" ? "aan" : "uit";
+
+        refreshAllFrameBounds();
 
         setAnchorToLevel(LEVEL);
         applyTransformsIdle();
       }
 
-      const STORAGE_KEY = "chick_timeline_tester_mp4_v1";
+      const STORAGE_KEY = "chick_timeline_tester_canvas_mp4_v1";
 
       function snapshot(){
         return {
@@ -698,6 +893,7 @@
           downY: downYRange.value,
           downScale: downScaleRange.value,
 
+          whiteThresh: whiteThreshRange.value,
           returnPanel: returnPanelRange.value
         };
       }
@@ -733,6 +929,7 @@
         downYRange.value = String(s.downY ?? downYRange.value);
         downScaleRange.value = String(s.downScale ?? downScaleRange.value);
 
+        whiteThreshRange.value = String(s.whiteThresh ?? whiteThreshRange.value);
         returnPanelRange.value = String(s.returnPanel ?? returnPanelRange.value);
 
         syncValues();
@@ -781,115 +978,20 @@
         downYRange.value = "0";
         downScaleRange.value = "1.00";
 
+        whiteThreshRange.value = "245";
         returnPanelRange.value = "1";
 
         syncValues();
         save();
       }
 
-      [
-        levelRange,
-        tickStartRange, tickEndRange,
-        anchorFineXRange, anchorFineYRange,
-        stillScaleRange, stillXRange, stillYRange,
-        upFpsRange, upStartFrameRange, upEndFrameRange, upXStartRange, upXEndRange, upYRange, upScaleRange,
-        downFpsRange, downStartFrameRange, downEndFrameRange, downXStartRange, downXEndRange, downYRange, downScaleRange,
-        returnPanelRange
-      ].forEach(el => el.addEventListener("input", () => {
-        LEVEL = clamp(Number(levelRange.value), LEVEL_MIN, LEVEL_MAX);
-        syncValues();
-      }));
-
-      resetBtn.addEventListener("click", () => resetDefaults());
-      saveBtn.addEventListener("click", () => save());
-      loadBtn.addEventListener("click", () => load());
-
-      function hidePanelImmediately(){
-        panel.style.display = "none";
-        panel.offsetHeight;
-        panel.style.display = "";
-        hidePanel();
-      }
-
-      function stopVideo(v){
-        try{ v.pause(); }catch(e){}
-        try{ v.currentTime = 0; }catch(e){}
-      }
-
-      function segmentTimes(startFrame, endFrame, fps){
-        const s = Math.max(0, Number(startFrame) / Math.max(1, Number(fps)));
-        const e = Math.max(s + (1 / Math.max(1, Number(fps))), Number(endFrame) / Math.max(1, Number(fps)));
-        return { start: s, end: e, durMs: (e - s) * 1000 };
-      }
-
-      function cancelXAnim(){
-        try{ if(xAnim) xAnim.cancel(); }catch(e){}
-        xAnim = null;
-      }
-
-      async function playSegmentWithX(videoEl, cfg){
-        const { start, end, durMs } = cfg.times;
-
-        cancelXAnim();
-
-        videoEl.classList.add("active");
-
-        videoEl.style.transform = tAnim(cfg.scale, cfg.xStart, cfg.y);
-
-        await raf();
-
-        xAnim = videoEl.animate(
-          [{ transform: tAnim(cfg.scale, cfg.xStart, cfg.y) }, { transform: tAnim(cfg.scale, cfg.xEnd, cfg.y) }],
-          { duration: durMs, easing: "linear", fill: "forwards" }
-        );
-
-        let canPlay = true;
+      async function tryAutoplayStill(){
         try{
-          videoEl.pause();
-          videoEl.currentTime = start;
+          stillVid.muted = true;
+          await stillVid.play();
         }catch(e){
-          canPlay = false;
+          try{ stillVid.pause(); }catch(e2){}
         }
-
-        if(!canPlay){
-          videoEl.classList.remove("active");
-          return false;
-        }
-
-        try{
-          await videoEl.play();
-        }catch(e){
-          videoEl.classList.remove("active");
-          return false;
-        }
-
-        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
-
-        if(useRVFC){
-          await new Promise(resolve => {
-            const step = () => {
-              if(videoEl.currentTime >= end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              videoEl.requestVideoFrameCallback(step);
-            };
-            videoEl.requestVideoFrameCallback(step);
-          });
-        }else{
-          await new Promise(resolve => {
-            const onTime = () => {
-              if(videoEl.currentTime >= end || videoEl.ended){
-                videoEl.removeEventListener("timeupdate", onTime);
-                resolve(true);
-              }
-            };
-            videoEl.addEventListener("timeupdate", onTime);
-          });
-        }
-
-        try{ videoEl.pause(); }catch(e){}
-        return true;
       }
 
       async function playOnce(direction){
@@ -905,13 +1007,9 @@
 
         showOnlyStill();
 
-        const v = direction === "up" ? upVid : downVid;
-
-        stopVideo(upVid);
-        stopVideo(downVid);
-
         const cfg = (direction === "up")
           ? {
+              video: upVid,
               scale: Number(upScaleRange.value),
               y: Number(upYRange.value),
               xStart: Number(upXStartRange.value),
@@ -919,6 +1017,7 @@
               times: segmentTimes(upStartFrameRange.value, upEndFrameRange.value, upFpsRange.value)
             }
           : {
+              video: downVid,
               scale: Number(downScaleRange.value),
               y: Number(downYRange.value),
               xStart: Number(downXStartRange.value),
@@ -926,19 +1025,18 @@
               times: segmentTimes(downStartFrameRange.value, downEndFrameRange.value, downFpsRange.value)
             };
 
-        const played = await playSegmentWithX(v, cfg);
+        stopVideo(upVid);
+        stopVideo(downVid);
 
-        v.classList.remove("active");
-        cancelXAnim();
+        const played = await playSegmentOnCanvas(cfg.video, cfg);
+
+        showOnlyStill();
 
         if(played){
           LEVEL = toLevel;
           levelRange.value = String(LEVEL);
           setAnchorToLevel(LEVEL);
         }
-
-        showOnlyStill();
-        stillVid.style.transform = tStill();
 
         syncValues();
 
@@ -950,18 +1048,6 @@
         playing = false;
       }
 
-      testUpBtn.addEventListener("click", () => {
-        if(testUpBtn.disabled) return;
-        hidePanelImmediately();
-        requestAnimationFrame(() => playOnce("up"));
-      });
-
-      testDownBtn.addEventListener("click", () => {
-        if(testDownBtn.disabled) return;
-        hidePanelImmediately();
-        requestAnimationFrame(() => playOnce("down"));
-      });
-
       function initResizeBinding(){
         const ro = new ResizeObserver(() => {
           setAnchorToLevel(LEVEL);
@@ -970,30 +1056,13 @@
         ro.observe(timeline);
       }
 
-      function markOk(){
-        statusText.textContent = "klaar";
-        statusSub.textContent = "je kunt testen";
-        testUpBtn.disabled = false;
-        testDownBtn.disabled = false;
+      function setStatus(text, sub){
+        statusText.textContent = text;
+        statusSub.textContent = sub || "";
       }
 
       async function warmup(){
-        statusText.textContent = "laden";
-        statusSub.textContent = "assets worden klaar gezet";
-
-        const waitCanPlay = (v) => new Promise(resolve => {
-          let done = false;
-          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
-          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
-          const cleanup = () => {
-            v.removeEventListener("canplaythrough", ok);
-            v.removeEventListener("canplay", ok);
-            v.removeEventListener("error", bad);
-          };
-          v.addEventListener("canplaythrough", ok, { once:true });
-          v.addEventListener("canplay", ok, { once:true });
-          v.addEventListener("error", bad, { once:true });
-        });
+        setStatus("laden", "assets worden klaar gezet");
 
         const imgOk = await new Promise(resolve => {
           const img = new Image();
@@ -1002,43 +1071,61 @@
           img.src = "levels.png";
         });
 
-        const sOk = await waitCanPlay(stillVid);
-        const uOk = await waitCanPlay(upVid);
-        const dOk = await waitCanPlay(downVid);
-
         if(!imgOk){
-          statusText.textContent = "let op";
-          statusSub.textContent = "levels.png niet gevonden";
+          setStatus("let op", "levels.png niet gevonden, tijdlijn kan leeg zijn");
+        }else{
+          setStatus("klaar", "je kunt testen");
         }
 
         showOnlyStill();
+        await tryAutoplayStill();
 
-        try{
-          stillVid.muted = true;
-          await stillVid.play();
-        }catch(e){
-          try{ stillVid.pause(); }catch(e2){}
-        }
-
-        if(!sOk){
-          statusText.textContent = "let op";
-          statusSub.textContent = "ballerina_still.mp4 niet gevonden";
-        }
-
-        if(!uOk || !dOk){
-          statusText.textContent = "let op";
-          statusSub.textContent = "vooruit of terug mp4 niet klaar, still blijft zichtbaar";
-        }
-
-        markOk();
+        refreshAllFrameBounds();
       }
+
+      const inputs = [
+        levelRange,
+        tickStartRange, tickEndRange,
+        anchorFineXRange, anchorFineYRange,
+        stillScaleRange, stillXRange, stillYRange,
+
+        upFpsRange, upStartFrameRange, upEndFrameRange, upXStartRange, upXEndRange, upYRange, upScaleRange,
+        downFpsRange, downStartFrameRange, downEndFrameRange, downXStartRange, downXEndRange, downYRange, downScaleRange,
+
+        whiteThreshRange,
+        returnPanelRange
+      ];
+
+      inputs.forEach(el => el.addEventListener("input", () => {
+        LEVEL = clamp(Number(levelRange.value), LEVEL_MIN, LEVEL_MAX);
+        syncValues();
+      }));
+
+      resetBtn.addEventListener("click", () => resetDefaults());
+      saveBtn.addEventListener("click", () => save());
+      loadBtn.addEventListener("click", () => load());
+
+      upVid.addEventListener("loadedmetadata", refreshAllFrameBounds);
+      downVid.addEventListener("loadedmetadata", refreshAllFrameBounds);
+      upFpsRange.addEventListener("input", refreshAllFrameBounds);
+      downFpsRange.addEventListener("input", refreshAllFrameBounds);
+
+      testUpBtn.addEventListener("click", () => {
+        hidePanelImmediately();
+        requestAnimationFrame(() => playOnce("up"));
+      });
+
+      testDownBtn.addEventListener("click", () => {
+        hidePanelImmediately();
+        requestAnimationFrame(() => playOnce("down"));
+      });
 
       function init(){
         const didLoad = load();
         if(!didLoad) resetDefaults();
 
+        stillVid.style.transform = tStill();
         showOnlyStill();
-        stillVid.classList.add("active");
 
         syncValues();
         initResizeBinding();
