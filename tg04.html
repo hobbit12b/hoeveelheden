@@ -47,7 +47,8 @@
       grid-template-columns: 58fr 42fr;
       height: 100%;
       position: relative;
-      overflow:hidden;
+      overflow: hidden; /* pagina blijft strak */
+      isolation: isolate; /* eigen stacking context, overlay kan veilig boven alles */
     }
     @media (orientation: portrait){
       body{
@@ -63,7 +64,7 @@
       flex-direction:column;
       gap: 22px;
       position: relative;
-      overflow:hidden;
+      overflow: visible; /* belangrijk, niets afknippen */
       min-height: 0;
       z-index: 1;
     }
@@ -71,7 +72,7 @@
     .scan-surface{
       background:#ffffff;
       position: relative;
-      overflow:hidden;
+      overflow: visible; /* belangrijk, niets afknippen */
       min-height: 0;
       transition: background 140ms ease;
       z-index: 1;
@@ -143,6 +144,7 @@
       min-height: 0;
       position: relative;
       z-index: 1;
+      overflow: visible; /* belangrijk, niets afknippen */
     }
 
     .gameCard{
@@ -217,7 +219,6 @@
       align-items:flex-end;
     }
 
-    /* LANDSCAPE: forceer altijd lage eindpositie */
     @media (orientation: landscape){
       .scanStage{
         align-items:flex-end;
@@ -359,7 +360,7 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1200;
+      z-index: 2200;
       color: #4d4a48;
     }
     .tunePanel.hidden{ display:none; }
@@ -462,7 +463,6 @@
       background-position: center;
       background-repeat: no-repeat;
     }
-
     .cardFront{
       width:100%;
       height:100%;
@@ -473,18 +473,23 @@
     .ansBtn.cardOpen .cardFront{ display:grid; }
     .ansBtn.cardOpen .cardBack{ display:none; }
 
-    /* 1 groep tijdlijn, bovenop alles, kan over links heen */
+    /* BELANGRIJK: overlay echt bovenop alles, nergens aan vast, geen clipping */
     .timelineOverlay{
       position: fixed;
-      left: 0;
-      top: 0;
-      width: 1px;
-      height: 1px;
-      z-index: 1600;
+      inset: 0;
+      z-index: 2000;
       pointer-events:none;
       user-select:none;
+      overflow: visible;
+    }
+
+    .timelineGroup{
+      position:absolute;
+      left: 0;
+      top: 0;
       transform-origin: 0 0;
       will-change: transform;
+      pointer-events:none;
     }
 
     .progressTimeline{
@@ -542,7 +547,6 @@
       .chickLayer{ width: 78px; }
     }
 
-    /* kalibratie paneel */
     .calPanel{
       position: fixed;
       left: 18px;
@@ -553,7 +557,7 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1650;
+      z-index: 2300;
       color: #4d4a48;
     }
     .calPanel.hidden{ display:none; }
@@ -650,15 +654,17 @@
     </div>
   </section>
 
-  <!-- 1 overlay groep voor de hele tijdlijn -->
+  <!-- overlay zit nu bovenop alles en kan overal heen, ook links -->
   <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
-    <div class="progressTimeline" id="timeline">
-      <img class="progressLine" id="levelsImg" src="levels.png" alt="">
-      <div class="progressChickAnchor" id="chickAnchor">
-        <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
-        <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
-        <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
-        <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+    <div class="timelineGroup" id="timelineGroup">
+      <div class="progressTimeline" id="timeline">
+        <img class="progressLine" id="levelsImg" src="levels.png" alt="">
+        <div class="progressChickAnchor" id="chickAnchor">
+          <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+          <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -723,13 +729,13 @@
 
     <div class="tuneRow">
       <div class="tuneLabel">groep x</div>
-      <input type="range" id="gX" min="-600" max="600" step="1" value="0" />
+      <input type="range" id="gX" min="-1200" max="1200" step="1" value="0" />
       <div class="tuneValue" id="gXv">0</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">groep y</div>
-      <input type="range" id="gY" min="-600" max="600" step="1" value="0" />
+      <input type="range" id="gY" min="-1200" max="1200" step="1" value="0" />
       <div class="tuneValue" id="gYv">0</div>
     </div>
 
@@ -741,7 +747,7 @@
 
     <div class="tuneRow">
       <div class="tuneLabel">kuiken lijn</div>
-      <input type="range" id="lineY" min="-120" max="120" step="1" value="-10" />
+      <input type="range" id="lineY" min="-160" max="160" step="1" value="-10" />
       <div class="tuneValue" id="lineYv">-10</div>
     </div>
 
@@ -751,7 +757,7 @@
     </div>
 
     <div class="hintLine">
-      alles is één groep, x y schaal verplaatst en schaalt levels png, het kuiken, de png en de canvas animatie samen
+      de overlay zit nu altijd bovenop alles, je kunt hem met de x slider helemaal over het linker vlak schuiven, in beide standen
     </div>
   </div>
 
@@ -809,6 +815,7 @@
       const scanArea = $("scanArea");
 
       const timelineOverlay = $("timelineOverlay");
+      const timelineGroup = $("timelineGroup");
       const timeline = $("timeline");
       const levelsImg = $("levelsImg");
       const chickAnchor = $("chickAnchor");
@@ -831,6 +838,10 @@
 
       let streakGood = 0;
       let streakBad = 0;
+
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
 
       function usesAnswerCards(){ return LEVEL >= 2; }
 
@@ -1078,11 +1089,6 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-      }
-
-      /* belangrijk: start positie voor in animatie altijd vanaf dezelfde lage eindpositie */
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
@@ -1219,8 +1225,8 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* tijdlijn groepskalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v2";
+      /* tijdlijn groep kalibratie */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v3";
       const DEFAULT_CALIB = {
         landscape: { x: 0, y: 0, s: 1.00 },
         portrait:  { x: 0, y: 0, s: 1.00 },
@@ -1243,10 +1249,10 @@
       function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
 
       function applyTimelineGroupTransform(){
-        if(!timelineOverlay) return;
+        if(!timelineGroup) return;
         const k = activeModeKey();
         const c = calib[k] || DEFAULT_CALIB[k];
-        timelineOverlay.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
+        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
@@ -1269,7 +1275,7 @@
       let chickXAnim = null;
 
       function timelineReady(){
-        return timelineOverlay && timeline && levelsImg && chickAnchor && stillImg;
+        return timelineOverlay && timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
       }
 
       function getContainedRect(img){
@@ -1330,7 +1336,6 @@
       }
 
       function showOnlyStill(){
-        if(!timelineReady()) return;
         stillImg.classList.add("active");
         if(animCanvas) animCanvas.classList.remove("active");
       }
@@ -1596,7 +1601,7 @@
         window.addEventListener("orientationchange", apply);
       }
 
-      /* Game loop */
+      /* game */
       let started = false;
       let locked = false;
       let correct = 1;
@@ -1658,7 +1663,7 @@
         await wait(260);
 
         renderAnswers(correct, onPick);
-        await wait(WAIT_BEFORE_IN_MS);
+        await wait(0);
         await animateInButtons();
 
         locked = false;
@@ -1899,7 +1904,6 @@
       window.addEventListener("resize", onAnyResize);
       window.addEventListener("orientationchange", onAnyResize);
 
-      /* default: laad sliders in achtergrond, maar open panel niet */
       function bootCalib(){
         if(!calib) calib = structuredClone(DEFAULT_CALIB);
         const k = activeModeKey();
