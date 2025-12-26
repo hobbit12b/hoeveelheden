@@ -28,7 +28,6 @@
 
       --activeFill: rgba(229, 140, 116, 0.18);
 
-      /* nieuw, automatische verticale shift van het linkervak */
       --qShift: 0px;
     }
 
@@ -141,7 +140,6 @@
       padding: 10px 6px;
       min-height: 0;
 
-      /* nieuw, linkervak automatisch hoger of lager */
       transform: translateY(var(--qShift, 0px));
       transition: transform 220ms ease;
     }
@@ -232,7 +230,6 @@
       .answersWrap{ width: min(640px, 92%); }
     }
 
-    /* Basis knop voor level 1 */
     .ansBtn{
       appearance:none;
       border:none;
@@ -285,7 +282,7 @@
 
     .answersHidden{ opacity:0; pointer-events:none; }
 
-    /* Kaarten voor level 2 en hoger, hele knop draait mee */
+    /* kaarten, hele knop draait mee */
     .ansBtn.cardBtn{
       background: transparent;
       border: none;
@@ -625,7 +622,6 @@
       const answersEl = document.getElementById("answers");
       const scanArea = document.getElementById("scanArea");
 
-      /* nieuw, voor uitlijning */
       const leftContent = document.querySelector(".left .content");
       const flashBoardEl = document.getElementById("flashBoard");
 
@@ -904,9 +900,6 @@
         return arr;
       }
 
-      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
-      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
-
       function isPortrait(){
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
@@ -937,13 +930,15 @@
         return rects.map(x => x.b);
       }
 
-      /* nieuw, uitlijnen: midden vraagvak naar midden middelste antwoordknop */
-      function alignQuestionToMiddleAnswer(){
+      /* belangrijk: nooit naar beneden, alleen opwaarts (anker boven) */
+      let topAnchorShift = 0; /* dit is de meest negatieve shift die we ooit hebben gezet */
+
+      function alignQuestionToMiddleAnswerUpOnly(){
         if(!leftContent || !flashBoardEl) return;
 
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(btns.length < 2){
-          leftContent.style.setProperty("--qShift", "0px");
+          leftContent.style.setProperty("--qShift", `${topAnchorShift}px`);
           return;
         }
 
@@ -959,14 +954,21 @@
         const maxShift = 140;
         dy = clamp(dy, -maxShift, maxShift);
 
-        leftContent.style.setProperty("--qShift", `${dy}px`);
+        /* alleen omhoog toestaan: dy mag 0 of negatief zijn */
+        dy = Math.min(0, dy);
+
+        /* anker: we onthouden de hoogste positie (meest negatief) */
+        topAnchorShift = Math.min(topAnchorShift, dy);
+
+        /* altijd het anker gebruiken, zodat hij nooit terug zakt */
+        leftContent.style.setProperty("--qShift", `${topAnchorShift}px`);
       }
 
       async function animateInButtons(){
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
 
-        hideAnswers();
+        answersEl.classList.add("answersHidden");
         await raf(); await raf();
 
         btns.forEach(btn => {
@@ -975,7 +977,7 @@
           btn.style.opacity = "0";
         });
 
-        showAnswers();
+        answersEl.classList.remove("answersHidden");
         await raf();
 
         const easing = "cubic-bezier(.22,.61,.35,1)";
@@ -997,8 +999,7 @@
           btn.style.opacity = "1";
         });
 
-        /* nieuw */
-        alignQuestionToMiddleAnswer();
+        alignQuestionToMiddleAnswerUpOnly();
       }
 
       async function animateOutButtons(btns, staggerMs){
@@ -1041,7 +1042,6 @@
           if(usesAnswerCards()){
             btn.className = "ansBtn cardBtn";
             const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
-
             btn.innerHTML = `
               <div class="cardWrap">
                 <div class="cardInner">
@@ -1130,7 +1130,7 @@
 
         answersEl.classList.add("answersHidden");
         answersEl.innerHTML = "";
-        clearBoard();
+        setBoard(svgForDots([], {dotRadius: 1}));
 
         await wait(160);
 
@@ -1140,15 +1140,15 @@
 
         await wait(flashMs);
 
-        clearBoard();
+        setBoard(svgForDots([], {dotRadius: 1}));
         await wait(260);
 
         renderAnswers(correct, onPick);
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
 
-        /* nieuw, nog een keer na animatie */
-        alignQuestionToMiddleAnswer();
+        /* opnieuw, maar nog steeds alleen omhoog */
+        alignQuestionToMiddleAnswerUpOnly();
 
         locked = false;
         previewCardsNonBlocking();
@@ -1314,14 +1314,13 @@
           previewToken++;
           answersEl.classList.add("answersHidden");
           answersEl.innerHTML = "";
-          clearBoard();
+          setBoard(svgForDots([], {dotRadius: 1}));
           await wait(120);
           renderAnswers(correct, onPick);
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
 
-          /* nieuw */
-          alignQuestionToMiddleAnswer();
+          alignQuestionToMiddleAnswerUpOnly();
 
           locked = false;
           previewCardsNonBlocking();
@@ -1330,13 +1329,16 @@
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
-      clearBoard();
+      setBoard(svgForDots([], {dotRadius: 1}));
       setLevel(1);
       resetStreaks();
       syncUI();
 
-      /* startwaarde */
-      if(leftContent) leftContent.style.setProperty("--qShift", "0px");
+      /* startpositie vastleggen */
+      if(leftContent){
+        leftContent.style.setProperty("--qShift", "0px");
+        topAnchorShift = 0;
+      }
     })();
   </script>
 </body>
