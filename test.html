@@ -253,15 +253,13 @@
 
       <div class="progressChickAnchor" id="chickAnchor">
         <!-- Still is basislaag -->
-        <video
-          class="chickLayer stillLayer active"
-          id="stillVid"
-          src="ballerina_still.mp4"
-          muted
-          playsinline
-          preload="auto"
-          loop
-        ></video>
+     <img
+  class="chickLayer stillLayer active"
+  id="stillImg"
+  src="ballerina_still.png"
+  alt=""
+  draggable="false"
+/>
 
         <!-- Hidden sources voor canvas -->
         <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
@@ -491,7 +489,7 @@
       const levelsImg = $("levelsImg");
       const chickAnchor = $("chickAnchor");
 
-      const stillVid = $("stillVid");
+      const stillImg = $("stillImg");
       const upVid = $("upVid");
       const downVid = $("downVid");
 
@@ -638,11 +636,11 @@
         try{ ctx.clearRect(0, 0, animCanvas.width, animCanvas.height); }catch(e){}
       }
 
-      function showOnlyStill(){
-        stillVid.classList.add("active");
-        animCanvas.classList.remove("active");
-        clearCanvas();
-      }
+     function showOnlyStill(){
+  stillImg.classList.add("active");
+  animCanvas.classList.remove("active");
+  clearCanvas();
+}
 
       function showAnimCanvas(){
         animCanvas.classList.add("active");
@@ -796,8 +794,8 @@
       }
 
       function applyTransformsIdle(){
-        stillVid.style.transform = tStill();
-      }
+  stillImg.style.transform = tStill();
+}
 
       function setFrameSliderBoundsFor(videoEl, fpsRangeEl, startRangeEl, endRangeEl){
         const fps = Math.max(1, Number(fpsRangeEl.value));
@@ -985,14 +983,9 @@
         save();
       }
 
-      async function tryAutoplayStill(){
-        try{
-          stillVid.muted = true;
-          await stillVid.play();
-        }catch(e){
-          try{ stillVid.pause(); }catch(e2){}
-        }
-      }
+    async function tryAutoplayStill(){
+  return;
+}
 
       async function playOnce(direction){
         if(playing) return;
@@ -1124,7 +1117,7 @@
         const didLoad = load();
         if(!didLoad) resetDefaults();
 
-        stillVid.style.transform = tStill();
+        stillImg.style.transform = tStill();
         showOnlyStill();
 
         syncValues();
