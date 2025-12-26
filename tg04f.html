@@ -28,6 +28,7 @@
 
       --activeFill: rgba(229, 140, 116, 0.18);
 
+      /* vaste shift voor antwoorden in landscape */
       --answersShiftY: 0px;
     }
 
@@ -460,7 +461,7 @@
       }
     }
 
-    /* Tijdlijn, portrait blijft bovenin, landscape wordt gecentreerd in rechter vak */
+    /* tijdlijn basis */
     .progressTimeline{
       position: fixed;
       z-index: 950;
@@ -522,18 +523,17 @@
       .chickLayer{ width: 78px; }
     }
 
+    /* fix 1, landscape: tijdlijn hoger in het witte vak, ongeveer gelijk met titlePill */
     @media (orientation: landscape){
       .progressTimeline{
         position: absolute;
-        top: 50%;
+        top: 28px;
         left: 50%;
         right: auto;
-        transform: translate(-50%, -50%);
+        transform: translateX(-50%);
         width: min(520px, 88%);
         height: 110px;
       }
-
-      /* anker voelt het mooist als hij iets lager hangt in het midden */
       .progressChickAnchor{ bottom: -12px; }
     }
   </style>
@@ -571,7 +571,6 @@
       </div>
     </div>
 
-    <!-- tijdlijn komt in landscape in het midden van dit rechter vak te staan -->
     <div class="progressTimeline" aria-hidden="true" id="timeline">
       <img class="progressLine" id="levelsImg" src="levels.png" alt="">
       <div class="progressChickAnchor" id="chickAnchor">
@@ -660,7 +659,6 @@
       const answersWrap = document.getElementById("answersWrap");
       const gameCard = document.getElementById("gameCard");
 
-      /* tijdlijn */
       const timeline = document.getElementById("timeline");
       const levelsImg = document.getElementById("levelsImg");
       const chickAnchor = document.getElementById("chickAnchor");
@@ -670,22 +668,20 @@
       const animCanvas = document.getElementById("animCanvas");
       const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
 
-      /* Timing knoppen animatie */
+      /* anim timing knoppen */
       const WAIT_BEFORE_IN_MS = 0;
       const IN_DUR_MS = 800;
       const OUT_DUR_MS = 750;
 
-      /* Kaarten, openklappen */
+      /* kaarten */
       const PREVIEW_GAP_MS = 120;
       const PREVIEW_MS = 1700;
 
-      /* Flits instelbaar */
       let flashMs = Number(flashMsRange.value);
 
-      /* Level in spel: exact zoals jouw oude code, 1 tot 5 */
+      /* spel level 1 tot 5 */
       let LEVEL = 1;
 
-      /* Progressie */
       let streakGood = 0;
       let streakBad = 0;
 
@@ -699,7 +695,6 @@
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
       }
 
-      /* EXACT zoals jouw oude code */
       function maxForLevel(){
         if(LEVEL === 1) return 4;
         if(LEVEL === 2) return 4;
@@ -708,7 +703,6 @@
         return 6;
       }
 
-      /* Minder vaak 1, exact zoals jouw oude code */
       function pickNumberWeighted(cap){
         const w1 = 0.30;
         const weights = [];
@@ -724,7 +718,7 @@
         return cap;
       }
 
-      /* WebAudio beep */
+      /* audio */
       let audioCtx = null;
       function beep(type){
         try{
@@ -745,7 +739,7 @@
         }catch(e){}
       }
 
-      /* Dobbelpunten 1 tot 6 */
+      /* dobbel */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -767,7 +761,6 @@
         }];
       }
 
-      /* Basispunten voor variaties */
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
         d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
@@ -781,7 +774,6 @@
         r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
       };
 
-      /* Variaties 1-4, exact zoals jouw oude code */
       const VARS_1TO4 = {
         1: [
           [L.m],
@@ -1005,7 +997,8 @@
         return rects.map(x => x.b);
       }
 
-      function applyLandscapeAnswerAlign(){
+      /* fix 2, altijd dezelfde lage positie in landscape */
+      function computeFixedLandscapeAnswerShift(){
         if(!answersWrap || !answersEl || !scanArea || !gameCard) return;
 
         if(isPortrait()){
@@ -1037,7 +1030,24 @@
         const maxDy = (areaRect.bottom - pad) - groupBottom;
 
         const dy = clamp(desiredDy, minDy, maxDy);
+
         answersWrap.style.setProperty("--answersShiftY", `${dy.toFixed(1)}px`);
+      }
+
+      /* fix 2, dit is de enige plek waar we de shift in landscape bepalen */
+      let fixedShiftLocked = false;
+      function lockLandscapeShiftOnce(){
+        if(isPortrait()){
+          fixedShiftLocked = false;
+          answersWrap.style.setProperty("--answersShiftY", "0px");
+          return;
+        }
+        if(fixedShiftLocked) return;
+        computeFixedLandscapeAnswerShift();
+        fixedShiftLocked = true;
+      }
+      function resetLandscapeShiftLock(){
+        fixedShiftLocked = false;
       }
 
       async function animateInButtons(){
@@ -1155,7 +1165,7 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* Tijdlijn: positioneren zoals tester, met optionele schaal 1 tot 9 */
+      /* tijdlijn positioneren */
       const TL_LEVEL_MIN = 1;
       const TL_LEVEL_MAX = 9;
 
@@ -1411,12 +1421,13 @@
         stillImg.classList.remove("active");
         await raf();
 
+        const timesMs = times.durMs;
         chickXAnim = animCanvas.animate(
           [
             { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
             { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
           ],
-          { duration: times.durMs, easing: "linear", fill: "forwards" }
+          { duration: timesMs, easing: "linear", fill: "forwards" }
         );
 
         if(useRVFC){
@@ -1474,7 +1485,6 @@
 
         await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        /* fix: zet anker meteen op eindpunt zonder zichtbare schuif, daarna png zichtbaar */
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1487,7 +1497,6 @@
       function initTimeline(){
         if(!timelineReady()) return;
 
-        chickAnchor.style.left = "0px";
         showOnlyStill();
 
         const apply = () => setAnchorToLevel(LEVEL);
@@ -1504,7 +1513,7 @@
         window.addEventListener("orientationchange", apply);
       }
 
-      /* Game */
+      /* game */
       let started = false;
       let locked = false;
       let correct = 1;
@@ -1569,8 +1578,10 @@
         await wait(260);
 
         renderAnswers(correct, onPick);
+
+        /* fix 2: zet shift 1x vast op basis van eerste render, daarna nooit meer wisselen */
         await raf();
-        applyLandscapeAnswerAlign();
+        lockLandscapeShiftOnce();
 
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
@@ -1726,6 +1737,9 @@
       let reflowTimer = null;
       function onReflow(){
         if(!started) return;
+
+        resetLandscapeShiftLock();
+
         if(reflowTimer) clearTimeout(reflowTimer);
         reflowTimer = setTimeout(async () => {
           locked = true;
@@ -1737,7 +1751,7 @@
 
           renderAnswers(correct, onPick);
           await raf();
-          applyLandscapeAnswerAlign();
+          lockLandscapeShiftOnce();
 
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
@@ -1748,6 +1762,7 @@
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
+      /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
