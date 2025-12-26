@@ -253,13 +253,13 @@
 
       <div class="progressChickAnchor" id="chickAnchor">
         <!-- Still is basislaag -->
-     <img
-  class="chickLayer stillLayer active"
-  id="stillImg"
-  src="ballerina_still.png"
-  alt=""
-  draggable="false"
-/>
+        <img
+          class="chickLayer stillLayer active"
+          id="stillImg"
+          src="ballerina_still.png"
+          alt=""
+          draggable="false"
+        >
 
         <!-- Hidden sources voor canvas -->
         <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
@@ -293,14 +293,14 @@
 
         <div class="row">
           <div class="label">tick start procent</div>
-          <input type="range" id="tickStartRange" min="0" max="35" step="0.1" value="9.4">
-          <div class="value" id="tickStartValue">9.4</div>
+          <input type="range" id="tickStartRange" min="0" max="35" step="0.1" value="8.1">
+          <div class="value" id="tickStartValue">8.1</div>
         </div>
 
         <div class="row">
           <div class="label">tick einde procent</div>
-          <input type="range" id="tickEndRange" min="0" max="100" step="0.1" value="75.0">
-          <div class="value" id="tickEndValue">75.0</div>
+          <input type="range" id="tickEndRange" min="0" max="100" step="0.1" value="49.7">
+          <div class="value" id="tickEndValue">49.7</div>
         </div>
 
         <div class="row">
@@ -351,26 +351,26 @@
 
         <div class="row">
           <div class="label">eerste frame</div>
-          <input type="range" id="upStartFrameRange" min="0" max="600" step="1" value="0">
-          <div class="value" id="upStartFrameValue">0</div>
+          <input type="range" id="upStartFrameRange" min="0" max="600" step="1" value="13">
+          <div class="value" id="upStartFrameValue">13</div>
         </div>
 
         <div class="row">
           <div class="label">laatste frame</div>
-          <input type="range" id="upEndFrameRange" min="1" max="600" step="1" value="27">
-          <div class="value" id="upEndFrameValue">27</div>
+          <input type="range" id="upEndFrameRange" min="1" max="600" step="1" value="53">
+          <div class="value" id="upEndFrameValue">53</div>
         </div>
 
         <div class="row">
           <div class="label">x start</div>
-          <input type="range" id="upXStartRange" min="-250" max="250" step="1" value="0">
-          <div class="value" id="upXStartValue">0</div>
+          <input type="range" id="upXStartRange" min="-250" max="250" step="1" value="30">
+          <div class="value" id="upXStartValue">30</div>
         </div>
 
         <div class="row">
           <div class="label">x einde</div>
-          <input type="range" id="upXEndRange" min="-250" max="250" step="1" value="0">
-          <div class="value" id="upXEndValue">0</div>
+          <input type="range" id="upXEndRange" min="-250" max="250" step="1" value="40">
+          <div class="value" id="upXEndValue">40</div>
         </div>
 
         <div class="row">
@@ -403,20 +403,20 @@
 
         <div class="row">
           <div class="label">laatste frame</div>
-          <input type="range" id="downEndFrameRange" min="1" max="600" step="1" value="27">
-          <div class="value" id="downEndFrameValue">27</div>
+          <input type="range" id="downEndFrameRange" min="1" max="600" step="1" value="63">
+          <div class="value" id="downEndFrameValue">63</div>
         </div>
 
         <div class="row">
           <div class="label">x start</div>
-          <input type="range" id="downXStartRange" min="-250" max="250" step="1" value="0">
-          <div class="value" id="downXStartValue">0</div>
+          <input type="range" id="downXStartRange" min="-250" max="250" step="1" value="-6">
+          <div class="value" id="downXStartValue">-6</div>
         </div>
 
         <div class="row">
           <div class="label">x einde</div>
-          <input type="range" id="downXEndRange" min="-250" max="250" step="1" value="0">
-          <div class="value" id="downXEndValue">0</div>
+          <input type="range" id="downXEndRange" min="-250" max="250" step="1" value="-15">
+          <div class="value" id="downXEndValue">-15</div>
         </div>
 
         <div class="row">
@@ -437,8 +437,8 @@
 
         <div class="row">
           <div class="label">wit drempel</div>
-          <input type="range" id="whiteThreshRange" min="200" max="255" step="1" value="245">
-          <div class="value" id="whiteThreshValue">245</div>
+          <input type="range" id="whiteThreshRange" min="200" max="255" step="1" value="255">
+          <div class="value" id="whiteThreshValue">255</div>
         </div>
 
         <p class="hint">hoger betekent agressiever wit verwijderen, als randen rafelig worden, zet hem iets lager</p>
@@ -464,7 +464,7 @@
           <button class="btn" id="testDownBtn" type="button">test terug</button>
         </div>
 
-        <p class="hint">still blijft zichtbaar, animatie tekent in canvas met wit transparant, level springt pas na laatste frame</p>
+        <p class="hint">still is uit tijdens animatie, animatie tekent in canvas met wit transparant, level springt pas na laatste frame</p>
       </div>
     </div>
   </div>
@@ -636,13 +636,14 @@
         try{ ctx.clearRect(0, 0, animCanvas.width, animCanvas.height); }catch(e){}
       }
 
-     function showOnlyStill(){
-  stillImg.classList.add("active");
-  animCanvas.classList.remove("active");
-  clearCanvas();
-}
+      function showOnlyStill(){
+        stillImg.classList.add("active");
+        animCanvas.classList.remove("active");
+        clearCanvas();
+      }
 
       function showAnimCanvas(){
+        stillImg.classList.remove("active");
         animCanvas.classList.add("active");
       }
 
@@ -741,8 +742,8 @@
         }
 
         animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
-        showAnimCanvas();
 
+        showAnimCanvas();
         await raf();
 
         xAnim = animCanvas.animate(
@@ -794,8 +795,8 @@
       }
 
       function applyTransformsIdle(){
-  stillImg.style.transform = tStill();
-}
+        stillImg.style.transform = tStill();
+      }
 
       function setFrameSliderBoundsFor(videoEl, fpsRangeEl, startRangeEl, endRangeEl){
         const fps = Math.max(1, Number(fpsRangeEl.value));
@@ -951,8 +952,8 @@
         LEVEL = 1;
         levelRange.value = "1";
 
-        tickStartRange.value = "9.4";
-        tickEndRange.value = "75.0";
+        tickStartRange.value = "8.1";
+        tickEndRange.value = "49.7";
         anchorFineXRange.value = "0";
         anchorFineYRange.value = "0";
 
@@ -961,31 +962,27 @@
         stillYRange.value = "0";
 
         upFpsRange.value = "30";
-        upStartFrameRange.value = "0";
-        upEndFrameRange.value = "27";
-        upXStartRange.value = "0";
-        upXEndRange.value = "0";
+        upStartFrameRange.value = "13";
+        upEndFrameRange.value = "53";
+        upXStartRange.value = "30";
+        upXEndRange.value = "40";
         upYRange.value = "0";
         upScaleRange.value = "1.00";
 
         downFpsRange.value = "30";
         downStartFrameRange.value = "0";
-        downEndFrameRange.value = "27";
-        downXStartRange.value = "0";
-        downXEndRange.value = "0";
+        downEndFrameRange.value = "63";
+        downXStartRange.value = "-6";
+        downXEndRange.value = "-15";
         downYRange.value = "0";
         downScaleRange.value = "1.00";
 
-        whiteThreshRange.value = "245";
+        whiteThreshRange.value = "255";
         returnPanelRange.value = "1";
 
         syncValues();
         save();
       }
-
-    async function tryAutoplayStill(){
-  return;
-}
 
       async function playOnce(direction){
         if(playing) return;
@@ -1023,6 +1020,7 @@
 
         const played = await playSegmentOnCanvas(cfg.video, cfg);
 
+        /* Meteen terug naar png zodra animatie klaar is */
         showOnlyStill();
 
         if(played){
@@ -1071,8 +1069,6 @@
         }
 
         showOnlyStill();
-        await tryAutoplayStill();
-
         refreshAllFrameBounds();
       }
 
