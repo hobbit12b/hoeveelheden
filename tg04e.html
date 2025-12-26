@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="nl">
 <head>
@@ -26,6 +25,11 @@
 
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
+
+      --activeFill: rgba(229, 140, 116, 0.18);
+
+      /* vaste shift voor antwoorden in landscape */
+      --answersShiftY: 0px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -47,9 +51,6 @@
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
-      position: relative;
-      overflow: hidden; /* pagina blijft strak */
-      isolation: isolate; /* eigen stacking context, overlay kan veilig boven alles */
     }
     @media (orientation: portrait){
       body{
@@ -65,18 +66,16 @@
       flex-direction:column;
       gap: 22px;
       position: relative;
-      overflow: visible; /* belangrijk, niets afknippen */
+      overflow:hidden;
       min-height: 0;
-      z-index: 1;
     }
 
     .scan-surface{
       background:#ffffff;
       position: relative;
-      overflow: visible; /* belangrijk, niets afknippen */
+      overflow:hidden;
       min-height: 0;
       transition: background 140ms ease;
-      z-index: 1;
     }
 
     @media (orientation: landscape){
@@ -92,8 +91,6 @@
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
-      position: relative;
-      z-index: 2;
     }
 
     .homeBtn,
@@ -143,9 +140,6 @@
       justify-content:center;
       padding: 10px 6px;
       min-height: 0;
-      position: relative;
-      z-index: 1;
-      overflow: visible; /* belangrijk, niets afknippen */
     }
 
     .gameCard{
@@ -184,6 +178,7 @@
       .flashBoard{
         width: min(440px, 92%);
         height: auto;
+        transform: none;
       }
     }
 
@@ -206,30 +201,15 @@
       position:absolute;
       inset:0;
       display:flex;
-      align-items:flex-end;
+      align-items:center;
       justify-content:center;
-      padding: 18px 18px 24px 18px;
+      padding: 18px;
       z-index: 10;
     }
 
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
-      display:flex;
-      justify-content:center;
-      align-items:flex-end;
-    }
-
-    @media (orientation: landscape){
-      .scanStage{
-        align-items:flex-end;
-        padding-bottom: 28px;
-      }
-      .answersWrap{
-        width: min(420px, 92%);
-        max-width: 420px;
-        align-items:flex-end;
-      }
     }
 
     .answers{
@@ -238,7 +218,6 @@
       gap: 14px;
       justify-items:center;
       align-items:center;
-      width:100%;
     }
 
     @media (orientation: portrait){
@@ -247,10 +226,6 @@
         gap: 12px;
       }
       .answersWrap{ width: min(640px, 92%); }
-      .scanStage{
-        align-items:center;
-        padding: 18px;
-      }
     }
 
     .ansBtn{
@@ -277,7 +252,8 @@
     }
 
     @media (orientation: landscape){
-      .ansBtn{ width: clamp(92px, 10.8vw, 124px); }
+      .answersWrap{ width: min(360px, 92%); }
+      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
     }
 
     .ansBtn:active{
@@ -361,7 +337,7 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 2200;
+      z-index: 1200;
       color: #4d4a48;
     }
     .tunePanel.hidden{ display:none; }
@@ -388,6 +364,7 @@
       cursor:pointer;
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
     }
+    .tuneClose:active{ transform: translateY(1px) scale(0.99); }
 
     .tuneSection{
       margin-top: 8px;
@@ -443,6 +420,7 @@
       background:#f8c3b0;
       color:#4d4a48;
     }
+    .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
     .cardWrap{
       width:100%;
@@ -464,6 +442,7 @@
       background-position: center;
       background-repeat: no-repeat;
     }
+
     .cardFront{
       width:100%;
       height:100%;
@@ -474,27 +453,21 @@
     .ansBtn.cardOpen .cardFront{ display:grid; }
     .ansBtn.cardOpen .cardBack{ display:none; }
 
-    /* BELANGRIJK: overlay echt bovenop alles, nergens aan vast, geen clipping */
-    .timelineOverlay{
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      pointer-events:none;
-      user-select:none;
-      overflow: visible;
+    @media (orientation: landscape){
+      #answersWrap{
+        transform: translateY(var(--answersShiftY, 0px));
+        transition: transform 160ms ease;
+        will-change: transform;
+      }
     }
 
-    .timelineGroup{
-      position:absolute;
-      left: 0;
-      top: 0;
-      transform-origin: 0 0;
-      will-change: transform;
-      pointer-events:none;
-    }
-
+    /* tijdlijn basis */
     .progressTimeline{
-      position:absolute;
+      position: fixed;
+      z-index: 950;
+      pointer-events: none;
+      user-select: none;
+
       top: calc(14px + env(safe-area-inset-top));
       right: calc(14px + env(safe-area-inset-right));
       width: min(520px, 58vw);
@@ -541,6 +514,8 @@
 
     @media (orientation: portrait){
       .progressTimeline{
+        top: calc(10px + env(safe-area-inset-top));
+        right: calc(10px + env(safe-area-inset-right));
         width: min(680px, 92vw);
         height: 100px;
       }
@@ -548,76 +523,18 @@
       .chickLayer{ width: 78px; }
     }
 
-    .calPanel{
-      position: fixed;
-      left: 18px;
-      bottom: 18px;
-      width: min(640px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.98);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
-      padding: 14px 14px 12px 14px;
-      z-index: 2300;
-      color: #4d4a48;
-    }
-    .calPanel.hidden{ display:none; }
-
-    .calHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .calTitle{
-      font-weight: 950;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      text-transform: lowercase;
-    }
-    .calClose{
-      appearance:none;
-      border:none;
-      background:#f8c3b0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 950;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-      color:#2f2c2a;
-    }
-
-    .calTabs{
-      display:flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .tabBtn{
-      appearance:none;
-      border:none;
-      background: rgba(245,180,152,0.18);
-      border: 2px solid rgba(245,180,152,0.35);
-      color:#2f2c2a;
-      font-weight: 950;
-      padding: 10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-    }
-    .tabBtn.active{
-      background: var(--brand);
-      border-color: rgba(229,140,116,0.95);
-      color:#fff;
-    }
-
-    .hintLine{
-      margin-top: 6px;
-      font-size: 13px;
-      font-weight: 850;
-      color: rgba(77,74,72,0.78);
-      line-height: 1.3;
-      text-transform: lowercase;
+    /* fix 1, landscape: tijdlijn hoger in het witte vak, ongeveer gelijk met titlePill */
+    @media (orientation: landscape){
+      .progressTimeline{
+        position: absolute;
+        top: 28px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(520px, 88%);
+        height: 110px;
+      }
+      .progressChickAnchor{ bottom: -12px; }
     }
   </style>
 </head>
@@ -653,22 +570,17 @@
         <div class="answers answersHidden" id="answers"></div>
       </div>
     </div>
-  </section>
 
-  <!-- overlay zit nu bovenop alles en kan overal heen, ook links -->
-  <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
-    <div class="timelineGroup" id="timelineGroup">
-      <div class="progressTimeline" id="timeline">
-        <img class="progressLine" id="levelsImg" src="levels.png" alt="">
-        <div class="progressChickAnchor" id="chickAnchor">
-          <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
-          <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
-          <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
-          <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
-        </div>
+    <div class="progressTimeline" aria-hidden="true" id="timeline">
+      <img class="progressLine" id="levelsImg" src="levels.png" alt="">
+      <div class="progressChickAnchor" id="chickAnchor">
+        <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+        <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+        <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+        <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
@@ -710,55 +622,6 @@
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
         <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
-
-      <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="calPanel hidden" id="calPanel" role="dialog" aria-modal="false" aria-label="Kalibratie tijdlijn">
-    <div class="calHeader">
-      <div class="calTitle">kalibratie tijdlijn</div>
-      <button class="calClose" id="calClose" type="button">Sluit</button>
-    </div>
-
-    <div class="calTabs">
-      <button class="tabBtn active" id="tabLandscape" type="button">horizontaal</button>
-      <button class="tabBtn" id="tabPortrait" type="button">vertikaal</button>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">groep x</div>
-      <input type="range" id="gX" min="-1200" max="1200" step="1" value="0" />
-      <div class="tuneValue" id="gXv">0</div>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">groep y</div>
-      <input type="range" id="gY" min="-1200" max="1200" step="1" value="0" />
-      <div class="tuneValue" id="gYv">0</div>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">groep schaal</div>
-      <input type="range" id="gS" min="0.50" max="2.00" step="0.01" value="1.00" />
-      <div class="tuneValue" id="gSv">1.00</div>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">kuiken lijn</div>
-      <input type="range" id="lineY" min="-160" max="160" step="1" value="-10" />
-      <div class="tuneValue" id="lineYv">-10</div>
-    </div>
-
-    <div class="tuneButtons">
-      <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
-      <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
-    </div>
-
-    <div class="hintLine">
-      de overlay zit nu altijd bovenop alles, je kunt hem met de x slider helemaal over het linker vlak schuiven, in beide standen
     </div>
   </div>
 
@@ -771,80 +634,60 @@
       const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
-      const $ = (id) => document.getElementById(id);
 
-      const startOverlay = $("startOverlay");
-      const startBtn = $("startBtn");
+      const startOverlay = document.getElementById("startOverlay");
+      const startBtn = document.getElementById("startBtn");
 
-      const titlePill = $("titlePill");
+      const titlePill = document.getElementById("titlePill");
 
-      const homeBtn = $("homeBtn");
-      const tuneBtn = $("tuneBtn");
-      const tunePanel = $("tunePanel");
-      const tuneClose = $("tuneClose");
+      const homeBtn = document.getElementById("homeBtn");
+      const tuneBtn = document.getElementById("tuneBtn");
+      const tunePanel = document.getElementById("tunePanel");
+      const tuneClose = document.getElementById("tuneClose");
 
-      const flashMsRange = $("flashMsRange");
-      const flashMsValue = $("flashMsValue");
-      const tuneLevelValue = $("tuneLevelValue");
+      const flashMsRange = document.getElementById("flashMsRange");
+      const flashMsValue = document.getElementById("flashMsValue");
+      const tuneLevelValue = document.getElementById("tuneLevelValue");
 
-      const newRoundBtn = $("newRoundBtn");
-      const testWrongBtn = $("testWrongBtn");
-      const testGoodBtn = $("testGoodBtn");
+      const newRoundBtn = document.getElementById("newRoundBtn");
+      const testWrongBtn = document.getElementById("testWrongBtn");
+      const testGoodBtn = document.getElementById("testGoodBtn");
 
-      const openCalBtn = $("openCalBtn");
-      const calPanel = $("calPanel");
-      const calClose = $("calClose");
+      const flashSvg = document.getElementById("flashSvg");
+      const answersEl = document.getElementById("answers");
+      const scanArea = document.getElementById("scanArea");
+      const answersWrap = document.getElementById("answersWrap");
+      const gameCard = document.getElementById("gameCard");
 
-      const tabLandscape = $("tabLandscape");
-      const tabPortrait = $("tabPortrait");
-
-      const gX = $("gX");
-      const gY = $("gY");
-      const gS = $("gS");
-      const lineY = $("lineY");
-
-      const gXv = $("gXv");
-      const gYv = $("gYv");
-      const gSv = $("gSv");
-      const lineYv = $("lineYv");
-
-      const gResetBtn = $("gResetBtn");
-      const gSaveBtn = $("gSaveBtn");
-
-      const flashSvg = $("flashSvg");
-      const answersEl = $("answers");
-      const scanArea = $("scanArea");
-
-      const timelineOverlay = $("timelineOverlay");
-      const timelineGroup = $("timelineGroup");
-      const timeline = $("timeline");
-      const levelsImg = $("levelsImg");
-      const chickAnchor = $("chickAnchor");
-      const stillImg = $("stillImg");
-      const upVid = $("upVid");
-      const downVid = $("downVid");
-      const animCanvas = $("animCanvas");
+      const timeline = document.getElementById("timeline");
+      const levelsImg = document.getElementById("levelsImg");
+      const chickAnchor = document.getElementById("chickAnchor");
+      const stillImg = document.getElementById("stillImg");
+      const upVid = document.getElementById("upVid");
+      const downVid = document.getElementById("downVid");
+      const animCanvas = document.getElementById("animCanvas");
       const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
 
+      /* anim timing knoppen */
       const WAIT_BEFORE_IN_MS = 0;
       const IN_DUR_MS = 800;
       const OUT_DUR_MS = 750;
 
+      /* kaarten */
       const PREVIEW_GAP_MS = 120;
       const PREVIEW_MS = 1700;
 
       let flashMs = Number(flashMsRange.value);
 
+      /* spel level 1 tot 5 */
       let LEVEL = 1;
 
       let streakGood = 0;
       let streakBad = 0;
 
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      function usesAnswerCards(){
+        return LEVEL >= 2;
       }
-
-      function usesAnswerCards(){ return LEVEL >= 2; }
 
       function setLevel(n){
         LEVEL = clamp(n, 1, 5);
@@ -863,7 +706,9 @@
       function pickNumberWeighted(cap){
         const w1 = 0.30;
         const weights = [];
-        for(let i=1;i<=cap;i++) weights.push(i === 1 ? w1 : 1);
+        for(let i=1;i<=cap;i++){
+          weights.push(i === 1 ? w1 : 1);
+        }
         const sum = weights.reduce((a,b) => a + b, 0);
         let r = Math.random() * sum;
         for(let i=0;i<weights.length;i++){
@@ -873,6 +718,7 @@
         return cap;
       }
 
+      /* audio */
       let audioCtx = null;
       function beep(type){
         try{
@@ -893,6 +739,7 @@
         }catch(e){}
       }
 
+      /* dobbel */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -906,8 +753,12 @@
         5: [P.tl, P.tr, P.mc, P.bl, P.br],
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
+
       function patternDice(n){
-        return [{ dots: diceFaces[n], box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88} }];
+        return [{
+          dots: diceFaces[n],
+          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+        }];
       }
 
       const L = {
@@ -917,16 +768,35 @@
         r:[0.86,0.50],
         l:[0.14,0.50]
       };
+
       const V = {
         l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
         r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
       };
+
       const VARS_1TO4 = {
-        1: [[L.m],[L.b],[L.e]],
-        2: [[L.a, L.c],[L.b, L.e],[L.a, L.f]],
-        3: [[L.a, L.b, L.c],[L.a, L.m, L.f],[L.a, L.d, L.f]],
-        4: [[L.a, L.c, L.d, L.f],[L.a, L.b, L.c, L.m],[L.a, L.d, L.f, L.b]]
+        1: [
+          [L.m],
+          [L.b],
+          [L.e]
+        ],
+        2: [
+          [L.a, L.c],
+          [L.b, L.e],
+          [L.a, L.f]
+        ],
+        3: [
+          [L.a, L.b, L.c],
+          [L.a, L.m, L.f],
+          [L.a, L.d, L.f]
+        ],
+        4: [
+          [L.a, L.c, L.d, L.f],
+          [L.a, L.b, L.c, L.m],
+          [L.a, L.d, L.f, L.b]
+        ]
       };
+
       const VARS_5 = [
         [L.a, L.b, L.c, L.d, L.e],
         [L.a, L.c, L.d, L.f, L.m],
@@ -956,6 +826,7 @@
         }
         return 1;
       }
+
       function pickVariantIndexForQuestion(n){
         const k = allowedVariantCountQuestion(n);
         if(k <= 1) return 0;
@@ -1008,8 +879,12 @@
       }
 
       function patternAnswer(n){
-        if(n <= 4) return patternDice(n);
-        if(n === 5) return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        if(n <= 4){
+          return patternDice(n);
+        }
+        if(n === 5){
+          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        }
         return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
       }
 
@@ -1063,7 +938,9 @@
             if(options.size >= 3) break;
           }
 
-          while(options.size < 3) options.add(randInt(1, cap));
+          while(options.size < 3){
+            options.add(randInt(1, cap));
+          }
 
           const arr = [...options];
           for(let i=arr.length-1;i>0;i--){
@@ -1090,6 +967,10 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
+
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
@@ -1108,9 +989,65 @@
 
       function sortedButtonsForExit(btns){
         const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
-        if(isPortrait()) rects.sort((u,v) => v.r.left - u.r.left);
-        else rects.sort((u,v) => v.r.top - u.r.top);
+        if(isPortrait()){
+          rects.sort((u,v) => v.r.left - u.r.left);
+        }else{
+          rects.sort((u,v) => v.r.top - u.r.top);
+        }
         return rects.map(x => x.b);
+      }
+
+      /* fix 2, altijd dezelfde lage positie in landscape */
+      function computeFixedLandscapeAnswerShift(){
+        if(!answersWrap || !answersEl || !scanArea || !gameCard) return;
+
+        if(isPortrait()){
+          answersWrap.style.setProperty("--answersShiftY", "0px");
+          return;
+        }
+
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length){
+          answersWrap.style.setProperty("--answersShiftY", "0px");
+          return;
+        }
+
+        const cardRect = gameCard.getBoundingClientRect();
+        const areaRect = scanArea.getBoundingClientRect();
+
+        let groupTop = Infinity;
+        let groupBottom = -Infinity;
+        for(const b of btns){
+          const r = b.getBoundingClientRect();
+          groupTop = Math.min(groupTop, r.top);
+          groupBottom = Math.max(groupBottom, r.bottom);
+        }
+
+        const desiredDy = cardRect.bottom - groupBottom;
+
+        const pad = 18;
+        const minDy = (areaRect.top + pad) - groupTop;
+        const maxDy = (areaRect.bottom - pad) - groupBottom;
+
+        const dy = clamp(desiredDy, minDy, maxDy);
+
+        answersWrap.style.setProperty("--answersShiftY", `${dy.toFixed(1)}px`);
+      }
+
+      /* fix 2, dit is de enige plek waar we de shift in landscape bepalen */
+      let fixedShiftLocked = false;
+      function lockLandscapeShiftOnce(){
+        if(isPortrait()){
+          fixedShiftLocked = false;
+          answersWrap.style.setProperty("--answersShiftY", "0px");
+          return;
+        }
+        if(fixedShiftLocked) return;
+        computeFixedLandscapeAnswerShift();
+        fixedShiftLocked = true;
+      }
+      function resetLandscapeShiftLock(){
+        fixedShiftLocked = false;
       }
 
       async function animateInButtons(){
@@ -1166,6 +1103,7 @@
         });
 
         await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
+
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
@@ -1204,6 +1142,7 @@
       }
 
       let previewToken = 0;
+
       async function previewCardsNonBlocking(){
         if(!usesAnswerCards()) return;
         const myToken = ++previewToken;
@@ -1226,38 +1165,7 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* tijdlijn groep kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v3";
-      const DEFAULT_CALIB = {
-        landscape: { x: 0, y: 0, s: 1.00 },
-        portrait:  { x: 0, y: 0, s: 1.00 },
-        lineY: -10
-      };
-
-      let calib = loadCalib() || structuredClone(DEFAULT_CALIB);
-
-      function loadCalib(){
-        try{
-          const raw = localStorage.getItem(TL_STORE_KEY);
-          if(!raw) return null;
-          return JSON.parse(raw);
-        }catch(e){ return null; }
-      }
-      function saveCalib(){
-        try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
-      }
-
-      function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
-
-      function applyTimelineGroupTransform(){
-        if(!timelineGroup) return;
-        const k = activeModeKey();
-        const c = calib[k] || DEFAULT_CALIB[k];
-        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-
-      /* levels mapping */
+      /* tijdlijn positioneren */
       const TL_LEVEL_MIN = 1;
       const TL_LEVEL_MAX = 9;
 
@@ -1266,6 +1174,9 @@
 
       const TL_TICK_START = 8.1;
       const TL_TICK_END = 48.7;
+
+      const TL_FINE_X = 0;
+      const TL_FINE_Y = 0;
 
       const TL_WHITE_THRESH = 255;
 
@@ -1276,7 +1187,7 @@
       let chickXAnim = null;
 
       function timelineReady(){
-        return timelineOverlay && timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
+        return timeline && levelsImg && chickAnchor && stillImg;
       }
 
       function getContainedRect(img){
@@ -1315,20 +1226,18 @@
         const parent = timeline.getBoundingClientRect();
         const xLocal = xAbs - parent.left;
 
-        const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
-
         if(opts.noTransition){
           const prev = chickAnchor.style.transition;
           chickAnchor.style.transition = "none";
           chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+          chickAnchor.style.transform = `translateX(-50%) translate(${TL_FINE_X}px, ${TL_FINE_Y}px)`;
           chickAnchor.offsetHeight;
           chickAnchor.style.transition = prev || "";
           return;
         }
 
         chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+        chickAnchor.style.transform = `translateX(-50%) translate(${TL_FINE_X}px, ${TL_FINE_Y}px)`;
       }
 
       function cancelChickXAnim(){
@@ -1337,9 +1246,11 @@
       }
 
       function showOnlyStill(){
+        if(!timelineReady()) return;
         stillImg.classList.add("active");
         if(animCanvas) animCanvas.classList.remove("active");
       }
+
       function showCanvas(){
         if(animCanvas) animCanvas.classList.add("active");
       }
@@ -1381,6 +1292,7 @@
 
       async function ensureReady(videoEl){
         if(videoEl.readyState >= 2) return true;
+
         return await new Promise(resolve => {
           let done = false;
 
@@ -1462,7 +1374,11 @@
         animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
 
         let playingOk = true;
-        try{ await videoEl.play(); }catch(e){ playingOk = false; }
+        try{
+          await videoEl.play();
+        }catch(e){
+          playingOk = false;
+        }
         if(!playingOk) return false;
 
         const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
@@ -1505,12 +1421,13 @@
         stillImg.classList.remove("active");
         await raf();
 
+        const timesMs = times.durMs;
         chickXAnim = animCanvas.animate(
           [
             { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
             { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
           ],
-          { duration: times.durMs, easing: "linear", fill: "forwards" }
+          { duration: timesMs, easing: "linear", fill: "forwards" }
         );
 
         if(useRVFC){
@@ -1560,7 +1477,6 @@
 
         stopVideo(upVid);
         stopVideo(downVid);
-
         showOnlyStill();
 
         const dir = toLevel > fromLevel ? "up" : "down";
@@ -1569,7 +1485,6 @@
 
         await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        /* direct op eindpunt, zonder zichtbaar schuiven */
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1582,13 +1497,9 @@
       function initTimeline(){
         if(!timelineReady()) return;
 
-        applyTimelineGroupTransform();
         showOnlyStill();
 
-        const apply = () => {
-          applyTimelineGroupTransform();
-          setAnchorToLevel(LEVEL, { noTransition: true });
-        };
+        const apply = () => setAnchorToLevel(LEVEL);
 
         if(levelsImg.complete && levelsImg.naturalWidth) apply();
         else levelsImg.addEventListener("load", apply, { once:true });
@@ -1608,7 +1519,10 @@
       let correct = 1;
       let questionVariantIndex = 0;
 
-      function resetStreaks(){ streakGood = 0; streakBad = 0; }
+      function resetStreaks(){
+        streakGood = 0;
+        streakBad = 0;
+      }
 
       async function handleAutoLevelOnGood(){
         streakGood += 1;
@@ -1664,7 +1578,12 @@
         await wait(260);
 
         renderAnswers(correct, onPick);
-        await wait(0);
+
+        /* fix 2: zet shift 1x vast op basis van eerste render, daarna nooit meer wisselen */
+        await raf();
+        lockLandscapeShiftOnce();
+
+        await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
 
         locked = false;
@@ -1745,7 +1664,6 @@
         nextRound();
       }
 
-      /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
@@ -1784,87 +1702,16 @@
         if(btns[0]) await onPick(btns[0], correct);
       });
 
-      /* calibration ui */
-      let calMode = "landscape";
-
-      function setCalMode(mode){
-        calMode = mode === "portrait" ? "portrait" : "landscape";
-        tabLandscape.classList.toggle("active", calMode === "landscape");
-        tabPortrait.classList.toggle("active", calMode === "portrait");
-        loadSlidersFromCalib();
-      }
-
-      function loadSlidersFromCalib(){
-        const c = calib[calMode] || DEFAULT_CALIB[calMode];
-        gX.value = String(c.x ?? 0);
-        gY.value = String(c.y ?? 0);
-        gS.value = String((c.s ?? 1.0).toFixed(2));
-        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
-        syncCalNumbers();
-        applyTimelineGroupTransform();
-      }
-
-      function syncCalNumbers(){
-        gXv.textContent = String(gX.value);
-        gYv.textContent = String(gY.value);
-        gSv.textContent = Number(gS.value).toFixed(2);
-        lineYv.textContent = String(lineY.value);
-      }
-
-      function writeSlidersToCalib(){
-        calib[calMode] = { x: Number(gX.value), y: Number(gY.value), s: Number(gS.value) };
-        calib.lineY = Number(lineY.value);
-      }
-
-      function openCal(){
-        calPanel.classList.remove("hidden");
-        setCalMode(calMode);
-      }
-      function closeCal(){ calPanel.classList.add("hidden"); }
-
-      openCalBtn.addEventListener("click", () => { beep("tap"); openCal(); });
-      calClose.addEventListener("click", () => { beep("tap"); closeCal(); });
-
-      tabLandscape.addEventListener("click", () => { beep("tap"); setCalMode("landscape"); });
-      tabPortrait.addEventListener("click", () => { beep("tap"); setCalMode("portrait"); });
-
-      [gX, gY, gS, lineY].forEach(el => el.addEventListener("input", () => {
-        writeSlidersToCalib();
-        syncCalNumbers();
-        applyTimelineGroupTransform();
-      }));
-
-      gResetBtn.addEventListener("click", () => {
-        beep("tap");
-        calib = structuredClone(DEFAULT_CALIB);
-        setCalMode(calMode);
-        applyTimelineGroupTransform();
-        saveCalib();
-      });
-
-      gSaveBtn.addEventListener("click", () => {
-        beep("tap");
-        writeSlidersToCalib();
-        saveCalib();
-        applyTimelineGroupTransform();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      });
-
-      /* start */
       function startGame(){
         if(started) return;
         started = true;
 
         setLevel(1);
         resetStreaks();
+        setAnchorToLevel(LEVEL, { noTransition: true });
 
         startOverlay.style.display = "none";
         syncUI();
-
-        applyTimelineGroupTransform();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-        showOnlyStill();
-
         nextRound();
       }
 
@@ -1887,35 +1734,42 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
+      let reflowTimer = null;
+      function onReflow(){
+        if(!started) return;
+
+        resetLandscapeShiftLock();
+
+        if(reflowTimer) clearTimeout(reflowTimer);
+        reflowTimer = setTimeout(async () => {
+          locked = true;
+          previewToken++;
+          answersEl.classList.add("answersHidden");
+          answersEl.innerHTML = "";
+          clearBoard();
+          await wait(120);
+
+          renderAnswers(correct, onPick);
+          await raf();
+          lockLandscapeShiftOnce();
+
+          await wait(WAIT_BEFORE_IN_MS);
+          await animateInButtons();
+          locked = false;
+          previewCardsNonBlocking();
+        }, 220);
+      }
+      window.addEventListener("resize", onReflow);
+      window.addEventListener("orientationchange", onReflow);
+
       /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
       initTimeline();
-
-      applyTimelineGroupTransform();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
-
-      function onAnyResize(){
-        applyTimelineGroupTransform();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-      window.addEventListener("resize", onAnyResize);
-      window.addEventListener("orientationchange", onAnyResize);
-
-      function bootCalib(){
-        if(!calib) calib = structuredClone(DEFAULT_CALIB);
-        const k = activeModeKey();
-        const c = calib[k] || DEFAULT_CALIB[k];
-        gX.value = String(c.x ?? 0);
-        gY.value = String(c.y ?? 0);
-        gS.value = String((c.s ?? 1.0).toFixed(2));
-        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
-        syncCalNumbers();
-      }
-      bootCalib();
     })();
   </script>
 </body>
