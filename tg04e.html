@@ -24,7 +24,7 @@
       --wrongBorder: rgba(229, 140, 116, 0.45);
 
       --correctFill: rgba(210, 244, 214, 0.92);
-      --correctBorder: rgba(144, 204, 152, 0.70);
+      --correctBorder: rgba(144, 204, 152,0.70);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -47,8 +47,8 @@
       grid-template-columns: 58fr 42fr;
       height: 100%;
       position: relative;
-      overflow: hidden; /* pagina blijft strak */
-      isolation: isolate; /* eigen stacking context, overlay kan veilig boven alles */
+      overflow: hidden;
+      isolation: isolate;
     }
     @media (orientation: portrait){
       body{
@@ -64,7 +64,7 @@
       flex-direction:column;
       gap: 22px;
       position: relative;
-      overflow: visible; /* belangrijk, niets afknippen */
+      overflow: visible;
       min-height: 0;
       z-index: 1;
     }
@@ -72,7 +72,7 @@
     .scan-surface{
       background:#ffffff;
       position: relative;
-      overflow: visible; /* belangrijk, niets afknippen */
+      overflow: visible;
       min-height: 0;
       transition: background 140ms ease;
       z-index: 1;
@@ -114,7 +114,6 @@
     }
     .homeBtn:active,
     .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
-
     .homeBtn svg{ width: 42px; height: 42px; display:block; }
 
     .titlePill{
@@ -144,7 +143,7 @@
       min-height: 0;
       position: relative;
       z-index: 1;
-      overflow: visible; /* belangrijk, niets afknippen */
+      overflow: visible;
     }
 
     .gameCard{
@@ -178,7 +177,6 @@
       position:relative;
       aspect-ratio: 520 / 380;
     }
-
     @media (orientation: portrait){
       .flashBoard{
         width: min(440px, 92%);
@@ -193,7 +191,6 @@
       align-items:center;
       justify-content:center;
     }
-
     .flashSvg svg{
       width: 100%;
       height: 100%;
@@ -219,10 +216,11 @@
       align-items:flex-end;
     }
 
+    /* HORIZONTAAL: altijd laag, nooit wisselend */
     @media (orientation: landscape){
       .scanStage{
         align-items:flex-end;
-        padding-bottom: 28px;
+        padding-bottom: 30px;
       }
       .answersWrap{
         width: min(420px, 92%);
@@ -274,7 +272,6 @@
       position: relative;
       overflow: hidden;
     }
-
     @media (orientation: landscape){
       .ansBtn{ width: clamp(92px, 10.8vw, 124px); }
     }
@@ -334,7 +331,6 @@
       font-size: 18px;
       line-height: 1.35;
     }
-
     .startBtn{
       appearance:none;
       border:none;
@@ -473,7 +469,7 @@
     .ansBtn.cardOpen .cardFront{ display:grid; }
     .ansBtn.cardOpen .cardBack{ display:none; }
 
-    /* BELANGRIJK: overlay echt bovenop alles, nergens aan vast, geen clipping */
+    /* overlay bovenop alles, geen clipping */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -492,12 +488,20 @@
       pointer-events:none;
     }
 
+    /* standaard plek: rechtsboven */
     .progressTimeline{
       position:absolute;
       top: calc(14px + env(safe-area-inset-top));
       right: calc(14px + env(safe-area-inset-right));
       width: min(520px, 58vw);
       height: 96px;
+    }
+
+    /* HORIZONTAAL: meer richting hoogte van titlePill */
+    @media (orientation: landscape){
+      .progressTimeline{
+        top: calc(20px + env(safe-area-inset-top));
+      }
     }
 
     .progressLine{
@@ -654,7 +658,7 @@
     </div>
   </section>
 
-  <!-- overlay zit nu bovenop alles en kan overal heen, ook links -->
+  <!-- overlay boven alles en overal zichtbaar -->
   <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
     <div class="timelineGroup" id="timelineGroup">
       <div class="progressTimeline" id="timeline">
@@ -757,7 +761,7 @@
     </div>
 
     <div class="hintLine">
-      de overlay zit nu altijd bovenop alles, je kunt hem met de x slider helemaal over het linker vlak schuiven, in beide standen
+      als je schaalt blijft de kuikenpositie nu correct, omdat de berekende tick x wordt teruggerekend naar ongeschaalde pixels
     </div>
   </div>
 
@@ -1061,7 +1065,6 @@
             options.add(c);
             if(options.size >= 3) break;
           }
-
           while(options.size < 3) options.add(randInt(1, cap));
 
           const arr = [...options];
@@ -1225,8 +1228,8 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* tijdlijn groep kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v3";
+      /* tijdlijngroep kalibratie */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v4_scale_fix";
       const DEFAULT_CALIB = {
         landscape: { x: 0, y: 0, s: 1.00 },
         portrait:  { x: 0, y: 0, s: 1.00 },
@@ -1247,6 +1250,12 @@
       }
 
       function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
+
+      function groupScale(){
+        const k = activeModeKey();
+        const s = Number(calib?.[k]?.s ?? 1);
+        return s || 1;
+      }
 
       function applyTimelineGroupTransform(){
         if(!timelineGroup) return;
@@ -1305,6 +1314,7 @@
         return content.left + (content.width * p);
       }
 
+      /* schaal fix: xLocal en lineY worden terug omgerekend naar ongeschaalde pixels */
       function setAnchorToLevel(level, opts = {}){
         if(!timelineReady()) return;
 
@@ -1312,22 +1322,25 @@
         if(xAbs == null) return;
 
         const parent = timeline.getBoundingClientRect();
-        const xLocal = xAbs - parent.left;
+        const s = groupScale();
+
+        const xLocal = (xAbs - parent.left) / s;
 
         const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
+        const yLocal = y / s;
 
         if(opts.noTransition){
           const prev = chickAnchor.style.transition;
           chickAnchor.style.transition = "none";
           chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${yLocal}px)`;
           chickAnchor.offsetHeight;
           chickAnchor.style.transition = prev || "";
           return;
         }
 
         chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${yLocal}px)`;
       }
 
       function cancelChickXAnim(){
@@ -1382,7 +1395,6 @@
         if(videoEl.readyState >= 2) return true;
         return await new Promise(resolve => {
           let done = false;
-
           const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
           const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
           const cleanup = () => {
@@ -1390,17 +1402,11 @@
             videoEl.removeEventListener("loadedmetadata", ok);
             videoEl.removeEventListener("error", bad);
           };
-
           videoEl.addEventListener("loadeddata", ok, { once:true });
           videoEl.addEventListener("loadedmetadata", ok, { once:true });
           videoEl.addEventListener("error", bad, { once:true });
-
           try{ videoEl.load(); }catch(e){}
-
-          setTimeout(() => {
-            cleanup();
-            resolve(videoEl.readyState >= 1);
-          }, 900);
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
         });
       }
 
@@ -1414,32 +1420,23 @@
       async function seekTo(videoEl, timeSec){
         return await new Promise(resolve => {
           let done = false;
-
           const finish = (ok) => {
             if(done) return;
             done = true;
             cleanup();
             resolve(ok);
           };
-
           const onSeeked = () => finish(true);
           const onErr = () => finish(false);
-
           const cleanup = () => {
             videoEl.removeEventListener("seeked", onSeeked);
             videoEl.removeEventListener("error", onErr);
           };
-
           videoEl.addEventListener("seeked", onSeeked, { once:true });
           videoEl.addEventListener("error", onErr, { once:true });
 
-          try{
-            videoEl.currentTime = Math.max(0, Number(timeSec) || 0);
-          }catch(e){
-            cleanup();
-            resolve(false);
-            return;
-          }
+          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+          catch(e){ cleanup(); resolve(false); return; }
 
           setTimeout(() => finish(true), 700);
         });
@@ -1469,7 +1466,6 @@
         const gotFirstFrame = await new Promise(resolve => {
           let done = false;
           const finish = (ok) => { if(done) return; done = true; resolve(ok); };
-
           const maxWait = setTimeout(() => finish(false), 900);
 
           if(useRVFC){
@@ -1568,7 +1564,7 @@
 
         await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        /* direct op eindpunt, zonder zichtbaar schuiven */
+        /* direct op eindpunt, zonder zichtbare schuif */
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1663,7 +1659,7 @@
         await wait(260);
 
         renderAnswers(correct, onPick);
-        await wait(0);
+        await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
 
         locked = false;
@@ -1815,10 +1811,7 @@
         calib.lineY = Number(lineY.value);
       }
 
-      function openCal(){
-        calPanel.classList.remove("hidden");
-        setCalMode(calMode);
-      }
+      function openCal(){ calPanel.classList.remove("hidden"); setCalMode(calMode); }
       function closeCal(){ calPanel.classList.add("hidden"); }
 
       openCalBtn.addEventListener("click", () => { beep("tap"); openCal(); });
@@ -1904,17 +1897,6 @@
       window.addEventListener("resize", onAnyResize);
       window.addEventListener("orientationchange", onAnyResize);
 
-      function bootCalib(){
-        if(!calib) calib = structuredClone(DEFAULT_CALIB);
-        const k = activeModeKey();
-        const c = calib[k] || DEFAULT_CALIB[k];
-        gX.value = String(c.x ?? 0);
-        gY.value = String(c.y ?? 0);
-        gS.value = String((c.s ?? 1.0).toFixed(2));
-        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
-        syncCalNumbers();
-      }
-      bootCalib();
     })();
   </script>
 </body>
