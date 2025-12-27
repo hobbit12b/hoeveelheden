@@ -27,12 +27,6 @@
       --correctBorder: rgba(144, 204, 152, 0.70);
 
       --activeFill: rgba(229, 140, 116, 0.18);
-
-      /* Vraagvak Y offset, alleen iPad horizontaal (mag blijven voor jouw layout) */
-      --questionYOffsetLandscape: 0px;
-
-      /* Antwoordknoppen grootte, alleen iPad horizontaal (mag blijven voor jouw layout) */
-      --answerBtnSizeLandscape: 112px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -53,6 +47,7 @@
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
+      grid-template-rows: 1fr; /* FIX: voorkomt witte balk onderin op desktop */
       height: 100%;
       position: relative;
       overflow:hidden;
@@ -85,8 +80,7 @@
       transition: background 140ms ease;
       z-index: 1;
 
-      /* clip alles zodat knoppen nooit over de middenlijn zichtbaar zijn */
-      overflow:hidden;
+      overflow:hidden; /* clip alles zodat knoppen nooit over de middenlijn zichtbaar zijn */
     }
 
     @media (orientation: landscape){
@@ -171,12 +165,6 @@
       justify-content:center;
       padding: 18px;
       transform: translateY(0px);
-    }
-
-    @media (min-aspect-ratio: 4/3){
-      .gameCard{
-        transform: translateY(var(--questionYOffsetLandscape));
-      }
     }
 
     @media (orientation: portrait){
@@ -283,14 +271,6 @@
       .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
     }
 
-    @media (min-aspect-ratio: 4/3){
-      .answers{ gap: 12px; }
-      .ansBtn{
-        width: min(var(--answerBtnSizeLandscape), 26vh);
-        padding: 8px;
-      }
-    }
-
     .ansBtn:active{
       transform: translateY(var(--pressDown));
       box-shadow: 0 8px 16px rgba(0,0,0,0.10);
@@ -362,7 +342,7 @@
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Instellingen, transparanter */
+    /* Instellingen */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -520,6 +500,7 @@
       pointer-events:none;
       user-select:none;
       overflow: visible;
+      background: transparent;
     }
 
     .timelineGroup{
@@ -531,13 +512,14 @@
       pointer-events:none;
     }
 
-    /* Zichtbare blok met levels.png, basismaat blijft, scale komt via timelineGroup */
+    /* Dit is het zichtbare blok met levels.png */
     .progressTimeline{
       position:absolute;
       left: 0;
       top: 0;
-      width: min(520px, 58vw);
-      height: 96px;
+      width: 520px;          /* basismaat, wordt via transform geschaald */
+      aspect-ratio: 10 / 1;  /* wordt in JS exact gezet op basis van echte afbeelding */
+      height: auto;
       z-index: 20;
     }
 
@@ -546,36 +528,36 @@
       inset:0;
       width:100%;
       height:100%;
-      object-fit: contain;
+      object-fit: fill;
     }
 
-    .progressLine.levelsHidden{
-      opacity: 0;
-    }
+    .progressLine.levelsHidden{ opacity: 0; }
 
+    /* Kuiken anker, top wordt in JS gezet zodat ogen op de lijn vallen */
     .progressChickAnchor{
       position:absolute;
-      bottom: -10px;
-      transform: translateX(-50%);
+      left: 0;
+      top: 0;
       width: 82px;
       height: 82px;
       pointer-events:none;
       transition: left 520ms cubic-bezier(.22,.61,.35,1);
-      will-change: left, transform;
+      will-change: left, transform, top;
+      transform: translateX(-50%);
     }
     .progressChickAnchor.noMove{ transition: none !important; }
 
     .chickLayer{
       position:absolute;
-      left:0;
-      bottom:0;
-      width: 82px;
-      height: auto;
+      inset:0;
+      width: 100%;
+      height: 100%;
       opacity: 0;
       pointer-events:none;
       transform-origin: 50% 100%;
       will-change: transform, opacity;
       display:block;
+      object-fit: contain;
     }
     .chickLayer.active{ opacity: 1; }
     .stillLayer{ z-index: 3; }
@@ -583,15 +565,6 @@
 
     #animCanvas{ opacity:0; }
     #animCanvas.active{ opacity:1; }
-
-    @media (orientation: portrait){
-      .progressTimeline{
-        width: min(680px, 92vw);
-        height: 100px;
-      }
-      .progressChickAnchor{ width: 78px; height: 78px; }
-      .chickLayer{ width: 78px; }
-    }
   </style>
 </head>
 
@@ -690,7 +663,7 @@
       </div>
 
       <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png tonen</button>
+        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
       </div>
     </div>
   </div>
@@ -769,7 +742,7 @@
       }
 
       function setLevel(n){
-        LEVEL = clamp(n, 1, 5);
+        LEVEL = clamp(n, 1, 9);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
         setAnchorToLevel(LEVEL, { noTransition: true });
@@ -1046,7 +1019,7 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      /* animatie: schuiven alleen zichtbaar binnen scan-surface (overflow hidden) */
+      /* animatie: schuiven alleen zichtbaar binnen scan-surface */
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
@@ -1192,801 +1165,63 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* timeline mapping, nu 1 tot en met 9 */
+      /* =========================
+         TIMELINE: auto schalen en positioneren
+         ========================= */
+
+      const LV_MIN = 1;
+      const LV_MAX = 9;
+
+      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v1";
+      let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
+
+      let tlMeta = null;          // { leftFrac, rightFrac, baseFrac }
+      let chickEyeFrac = 0.42;    // y positie ogen als fractie (0..1) in stillImg
+      let baselineLocalY = 0;     // baseline y in timeline local px
+
       function timelineReady(){
         return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && flashBoard;
       }
 
-      const TL_LEVEL_MIN = 1;
-      const TL_LEVEL_MAX = 9;
-
-      const TL_CALIB_MIN = 1;
-      const TL_CALIB_MAX = 5;
-
-      const TL_TICK_START = 8.1;
-      const TL_TICK_END = 48.7;
-
-      const TL_WHITE_THRESH = 255;
-
-      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
-      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
-
-      let chickPlaying = false;
-      let chickXAnim = null;
-
-      function tickPercentForLevel(level){
-        const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
-        const within = clamp(lv, TL_CALIB_MIN, TL_CALIB_MAX);
-        const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
-        const step = (TL_TICK_END - TL_TICK_START) / denom;
-        const p = TL_TICK_START + step * (within - TL_CALIB_MIN);
-        return clamp(p, 0, 100);
+      function luminance(r,g,b){
+        return 0.2126*r + 0.7152*g + 0.0722*b;
       }
 
-      function getContainedRectLocal(imgEl){
-        const w = imgEl.clientWidth || 0;
-        const h = imgEl.clientHeight || 0;
-        const iw = imgEl.naturalWidth || 0;
-        const ih = imgEl.naturalHeight || 0;
-
-        if(!w || !h || !iw || !ih) return null;
-
-        const s = Math.min(w / iw, h / ih);
-        const drawW = iw * s;
-        const drawH = ih * s;
-
-        const padX = (w - drawW) / 2;
-        const padY = (h - drawH) / 2;
-
-        return { padX, padY, drawW, drawH };
-      }
-
-      function currentTickXLocalForLevel(level){
-        if(!levelsImg) return null;
-        const c = getContainedRectLocal(levelsImg);
-        if(!c) return null;
-        const p = tickPercentForLevel(level) / 100;
-        return c.padX + (c.drawW * p);
-      }
-
-      /* automatische layout voor timelineGroup */
-      const CHICK_LINE_Y = -10;
-      const TL_FUDGE_X = 0;
-      const TL_FUDGE_Y = 0;
-
-      const TL_UI_STORE_KEY = "slim_kijken_timeline_ui_v1";
-      let levelsVisible = true;
-      try{
-        const raw = localStorage.getItem(TL_UI_STORE_KEY);
-        if(raw){
-          const obj = JSON.parse(raw);
-          if(obj && typeof obj.levelsVisible === "boolean") levelsVisible = obj.levelsVisible;
-        }
-      }catch(e){}
-
-      function saveTimelineUI(){
-        try{ localStorage.setItem(TL_UI_STORE_KEY, JSON.stringify({ levelsVisible })); }catch(e){}
-      }
-
-      function updateLevelsVisibilityUI(){
-        const on = !!levelsVisible;
-        toggleLevelsBtn.textContent = on ? "levels png tonen" : "levels png verbergen";
-        if(on) levelsImg.classList.remove("levelsHidden");
-        else levelsImg.classList.add("levelsHidden");
-      }
-
-      let levelsAnalysis = null;
-
-      function waitForImage(imgEl){
-        if(imgEl.complete && imgEl.naturalWidth) return Promise.resolve(true);
-        return new Promise(resolve => {
-          const ok = () => resolve(true);
-          const bad = () => resolve(false);
-          imgEl.addEventListener("load", ok, { once:true });
-          imgEl.addEventListener("error", bad, { once:true });
-        });
-      }
-
-      async function analyzeLevelsPng(imgEl){
-        const ok = await waitForImage(imgEl);
-        if(!ok) return null;
-
+      function analyzeLevelsPng(imgEl){
         const w = imgEl.naturalWidth || 0;
         const h = imgEl.naturalHeight || 0;
         if(!w || !h) return null;
 
-        const c = document.createElement("canvas");
-        c.width = w;
-        c.height = h;
-        const ctx = c.getContext("2d", { willReadFrequently:true });
+        const cv = document.createElement("canvas");
+        cv.width = w;
+        cv.height = h;
+        const ctx = cv.getContext("2d", { willReadFrequently: true });
         ctx.drawImage(imgEl, 0, 0);
 
         const img = ctx.getImageData(0, 0, w, h);
         const d = img.data;
 
-        const colCount = new Uint32Array(w);
-        const colTop = new Int32Array(w);
-        for(let x=0; x<w; x++) colTop[x] = h;
+        // Baseline: rij met meeste "ink" pixels in onderste helft
+        const yStart = Math.floor(h * 0.45);
+        let bestY = Math.floor(h * 0.85);
+        let bestCount = -1;
 
-        const isInk = (r,g,b,a) => {
-          if(a < 18) return false;
-          const lum = (r + g + b) / 3;
-          if(lum > 245) return false;
-          return true;
-        };
-
-        for(let y=0; y<h; y++){
-          const row = y * w;
+        for(let y=yStart; y<h; y++){
+          let c = 0;
+          const row = y * w * 4;
           for(let x=0; x<w; x++){
-            const i = (row + x) * 4;
-            const r = d[i], g = d[i+1], b = d[i+2], a = d[i+3];
-            if(!isInk(r,g,b,a)) continue;
-            colCount[x] += 1;
-            if(y < colTop[x]) colTop[x] = y;
+            const i = row + x*4;
+            const a = d[i+3];
+            if(a < 32) continue;
+            const lum = luminance(d[i], d[i+1], d[i+2]);
+            if(lum > 245) continue;
+            c++;
+          }
+          if(c > bestCount){
+            bestCount = c;
+            bestY = y;
           }
         }
 
-        let maxCount = 0;
-        for(let x=0; x<w; x++) if(colCount[x] > maxCount) maxCount = colCount[x];
-        if(maxCount < 6) return { leftXf: 0.0, rightXf: 1.0, yTopf: 0.0 };
-
-        const threshold = Math.max(6, Math.floor(maxCount * 0.55));
-
-        const clusters = [];
-        let start = -1;
-        for(let x=0; x<w; x++){
-          const strong = colCount[x] >= threshold;
-          if(strong && start < 0) start = x;
-          if(!strong && start >= 0){
-            clusters.push([start, x-1]);
-            start = -1;
-          }
-        }
-        if(start >= 0) clusters.push([start, w-1]);
-
-        if(clusters.length < 2){
-          return { leftXf: 0.0, rightXf: 1.0, yTopf: 0.0 };
-        }
-
-        const leftCl = clusters[0];
-        const rightCl = clusters[clusters.length - 1];
-
-        const clusterMeanX = (cl) => {
-          let sumW = 0;
-          let sumX = 0;
-          for(let x=cl[0]; x<=cl[1]; x++){
-            const wgt = colCount[x] || 0;
-            sumW += wgt;
-            sumX += x * wgt;
-          }
-          if(sumW <= 0) return (cl[0] + cl[1]) / 2;
-          return sumX / sumW;
-        };
-
-        const clusterTopY = (cl) => {
-          let top = h;
-          for(let x=cl[0]; x<=cl[1]; x++){
-            const t = colTop[x];
-            if(t < top) top = t;
-          }
-          return top >= h ? 0 : top;
-        };
-
-        const leftX = clusterMeanX(leftCl);
-        const rightX = clusterMeanX(rightCl);
-        const yTop = Math.min(clusterTopY(leftCl), clusterTopY(rightCl));
-
-        const leftXf = (w <= 1) ? 0 : leftX / (w - 1);
-        const rightXf = (w <= 1) ? 1 : rightX / (w - 1);
-        const yTopf = (h <= 1) ? 0 : yTop / (h - 1);
-
-        return {
-          leftXf: Math.max(0, Math.min(1, leftXf)),
-          rightXf: Math.max(0, Math.min(1, rightXf)),
-          yTopf: Math.max(0, Math.min(1, yTopf))
-        };
-      }
-
-      function imgFracToLocal(imgEl, fx, fy){
-        const c = getContainedRectLocal(imgEl);
-        if(!c) return null;
-        return {
-          x: c.padX + c.drawW * fx,
-          y: c.padY + c.drawH * fy
-        };
-      }
-
-      let tlLayoutRaf = 0;
-      function scheduleTimelineLayout(){
-        if(tlLayoutRaf) cancelAnimationFrame(tlLayoutRaf);
-        tlLayoutRaf = requestAnimationFrame(() => {
-          tlLayoutRaf = 0;
-          applyTimelineAutoTransform();
-        });
-      }
-
-      function applyTimelineAutoTransform(){
-        if(!timelineReady()) return;
-        if(!levelsAnalysis) return;
-
-        updateLevelsVisibilityUI();
-
-        const q = flashBoard.getBoundingClientRect();
-        const targetW = q.width;
-
-        const leftPt = imgFracToLocal(levelsImg, levelsAnalysis.leftXf, levelsAnalysis.yTopf);
-        const rightPt = imgFracToLocal(levelsImg, levelsAnalysis.rightXf, levelsAnalysis.yTopf);
-        if(!leftPt || !rightPt) return;
-
-        const dxLocal = rightPt.x - leftPt.x;
-        if(dxLocal < 8) return;
-
-        const s = targetW / dxLocal;
-
-        const tx = (q.left - leftPt.x * s) + TL_FUDGE_X;
-        const ty = (q.bottom - leftPt.y * s) + TL_FUDGE_Y;
-
-        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-
-      function setAnchorToLevel(level, opts = {}){
-        if(!timelineReady()) return;
-
-        const xLocal = currentTickXLocalForLevel(level);
-        if(xLocal == null) return;
-
-        const y = CHICK_LINE_Y;
-
-        if(opts.noTransition){
-          chickAnchor.classList.add("noMove");
-          chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
-          chickAnchor.offsetHeight;
-          chickAnchor.classList.remove("noMove");
-          return;
-        }
-
-        chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
-      }
-
-      function cancelChickXAnim(){
-        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
-        chickXAnim = null;
-      }
-
-      function showOnlyStill(){
-        stillImg.classList.add("active");
-        if(animCanvas) animCanvas.classList.remove("active");
-      }
-      function showCanvas(){
-        if(animCanvas) animCanvas.classList.add("active");
-      }
-
-      function stopVideo(v){
-        try{ v.pause(); }catch(e){}
-      }
-
-      function setCanvasSizeToVideo(videoEl){
-        if(!animCanvas) return false;
-        const w = videoEl.videoWidth || 0;
-        const h = videoEl.videoHeight || 0;
-        if(!w || !h) return false;
-        if(animCanvas.width !== w) animCanvas.width = w;
-        if(animCanvas.height !== h) animCanvas.height = h;
-        return true;
-      }
-
-      function applyChromaKeyWhite(){
-        if(!chickCtx || !animCanvas) return;
-        const t = TL_WHITE_THRESH;
-        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
-        const d = img.data;
-        for(let i = 0; i < d.length; i += 4){
-          const r = d[i], g = d[i+1], b = d[i+2];
-          if(r >= t && g >= t && b >= t) d[i+3] = 0;
-        }
-        chickCtx.putImageData(img, 0, 0);
-      }
-
-      function drawFrame(videoEl){
-        if(!chickCtx || !animCanvas) return false;
-        if(!setCanvasSizeToVideo(videoEl)) return false;
-        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
-        chickCtx.drawImage(videoEl, 0, 0);
-        applyChromaKeyWhite();
-        return true;
-      }
-
-      async function ensureReady(videoEl){
-        if(videoEl.readyState >= 2) return true;
-        return await new Promise(resolve => {
-          let done = false;
-          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
-          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
-          const cleanup = () => {
-            videoEl.removeEventListener("loadeddata", ok);
-            videoEl.removeEventListener("loadedmetadata", ok);
-            videoEl.removeEventListener("error", bad);
-          };
-          videoEl.addEventListener("loadeddata", ok, { once:true });
-          videoEl.addEventListener("loadedmetadata", ok, { once:true });
-          videoEl.addEventListener("error", bad, { once:true });
-          try{ videoEl.load(); }catch(e){}
-          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
-        });
-      }
-
-      function segmentTimes(startFrame, endFrame, fps){
-        const f = Math.max(1, Number(fps));
-        const s = Math.max(0, Number(startFrame) / f);
-        const e = Math.max(s + (1 / f), Number(endFrame) / f);
-        return { start: s, end: e, durMs: (e - s) * 1000 };
-      }
-
-      async function seekTo(videoEl, timeSec){
-        return await new Promise(resolve => {
-          let done = false;
-          const finish = (ok) => {
-            if(done) return;
-            done = true;
-            cleanup();
-            resolve(ok);
-          };
-          const onSeeked = () => finish(true);
-          const onErr = () => finish(false);
-          const cleanup = () => {
-            videoEl.removeEventListener("seeked", onSeeked);
-            videoEl.removeEventListener("error", onErr);
-          };
-          videoEl.addEventListener("seeked", onSeeked, { once:true });
-          videoEl.addEventListener("error", onErr, { once:true });
-
-          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
-          catch(e){ cleanup(); resolve(false); return; }
-
-          setTimeout(() => finish(true), 700);
-        });
-      }
-
-      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
-        if(!animCanvas || !chickCtx) return false;
-
-        cancelChickXAnim();
-
-        const ready = await ensureReady(videoEl);
-        if(!ready) return false;
-
-        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
-
-        stopVideo(videoEl);
-        await seekTo(videoEl, times.start);
-
-        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
-
-        let playingOk = true;
-        try{ await videoEl.play(); }catch(e){ playingOk = false; }
-        if(!playingOk) return false;
-
-        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
-
-        const gotFirstFrame = await new Promise(resolve => {
-          let done = false;
-          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
-          const maxWait = setTimeout(() => finish(false), 900);
-
-          if(useRVFC){
-            videoEl.requestVideoFrameCallback(() => {
-              const ok = drawFrame(videoEl);
-              clearTimeout(maxWait);
-              finish(!!ok);
-            });
-          }else{
-            const onTime = () => {
-              const ok = drawFrame(videoEl);
-              clearTimeout(maxWait);
-              finish(!!ok);
-            };
-            videoEl.addEventListener("timeupdate", onTime, { once:true });
-
-            requestAnimationFrame(() => {
-              if(done) return;
-              const ok = drawFrame(videoEl);
-              clearTimeout(maxWait);
-              finish(!!ok);
-            });
-          }
-        });
-
-        if(!gotFirstFrame){
-          try{ videoEl.pause(); }catch(e){}
-          return false;
-        }
-
-        showCanvas();
-        stillImg.classList.remove("active");
-        await raf();
-
-        chickXAnim = animCanvas.animate(
-          [
-            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
-            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
-          ],
-          { duration: times.durMs, easing: "linear", fill: "forwards" }
-        );
-
-        if(useRVFC){
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              videoEl.requestVideoFrameCallback(step);
-            };
-            videoEl.requestVideoFrameCallback(step);
-          });
-        }else{
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-          });
-        }
-
-        try{ videoEl.pause(); }catch(e){}
-        cancelChickXAnim();
-        return true;
-      }
-
-      async function animateTimeline(fromLevel, toLevel){
-        if(!timelineReady()) return;
-
-        setAnchorToLevel(fromLevel, { noTransition: true });
-        showOnlyStill();
-
-        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
-        if(!hasMp4){
-          setAnchorToLevel(toLevel, { noTransition: true });
-          return;
-        }
-
-        if(chickPlaying) return;
-        chickPlaying = true;
-
-        stopVideo(upVid);
-        stopVideo(downVid);
-
-        const dir = toLevel > fromLevel ? "up" : "down";
-        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
-        const vid = dir === "up" ? upVid : downVid;
-
-        await playSegmentOnCanvasNoFlash(vid, cfg);
-
-        setAnchorToLevel(toLevel, { noTransition: true });
-
-        stillImg.classList.add("active");
-        await raf();
-        if(animCanvas) animCanvas.classList.remove("active");
-
-        chickPlaying = false;
-      }
-
-      async function initTimeline(){
-        if(!timelineReady()) return;
-
-        levelsAnalysis = await analyzeLevelsPng(levelsImg);
-
-        scheduleTimelineLayout();
-
-        if(typeof ResizeObserver === "function"){
-          const ro = new ResizeObserver(() => scheduleTimelineLayout());
-          ro.observe(flashBoard);
-          ro.observe(gameCard);
-          ro.observe(timeline);
-        }
-
-        window.addEventListener("resize", scheduleTimelineLayout);
-        window.addEventListener("orientationchange", scheduleTimelineLayout);
-      }
-
-      /* game */
-      let started = false;
-      let locked = false;
-      let correct = 1;
-      let questionVariantIndex = 0;
-
-      function resetStreaks(){
-        streakGood = 0;
-        streakBad = 0;
-      }
-
-      async function handleAutoLevelOnGood(){
-        streakGood += 1;
-        streakBad = 0;
-
-        if(streakGood >= 5){
-          const before = LEVEL;
-          setLevel(LEVEL + 1);
-          resetStreaks();
-          if(LEVEL !== before){
-            beep("level");
-            await animateTimeline(before, LEVEL);
-          }
-          return true;
-        }
-        return false;
-      }
-
-      async function handleAutoLevelOnBad(){
-        streakBad += 1;
-        streakGood = 0;
-
-        if(streakBad >= 2){
-          const before = LEVEL;
-          setLevel(LEVEL - 1);
-          resetStreaks();
-          if(LEVEL !== before){
-            beep("level");
-            await animateTimeline(before, LEVEL);
-          }
-          return true;
-        }
-        return false;
-      }
-
-      async function flashAndAsk(){
-        locked = true;
-        previewToken++;
-
-        answersEl.classList.add("answersHidden");
-        answersEl.innerHTML = "";
-        clearBoard();
-
-        await wait(160);
-
-        questionVariantIndex = pickVariantIndexForQuestion(correct);
-        const qPattern = patternQuestion(correct, questionVariantIndex);
-        setBoard(svgForDots(qPattern, {dotRadius: 16}));
-
-        await wait(flashMs);
-
-        clearBoard();
-        await wait(260);
-
-        renderAnswers(correct, onPick);
-        await wait(WAIT_BEFORE_IN_MS);
-        await animateInButtons();
-
-        locked = false;
-        previewCardsNonBlocking();
-      }
-
-      function nextRound(){
-        const cap = maxForLevel();
-        correct = pickNumberWeighted(cap);
-        flashAndAsk();
-      }
-
-      async function onPick(btn, value){
-        if(!started || locked) return;
-
-        locked = true;
-        previewToken++;
-
-        const all = [...answersEl.querySelectorAll(".ansBtn")];
-        all.forEach(b => b.style.pointerEvents = "none");
-
-        if(usesAnswerCards()){
-          btn.classList.add("cardOpen");
-          await wait(110);
-        }
-
-        if(value === correct){
-          beep("ok");
-          btn.classList.add("correctHold");
-
-          const qPattern = patternQuestion(correct, questionVariantIndex);
-          setBoard(svgForDots(qPattern, {dotRadius: 16}));
-
-          await wait(520);
-          dissolveBoard(260);
-
-          const exitOrder = sortedButtonsForExit(all);
-          await animateOutButtons(exitOrder, 140);
-
-          btn.classList.remove("correctHold");
-          if(usesAnswerCards()) btn.classList.remove("cardOpen");
-
-          answersEl.classList.add("answersHidden");
-          all.forEach(b => b.style.pointerEvents = "");
-          await wait(160);
-
-          await handleAutoLevelOnGood();
-          nextRound();
-          return;
-        }
-
-        beep("no");
-
-        const notChosen = all.filter(b => b !== btn);
-        const chosen = btn;
-
-        chosen.classList.add("wrongHold");
-        await animateOutButtons(sortedButtonsForExit(notChosen), 120);
-
-        const qPattern = patternQuestion(correct, questionVariantIndex);
-        setBoard(svgForDots(qPattern, {dotRadius: 16}));
-
-        await wait(1200);
-        dissolveBoard(320);
-
-        await wait(120);
-        await animateOutButtons([chosen], 0);
-
-        chosen.classList.remove("wrongHold");
-        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
-
-        answersEl.classList.add("answersHidden");
-        await wait(240);
-
-        all.forEach(b => b.style.pointerEvents = "");
-
-        await handleAutoLevelOnBad();
-        nextRound();
-      }
-
-      /* tune ui */
-      function syncUI(){
-        flashMsValue.textContent = String(flashMs);
-        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-      }
-
-      function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
-      function closeTune(){ tunePanel.classList.add("hidden"); }
-
-      tuneBtn.addEventListener("click", () => {
-        beep("tap");
-        if(tunePanel.classList.contains("hidden")) openTune();
-        else closeTune();
-      });
-      tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
-
-      flashMsRange.addEventListener("input", () => {
-        flashMs = Number(flashMsRange.value);
-        syncUI();
-      });
-
-      newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
-
-      testWrongBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(!started || locked) return;
-        const cap = maxForLevel();
-        const wrong = (correct === cap) ? 1 : correct + 1;
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns[0]) await onPick(btns[0], wrong);
-      });
-
-      testGoodBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(!started || locked) return;
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns[0]) await onPick(btns[0], correct);
-      });
-
-      levelUpBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(locked) return;
-        const before = LEVEL;
-        setLevel(LEVEL + 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
-        }
-      });
-
-      levelDownBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(locked) return;
-        const before = LEVEL;
-        setLevel(LEVEL - 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
-        }
-      });
-
-      toggleLevelsBtn.addEventListener("click", () => {
-        beep("tap");
-        levelsVisible = !levelsVisible;
-        saveTimelineUI();
-        scheduleTimelineLayout();
-      });
-
-      /* start */
-      function startGame(){
-        if(started) return;
-        started = true;
-
-        setLevel(1);
-        resetStreaks();
-
-        startOverlay.style.display = "none";
-        syncUI();
-
-        scheduleTimelineLayout();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-        showOnlyStill();
-
-        nextRound();
-      }
-
-      startBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        beep("tap");
-        startGame();
-      });
-
-      startOverlay.addEventListener("click", (e) => {
-        if(e.target === startOverlay){
-          beep("tap");
-          startGame();
-        }
-      });
-
-      homeBtn.addEventListener("click", () => {
-        beep("tap");
-        try{ window.location.href = "index.html"; }catch(e){}
-      });
-
-      /* reflow game knoppen bij oriëntatie, zonder timing te veranderen */
-      let reflowTimer = null;
-      function onReflow(){
-        if(!started) return;
-        if(reflowTimer) clearTimeout(reflowTimer);
-        reflowTimer = setTimeout(async () => {
-          locked = true;
-          previewToken++;
-          answersEl.classList.add("answersHidden");
-          answersEl.innerHTML = "";
-          clearBoard();
-          await wait(120);
-          renderAnswers(correct, onPick);
-          await wait(WAIT_BEFORE_IN_MS);
-          await animateInButtons();
-          locked = false;
-          previewCardsNonBlocking();
-
-          scheduleTimelineLayout();
-          setAnchorToLevel(LEVEL, { noTransition: true });
-        }, 220);
-      }
-      window.addEventListener("resize", onReflow);
-      window.addEventListener("orientationchange", onReflow);
-
-      /* init */
-      clearBoard();
-      setLevel(1);
-      resetStreaks();
-      syncUI();
-
-      initTimeline();
-
-      scheduleTimelineLayout();
-      setAnchorToLevel(LEVEL, { noTransition: true });
-      showOnlyStill();
-      updateLevelsVisibilityUI();
-
-    })();
-  </script>
-</body>
-</html>
+        // Verticale ticks: kolommen met hoogste "ink" pixels
+        const col
