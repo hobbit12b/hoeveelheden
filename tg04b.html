@@ -27,6 +27,16 @@
       --correctBorder: rgba(144, 204, 152, 0.70);
 
       --activeFill: rgba(229, 140, 116, 0.18);
+
+      /* ---------------------------------------------------------
+         AANPASSEN Y POSITIE VRAAGVAK (ALLEEN iPad HORIZONTAAL)
+      --------------------------------------------------------- */
+      --questionYOffsetLandscape: 0px;
+
+      /* ---------------------------------------------------------
+         AANPASSEN GROOTTE ANTWOORDKNOPPEN (ALLEEN iPad HORIZONTAAL)
+      --------------------------------------------------------- */
+      --answerBtnSizeLandscape: 112px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -48,7 +58,11 @@
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
+      position: relative;
+      overflow:hidden;
+      isolation: isolate;
     }
+
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -63,16 +77,18 @@
       flex-direction:column;
       gap: 22px;
       position: relative;
-      overflow:hidden;
+      overflow: visible;
       min-height: 0;
+      z-index: 1;
     }
 
     .scan-surface{
       background:#ffffff;
       position: relative;
-      overflow:hidden;
+      overflow: visible;
       min-height: 0;
       transition: background 140ms ease;
+      z-index: 1;
     }
 
     @media (orientation: landscape){
@@ -88,6 +104,8 @@
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .homeBtn,
@@ -137,6 +155,8 @@
       justify-content:center;
       padding: 10px 6px;
       min-height: 0;
+      position: relative;
+      overflow: visible;
     }
 
     .gameCard{
@@ -152,7 +172,16 @@
       align-items:center;
       justify-content:center;
       padding: 18px;
+      transform: translateY(0px);
     }
+
+    /* iPad horizontaal, verplaats vraagvak met 1 variabele */
+    @media (min-aspect-ratio: 4/3){
+      .gameCard{
+        transform: translateY(var(--questionYOffsetLandscape));
+      }
+    }
+
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
@@ -204,6 +233,11 @@
       z-index: 10;
     }
 
+    /* iPad horizontaal, iets minder padding zodat knoppen sneller passen */
+    @media (min-aspect-ratio: 4/3){
+      .scanStage{ padding: 12px; }
+    }
+
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
@@ -251,6 +285,15 @@
     @media (orientation: landscape){
       .answersWrap{ width: min(360px, 92%); }
       .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+    }
+
+    /* iPad horizontaal, maak knoppen voorspelbaar */
+    @media (min-aspect-ratio: 4/3){
+      .answers{ gap: 12px; }
+      .ansBtn{
+        width: min(var(--answerBtnSizeLandscape), 26vh);
+        padding: 8px;
+      }
     }
 
     .ansBtn:active{
@@ -419,7 +462,7 @@
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Kaarten, echte flip (en verder alles hetzelfde) */
+    /* Kaarten, flip */
     .cardWrap{
       width:100%;
       height:100%;
@@ -470,6 +513,185 @@
       transform: rotateY(180deg);
       -webkit-transform: rotateY(180deg);
     }
+
+    /* Timeline overlay */
+    .timelineOverlay{
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      pointer-events:none;
+      user-select:none;
+      overflow: visible;
+    }
+
+    .timelineGroup{
+      position:absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      pointer-events:none;
+    }
+
+    .progressTimeline{
+      position:absolute;
+      top: calc(18px + env(safe-area-inset-top));
+      right: calc(14px + env(safe-area-inset-right));
+      width: min(520px, 58vw);
+      height: 96px;
+      z-index: 20;
+    }
+
+    @media (orientation: landscape){
+      .progressTimeline{
+        top: calc(24px + env(safe-area-inset-top));
+      }
+    }
+
+    .progressLine{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: contain;
+    }
+
+    .progressChickAnchor{
+      position:absolute;
+      bottom: -10px;
+      transform: translateX(-50%);
+      width: 82px;
+      height: 82px;
+      pointer-events:none;
+      transition: left 520ms cubic-bezier(.22,.61,.35,1);
+      will-change: left, transform;
+    }
+    .progressChickAnchor.noMove{ transition: none !important; }
+
+    .chickLayer{
+      position:absolute;
+      left:0;
+      bottom:0;
+      width: 82px;
+      height: auto;
+      opacity: 0;
+      pointer-events:none;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+      display:block;
+    }
+    .chickLayer.active{ opacity: 1; }
+    .stillLayer{ z-index: 3; }
+    .animLayer{ z-index: 2; }
+
+    #animCanvas{ opacity:0; }
+    #animCanvas.active{ opacity:1; }
+
+    @media (orientation: portrait){
+      .progressTimeline{
+        width: min(680px, 92vw);
+        height: 100px;
+      }
+      .progressChickAnchor{ width: 78px; height: 78px; }
+      .chickLayer{ width: 78px; }
+    }
+
+    /* Kalibratie panel */
+    .calPanel{
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      width: min(640px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 2300;
+      color: #4d4a48;
+    }
+    .calPanel.hidden{ display:none; }
+
+    .calHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .calTitle{
+      font-weight: 950;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .calClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 950;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+      color:#2f2c2a;
+    }
+
+    .calTabs{
+      display:flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .tabBtn{
+      appearance:none;
+      border:none;
+      background: rgba(245,180,152,0.18);
+      border: 2px solid rgba(245,180,152,0.35);
+      color:#2f2c2a;
+      font-weight: 950;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      background: var(--brand);
+      border-color: rgba(229,140,116,0.95);
+      color:#fff;
+    }
+
+    .hintLine{
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 850;
+      color: rgba(77,74,72,0.78);
+      line-height: 1.3;
+      text-transform: lowercase;
+    }
+
+    .calIO{
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px solid rgba(245,180,152,0.45);
+    }
+    .calTextArea{
+      width: 100%;
+      min-height: 108px;
+      resize: vertical;
+      border-radius: 14px;
+      border: 2px solid rgba(245,180,152,0.55);
+      padding: 10px 12px;
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 1.35;
+      color: #2f2c2a;
+      background: rgba(255,255,255,0.95);
+      outline: none;
+    }
+    .calTextArea:focus{
+      border-color: rgba(229,140,116,0.95);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.10);
+    }
   </style>
 </head>
 
@@ -506,6 +728,21 @@
     </div>
   </section>
 
+  <!-- Tijdlijngroep bovenop alles -->
+  <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
+    <div class="timelineGroup" id="timelineGroup">
+      <div class="progressTimeline" id="timeline">
+        <img class="progressLine" id="levelsImg" src="levels.png" alt="">
+        <div class="progressChickAnchor" id="chickAnchor">
+          <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+          <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>tik om te starten</h1>
@@ -539,7 +776,6 @@
         <div class="tuneValue" id="flashMsValue">300</div>
       </div>
 
-      <!-- Nieuw, kijktijd voordat kaarten terugflippen -->
       <div class="tuneRow">
         <div class="tuneLabel">kijktijd kaarten</div>
         <input type="range" id="previewMsRange" min="0" max="5000" step="100" value="1000" />
@@ -553,6 +789,67 @@
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
         <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="calPanel hidden" id="calPanel" role="dialog" aria-modal="false" aria-label="Kalibratie tijdlijn">
+    <div class="calHeader">
+      <div class="calTitle">kalibratie tijdlijn</div>
+      <button class="calClose" id="calClose" type="button">Sluit</button>
+    </div>
+
+    <div class="calTabs">
+      <button class="tabBtn active" id="tabLandscape" type="button">horizontaal</button>
+      <button class="tabBtn" id="tabPortrait" type="button">vertikaal</button>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">groep x</div>
+      <input type="range" id="gX" min="-1400" max="1400" step="1" value="0" />
+      <div class="tuneValue" id="gXv">0</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">groep y</div>
+      <input type="range" id="gY" min="-1400" max="1400" step="1" value="0" />
+      <div class="tuneValue" id="gYv">0</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">groep schaal</div>
+      <input type="range" id="gS" min="0.50" max="2.00" step="0.01" value="1.00" />
+      <div class="tuneValue" id="gSv">1.00</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">kuiken lijn</div>
+      <input type="range" id="lineY" min="-200" max="200" step="1" value="-10" />
+      <div class="tuneValue" id="lineYv">-10</div>
+    </div>
+
+    <div class="tuneButtons">
+      <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
+      <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
+    </div>
+
+    <div class="hintLine">
+      tip: schuif de groep over het linkervak om hem goed te kunnen afstellen, de overlay ligt altijd bovenop
+    </div>
+
+    <div class="calIO">
+      <div class="hintLine">kopieer en plak de waarden, je krijgt beide standen in één blok</div>
+
+      <textarea class="calTextArea" id="calibText" spellcheck="false"></textarea>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="calibRefreshBtn" type="button">ververs tekst</button>
+        <button class="tuneBtnSmall" id="calibCopyBtn" type="button">kopieer</button>
+        <button class="tuneBtnSmall secondary" id="calibApplyBtn" type="button">plak en toepassen</button>
+      </div>
     </div>
   </div>
 
@@ -565,52 +862,85 @@
       const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
+      const $ = (id) => document.getElementById(id);
 
-      const startOverlay = document.getElementById("startOverlay");
-      const startBtn = document.getElementById("startBtn");
+      const deepClone = (o) => {
+        try{ return structuredClone(o); }catch(e){ return JSON.parse(JSON.stringify(o)); }
+      };
 
-      const titlePill = document.getElementById("titlePill");
+      const startOverlay = $("startOverlay");
+      const startBtn = $("startBtn");
 
-      const homeBtn = document.getElementById("homeBtn");
-      const tuneBtn = document.getElementById("tuneBtn");
-      const tunePanel = document.getElementById("tunePanel");
-      const tuneClose = document.getElementById("tuneClose");
+      const titlePill = $("titlePill");
 
-      const flashMsRange = document.getElementById("flashMsRange");
-      const flashMsValue = document.getElementById("flashMsValue");
+      const homeBtn = $("homeBtn");
+      const tuneBtn = $("tuneBtn");
+      const tunePanel = $("tunePanel");
+      const tuneClose = $("tuneClose");
 
-      /* Nieuw, slider voor kijktijd kaarten */
-      const previewMsRange = document.getElementById("previewMsRange");
-      const previewMsValue = document.getElementById("previewMsValue");
+      const flashMsRange = $("flashMsRange");
+      const flashMsValue = $("flashMsValue");
 
-      const tuneLevelValue = document.getElementById("tuneLevelValue");
+      const previewMsRange = $("previewMsRange");
+      const previewMsValue = $("previewMsValue");
 
-      const newRoundBtn = document.getElementById("newRoundBtn");
-      const testWrongBtn = document.getElementById("testWrongBtn");
-      const testGoodBtn = document.getElementById("testGoodBtn");
+      const tuneLevelValue = $("tuneLevelValue");
 
-      const flashSvg = document.getElementById("flashSvg");
-      const answersEl = document.getElementById("answers");
-      const scanArea = document.getElementById("scanArea");
+      const newRoundBtn = $("newRoundBtn");
+      const testWrongBtn = $("testWrongBtn");
+      const testGoodBtn = $("testGoodBtn");
 
-      /* Timing knoppen animatie */
+      const openCalBtn = $("openCalBtn");
+      const calPanel = $("calPanel");
+      const calClose = $("calClose");
+
+      const tabLandscape = $("tabLandscape");
+      const tabPortrait = $("tabPortrait");
+
+      const gX = $("gX");
+      const gY = $("gY");
+      const gS = $("gS");
+      const lineY = $("lineY");
+
+      const gXv = $("gXv");
+      const gYv = $("gYv");
+      const gSv = $("gSv");
+      const lineYv = $("lineYv");
+
+      const gResetBtn = $("gResetBtn");
+      const gSaveBtn = $("gSaveBtn");
+
+      const calibText = $("calibText");
+      const calibRefreshBtn = $("calibRefreshBtn");
+      const calibCopyBtn = $("calibCopyBtn");
+      const calibApplyBtn = $("calibApplyBtn");
+
+      const flashSvg = $("flashSvg");
+      const answersEl = $("answers");
+      const scanArea = $("scanArea");
+
+      /* timeline nodes */
+      const timelineGroup = $("timelineGroup");
+      const timeline = $("timeline");
+      const levelsImg = $("levelsImg");
+      const chickAnchor = $("chickAnchor");
+      const stillImg = $("stillImg");
+      const upVid = $("upVid");
+      const downVid = $("downVid");
+      const animCanvas = $("animCanvas");
+      const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
+
       const WAIT_BEFORE_IN_MS = 0;
       const IN_DUR_MS = 800;
       const OUT_DUR_MS = 750;
 
-      /* Kaarten, openklappen, klik mag zodra de eerste kaart open is */
       const PREVIEW_GAP_MS = 120;
 
-      /* Was PREVIEW_MS const, nu instelbaar */
       let previewMs = previewMsRange ? Number(previewMsRange.value) : 1700;
-
-      /* Flits instelbaar */
       let flashMs = Number(flashMsRange.value);
 
-      /* Level */
       let LEVEL = 1;
 
-      /* Progressie */
       let streakGood = 0;
       let streakBad = 0;
 
@@ -618,10 +948,15 @@
         return LEVEL >= 2;
       }
 
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
+
       function setLevel(n){
         LEVEL = clamp(n, 1, 5);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -629,10 +964,9 @@
         if(LEVEL === 2) return 4;
         if(LEVEL === 3) return 4;
         if(LEVEL === 4) return 6;
-        return 6; /* level 5 */
+        return 6;
       }
 
-      /* Minder vaak 1 */
       function pickNumberWeighted(cap){
         const w1 = 0.30;
         const weights = [];
@@ -648,7 +982,6 @@
         return cap;
       }
 
-      /* WebAudio beep */
       let audioCtx = null;
       function beep(type){
         try{
@@ -669,7 +1002,7 @@
         }catch(e){}
       }
 
-      /* Dobbelpunten */
+      /* dobbelpunten */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -691,7 +1024,6 @@
         }];
       }
 
-      /* Basispunten voor variaties */
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
         d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
@@ -705,7 +1037,6 @@
         r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
       };
 
-      /* Variaties 1-4 */
       const VARS_1TO4 = {
         1: [
           [L.m],
@@ -810,7 +1141,6 @@
         return patternDice(n);
       }
 
-      /* Antwoordpatronen: rustig en herkenbaar */
       function patternAnswer(n){
         if(n <= 4){
           return patternDice(n);
@@ -855,7 +1185,6 @@
         }, ms + 40);
       }
 
-      /* Antwoordopties */
       function buildOptions(correct){
         const cap = maxForLevel();
 
@@ -900,10 +1229,6 @@
 
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
-
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-      }
 
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
@@ -1024,7 +1349,6 @@
         });
       }
 
-      /* Preview, niet blokkerend */
       let previewToken = 0;
 
       async function previewCardsNonBlocking(){
@@ -1051,7 +1375,510 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* Game */
+      /* timeline calib + anim */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v7";
+      const DEFAULT_CALIB = {
+        landscape: { x: 0, y: 0, s: 1.00, lineY: -10 },
+        portrait:  { x: 0, y: 0, s: 1.00, lineY: -10 }
+      };
+
+      function sanitizeCalib(obj){
+        const safe = deepClone(DEFAULT_CALIB);
+        if(!obj || typeof obj !== "object") return safe;
+
+        ["landscape","portrait"].forEach(k => {
+          const src = obj[k] || {};
+          safe[k].x = Number.isFinite(Number(src.x)) ? Number(src.x) : safe[k].x;
+          safe[k].y = Number.isFinite(Number(src.y)) ? Number(src.y) : safe[k].y;
+          safe[k].s = Number.isFinite(Number(src.s)) ? Number(src.s) : safe[k].s;
+          safe[k].lineY = Number.isFinite(Number(src.lineY)) ? Number(src.lineY) : safe[k].lineY;
+
+          safe[k].s = clamp(safe[k].s, 0.50, 2.00);
+          safe[k].x = clamp(safe[k].x, -1400, 1400);
+          safe[k].y = clamp(safe[k].y, -1400, 1400);
+          safe[k].lineY = clamp(safe[k].lineY, -200, 200);
+        });
+
+        return safe;
+      }
+
+      function loadCalib(){
+        try{
+          const raw = localStorage.getItem(TL_STORE_KEY);
+          if(!raw) return null;
+          const obj = JSON.parse(raw);
+          return sanitizeCalib(obj);
+        }catch(e){ return null; }
+      }
+
+      function saveCalib(){
+        try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(sanitizeCalib(calib))); }catch(e){}
+      }
+
+      let calib = loadCalib() || deepClone(DEFAULT_CALIB);
+
+      function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
+
+      function currentLineY(){
+        const k = activeModeKey();
+        const c = calib[k] || DEFAULT_CALIB[k];
+        return Number(c.lineY ?? DEFAULT_CALIB[k].lineY);
+      }
+
+      function timelineReady(){
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
+      }
+
+      function applyTimelineGroupTransform(){
+        if(!timelineGroup) return;
+        const k = activeModeKey();
+        const c = calib[k] || DEFAULT_CALIB[k];
+        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+
+      /* mapping: nu level 1 t/m 5, later kun je dit uitbreiden naar 9 */
+      const TL_LEVEL_MIN = 1;
+      const TL_LEVEL_MAX = 9;
+
+      const TL_CALIB_MIN = 1;
+      const TL_CALIB_MAX = 5;
+
+      const TL_TICK_START = 8.1;
+      const TL_TICK_END = 48.7;
+
+      const TL_WHITE_THRESH = 255;
+
+      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+
+      let chickPlaying = false;
+      let chickXAnim = null;
+
+      function tickPercentForLevel(level){
+        const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
+        const within = clamp(lv, TL_CALIB_MIN, TL_CALIB_MAX);
+        const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
+        const step = (TL_TICK_END - TL_TICK_START) / denom;
+        const p = TL_TICK_START + step * (within - TL_CALIB_MIN);
+        return clamp(p, 0, 100);
+      }
+
+      function getContainedRectLocal(imgEl){
+        const w = imgEl.clientWidth || 0;
+        const h = imgEl.clientHeight || 0;
+        const iw = imgEl.naturalWidth || 0;
+        const ih = imgEl.naturalHeight || 0;
+
+        if(!w || !h || !iw || !ih) return null;
+
+        const s = Math.min(w / iw, h / ih);
+        const drawW = iw * s;
+        const drawH = ih * s;
+
+        const padX = (w - drawW) / 2;
+        const padY = (h - drawH) / 2;
+
+        return { padX, padY, drawW, drawH };
+      }
+
+      function currentTickXLocalForLevel(level){
+        if(!levelsImg) return null;
+        const c = getContainedRectLocal(levelsImg);
+        if(!c) return null;
+        const p = tickPercentForLevel(level) / 100;
+        return c.padX + (c.drawW * p);
+      }
+
+      function setAnchorToLevel(level, opts = {}){
+        if(!timelineReady()) return;
+
+        const xLocal = currentTickXLocalForLevel(level);
+        if(xLocal == null) return;
+
+        const y = currentLineY();
+
+        if(opts.noTransition){
+          chickAnchor.classList.add("noMove");
+          chickAnchor.style.left = `${xLocal}px`;
+          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+          chickAnchor.offsetHeight;
+          chickAnchor.classList.remove("noMove");
+          return;
+        }
+
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+      }
+
+      function cancelChickXAnim(){
+        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+        chickXAnim = null;
+      }
+
+      function showOnlyStill(){
+        stillImg.classList.add("active");
+        if(animCanvas) animCanvas.classList.remove("active");
+      }
+      function showCanvas(){
+        if(animCanvas) animCanvas.classList.add("active");
+      }
+
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+      }
+
+      function setCanvasSizeToVideo(videoEl){
+        if(!animCanvas) return false;
+        const w = videoEl.videoWidth || 0;
+        const h = videoEl.videoHeight || 0;
+        if(!w || !h) return false;
+        if(animCanvas.width !== w) animCanvas.width = w;
+        if(animCanvas.height !== h) animCanvas.height = h;
+        return true;
+      }
+
+      function applyChromaKeyWhite(){
+        if(!chickCtx || !animCanvas) return;
+        const t = TL_WHITE_THRESH;
+        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+        const d = img.data;
+        for(let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i+1], b = d[i+2];
+          if(r >= t && g >= t && b >= t) d[i+3] = 0;
+        }
+        chickCtx.putImageData(img, 0, 0);
+      }
+
+      function drawFrame(videoEl){
+        if(!chickCtx || !animCanvas) return false;
+        if(!setCanvasSizeToVideo(videoEl)) return false;
+        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+        chickCtx.drawImage(videoEl, 0, 0);
+        applyChromaKeyWhite();
+        return true;
+      }
+
+      async function ensureReady(videoEl){
+        if(videoEl.readyState >= 2) return true;
+        return await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+          const cleanup = () => {
+            videoEl.removeEventListener("loadeddata", ok);
+            videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("error", bad);
+          };
+          videoEl.addEventListener("loadeddata", ok, { once:true });
+          videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("error", bad, { once:true });
+          try{ videoEl.load(); }catch(e){}
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+        });
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const f = Math.max(1, Number(fps));
+        const s = Math.max(0, Number(startFrame) / f);
+        const e = Math.max(s + (1 / f), Number(endFrame) / f);
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      async function seekTo(videoEl, timeSec){
+        return await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(ok);
+          };
+          const onSeeked = () => finish(true);
+          const onErr = () => finish(false);
+          const cleanup = () => {
+            videoEl.removeEventListener("seeked", onSeeked);
+            videoEl.removeEventListener("error", onErr);
+          };
+          videoEl.addEventListener("seeked", onSeeked, { once:true });
+          videoEl.addEventListener("error", onErr, { once:true });
+
+          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+          catch(e){ cleanup(); resolve(false); return; }
+
+          setTimeout(() => finish(true), 700);
+        });
+      }
+
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+        if(!animCanvas || !chickCtx) return false;
+
+        cancelChickXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+
+        stopVideo(videoEl);
+        await seekTo(videoEl, times.start);
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+        let playingOk = true;
+        try{ await videoEl.play(); }catch(e){ playingOk = false; }
+        if(!playingOk) return false;
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        const gotFirstFrame = await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+          const maxWait = setTimeout(() => finish(false), 900);
+
+          if(useRVFC){
+            videoEl.requestVideoFrameCallback(() => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }else{
+            const onTime = () => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.addEventListener("timeupdate", onTime, { once:true });
+
+            requestAnimationFrame(() => {
+              if(done) return;
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }
+        });
+
+        if(!gotFirstFrame){
+          try{ videoEl.pause(); }catch(e){}
+          return false;
+        }
+
+        showCanvas();
+        stillImg.classList.remove("active");
+        await raf();
+
+        chickXAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: times.durMs, easing: "linear", fill: "forwards" }
+        );
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        cancelChickXAnim();
+        return true;
+      }
+
+      async function animateTimeline(fromLevel, toLevel){
+        if(!timelineReady()) return;
+
+        setAnchorToLevel(fromLevel, { noTransition: true });
+        showOnlyStill();
+
+        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+        if(!hasMp4){
+          setAnchorToLevel(toLevel, { noTransition: true });
+          return;
+        }
+
+        if(chickPlaying) return;
+        chickPlaying = true;
+
+        stopVideo(upVid);
+        stopVideo(downVid);
+
+        const dir = toLevel > fromLevel ? "up" : "down";
+        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+        const vid = dir === "up" ? upVid : downVid;
+
+        await playSegmentOnCanvasNoFlash(vid, cfg);
+
+        setAnchorToLevel(toLevel, { noTransition: true });
+
+        stillImg.classList.add("active");
+        await raf();
+        if(animCanvas) animCanvas.classList.remove("active");
+
+        chickPlaying = false;
+      }
+
+      function initTimeline(){
+        if(!timelineReady()) return;
+
+        const apply = () => {
+          applyTimelineGroupTransform();
+          setAnchorToLevel(LEVEL, { noTransition: true });
+          showOnlyStill();
+        };
+
+        if(levelsImg.complete && levelsImg.naturalWidth) apply();
+        else levelsImg.addEventListener("load", apply, { once:true });
+
+        if(typeof ResizeObserver === "function"){
+          const ro = new ResizeObserver(() => apply());
+          ro.observe(timeline);
+        }
+
+        window.addEventListener("resize", apply);
+        window.addEventListener("orientationchange", apply);
+      }
+
+      /* kalibratie ui */
+      let calMode = "landscape";
+
+      function setCalMode(mode){
+        calMode = mode === "portrait" ? "portrait" : "landscape";
+        tabLandscape.classList.toggle("active", calMode === "landscape");
+        tabPortrait.classList.toggle("active", calMode === "portrait");
+        loadSlidersFromCalib();
+      }
+
+      function loadSlidersFromCalib(){
+        const c = calib[calMode] || DEFAULT_CALIB[calMode];
+        gX.value = String(c.x ?? 0);
+        gY.value = String(c.y ?? 0);
+        gS.value = String((c.s ?? 1.0).toFixed(2));
+        lineY.value = String(c.lineY ?? DEFAULT_CALIB[calMode].lineY);
+        syncCalNumbers();
+        applyTimelineGroupTransform();
+        refreshCalibText();
+      }
+
+      function syncCalNumbers(){
+        gXv.textContent = String(gX.value);
+        gYv.textContent = String(gY.value);
+        gSv.textContent = Number(gS.value).toFixed(2);
+        lineYv.textContent = String(lineY.value);
+      }
+
+      function writeSlidersToCalib(){
+        calib[calMode] = {
+          x: Number(gX.value),
+          y: Number(gY.value),
+          s: Number(gS.value),
+          lineY: Number(lineY.value)
+        };
+        calib = sanitizeCalib(calib);
+      }
+
+      function calibToText(){
+        const clean = sanitizeCalib(calib);
+        return JSON.stringify(clean, null, 2);
+      }
+
+      function refreshCalibText(){
+        if(!calibText) return;
+        calibText.value = calibToText();
+      }
+
+      async function copyCalibText(){
+        if(!calibText) return;
+        const txt = calibText.value || calibToText();
+        try{
+          await navigator.clipboard.writeText(txt);
+        }catch(e){
+          calibText.focus();
+          calibText.select();
+          try{ document.execCommand("copy"); }catch(err){}
+        }
+      }
+
+      function applyFromText(){
+        if(!calibText) return;
+        try{
+          const obj = JSON.parse(calibText.value);
+          calib = sanitizeCalib(obj);
+          saveCalib();
+          loadSlidersFromCalib();
+          applyTimelineGroupTransform();
+          setAnchorToLevel(LEVEL, { noTransition: true });
+          showOnlyStill();
+        }catch(e){
+          beep("no");
+        }
+      }
+
+      openCalBtn.addEventListener("click", () => {
+        beep("tap");
+        calPanel.classList.remove("hidden");
+        setCalMode(calMode);
+        refreshCalibText();
+      });
+
+      calClose.addEventListener("click", () => { beep("tap"); calPanel.classList.add("hidden"); });
+
+      tabLandscape.addEventListener("click", () => { beep("tap"); setCalMode("landscape"); });
+      tabPortrait.addEventListener("click", () => { beep("tap"); setCalMode("portrait"); });
+
+      [gX, gY, gS, lineY].forEach(el => el.addEventListener("input", () => {
+        writeSlidersToCalib();
+        syncCalNumbers();
+        applyTimelineGroupTransform();
+        refreshCalibText();
+      }));
+
+      gResetBtn.addEventListener("click", () => {
+        beep("tap");
+        calib = deepClone(DEFAULT_CALIB);
+        saveCalib();
+        setCalMode(calMode);
+        applyTimelineGroupTransform();
+        refreshCalibText();
+      });
+
+      gSaveBtn.addEventListener("click", () => {
+        beep("tap");
+        writeSlidersToCalib();
+        saveCalib();
+        applyTimelineGroupTransform();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+        showOnlyStill();
+        refreshCalibText();
+      });
+
+      if(calibRefreshBtn) calibRefreshBtn.addEventListener("click", () => { beep("tap"); refreshCalibText(); });
+      if(calibCopyBtn) calibCopyBtn.addEventListener("click", async () => { beep("tap"); await copyCalibText(); });
+      if(calibApplyBtn) calibApplyBtn.addEventListener("click", () => { beep("tap"); applyFromText(); });
+
+      /* game */
       let started = false;
       let locked = false;
       let correct = 1;
@@ -1062,7 +1889,7 @@
         streakBad = 0;
       }
 
-      function handleAutoLevelOnGood(){
+      async function handleAutoLevelOnGood(){
         streakGood += 1;
         streakBad = 0;
 
@@ -1070,13 +1897,16 @@
           const before = LEVEL;
           setLevel(LEVEL + 1);
           resetStreaks();
-          if(LEVEL !== before) beep("level");
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
           return true;
         }
         return false;
       }
 
-      function handleAutoLevelOnBad(){
+      async function handleAutoLevelOnBad(){
         streakBad += 1;
         streakGood = 0;
 
@@ -1084,7 +1914,10 @@
           const before = LEVEL;
           setLevel(LEVEL - 1);
           resetStreaks();
-          if(LEVEL !== before) beep("level");
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
           return true;
         }
         return false;
@@ -1157,7 +1990,7 @@
           all.forEach(b => b.style.pointerEvents = "");
           await wait(160);
 
-          const leveled = handleAutoLevelOnGood();
+          await handleAutoLevelOnGood();
           nextRound();
           return;
         }
@@ -1187,11 +2020,11 @@
 
         all.forEach(b => b.style.pointerEvents = "");
 
-        handleAutoLevelOnBad();
+        await handleAutoLevelOnBad();
         nextRound();
       }
 
-      /* Settings UI */
+      /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
         if(previewMsValue) previewMsValue.textContent = String(previewMs);
@@ -1238,7 +2071,6 @@
         if(btns[0]) await onPick(btns[0], correct);
       });
 
-      /* Start */
       function startGame(){
         if(started) return;
         started = true;
@@ -1248,6 +2080,11 @@
 
         startOverlay.style.display = "none";
         syncUI();
+
+        applyTimelineGroupTransform();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+        showOnlyStill();
+
         nextRound();
       }
 
@@ -1270,7 +2107,6 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
-      /* Reflow guard */
       let reflowTimer = null;
       function onReflow(){
         if(!started) return;
@@ -1281,6 +2117,11 @@
           answersEl.classList.add("answersHidden");
           answersEl.innerHTML = "";
           clearBoard();
+
+          applyTimelineGroupTransform();
+          setAnchorToLevel(LEVEL, { noTransition: true });
+          showOnlyStill();
+
           await wait(120);
           renderAnswers(correct, onPick);
           await wait(WAIT_BEFORE_IN_MS);
@@ -1292,11 +2133,17 @@
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
-      /* Init */
+      /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
+      initTimeline();
+
+      applyTimelineGroupTransform();
+      setAnchorToLevel(LEVEL, { noTransition: true });
+      showOnlyStill();
+
     })();
   </script>
 </body>
