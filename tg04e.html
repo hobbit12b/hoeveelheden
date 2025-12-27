@@ -24,7 +24,7 @@
       --wrongBorder: rgba(229, 140, 116, 0.45);
 
       --correctFill: rgba(210, 244, 214, 0.92);
-      --correctBorder: rgba(144, 204, 152,0.70);
+      --correctBorder: rgba(144, 204, 152, 0.70);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -114,6 +114,7 @@
     }
     .homeBtn:active,
     .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+
     .homeBtn svg{ width: 42px; height: 42px; display:block; }
 
     .titlePill{
@@ -142,7 +143,6 @@
       padding: 10px 6px;
       min-height: 0;
       position: relative;
-      z-index: 1;
       overflow: visible;
     }
 
@@ -177,6 +177,7 @@
       position:relative;
       aspect-ratio: 520 / 380;
     }
+
     @media (orientation: portrait){
       .flashBoard{
         width: min(440px, 92%);
@@ -191,6 +192,7 @@
       align-items:center;
       justify-content:center;
     }
+
     .flashSvg svg{
       width: 100%;
       height: 100%;
@@ -198,13 +200,14 @@
       max-height: 100%;
     }
 
+    /* Antwoordgebied: altijd laag in horizontale stand */
     .scanStage{
       position:absolute;
       inset:0;
       display:flex;
       align-items:flex-end;
       justify-content:center;
-      padding: 18px 18px 24px 18px;
+      padding: 18px 18px 34px 18px;
       z-index: 10;
     }
 
@@ -216,37 +219,38 @@
       align-items:flex-end;
     }
 
-    /* HORIZONTAAL: altijd laag, nooit wisselend */
-    @media (orientation: landscape){
-      .scanStage{
-        align-items:flex-end;
-        padding-bottom: 30px;
-      }
-      .answersWrap{
-        width: min(420px, 92%);
-        max-width: 420px;
-        align-items:flex-end;
-      }
-    }
-
     .answers{
       display:grid;
       grid-template-columns: 1fr;
       gap: 14px;
       justify-items:center;
-      align-items:center;
+      align-items:flex-end;
       width:100%;
     }
 
     @media (orientation: portrait){
-      .answers{
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-      .answersWrap{ width: min(640px, 92%); }
       .scanStage{
         align-items:center;
         padding: 18px;
+      }
+      .answers{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        align-items:center;
+      }
+      .answersWrap{ width: min(640px, 92%); }
+    }
+
+    /* HORIZONTAAL: vaste breedte zodat knoppen niet per ronde verschuiven */
+    @media (orientation: landscape){
+      .scanStage{ padding-bottom: 44px; }
+      .answersWrap{
+        width: 170px;
+        max-width: 170px;
+      }
+      .ansBtn{
+        width: 124px;
+        max-width: 124px;
       }
     }
 
@@ -271,9 +275,6 @@
       will-change: transform, opacity;
       position: relative;
       overflow: hidden;
-    }
-    @media (orientation: landscape){
-      .ansBtn{ width: clamp(92px, 10.8vw, 124px); }
     }
 
     .ansBtn:active{
@@ -469,7 +470,7 @@
     .ansBtn.cardOpen .cardFront{ display:grid; }
     .ansBtn.cardOpen .cardBack{ display:none; }
 
-    /* overlay bovenop alles, geen clipping */
+    /* Timeline overlay */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -488,19 +489,19 @@
       pointer-events:none;
     }
 
-    /* standaard plek: rechtsboven */
     .progressTimeline{
       position:absolute;
-      top: calc(14px + env(safe-area-inset-top));
+      top: calc(18px + env(safe-area-inset-top));
       right: calc(14px + env(safe-area-inset-right));
       width: min(520px, 58vw);
       height: 96px;
+      z-index: 20;
     }
 
-    /* HORIZONTAAL: meer richting hoogte van titlePill */
+    /* in horizontale stand iets hoger, rond hoogte van de titelbalk */
     @media (orientation: landscape){
       .progressTimeline{
-        top: calc(20px + env(safe-area-inset-top));
+        top: calc(24px + env(safe-area-inset-top));
       }
     }
 
@@ -520,7 +521,9 @@
       height: 82px;
       pointer-events:none;
       transition: left 520ms cubic-bezier(.22,.61,.35,1);
+      will-change: left, transform;
     }
+    .progressChickAnchor.noMove{ transition: none !important; }
 
     .chickLayer{
       position:absolute;
@@ -535,7 +538,6 @@
       display:block;
     }
     .chickLayer.active{ opacity: 1; }
-
     .stillLayer{ z-index: 3; }
     .animLayer{ z-index: 2; }
 
@@ -658,7 +660,7 @@
     </div>
   </section>
 
-  <!-- overlay boven alles en overal zichtbaar -->
+  <!-- Tijdlijngroep bovenop alles, zichtbaar over beide vakken -->
   <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
     <div class="timelineGroup" id="timelineGroup">
       <div class="progressTimeline" id="timeline">
@@ -733,13 +735,13 @@
 
     <div class="tuneRow">
       <div class="tuneLabel">groep x</div>
-      <input type="range" id="gX" min="-1200" max="1200" step="1" value="0" />
+      <input type="range" id="gX" min="-1400" max="1400" step="1" value="0" />
       <div class="tuneValue" id="gXv">0</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">groep y</div>
-      <input type="range" id="gY" min="-1200" max="1200" step="1" value="0" />
+      <input type="range" id="gY" min="-1400" max="1400" step="1" value="0" />
       <div class="tuneValue" id="gYv">0</div>
     </div>
 
@@ -751,7 +753,7 @@
 
     <div class="tuneRow">
       <div class="tuneLabel">kuiken lijn</div>
-      <input type="range" id="lineY" min="-160" max="160" step="1" value="-10" />
+      <input type="range" id="lineY" min="-200" max="200" step="1" value="-10" />
       <div class="tuneValue" id="lineYv">-10</div>
     </div>
 
@@ -761,7 +763,7 @@
     </div>
 
     <div class="hintLine">
-      als je schaalt blijft de kuikenpositie nu correct, omdat de berekende tick x wordt teruggerekend naar ongeschaalde pixels
+      tip: schuif de groep over het linkervak om hem goed te kunnen afstellen, de overlay ligt altijd bovenop
     </div>
   </div>
 
@@ -775,6 +777,10 @@
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
       const $ = (id) => document.getElementById(id);
+
+      const deepClone = (o) => {
+        try{ return structuredClone(o); }catch(e){ return JSON.parse(JSON.stringify(o)); }
+      };
 
       const startOverlay = $("startOverlay");
       const startBtn = $("startBtn");
@@ -818,7 +824,6 @@
       const answersEl = $("answers");
       const scanArea = $("scanArea");
 
-      const timelineOverlay = $("timelineOverlay");
       const timelineGroup = $("timelineGroup");
       const timeline = $("timeline");
       const levelsImg = $("levelsImg");
@@ -839,7 +844,6 @@
       let flashMs = Number(flashMsRange.value);
 
       let LEVEL = 1;
-
       let streakGood = 0;
       let streakBad = 0;
 
@@ -896,6 +900,7 @@
         }catch(e){}
       }
 
+      /* dobbelpunten */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -913,6 +918,7 @@
         return [{ dots: diceFaces[n], box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88} }];
       }
 
+      /* variaties */
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
         d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
@@ -1229,20 +1235,22 @@
       }
 
       /* tijdlijngroep kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v4_scale_fix";
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v6_local_math";
       const DEFAULT_CALIB = {
         landscape: { x: 0, y: 0, s: 1.00 },
         portrait:  { x: 0, y: 0, s: 1.00 },
         lineY: -10
       };
 
-      let calib = loadCalib() || structuredClone(DEFAULT_CALIB);
+      let calib = loadCalib() || deepClone(DEFAULT_CALIB);
 
       function loadCalib(){
         try{
           const raw = localStorage.getItem(TL_STORE_KEY);
           if(!raw) return null;
-          return JSON.parse(raw);
+          const obj = JSON.parse(raw);
+          if(!obj || typeof obj !== "object") return null;
+          return obj;
         }catch(e){ return null; }
       }
       function saveCalib(){
@@ -1250,12 +1258,6 @@
       }
 
       function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
-
-      function groupScale(){
-        const k = activeModeKey();
-        const s = Number(calib?.[k]?.s ?? 1);
-        return s || 1;
-      }
 
       function applyTimelineGroupTransform(){
         if(!timelineGroup) return;
@@ -1265,7 +1267,7 @@
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
-      /* levels mapping */
+      /* levels mapping, nu 1 tot en met 5, later kun je 6 tot en met 9 uitbreiden */
       const TL_LEVEL_MIN = 1;
       const TL_LEVEL_MAX = 9;
 
@@ -1284,67 +1286,65 @@
       let chickXAnim = null;
 
       function timelineReady(){
-        return timelineOverlay && timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
       }
-
-  function getContainedRectLocal(imgEl){
-  const w = imgEl.clientWidth || 1;     // layout maat, niet beïnvloed door transform scale
-  const h = imgEl.clientHeight || 1;
-  const iw = imgEl.naturalWidth || 1;
-  const ih = imgEl.naturalHeight || 1;
-
-  const s = Math.min(w / iw, h / ih);
-  const drawW = iw * s;
-  const drawH = ih * s;
-
-  const padX = (w - drawW) / 2;
-  const padY = (h - drawH) / 2;
-
-  return { padX, padY, drawW, drawH };
-}}
 
       function tickPercentForLevel(level){
         const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
+        const within = clamp(lv, TL_CALIB_MIN, TL_CALIB_MAX);
         const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
         const step = (TL_TICK_END - TL_TICK_START) / denom;
-        const p = TL_TICK_START + step * (lv - TL_CALIB_MIN);
+        const p = TL_TICK_START + step * (within - TL_CALIB_MIN);
         return clamp(p, 0, 100);
       }
 
+      /* BELANGRIJK: lokaal rekenen met clientWidth en clientHeight, dus geen dubbel verspringen bij schaal */
+      function getContainedRectLocal(imgEl){
+        const w = imgEl.clientWidth || 0;
+        const h = imgEl.clientHeight || 0;
+        const iw = imgEl.naturalWidth || 0;
+        const ih = imgEl.naturalHeight || 0;
+
+        if(!w || !h || !iw || !ih) return null;
+
+        const s = Math.min(w / iw, h / ih);
+        const drawW = iw * s;
+        const drawH = ih * s;
+
+        const padX = (w - drawW) / 2;
+        const padY = (h - drawH) / 2;
+
+        return { padX, padY, drawW, drawH };
+      }
+
       function currentTickXLocalForLevel(level){
-  if(!levelsImg || !levelsImg.naturalWidth) return null;
+        if(!levelsImg) return null;
+        const c = getContainedRectLocal(levelsImg);
+        if(!c) return null;
+        const p = tickPercentForLevel(level) / 100;
+        return c.padX + (c.drawW * p);
+      }
 
-  const p = tickPercentForLevel(level) / 100;
-  const c = getContainedRectLocal(levelsImg);
+      function setAnchorToLevel(level, opts = {}){
+        if(!timelineReady()) return;
 
-  return c.padX + (c.drawW * p);
-}
+        const xLocal = currentTickXLocalForLevel(level);
+        if(xLocal == null) return;
 
-      /* schaal fix: xLocal en lineY worden terug omgerekend naar ongeschaalde pixels */
-   /* nu geen deling door schaal meer nodig */
-function setAnchorToLevel(level, opts = {}){
-  if(!timelineReady()) return;
+        const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
 
-  const xLocal = currentTickXLocalForLevel(level);
-  if(xLocal == null) return;
+        if(opts.noTransition){
+          chickAnchor.classList.add("noMove");
+          chickAnchor.style.left = `${xLocal}px`;
+          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+          chickAnchor.offsetHeight;
+          chickAnchor.classList.remove("noMove");
+          return;
+        }
 
-  const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
-
-  if(opts.noTransition){
-    const prev = chickAnchor.style.transition;
-    chickAnchor.style.transition = "none";
-
-    chickAnchor.style.left = `${xLocal}px`;
-    chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
-
-    chickAnchor.offsetHeight;
-    chickAnchor.style.transition = prev || "";
-    return;
-  }
-
-  chickAnchor.style.left = `${xLocal}px`;
-  chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
-}
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+      }
 
       function cancelChickXAnim(){
         try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
@@ -1545,11 +1545,12 @@ function setAnchorToLevel(level, opts = {}){
       async function animateTimeline(fromLevel, toLevel){
         if(!timelineReady()) return;
 
-        setAnchorToLevel(fromLevel);
+        setAnchorToLevel(fromLevel, { noTransition: true });
+        showOnlyStill();
 
         const hasMp4 = upVid && downVid && animCanvas && chickCtx;
         if(!hasMp4){
-          setAnchorToLevel(toLevel);
+          setAnchorToLevel(toLevel, { noTransition: true });
           return;
         }
 
@@ -1559,15 +1560,13 @@ function setAnchorToLevel(level, opts = {}){
         stopVideo(upVid);
         stopVideo(downVid);
 
-        showOnlyStill();
-
         const dir = toLevel > fromLevel ? "up" : "down";
         const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
         const vid = dir === "up" ? upVid : downVid;
 
         await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        /* direct op eindpunt, zonder zichtbare schuif */
+        /* direct op eindpunt, geen zichtbare schuif van still */
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1782,7 +1781,7 @@ function setAnchorToLevel(level, opts = {}){
         if(btns[0]) await onPick(btns[0], correct);
       });
 
-      /* calibration ui */
+      /* kalibratie ui */
       let calMode = "landscape";
 
       function setCalMode(mode){
@@ -1831,7 +1830,7 @@ function setAnchorToLevel(level, opts = {}){
 
       gResetBtn.addEventListener("click", () => {
         beep("tap");
-        calib = structuredClone(DEFAULT_CALIB);
+        calib = deepClone(DEFAULT_CALIB);
         setCalMode(calMode);
         applyTimelineGroupTransform();
         saveCalib();
