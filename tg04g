@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Slim Kijken</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      .preserve-3d {
+        transform-style: preserve-3d;
+        -webkit-transform-style: preserve-3d;
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .rotate-y-180 {
+        transform: rotateY(180deg);
+        -webkit-transform: rotateY(180deg);
+      }
+      @keyframes pressBounce {
+        0% { transform: translateY(0); }
+        42% { transform: translateY(2px); }
+        100% { transform: translateY(0); }
+      }
+      .animate-pressBounce {
+        animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module" data-presets="react,typescript">
+      import React, { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'https://esm.sh/react@18.2.0?dev';
+      import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client?dev';
+
+      // --- CONSTANTS ---
+
+      interface Dot {
+        x: number;
+        y: number;
+      }
+
+      interface Pattern {
+        dots: number[][];
+        box: { x0: number; y0: number; x1: number; y1: number };
+      }
+
+      const P = {
+        tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
+        ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
+        bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
+      };
+
+      const diceFaces: Record<number, number[][]> = {
+        1: [P.mc],
+        2: [P.tl, P.br],
+        3: [P.tl, P.mc, P.br],
+        4: [P.tl, P.tr, P.bl, P.br],
+        5: [P.tl, P.tr, P.mc, P.bl, P.br],
+        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
+      };
+
+      const patternDice = (n: number): Pattern[] => {
+        return [{
+          dots: diceFaces[n] || [],
+          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+        }];
+      };
+
+      const L = {
+        a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
+        d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
+        m:[0.50,0.50],
+        r:[0.86,0.50],
+        l:[0.14,0.50]
+      };
+
+      const V = {
+        l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
+        r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
+      };
+
+      const VARS_1TO4: Record<number, number[][][]> = {
+        1: [[L.m], [L.b], [L.e]],
+        2: [[L.a, L.c], [L.b, L.e], [L.a, L.f]],
+        3: [[L.a, L.b, L.c], [L.a, L.m, L.f], [L.a, L.d, L.f]],
+        4: [[L.a, L.c, L.d, L.f], [L.a, L.b, L.c, L.m], [L.a, L.d, L.f, L.b]]
+      };
+
+      const VARS_5 = [
+        [L.a, L.b, L.c, L.d, L.e],
+        [L.a, L.c, L.d, L.f, L.m],
+        [L.a, L.c, L.d, L.f, L.b]
+      ];
+
+      const VARS_6 = [
+        [L.a, L.b, L.c, L.d, L.e, L.f],
+        [V.l1, V.l2, V.l3, V.r1, V.r2, V.r3],
+        [L.a, L.c, L.m, L.d, L.f, L.r]
+      ];
+
+      const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+      const randInt = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+      const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+      const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+      const raf = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+
+      function maxForLevel(level: number) {
+        if(level === 1) return 4;
+        if(level === 2) return 4;
+        if(level === 3) return 4;
+        if(level === 4) return 6;
+        return 6;
+      }
+
+      function allowedVariantCountQuestion(n: number, level: number){
+        if(level === 1) return 1;
+        if(level === 2) return 1;
+        if(level === 3) return (n<=4) ? 3 : 0;
+        if(level === 4){
+          if(n<=4) return 3;
+          if(n===5) return 2;
+          if(n===6) return 3;
+          return 0;
+        }
+        if(level === 5){
+          if(n<=4) return 3;
+          if(n===5) return 3;
+          if(n===6) return 3;
+          return 0;
+        }
+        return 1;
+      }
+
+      function pickVariantIndexForQuestion(n: number, level: number){
+        const k = allowedVariantCountQuestion(n, level);
+        if(k <= 1) return 0;
+        return randInt(0, k - 1);
+      }
+
+      function patternQuestion(n: number, variantIndex: number, level: number): Pattern[] {
+        if(level === 1 || level === 2) return patternDice(n);
+
+        if(level === 3){
+          const arr = VARS_1TO4[n] || [];
+          const dots = arr[clamp(variantIndex, 0, arr.length-1)] || [];
+          return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        }
+
+        if(level === 4 || level === 5){
+          if(n<=4){
+            const arr = VARS_1TO4[n] || [];
+            const dots = arr[clamp(variantIndex, 0, 2)] || [];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n===5){
+            const dots = VARS_5[clamp(variantIndex, 0, 1)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n===6){
+            const dots = VARS_6[clamp(variantIndex, 0, 2)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+        }
+
+        return patternDice(n);
+      }
+
+      function patternAnswer(n: number): Pattern[] {
+        if(n <= 4) return patternDice(n);
+        if(n === 5) return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+      }
+
+      function buildOptions(correct: number, level: number) {
+        const cap = maxForLevel(level);
+
+        if(level === 5){
+          const options = new Set([correct]);
+          const candidates = [
+            correct - 1, correct + 1,
+            correct - 2, correct + 2,
+            correct - 3, correct + 3
+          ].map(v => clamp(v, 1, cap));
+
+          for(const c of candidates){
+            options.add(c);
+            if(options.size >= 3) break;
+          }
+          while(options.size < 3) options.add(randInt(1, cap));
+
+          const arr = [...options];
+          for(let i=arr.length-1;i>0;i--){
+            const j = Math.floor(Math.random()*(i+1));
+            [arr[i],arr[j]] = [arr[j],arr[i]];
+          }
+          return arr;
+        }
+
+        const options = new Set([correct]);
+        while(options.size < 3){
+          const delta = pick([ -2, -1, 1, 2 ]);
+          options.add(clamp(correct + delta, 1, cap));
+        }
+
+        const arr = [...options];
+        for(let i=arr.length-1;i>0;i--){
+          const j = Math.floor(Math.random()*(i+1));
+          [arr[i],arr[j]] = [arr[j],arr[i]];
+        }
+        return arr;
+      }
+
+      function pickNumberWeighted(cap: number){
+        const w1 = 0.30;
+        const weights = [];
+        for(let i=1;i<=cap;i++){
+          weights.push(i === 1 ? w1 : 1);
+        }
+        const sum = weights.reduce((a,b) => a + b, 0);
+        let r = Math.random() * sum;
+        for(let i=0;i<weights.length;i++){
+          r -= weights[i];
+          if(r <= 0) return i + 1;
+        }
+        return cap;
+      }
+
+      // --- TIMELINE COMPONENT ---
+
+      const TL_TICK_START = 8.1;
+      const TL_TICK_END = 48.7;
+      const TL_CALIB_MIN = 1;
+      const TL_CALIB_MAX = 5;
+      const TL_WHITE_THRESH = 255;
+      const CHICK_Y_OFFSET = -10;
+
+      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+
+      interface TimelineProps {
+        level: number;
+        targetRect: DOMRect | null;
+        visible: boolean;
+      }
+
+      interface TimelineRef {
+        animateTimeline: (from: number, to: number) => Promise<void>;
+        updateLayout: () => void;
+      }
+
+      const Timeline = forwardRef<TimelineRef, TimelineProps>(({ level, targetRect, visible }, ref) => {
+        const groupRef = useRef<HTMLDivElement>(null);
+        const containerRef = useRef<HTMLDivElement>(null);
+        const levelsImgRef = useRef<HTMLImageElement>(null);
+        const chickAnchorRef = useRef<HTMLDivElement>(null);
+        const stillImgRef = useRef<HTMLImageElement>(null);
+        const animCanvasRef = useRef<HTMLCanvasElement>(null);
+        
+        const upVidRef = useRef<HTMLVideoElement>(null);
+        const downVidRef = useRef<HTMLVideoElement>(null);
+
+        const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
+
+        const updateLayout = useCallback(() => {
+          if (!groupRef.current || !levelsImgRef.current || !targetRect) return;
+
+          const img = levelsImgRef.current;
+          const nw = img.naturalWidth || 520; 
+          const nh = img.naturalHeight || 96;
+
+          if (nw !== naturalSize.w || nh !== naturalSize.h) {
+            setNaturalSize({ w: nw, h: nh });
+          }
+
+          // Automatic Scaling
+          const scale = targetRect.width / nw;
+          
+          // Automatic Positioning (Right below the card)
+          const x = targetRect.left;
+          const y = targetRect.bottom;
+
+          groupRef.current.style.transformOrigin = '0 0';
+          groupRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+          
+          if (containerRef.current) {
+            containerRef.current.style.width = `${nw}px`;
+            containerRef.current.style.height = `${nh}px`;
+          }
+
+          updateChickPosition(level, nw);
+        }, [targetRect, level, naturalSize]);
+
+        useEffect(() => {
+          updateLayout();
+        }, [updateLayout]);
+
+        const updateChickPosition = (lvl: number, totalWidth: number, noTransition = true) => {
+          if (!chickAnchorRef.current) return;
+
+          const lv = clamp(lvl, 1, 9);
+          const within = clamp(lv, TL_CALIB_MIN, TL_CALIB_MAX);
+          const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
+          const step = (TL_TICK_END - TL_TICK_START) / denom;
+          const p = (TL_TICK_START + step * (within - TL_CALIB_MIN)) / 100;
+
+          const xLocal = totalWidth * p;
+          
+          if (noTransition) chickAnchorRef.current.style.transition = 'none';
+          chickAnchorRef.current.style.left = `${xLocal}px`;
+          chickAnchorRef.current.style.transform = `translateX(-50%) translate(0px, ${CHICK_Y_OFFSET}px)`;
+          
+          if (noTransition) {
+             void chickAnchorRef.current.offsetHeight;
+             chickAnchorRef.current.style.transition = ''; 
+          }
+        };
+
+        const drawFrame = (video: HTMLVideoElement) => {
+          const canvas = animCanvasRef.current;
+          if (!canvas) return false;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          if (!ctx) return false;
+
+          if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
+          if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(video, 0, 0);
+
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const d = imgData.data;
+          for (let i = 0; i < d.length; i += 4) {
+            if (d[i] >= TL_WHITE_THRESH && d[i+1] >= TL_WHITE_THRESH && d[i+2] >= TL_WHITE_THRESH) {
+              d[i+3] = 0;
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+          return true;
+        };
+
+        const playSegment = async (video: HTMLVideoElement, cfg: typeof CHICK_UP) => {
+          if (!animCanvasRef.current) return;
+          
+          const fps = Math.max(1, cfg.fps);
+          const startT = Math.max(0, cfg.startFrame / fps);
+          const endT = Math.max(startT + 0.01, cfg.endFrame / fps);
+          const durMs = (endT - startT) * 1000;
+
+          video.pause();
+          video.currentTime = startT;
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const canvas = animCanvasRef.current;
+          canvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+          
+          try {
+            await video.play();
+          } catch(e) { console.error(e); return; }
+
+          if (stillImgRef.current) stillImgRef.current.style.opacity = '0';
+          canvas.style.opacity = '1';
+
+          const startTime = performance.now();
+          
+          const kf = canvas.animate([
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ], { duration: durMs, easing: 'linear', fill: 'forwards' });
+          
+          return new Promise<void>(resolve => {
+             const tick = () => {
+               const now = performance.now();
+               drawFrame(video);
+               if (video.currentTime >= endT || video.ended || (now - startTime > durMs + 100)) {
+                 video.pause();
+                 kf.cancel();
+                 resolve();
+               } else {
+                 requestAnimationFrame(tick);
+               }
+             };
+             tick();
+          });
+        };
+
+        useImperativeHandle(ref, () => ({
+          updateLayout,
+          animateTimeline: async (from: number, to: number) => {
+            updateChickPosition(from, levelsImgRef.current?.naturalWidth || 520, true);
+            
+            const dir = to > from ? 'up' : 'down';
+            const vid = dir === 'up' ? upVidRef.current : downVidRef.current;
+            const cfg = dir === 'up' ? CHICK_UP : CHICK_DOWN;
+            
+            if (vid && animCanvasRef.current) {
+               await playSegment(vid, cfg);
+            } else {
+               await new Promise(r => setTimeout(r, 800));
+            }
+
+            updateChickPosition(to, levelsImgRef.current?.naturalWidth || 520, true);
+            
+            if (stillImgRef.current) stillImgRef.current.style.opacity = '1';
+            if (animCanvasRef.current) animCanvasRef.current.style.opacity = '0';
+          }
+        }));
+
+        return (
+          <div className="fixed inset-0 z-[2000] pointer-events-none overflow-visible select-none">
+            <div 
+              ref={groupRef}
+              className="absolute left-0 top-0 origin-top-left will-change-transform"
+            >
+              <div ref={containerRef} className="relative">
+                 <img 
+                   ref={levelsImgRef}
+                   src="levels.png" 
+                   alt="levels" 
+                   className={`absolute inset-0 w-full h-full object-contain ${visible ? '' : 'opacity-0'}`}
+                   onLoad={updateLayout}
+                   draggable={false}
+                 />
+                 <div 
+                   ref={chickAnchorRef}
+                   className="absolute w-[82px] h-[82px] pointer-events-none transition-[left] duration-500 ease-[cubic-bezier(.22,.61,.35,1)]"
+                   style={{ bottom: '-10px' }}
+                 >
+                    <img 
+                      ref={stillImgRef} 
+                      src="ballerina_still.png" 
+                      className="absolute left-0 bottom-0 w-[82px] h-auto origin-bottom-center z-10 transition-opacity duration-100"
+                      alt=""
+                    />
+                    <canvas 
+                      ref={animCanvasRef}
+                      className="absolute left-0 bottom-0 w-[82px] h-auto origin-bottom-center z-20 opacity-0"
+                    />
+                    <video ref={upVidRef} src="ballerina_springt.mp4" muted playsInline preload="auto" className="hidden" />
+                    <video ref={downVidRef} src="ballerina_terug.mp4" muted playsInline preload="auto" className="hidden" />
+                 </div>
+              </div>
+            </div>
+          </div>
+        );
+      });
+
+      // --- APP COMPONENT ---
+
+      const HomeIcon = () => (
+        <svg viewBox="0 0 64 64" className="w-[42px] h-[42px] block" aria-hidden="true">
+          <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
+          <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
+          <path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+
+      const DotsSvg = ({ patterns, radius = 14 }: { patterns: Pattern[], radius?: number }) => {
+        if (!patterns.length) return null;
+        
+        const w = 520, h = 380;
+        const circles = [];
+        
+        patterns.forEach((p, pi) => {
+          const b = p.box;
+          p.dots.forEach((d, di) => {
+            const cx = (b.x0 + d[0] * (b.x1 - b.x0)) * w;
+            const cy = (b.y0 + d[1] * (b.y1 - b.y0)) * h;
+            circles.push(
+              <circle key={`${pi}-${di}`} cx={cx.toFixed(1)} cy={cy.toFixed(1)} r={radius} fill="rgba(25,25,25,.92)" />
+            );
+          });
+        });
+
+        return (
+          <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            {circles}
+          </svg>
+        );
+      };
+
+      function App() {
+        const [level, setLevel] = useState(1);
+        const [started, setStarted] = useState(false);
+        const [showSettings, setShowSettings] = useState(false);
+        const [flashMs, setFlashMs] = useState(300);
+        const [showLevelsPng, setShowLevelsPng] = useState(true);
+        
+        const [boardContent, setBoardContent] = useState([]);
+        const [boardVisible, setBoardVisible] = useState(true);
+        const [answers, setAnswers] = useState([]);
+        const [answersVisible, setAnswersVisible] = useState(false);
+        const [answerState, setAnswerState] = useState('idle');
+        
+        const correctRef = useRef(1);
+        const streakGood = useRef(0);
+        const streakBad = useRef(0);
+        const variantIndexRef = useRef(0);
+        
+        const gameCardRef = useRef(null);
+        const timelineRef = useRef(null);
+        const [gameCardRect, setGameCardRect] = useState(null);
+
+        const audioCtxRef = useRef(null);
+
+        const beep = (type) => {
+          try {
+            if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = audioCtxRef.current;
+            const t = ctx.currentTime;
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = "sine";
+            
+            if (type === "ok") o.frequency.setValueAtTime(740, t);
+            else if (type === "no") o.frequency.setValueAtTime(220, t);
+            else if (type === "tap") o.frequency.setValueAtTime(520, t);
+            else if (type === "level") o.frequency.setValueAtTime(620, t);
+            
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+            o.connect(g); g.connect(ctx.destination);
+            o.start(t); o.stop(t + 0.22);
+          } catch(e) {}
+        };
+
+        useEffect(() => {
+          if (!gameCardRef.current) return;
+          const ro = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+               setGameCardRect(entry.target.getBoundingClientRect());
+            }
+          });
+          ro.observe(gameCardRef.current);
+          setGameCardRect(gameCardRef.current.getBoundingClientRect());
+          return () => ro.disconnect();
+        }, []);
+
+        useEffect(() => {
+          const handleResize = () => {
+             if(gameCardRef.current) setGameCardRect(gameCardRef.current.getBoundingClientRect());
+          };
+          window.addEventListener('resize', handleResize);
+          window.addEventListener('orientationchange', handleResize);
+          return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
+          };
+        }, []);
+
+        const startRound = useCallback(async () => {
+          setAnswerState('locked');
+          setAnswersVisible(false);
+          setBoardContent([]);
+          setBoardVisible(true);
+
+          const cap = (level >= 4) ? 6 : 4;
+          correctRef.current = pickNumberWeighted(cap);
+          variantIndexRef.current = pickVariantIndexForQuestion(correctRef.current, level);
+
+          await wait(160);
+
+          setBoardContent(patternQuestion(correctRef.current, variantIndexRef.current, level));
+          
+          await wait(flashMs);
+
+          setBoardContent([]);
+          await wait(260);
+
+          setAnswers(buildOptions(correctRef.current, level));
+          
+          await wait(0); 
+          setAnswersVisible(true);
+          setAnswerState('idle');
+          
+        }, [level, flashMs]);
+
+        const handleLevelChange = async (newLevel) => {
+           const oldLevel = level;
+           setLevel(newLevel);
+           if (oldLevel !== newLevel) {
+             beep('level');
+             await timelineRef.current?.animateTimeline(oldLevel, newLevel);
+           }
+        };
+
+        const handlePick = async (val, btnIdx) => {
+          if (answerState === 'locked') return;
+          setAnswerState('locked');
+
+          if (val === correctRef.current) {
+            beep('ok');
+            setBoardContent(patternQuestion(correctRef.current, variantIndexRef.current, level));
+            
+            await wait(520);
+            setBoardVisible(false);
+            await wait(300);
+            setAnswersVisible(false);
+            await wait(200);
+
+            streakGood.current++;
+            streakBad.current = 0;
+            if (streakGood.current >= 5) {
+               streakGood.current = 0;
+               await handleLevelChange(level + 1);
+            }
+            
+            setBoardVisible(true);
+            startRound();
+
+          } else {
+            beep('no');
+            streakGood.current = 0;
+            streakBad.current++;
+
+            setBoardContent(patternQuestion(correctRef.current, variantIndexRef.current, level));
+            await wait(1200);
+            setBoardVisible(false);
+            await wait(300);
+            setAnswersVisible(false);
+            await wait(200);
+
+            if (streakBad.current >= 2) {
+              streakBad.current = 0;
+              await handleLevelChange(level - 1);
+            }
+            
+            setBoardVisible(true);
+            startRound();
+          }
+        };
+
+        const startGame = () => {
+          setStarted(true);
+          setLevel(1);
+          streakGood.current = 0;
+          streakBad.current = 0;
+          startRound();
+        };
+
+        return (
+          <div className="w-full h-full bg-white text-[#6f6b68] overflow-hidden grid grid-cols-1 grid-rows-[54fr_46fr] portrait:grid-cols-1 portrait:grid-rows-[54fr_46fr] landscape:grid-cols-[58fr_42fr] landscape:grid-rows-1">
+            
+            <section className="bg-[#fdeeea] p-[22px] portrait:p-[22px] landscape:p-[28px_26px_22px_26px] flex flex-col gap-[16px] landscape:gap-[22px] relative overflow-hidden z-10">
+              
+              <div className="flex items-center gap-[18px] flex-none relative z-20">
+                <button 
+                   onClick={() => { beep('tap'); window.location.reload(); }}
+                   className="w-[72px] h-[72px] rounded-[18px] bg-[#f8c3b0] border-none shadow-[0_8px_18px_rgba(0,0,0,0.1)] flex items-center justify-center cursor-pointer active:scale-[0.99] active:translate-y-[1px] transition-transform"
+                   aria-label="Home"
+                >
+                  <HomeIcon />
+                </button>
+                <button 
+                   onClick={() => { beep('tap'); setShowSettings(true); }}
+                   className="w-[72px] h-[72px] rounded-[18px] bg-[#f8c3b0] border-none shadow-[0_8px_18px_rgba(0,0,0,0.1)] flex items-center justify-center cursor-pointer text-[30px] active:scale-[0.99] active:translate-y-[1px] transition-transform"
+                   aria-label="Settings"
+                >
+                  ⚙️
+                </button>
+                <div className="px-[44px] py-[18px] rounded-[22px] bg-[#e58c74] text-white font-extrabold text-[clamp(22px,2.1vw,34px)] tracking-wide shadow-[0_16px_40px_rgba(0,0,0,0.08)] leading-none flex items-center justify-center min-h-[64px] w-full max-w-[660px] lowercase">
+                  slim kijken{level > 0 && `, level ${level}`}
+                </div>
+              </div>
+
+              <div className="flex-1 flex items-center justify-center p-[10px_6px] min-h-0 relative overflow-hidden">
+                <div 
+                   ref={gameCardRef}
+                   className="w-full max-w-[980px] h-[min(420px,34vh)] landscape:h-[min(520px,58vh)] bg-white border-[6px] border-[rgba(245,180,152,0.85)] rounded-[28px] shadow-[0_10px_22px_rgba(0,0,0,0.08)] relative overflow-hidden flex items-center justify-center p-[18px]"
+                >
+                   <div className="w-full h-full max-w-[440px] landscape:max-w-full rounded-[26px] bg-white border-[2px] border-[rgba(245,180,152,0.55)] flex items-center justify-center overflow-hidden relative aspect-[520/380]">
+                      <div 
+                        className={`w-full h-full transition-opacity duration-300 ${boardVisible ? 'opacity-100' : 'opacity-0'}`}
+                      >
+                         <DotsSvg patterns={boardContent} radius={16} />
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white relative min-h-0 transition-colors z-10 border-t-[6px] landscape:border-t-0 landscape:border-l-[6px] border-dashed border-[rgba(245,180,152,0.85)] overflow-hidden flex items-center justify-center p-[18px]">
+              <div className="w-full max-w-[640px] landscape:max-w-[360px]">
+                 <div className={`grid grid-cols-3 landscape:grid-cols-1 gap-[12px] landscape:gap-[14px] items-center justify-items-center transition-opacity duration-300 ${answersVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    {answers.map((ans, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handlePick(ans, idx)}
+                        disabled={answerState === 'locked'}
+                        className={`
+                          w-full aspect-square bg-white rounded-[22px] border-[3px] border-[rgba(245,180,152,0.85)] shadow-[0_12px_24px_rgba(0,0,0,0.1)]
+                          flex items-center justify-center p-[10px] cursor-pointer relative overflow-hidden
+                          active:translate-y-[2px] active:shadow-sm transition-all duration-200
+                          animate-pressBounce
+                          landscape:w-[clamp(86px,10.5vw,120px)]
+                        `}
+                      >
+                        {level >= 2 ? (
+                          <div className="w-full h-full rounded-[18px] perspective-[900px]">
+                            <div className={`w-full h-full relative preserve-3d transition-transform duration-500 ${(answersVisible && !started) ? 'rotate-y-0' : 'rotate-y-180'} ${'rotate-y-180'}`}>
+                               <div className="absolute inset-0 backface-hidden bg-[#f8c3b0] flex items-center justify-center rounded-[18px]">?</div>
+                               <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-[18px] flex items-center justify-center">
+                                 <div className="w-full h-full"><DotsSvg patterns={patternAnswer(ans)} radius={12} /></div>
+                               </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                             <DotsSvg patterns={patternAnswer(ans)} radius={12} />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                 </div>
+              </div>
+            </section>
+
+            <Timeline 
+               ref={timelineRef}
+               level={level}
+               targetRect={gameCardRect}
+               visible={showLevelsPng}
+            />
+
+            {!started && (
+              <div className="fixed inset-0 bg-[rgba(253,238,234,0.55)] backdrop-blur-[2px] flex items-center justify-center z-[3000] p-6" onClick={() => { beep('tap'); startGame(); }}>
+                 <div className="w-full max-w-[740px] bg-white rounded-[24px] shadow-[0_16px_40px_rgba(0,0,0,0.08)] p-[22px_20px] text-center" onClick={(e) => e.stopPropagation()}>
+                    <h1 className="m-0 mb-[10px] text-[28px] text-[#4d4a48] lowercase">tik om te starten</h1>
+                    <p className="m-0 mb-[14px] text-[18px] text-[rgba(77,74,72,0.82)] leading-snug">
+                      Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.
+                    </p>
+                    <button onClick={() => { beep('tap'); startGame(); }} className="bg-[#e58c74] text-white font-black px-[18px] py-[14px] rounded-[18px] text-[18px] shadow-[0_14px_26px_rgba(0,0,0,0.12)] active:translate-y-[1px] active:scale-[0.99] transition-transform">
+                      Start
+                    </button>
+                 </div>
+              </div>
+            )}
+
+            {showSettings && (
+              <div className="fixed right-[18px] bottom-[18px] w-[min(640px,calc(100vw-36px))] bg-[rgba(255,255,255,0.62)] backdrop-blur-[10px] rounded-[18px] shadow-[0_18px_50px_rgba(0,0,0,0.16)] border-[2px] border-[rgba(245,180,152,0.75)] p-[14px] z-[2200] text-[#4d4a48]">
+                 <div className="flex items-center justify-between mb-[10px]">
+                   <div className="font-black text-[18px] lowercase">instellingen</div>
+                   <button onClick={() => setShowSettings(false)} className="bg-[#f8c3b0] rounded-[12px] px-[12px] py-[10px] font-black shadow-sm active:scale-95">Sluit</button>
+                 </div>
+                 
+                 <div className="mt-2 pt-2 border-t-[2px] border-[rgba(245,180,152,0.45)]">
+                   <div className="font-bold text-sm mb-2 lowercase">flitstijd</div>
+                   <div className="flex items-center gap-2">
+                     <input 
+                       type="range" min="100" max="2400" step="50" 
+                       value={flashMs} onChange={(e) => setFlashMs(Number(e.target.value))} 
+                       className="flex-1"
+                     />
+                     <span className="font-black tabular-nums">{flashMs}</span>
+                   </div>
+                 </div>
+
+                 <div className="mt-2 pt-2 border-t-[2px] border-[rgba(245,180,152,0.45)] flex flex-wrap gap-2">
+                    <button onClick={() => setShowLevelsPng(!showLevelsPng)} className="bg-[#f8c3b0] px-3 py-2 rounded-[14px] text-sm font-bold shadow-sm active:scale-95">
+                      {showLevelsPng ? 'verberg levels' : 'toon levels'}
+                    </button>
+                    <button onClick={() => handleLevelChange(Math.max(1, level - 1))} className="bg-[#f8c3b0] px-3 py-2 rounded-[14px] text-sm font-bold shadow-sm active:scale-95">level -</button>
+                    <button onClick={() => handleLevelChange(Math.min(9, level + 1))} className="bg-[#e58c74] text-white px-3 py-2 rounded-[14px] text-sm font-bold shadow-sm active:scale-95">level +</button>
+                 </div>
+              </div>
+            )}
+
+          </div>
+        );
+      }
+
+      // --- MOUNT ---
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        const root = createRoot(rootElement);
+        root.render(<App />);
+      }
+    </script>
+  </body>
+</html>
