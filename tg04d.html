@@ -26,19 +26,21 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      /*
-        Y positie van het vraagvak in landscape:
-        0px is precies midden
-        negatief betekent omhoog, bijvoorbeeld -12px
-        positief betekent omlaag, bijvoorbeeld 12px
-      */
-      --questionYOffsetLandscape: -50px;
+      --activeFill: rgba(229, 140, 116, 0.18);
 
-      /*
-        Extra veiligheidsmarge voor knoppen in landscape:
-        groter getal maakt knoppen kleiner en dus sneller volledig zichtbaar
-      */
-      --answerSizeLandscape: 116px;
+      /* ---------------------------------------------------------
+         AANPASSEN Y POSITIE VRAAGVAK (ALLEEN iPad HORIZONTAAL)
+         Zet dit bijvoorbeeld op -18px als het vraagvak omhoog moet,
+         of op 12px als het vraagvak omlaag moet
+      --------------------------------------------------------- */
+      --questionYOffsetLandscape: 0px;
+
+      /* ---------------------------------------------------------
+         AANPASSEN GROOTTE ANTWOORDKNOPPEN (ALLEEN iPad HORIZONTAAL)
+         Als knoppen soms buiten beeld vallen, maak dit kleiner,
+         bijvoorbeeld 104px of 98px
+      --------------------------------------------------------- */
+      --answerBtnSizeLandscape: 112px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,14 +58,10 @@
       overflow:hidden;
     }
 
-    /* iOS stabiliteit: gebruik stabiele viewport hoogte waar mogelijk */
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
       height: 100%;
-    }
-    @supports (height: 100svh){
-      body{ height: 100svh; }
     }
 
     @media (orientation: portrait){
@@ -75,7 +73,7 @@
 
     .left{
       background: var(--bg-left);
-      padding: calc(28px + env(safe-area-inset-top)) 26px 22px 26px;
+      padding: 28px 26px 22px 26px;
       display:flex;
       flex-direction:column;
       gap: 22px;
@@ -89,7 +87,7 @@
       position: relative;
       overflow:hidden;
       min-height: 0;
-      padding-bottom: env(safe-area-inset-bottom);
+      transition: background 140ms ease;
     }
 
     @media (orientation: landscape){
@@ -97,7 +95,7 @@
     }
     @media (orientation: portrait){
       .scan-surface{ border-top: 6px dashed var(--midLine); }
-      .left{ padding: calc(22px + env(safe-area-inset-top)) 22px 22px 22px; gap: 16px; }
+      .left{ padding: 22px; gap: 16px; }
     }
 
     .topbar{
@@ -156,13 +154,6 @@
       min-height: 0;
     }
 
-    /* Landscape, vraagvak in het midden, met instelbare y offset via var */
-    @media (orientation: landscape){
-      .gameCard{
-        transform: translateY(var(--questionYOffsetLandscape));
-      }
-    }
-
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
@@ -176,18 +167,18 @@
       align-items:center;
       justify-content:center;
       padding: 18px;
+      transform: translateY(0px);
     }
 
-    /* Stabielere hoogte op iOS zodat layout minder springt */
-    @supports (height: 1svh){
-      .gameCard{ height: min(520px, 58svh); }
+    /* iPad horizontaal, verplaats vraagvak met 1 variabele (betrouwbaar) */
+    @media (min-aspect-ratio: 4/3){
+      .gameCard{
+        transform: translateY(var(--questionYOffsetLandscape));
+      }
     }
 
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
-      @supports (height: 1svh){
-        .gameCard{ height: min(420px, 34svh); }
-      }
     }
 
     .flashBoard{
@@ -227,21 +218,9 @@
       max-height: 100%;
     }
 
-    /*
-      Antwoordvak layout, geen absolute centering meer,
-      hierdoor blijft alles stabieler en sneller volledig in beeld
-    */
-    .scan-surface{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
     .scanStage{
-      position: relative;
-      inset: auto;
-      width: 100%;
-      height: 100%;
+      position:absolute;
+      inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -249,13 +228,14 @@
       z-index: 10;
     }
 
+    /* iPad horizontaal, iets minder padding zodat knoppen sneller passen */
+    @media (min-aspect-ratio: 4/3){
+      .scanStage{ padding: 12px; }
+    }
+
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
-      max-height: 100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
     }
 
     .answers{
@@ -264,7 +244,6 @@
       gap: 14px;
       justify-items:center;
       align-items:center;
-      width: 100%;
     }
 
     @media (orientation: portrait){
@@ -273,14 +252,6 @@
         gap: 12px;
       }
       .answersWrap{ width: min(640px, 92%); }
-    }
-
-    /*
-      Landscape, maak knoppen voorspelbaar kleiner wanneer nodig,
-      zo blijven ze vrijwel altijd volledig zichtbaar
-    */
-    @media (orientation: landscape){
-      .answersWrap{ width: min(360px, 92%); }
     }
 
     .ansBtn{
@@ -307,8 +278,16 @@
     }
 
     @media (orientation: landscape){
+      .answersWrap{ width: min(360px, 92%); }
+      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+    }
+
+    /* iPad horizontaal, maak knoppen voorspelbaar, zodat ze altijd in beeld blijven */
+    @media (min-aspect-ratio: 4/3){
+      .answers{ gap: 12px; }
       .ansBtn{
-        width: min(var(--answerSizeLandscape), 30vh);
+        width: min(var(--answerBtnSizeLandscape), 26vh);
+        padding: 8px;
       }
     }
 
@@ -335,82 +314,6 @@
     }
 
     .answersHidden{ opacity:0; pointer-events:none; }
-
-    /* Kaarten, hele antwoordknop draait mee */
-    .ansBtn.cardBtn{
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      padding: 0;
-      overflow: visible;
-      perspective: 1000px;
-    }
-
-    .cardWrap{
-      width:100%;
-      height:100%;
-      border-radius:22px;
-      overflow:hidden;
-      display:grid;
-      place-items:center;
-    }
-
-    .cardInner{
-      width:100%;
-      height:100%;
-      position:relative;
-      transform-style: preserve-3d;
-      -webkit-transform-style: preserve-3d;
-      transition: transform 420ms cubic-bezier(.22,.61,.35,1);
-    }
-
-    .cardBack,
-    .cardFront{
-      position:absolute;
-      inset:0;
-      display:grid;
-      place-items:center;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      border-radius:22px;
-      overflow:hidden;
-
-      border: 3px solid rgba(245,180,152,0.85);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
-    }
-
-    /* Dicht, kuiken */
-    .cardBack{
-      background:#f8c3b0;
-      background-image: url("vogeltje_achterkantkaart.png");
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
-      transform: rotateY(0deg);
-      -webkit-transform: rotateY(0deg);
-    }
-
-    /* Open, hoeveelheden */
-    .cardFront{
-      background:#ffffff;
-      transform: rotateY(180deg);
-      -webkit-transform: rotateY(180deg);
-      padding: 10px;
-    }
-
-    .ansBtn.cardOpen .cardInner{
-      transform: rotateY(180deg);
-      -webkit-transform: rotateY(180deg);
-    }
-
-    .ansBtn.cardBtn.wrongHold .cardFront{
-      background: var(--wrongFill);
-      border-color: var(--wrongBorder);
-    }
-    .ansBtn.cardBtn.correctHold .cardFront{
-      background: var(--correctFill);
-      border-color: var(--correctBorder);
-    }
 
     .startOverlay{
       position:fixed;
@@ -553,6 +456,58 @@
       color:#4d4a48;
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+
+    /* Kaarten, flip zoals jouw goede versie, hoeveelheden verschijnen na omdraaien */
+    .cardWrap{
+      width:100%;
+      height:100%;
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      perspective: 900px;
+    }
+
+    .cardInner{
+      width:100%;
+      height:100%;
+      position:relative;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transition: transform 420ms cubic-bezier(.22,.61,.35,1);
+    }
+
+    .cardBack,
+    .cardFront{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius:18px;
+      overflow:hidden;
+    }
+
+    .cardBack{
+      background:#f8c3b0;
+      font-size:32px;
+      background-image: url("vogeltje_achterkantkaart.png");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .cardFront{
+      background:#ffffff;
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+
+    .ansBtn.cardOpen .cardInner{
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
   </style>
 </head>
 
@@ -776,10 +731,26 @@
       };
 
       const VARS_1TO4 = {
-        1: [[L.m],[L.b],[L.e]],
-        2: [[L.a, L.c],[L.b, L.e],[L.a, L.f]],
-        3: [[L.a, L.b, L.c],[L.a, L.m, L.f],[L.a, L.d, L.f]],
-        4: [[L.a, L.c, L.d, L.f],[L.a, L.b, L.c, L.m],[L.a, L.d, L.f, L.b]]
+        1: [
+          [L.m],
+          [L.b],
+          [L.e]
+        ],
+        2: [
+          [L.a, L.c],
+          [L.b, L.e],
+          [L.a, L.f]
+        ],
+        3: [
+          [L.a, L.b, L.c],
+          [L.a, L.m, L.f],
+          [L.a, L.d, L.f]
+        ],
+        4: [
+          [L.a, L.c, L.d, L.f],
+          [L.a, L.b, L.c, L.m],
+          [L.a, L.d, L.f, L.b]
+        ]
       };
 
       const VARS_5 = [
@@ -949,6 +920,9 @@
         return arr;
       }
 
+      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
+
       function isPortrait(){
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
@@ -983,7 +957,7 @@
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
 
-        answersEl.classList.add("answersHidden");
+        hideAnswers();
         await raf(); await raf();
 
         btns.forEach(btn => {
@@ -992,7 +966,7 @@
           btn.style.opacity = "0";
         });
 
-        answersEl.classList.remove("answersHidden");
+        showAnswers();
         await raf();
 
         const easing = "cubic-bezier(.22,.61,.35,1)";
@@ -1042,6 +1016,7 @@
 
         arr.forEach(v => {
           const btn = document.createElement("button");
+          btn.className = "ansBtn";
           btn.type = "button";
 
           btn.addEventListener("pointerdown", () => {
@@ -1053,7 +1028,6 @@
           btn.addEventListener("click", () => onPick(btn, v));
 
           if(usesAnswerCards()){
-            btn.className = "ansBtn cardBtn";
             const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
             btn.innerHTML = `
               <div class="cardWrap">
@@ -1064,7 +1038,6 @@
               </div>
             `;
           }else{
-            btn.className = "ansBtn";
             const svg = svgForDots(patternDice(v), {dotRadius: 12});
             btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
           }
@@ -1081,7 +1054,7 @@
 
         const myToken = ++previewToken;
 
-        const btns = [...answersEl.querySelectorAll(".ansBtn.cardBtn")];
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
         if(!btns.length) return;
 
         await wait(PREVIEW_GAP_MS);
