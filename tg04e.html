@@ -1287,17 +1287,21 @@
         return timelineOverlay && timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
       }
 
-      function getContainedRect(img){
-        const box = img.getBoundingClientRect();
-        const iw = img.naturalWidth || 1;
-        const ih = img.naturalHeight || 1;
-        const scale = Math.min(box.width / iw, box.height / ih);
-        const drawW = iw * scale;
-        const drawH = ih * scale;
-        const padX = (box.width - drawW) / 2;
-        const padY = (box.height - drawH) / 2;
-        return { left: box.left + padX, top: box.top + padY, width: drawW, height: drawH };
-      }
+  function getContainedRectLocal(imgEl){
+  const w = imgEl.clientWidth || 1;     // layout maat, niet beïnvloed door transform scale
+  const h = imgEl.clientHeight || 1;
+  const iw = imgEl.naturalWidth || 1;
+  const ih = imgEl.naturalHeight || 1;
+
+  const s = Math.min(w / iw, h / ih);
+  const drawW = iw * s;
+  const drawH = ih * s;
+
+  const padX = (w - drawW) / 2;
+  const padY = (h - drawH) / 2;
+
+  return { padX, padY, drawW, drawH };
+}}
 
       function tickPercentForLevel(level){
         const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
@@ -1307,41 +1311,40 @@
         return clamp(p, 0, 100);
       }
 
-      function currentTickXForLevel(level){
-        if(!levelsImg.naturalWidth) return null;
-        const p = tickPercentForLevel(level) / 100;
-        const content = getContainedRect(levelsImg);
-        return content.left + (content.width * p);
-      }
+      function currentTickXLocalForLevel(level){
+  if(!levelsImg || !levelsImg.naturalWidth) return null;
+
+  const p = tickPercentForLevel(level) / 100;
+  const c = getContainedRectLocal(levelsImg);
+
+  return c.padX + (c.drawW * p);
+}
 
       /* schaal fix: xLocal en lineY worden terug omgerekend naar ongeschaalde pixels */
-      function setAnchorToLevel(level, opts = {}){
-        if(!timelineReady()) return;
+   /* nu geen deling door schaal meer nodig */
+function setAnchorToLevel(level, opts = {}){
+  if(!timelineReady()) return;
 
-        const xAbs = currentTickXForLevel(level);
-        if(xAbs == null) return;
+  const xLocal = currentTickXLocalForLevel(level);
+  if(xLocal == null) return;
 
-        const parent = timeline.getBoundingClientRect();
-        const s = groupScale();
+  const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
 
-        const xLocal = (xAbs - parent.left) / s;
+  if(opts.noTransition){
+    const prev = chickAnchor.style.transition;
+    chickAnchor.style.transition = "none";
 
-        const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
-        const yLocal = y / s;
+    chickAnchor.style.left = `${xLocal}px`;
+    chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
 
-        if(opts.noTransition){
-          const prev = chickAnchor.style.transition;
-          chickAnchor.style.transition = "none";
-          chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${yLocal}px)`;
-          chickAnchor.offsetHeight;
-          chickAnchor.style.transition = prev || "";
-          return;
-        }
+    chickAnchor.offsetHeight;
+    chickAnchor.style.transition = prev || "";
+    return;
+  }
 
-        chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${yLocal}px)`;
-      }
+  chickAnchor.style.left = `${xLocal}px`;
+  chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+}
 
       function cancelChickXAnim(){
         try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
