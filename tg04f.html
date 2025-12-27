@@ -26,8 +26,13 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      /* laptop auto fit, ogen hoogte, afstellen indien nodig */
-      --eyeFromAnchorBottom: 44px;
+      --activeFill: rgba(229, 140, 116, 0.18);
+
+      /* iPad horizontaal, vraagvak omhoog of omlaag */
+      --questionYOffsetLandscape: 0px;
+
+      /* iPad horizontaal, knoppen voorspelbaar */
+      --answerBtnSizeLandscape: 112px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -53,6 +58,7 @@
       overflow:hidden;
       isolation:isolate;
     }
+
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
@@ -81,43 +87,12 @@
       z-index: 1;
     }
 
-    /* middenlijn blijft visueel bestaan */
     @media (orientation: landscape){
       .scan-surface{ border-left: 6px dashed var(--midLine); }
     }
     @media (orientation: portrait){
       .scan-surface{ border-top: 6px dashed var(--midLine); }
       .left{ padding: 22px; gap: 16px; }
-    }
-
-    /* en nu de echte fix: een overlay die de middenlijn boven alles tekent */
-    .seamOverlay{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      z-index: 50;
-    }
-    @media (orientation: landscape){
-      .seamOverlay::before{
-        content:"";
-        position:absolute;
-        left:0;
-        top:0;
-        bottom:0;
-        width: 6px;
-        border-left: 6px dashed var(--midLine);
-      }
-    }
-    @media (orientation: portrait){
-      .seamOverlay::before{
-        content:"";
-        position:absolute;
-        left:0;
-        right:0;
-        top:0;
-        height: 6px;
-        border-top: 6px dashed var(--midLine);
-      }
     }
 
     .topbar{
@@ -191,7 +166,13 @@
       align-items:center;
       justify-content:center;
       padding: 18px;
+      transform: translateY(0px);
     }
+
+    @media (min-aspect-ratio: 4/3){
+      .gameCard{ transform: translateY(var(--questionYOffsetLandscape)); }
+    }
+
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
@@ -209,10 +190,12 @@
       position:relative;
       aspect-ratio: 520 / 380;
     }
+
     @media (orientation: portrait){
       .flashBoard{
         width: min(440px, 92%);
         height: auto;
+        transform: none;
       }
     }
 
@@ -223,7 +206,6 @@
       align-items:center;
       justify-content:center;
     }
-
     .flashSvg svg{
       width: 100%;
       height: 100%;
@@ -231,22 +213,31 @@
       max-height: 100%;
     }
 
+    /* Antwoordvak, let op clipping zodat knoppen nooit over de middenlijn zichtbaar zijn */
+    .scanClip{
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      background:#ffffff;
+    }
+
     .scanStage{
       position:absolute;
       inset:0;
       display:flex;
-      align-items:flex-end;
+      align-items:center;
       justify-content:center;
-      padding: 18px 18px 34px 18px;
+      padding: 18px;
       z-index: 10;
+    }
+
+    @media (min-aspect-ratio: 4/3){
+      .scanStage{ padding: 12px; }
     }
 
     .answersWrap{
       width: min(560px, 92%);
       max-width: 560px;
-      display:flex;
-      justify-content:center;
-      align-items:flex-end;
     }
 
     .answers{
@@ -254,33 +245,15 @@
       grid-template-columns: 1fr;
       gap: 14px;
       justify-items:center;
-      align-items:flex-end;
-      width:100%;
+      align-items:center;
     }
 
     @media (orientation: portrait){
-      .scanStage{
-        align-items:center;
-        padding: 18px;
-      }
       .answers{
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
-        align-items:center;
       }
       .answersWrap{ width: min(640px, 92%); }
-    }
-
-    @media (orientation: landscape){
-      .scanStage{ padding-bottom: 44px; }
-      .answersWrap{
-        width: 170px;
-        max-width: 170px;
-      }
-      .ansBtn{
-        width: 124px;
-        max-width: 124px;
-      }
     }
 
     .ansBtn{
@@ -304,6 +277,19 @@
       will-change: transform, opacity;
       position: relative;
       overflow: hidden;
+    }
+
+    @media (orientation: landscape){
+      .answersWrap{ width: min(360px, 92%); }
+      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+    }
+
+    @media (min-aspect-ratio: 4/3){
+      .answers{ gap: 12px; }
+      .ansBtn{
+        width: min(var(--answerBtnSizeLandscape), 26vh);
+        padding: 8px;
+      }
     }
 
     .ansBtn:active{
@@ -343,7 +329,7 @@
     }
     .startCard{
       width: min(740px, 92vw);
-      background: #ffffff;
+      background: rgba(255,255,255,0.92);
       border-radius: 24px;
       box-shadow: var(--shadow);
       padding: 22px 20px;
@@ -361,6 +347,7 @@
       font-size: 18px;
       line-height: 1.35;
     }
+
     .startBtn{
       appearance:none;
       border:none;
@@ -380,17 +367,18 @@
       position: fixed;
       right: 18px;
       bottom: 18px;
-      width: min(620px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.45);
-      backdrop-filter: blur(10px);
+      width: min(640px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.68);
+      backdrop-filter: blur(6px);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
+      border: 2px solid rgba(245,180,152,0.65);
       padding: 14px 14px 12px 14px;
       z-index: 2200;
       color: #4d4a48;
     }
     .tunePanel.hidden{ display:none; }
+
     .tuneHeader{
       display:flex;
       align-items:center;
@@ -414,6 +402,7 @@
       cursor:pointer;
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
     }
+    .tuneClose:active{ transform: translateY(1px) scale(0.99); }
 
     .tuneSection{
       margin-top: 8px;
@@ -464,12 +453,15 @@
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
       font-size: 14px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
     .tuneBtnSmall.secondary{
       background:#f8c3b0;
       color:#4d4a48;
     }
+    .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
+    /* Kaarten, jouw goede 3D flip */
     .cardWrap{
       width:100%;
       height:100%;
@@ -477,12 +469,31 @@
       overflow:hidden;
       display:grid;
       place-items:center;
+      perspective: 900px;
     }
-    .cardBack{
+
+    .cardInner{
       width:100%;
       height:100%;
+      position:relative;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transition: transform 420ms cubic-bezier(.22,.61,.35,1);
+    }
+
+    .cardBack,
+    .cardFront{
+      position:absolute;
+      inset:0;
       display:grid;
       place-items:center;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius:18px;
+      overflow:hidden;
+    }
+
+    .cardBack{
       background:#f8c3b0;
       font-size:32px;
       background-image: url("vogeltje_achterkantkaart.png");
@@ -490,16 +501,28 @@
       background-position: center;
       background-repeat: no-repeat;
     }
+
     .cardFront{
+      background:#ffffff;
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+
+    .ansBtn.cardOpen .cardInner{
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+
+    /* Cruciaal: slide animatie loopt op deze wrapper, rotatie blijft werken */
+    .ansInner{
       width:100%;
       height:100%;
-      display:none;
+      display:grid;
       place-items:center;
-      background:#ffffff;
+      will-change: transform, opacity;
     }
-    .ansBtn.cardOpen .cardFront{ display:grid; }
-    .ansBtn.cardOpen .cardBack{ display:none; }
 
+    /* Timeline overlay */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -508,7 +531,6 @@
       user-select:none;
       overflow: visible;
     }
-
     .timelineGroup{
       position:absolute;
       left: 0;
@@ -517,7 +539,6 @@
       will-change: transform;
       pointer-events:none;
     }
-
     .progressTimeline{
       position:absolute;
       top: calc(18px + env(safe-area-inset-top));
@@ -526,11 +547,8 @@
       height: 96px;
       z-index: 20;
     }
-
     @media (orientation: landscape){
-      .progressTimeline{
-        top: calc(24px + env(safe-area-inset-top));
-      }
+      .progressTimeline{ top: calc(24px + env(safe-area-inset-top)); }
     }
 
     .progressLine{
@@ -540,11 +558,7 @@
       height:100%;
       object-fit: contain;
     }
-
-    /* laptop auto fit: levels png mag gerust meegaan met kaderbreedte */
-    body.autoFit .progressLine{
-      object-fit: fill;
-    }
+    .progressLine.hidden{ opacity:0; }
 
     .progressChickAnchor{
       position:absolute;
@@ -586,22 +600,17 @@
       .chickLayer{ width: 78px; }
     }
 
-    /* alleen levels png onzichtbaar */
-    .hideLevels #levelsImg{
-      opacity: 0;
-      visibility: hidden;
-    }
-
+    /* Kalibratie panel */
     .calPanel{
       position: fixed;
       left: 18px;
       bottom: 18px;
-      width: min(640px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.45);
-      backdrop-filter: blur(10px);
+      width: min(680px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.62);
+      backdrop-filter: blur(6px);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
+      border: 2px solid rgba(245,180,152,0.65);
       padding: 14px 14px 12px 14px;
       z-index: 2300;
       color: #4d4a48;
@@ -632,6 +641,7 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.10);
       color:#2f2c2a;
     }
+    .calClose:active{ transform: translateY(1px) scale(0.99); }
 
     .calTabs{
       display:flex;
@@ -649,7 +659,9 @@
       padding: 10px 12px;
       border-radius: 14px;
       cursor:pointer;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
+    .tabBtn:active{ transform: translateY(1px) scale(0.99); }
     .tabBtn.active{
       background: var(--brand);
       border-color: rgba(229,140,116,0.95);
@@ -693,14 +705,16 @@
   </section>
 
   <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
-    <div class="scanStage">
-      <div class="answersWrap" id="answersWrap">
-        <div class="answers answersHidden" id="answers"></div>
+    <div class="scanClip" id="scanClip">
+      <div class="scanStage">
+        <div class="answersWrap" id="answersWrap">
+          <div class="answers answersHidden" id="answers"></div>
+        </div>
       </div>
     </div>
-    <div class="seamOverlay" aria-hidden="true"></div>
   </section>
 
+  <!-- Tijdlijngroep bovenop alles -->
   <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
     <div class="timelineGroup" id="timelineGroup">
       <div class="progressTimeline" id="timeline">
@@ -734,6 +748,12 @@
       <div style="font-weight:900; font-size:16px; text-transform: lowercase;">
         huidig level: <span id="tuneLevelValue">1</span>
       </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
+        <button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
+      </div>
+
       <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
         level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
       </div>
@@ -741,11 +761,16 @@
 
     <div class="tuneSection">
       <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
-
       <div class="tuneRow">
         <div class="tuneLabel">flitstijd</div>
-        <input type="range" id="flashMsRange" min="300" max="2400" step="50" value="300" />
+        <input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
         <div class="tuneValue" id="flashMsValue">300</div>
+      </div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">kijktijd kaarten</div>
+        <input type="range" id="previewMsRange" min="0" max="5000" step="100" value="1000" />
+        <div class="tuneValue" id="previewMsValue">1000</div>
       </div>
     </div>
 
@@ -757,13 +782,8 @@
       </div>
 
       <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level lager</button>
-        <button class="tuneBtnSmall secondary" id="levelUpBtn" type="button">level hoger</button>
-        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">verberg levels</button>
-      </div>
-
-      <div class="tuneButtons" style="margin-top:10px;">
         <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
+        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels.png verbergen</button>
       </div>
     </div>
   </div>
@@ -806,10 +826,10 @@
     <div class="tuneButtons">
       <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
       <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
-      <button class="tuneBtnSmall secondary" id="gCopyBtn" type="button">kopieer waarden</button>
+      <button class="tuneBtnSmall secondary" id="gCopyBtn" type="button">kopieer json</button>
     </div>
 
-    <div class="hintLine">
+    <div class="hintLine" id="copyHint">
       tip: schuif de groep over het linkervak om hem goed te kunnen afstellen, de overlay ligt altijd bovenop
     </div>
   </div>
@@ -825,14 +845,11 @@
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
       const $ = (id) => document.getElementById(id);
 
-      const deepClone = (o) => {
-        try{ return structuredClone(o); }catch(e){ return JSON.parse(JSON.stringify(o)); }
-      };
-
       const startOverlay = $("startOverlay");
       const startBtn = $("startBtn");
 
       const titlePill = $("titlePill");
+      const gameCard = $("gameCard");
 
       const homeBtn = $("homeBtn");
       const tuneBtn = $("tuneBtn");
@@ -841,6 +858,10 @@
 
       const flashMsRange = $("flashMsRange");
       const flashMsValue = $("flashMsValue");
+
+      const previewMsRange = $("previewMsRange");
+      const previewMsValue = $("previewMsValue");
+
       const tuneLevelValue = $("tuneLevelValue");
 
       const newRoundBtn = $("newRoundBtn");
@@ -849,7 +870,6 @@
 
       const levelDownBtn = $("levelDownBtn");
       const levelUpBtn = $("levelUpBtn");
-      const toggleLevelsBtn = $("toggleLevelsBtn");
 
       const openCalBtn = $("openCalBtn");
       const calPanel = $("calPanel");
@@ -871,12 +891,13 @@
       const gResetBtn = $("gResetBtn");
       const gSaveBtn = $("gSaveBtn");
       const gCopyBtn = $("gCopyBtn");
+      const copyHint = $("copyHint");
+
+      const toggleLevelsBtn = $("toggleLevelsBtn");
 
       const flashSvg = $("flashSvg");
       const answersEl = $("answers");
       const scanArea = $("scanArea");
-
-      const gameCard = $("gameCard");
 
       const timelineGroup = $("timelineGroup");
       const timeline = $("timeline");
@@ -893,8 +914,8 @@
       const OUT_DUR_MS = 750;
 
       const PREVIEW_GAP_MS = 120;
-      const PREVIEW_MS = 1700;
 
+      let previewMs = previewMsRange ? Number(previewMsRange.value) : 1700;
       let flashMs = Number(flashMsRange.value);
 
       let LEVEL = 1;
@@ -905,20 +926,22 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
-      function isTouchDevice(){
-        try{
-          return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
-        }catch(e){
-          return false;
-        }
+      function isProbablyIPad(){
+        const ua = navigator.userAgent || "";
+        const isIOS = /iPad|iPhone|iPod/.test(ua);
+        const isMacTouch = /Macintosh/.test(ua) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1;
+        return isIOS || isMacTouch;
       }
 
-      function usesAnswerCards(){ return LEVEL >= 2; }
+      function usesAnswerCards(){
+        return LEVEL >= 2;
+      }
 
       function setLevel(n){
         LEVEL = clamp(n, 1, 5);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -962,6 +985,7 @@
         }catch(e){}
       }
 
+      /* dobbelpunten */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -979,6 +1003,7 @@
         return [{ dots: diceFaces[n], box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88} }];
       }
 
+      /* variaties */
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
         d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
@@ -1189,9 +1214,10 @@
         await raf(); await raf();
 
         btns.forEach(btn => {
+          const inner = btn.querySelector(".ansInner") || btn;
           const v = slideVectorForButton(btn);
-          btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
-          btn.style.opacity = "0";
+          inner.style.transform = `translate(${v.x}px, ${v.y}px)`;
+          inner.style.opacity = "0";
         });
 
         showAnswers();
@@ -1200,9 +1226,11 @@
         const easing = "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
-          btn.animate(
+          const inner = btn.querySelector(".ansInner") || btn;
+          const fromT = inner.style.transform || "translate(0px,0px)";
+          inner.animate(
             [
-              { transform: btn.style.transform, opacity: 0 },
+              { transform: fromT, opacity: 0 },
               { transform: "translate(0px, 0px)", opacity: 1 }
             ],
             { duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
@@ -1212,8 +1240,9 @@
         await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
 
         btns.forEach(btn => {
-          btn.style.transform = "translate(0px, 0px)";
-          btn.style.opacity = "1";
+          const inner = btn.querySelector(".ansInner") || btn;
+          inner.style.transform = "translate(0px, 0px)";
+          inner.style.opacity = "1";
         });
       }
 
@@ -1223,8 +1252,9 @@
         const easing = "cubic-bezier(.22,.61,.35,1)";
 
         btns.forEach((btn, i) => {
+          const inner = btn.querySelector(".ansInner") || btn;
           const v = slideVectorForButton(btn);
-          btn.animate(
+          inner.animate(
             [
               { transform: "translate(0px, 0px)", opacity: 1 },
               { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
@@ -1234,7 +1264,11 @@
         });
 
         await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
-        btns.forEach(btn => { btn.style.opacity = "0"; });
+
+        btns.forEach(btn => {
+          const inner = btn.querySelector(".ansInner") || btn;
+          inner.style.opacity = "0";
+        });
       }
 
       function renderAnswers(correct, onPick){
@@ -1257,14 +1291,22 @@
           if(usesAnswerCards()){
             const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
             btn.innerHTML = `
-              <div class="cardWrap">
-                <div class="cardBack" aria-hidden="true"></div>
-                <div class="cardFront">${svg}</div>
+              <div class="ansInner">
+                <div class="cardWrap">
+                  <div class="cardInner">
+                    <div class="cardBack" aria-hidden="true"></div>
+                    <div class="cardFront">${svg}</div>
+                  </div>
+                </div>
               </div>
             `;
           }else{
             const svg = svgForDots(patternDice(v), {dotRadius: 12});
-            btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
+            btn.innerHTML = `
+              <div class="ansInner">
+                <div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>
+              </div>
+            `;
           }
 
           answersEl.appendChild(btn);
@@ -1272,8 +1314,11 @@
       }
 
       let previewToken = 0;
+
       async function previewCardsNonBlocking(){
         if(!usesAnswerCards()) return;
+        if(previewMs <= 0) return;
+
         const myToken = ++previewToken;
 
         const btns = [...answersEl.querySelectorAll(".ansBtn")];
@@ -1288,23 +1333,24 @@
         }
 
         if(previewToken !== myToken) return;
-        await wait(PREVIEW_MS);
+        await wait(previewMs);
 
         if(previewToken !== myToken) return;
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* tijdlijngroep kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v8_fit";
-      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v3";
-
+      /* timeline calibratie, inclusief jouw startwaarden */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v7";
       const DEFAULT_CALIB = {
         landscape: { x: 714, y: 490, s: 1.42 },
         portrait:  { x: 1012, y: 334, s: 1.70 },
-        lineY: -10
+        lineY: -10,
+        hideLevels: false
       };
 
-      let calib = loadCalib() || deepClone(DEFAULT_CALIB);
+      function deepClone(o){
+        try{ return structuredClone(o); }catch(e){ return JSON.parse(JSON.stringify(o)); }
+      }
 
       function loadCalib(){
         try{
@@ -1319,38 +1365,24 @@
         try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
       }
 
-      function loadLevelsVisible(){
-        try{
-          const raw = localStorage.getItem(LEVELS_VIS_KEY);
-          if(raw === "0") return false;
-        }catch(e){}
-        return true;
+      let calib = loadCalib() || deepClone(DEFAULT_CALIB);
+
+      function activeModeKey(){
+        return isPortrait() ? "portrait" : "landscape";
       }
 
-      function setLevelsVisible(isVisible){
-        const on = !!isVisible;
-        document.body.classList.toggle("hideLevels", !on);
-        try{ localStorage.setItem(LEVELS_VIS_KEY, on ? "1" : "0"); }catch(e){}
-        if(toggleLevelsBtn){
-          toggleLevelsBtn.textContent = on ? "verberg levels" : "toon levels";
-        }
+      function timelineReady(){
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
       }
 
-      toggleLevelsBtn.addEventListener("click", () => {
-        beep("tap");
-        const currentlyVisible = !document.body.classList.contains("hideLevels");
-        setLevelsVisible(!currentlyVisible);
-      });
-
-      function activeModeKey(){ return isPortrait() ? "portrait" : "landscape"; }
-
-      /* levels mapping */
+      /* mapping levels, nu 1 tot en met 5, later 9 */
       const TL_LEVEL_MIN = 1;
       const TL_LEVEL_MAX = 9;
 
       const TL_CALIB_MIN = 1;
       const TL_CALIB_MAX = 5;
 
+      /* percentages over levels.png */
       const TL_TICK_START = 8.1;
       const TL_TICK_END = 48.7;
 
@@ -1361,10 +1393,6 @@
 
       let chickPlaying = false;
       let chickXAnim = null;
-
-      function timelineReady(){
-        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
-      }
 
       function tickPercentForLevel(level){
         const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
@@ -1393,11 +1421,19 @@
         return { padX, padY, drawW, drawH };
       }
 
+      function isAutoFitDesktop(){
+        return !isProbablyIPad() && window.innerWidth >= 920;
+      }
+
       function currentTickXLocalForLevel(level){
-        if(!levelsImg) return null;
+        const p = tickPercentForLevel(level) / 100;
+
+        if(isAutoFitDesktop()){
+          return (timeline.clientWidth || 0) * p;
+        }
+
         const c = getContainedRectLocal(levelsImg);
         if(!c) return null;
-        const p = tickPercentForLevel(level) / 100;
         return c.padX + (c.drawW * p);
       }
 
@@ -1651,64 +1687,48 @@
         chickPlaying = false;
       }
 
-      function applyTimelineGroupTransformTouch(){
+      function applyTimelineLevelsVisibility(){
+        const hide = !!(calib.hideLevels);
+        levelsImg.classList.toggle("hidden", hide);
+        toggleLevelsBtn.textContent = hide ? "levels.png tonen" : "levels.png verbergen";
+      }
+
+      function applyTimelineGroupTransform(){
         if(!timelineGroup) return;
+
+        if(isAutoFitDesktop()){
+          const r = gameCard.getBoundingClientRect();
+
+          const desiredW = Math.max(260, Math.round(r.width));
+          const desiredH = Math.max(80, Math.round(r.height * 0.30));
+
+          timeline.style.width = desiredW + "px";
+          timeline.style.height = desiredH + "px";
+
+          const x = Math.round(r.left);
+          const y = Math.round(r.bottom - desiredH + 6);
+
+          timelineGroup.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+          setAnchorToLevel(LEVEL, { noTransition: true });
+          return;
+        }
+
         const k = activeModeKey();
         const c = calib[k] || DEFAULT_CALIB[k];
         timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
-      function applyTimelineAutoFitLaptop(){
-        if(!timelineReady() || !gameCard) return;
-
-        document.body.classList.add("autoFit");
-
-        const r = gameCard.getBoundingClientRect();
-
-        timelineGroup.style.transform = "translate(0px, 0px) scale(1)";
-        timelineGroup.style.left = "0px";
-        timelineGroup.style.top = "0px";
-
-        timeline.style.position = "fixed";
-        timeline.style.left = `${Math.round(r.left)}px`;
-        timeline.style.width = `${Math.round(r.width)}px`;
-
-        const h = Math.max(84, Math.round(r.height * 0.22));
-        timeline.style.height = `${h}px`;
-
-        const lineYpx = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
-
-        const eyeFromBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--eyeFromAnchorBottom")) || 44;
-        const top = Math.round(r.bottom - h - 10 - lineYpx + eyeFromBottom);
-
-        timeline.style.top = `${top}px`;
-        timeline.style.right = "auto";
-
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-
-      function applyTimelinePlacement(){
-        const touch = isTouchDevice();
-        if(touch){
-          document.body.classList.remove("autoFit");
-          timeline.style.position = "";
-          timeline.style.left = "";
-          timeline.style.top = "";
-          timeline.style.right = "";
-          timeline.style.width = "";
-          timeline.style.height = "";
-          applyTimelineGroupTransformTouch();
-          return;
-        }
-        applyTimelineAutoFitLaptop();
-      }
-
       function initTimeline(){
         if(!timelineReady()) return;
 
+        applyTimelineLevelsVisibility();
+        applyTimelineGroupTransform();
+        showOnlyStill();
+
         const apply = () => {
-          applyTimelinePlacement();
+          applyTimelineLevelsVisibility();
+          applyTimelineGroupTransform();
           setAnchorToLevel(LEVEL, { noTransition: true });
         };
 
@@ -1717,21 +1737,24 @@
 
         if(typeof ResizeObserver === "function"){
           const ro = new ResizeObserver(() => apply());
-          ro.observe(gameCard);
           ro.observe(timeline);
+          ro.observe(gameCard);
         }
 
         window.addEventListener("resize", apply);
         window.addEventListener("orientationchange", apply);
       }
 
-      /* game */
+      /* game flow */
       let started = false;
       let locked = false;
       let correct = 1;
       let questionVariantIndex = 0;
 
-      function resetStreaks(){ streakGood = 0; streakBad = 0; }
+      function resetStreaks(){
+        streakGood = 0;
+        streakBad = 0;
+      }
 
       async function handleAutoLevelOnGood(){
         streakGood += 1;
@@ -1871,6 +1894,7 @@
       /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
+        if(previewMsValue) previewMsValue.textContent = String(previewMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
       }
 
@@ -1888,6 +1912,13 @@
         flashMs = Number(flashMsRange.value);
         syncUI();
       });
+
+      if(previewMsRange){
+        previewMsRange.addEventListener("input", () => {
+          previewMs = Number(previewMsRange.value);
+          syncUI();
+        });
+      }
 
       newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
 
@@ -1907,23 +1938,20 @@
         if(btns[0]) await onPick(btns[0], correct);
       });
 
-      /* nieuwe test knoppen: direct level veranderen met animatie */
       levelDownBtn.addEventListener("click", async () => {
         beep("tap");
-        if(locked) return;
         const before = LEVEL;
         setLevel(LEVEL - 1);
-        applyTimelinePlacement();
-        if(LEVEL !== before) await animateTimeline(before, LEVEL);
+        if(before !== LEVEL) await animateTimeline(before, LEVEL);
+        applyTimelineGroupTransform();
       });
 
       levelUpBtn.addEventListener("click", async () => {
         beep("tap");
-        if(locked) return;
         const before = LEVEL;
         setLevel(LEVEL + 1);
-        applyTimelinePlacement();
-        if(LEVEL !== before) await animateTimeline(before, LEVEL);
+        if(before !== LEVEL) await animateTimeline(before, LEVEL);
+        applyTimelineGroupTransform();
       });
 
       /* kalibratie ui */
@@ -1943,7 +1971,7 @@
         gS.value = String((c.s ?? 1.0).toFixed(2));
         lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
         syncCalNumbers();
-        applyTimelinePlacement();
+        applyTimelineGroupTransform();
       }
 
       function syncCalNumbers(){
@@ -1970,14 +1998,15 @@
       [gX, gY, gS, lineY].forEach(el => el.addEventListener("input", () => {
         writeSlidersToCalib();
         syncCalNumbers();
-        applyTimelinePlacement();
+        applyTimelineGroupTransform();
       }));
 
       gResetBtn.addEventListener("click", () => {
         beep("tap");
         calib = deepClone(DEFAULT_CALIB);
         setCalMode(calMode);
-        applyTimelinePlacement();
+        applyTimelineLevelsVisibility();
+        applyTimelineGroupTransform();
         saveCalib();
       });
 
@@ -1985,48 +2014,32 @@
         beep("tap");
         writeSlidersToCalib();
         saveCalib();
-        applyTimelinePlacement();
+        applyTimelineGroupTransform();
         setAnchorToLevel(LEVEL, { noTransition: true });
       });
 
-      function buildCopyPayload(){
-        const obj = {
-          landscape: { x: calib.landscape?.x ?? DEFAULT_CALIB.landscape.x, y: calib.landscape?.y ?? DEFAULT_CALIB.landscape.y, s: calib.landscape?.s ?? DEFAULT_CALIB.landscape.s, lineY: calib.lineY ?? DEFAULT_CALIB.lineY },
-          portrait:  { x: calib.portrait?.x  ?? DEFAULT_CALIB.portrait.x,  y: calib.portrait?.y  ?? DEFAULT_CALIB.portrait.y,  s: calib.portrait?.s  ?? DEFAULT_CALIB.portrait.s,  lineY: calib.lineY ?? DEFAULT_CALIB.lineY }
-        };
-        return JSON.stringify(obj, null, 2);
-      }
-
-      async function copyToClipboard(text){
-        try{
-          if(navigator.clipboard && navigator.clipboard.writeText){
-            await navigator.clipboard.writeText(text);
-            return true;
-          }
-        }catch(e){}
-        try{
-          const ta = document.createElement("textarea");
-          ta.value = text;
-          ta.style.position = "fixed";
-          ta.style.left = "0";
-          ta.style.top = "0";
-          ta.style.opacity = "0";
-          document.body.appendChild(ta);
-          ta.focus();
-          ta.select();
-          const ok = document.execCommand("copy");
-          document.body.removeChild(ta);
-          return !!ok;
-        }catch(e){}
-        return false;
-      }
-
       gCopyBtn.addEventListener("click", async () => {
         beep("tap");
-        const text = buildCopyPayload();
-        const ok = await copyToClipboard(text);
-        gCopyBtn.textContent = ok ? "gekopieerd" : "kopieer waarden";
-        setTimeout(() => { gCopyBtn.textContent = "kopieer waarden"; }, 900);
+        writeSlidersToCalib();
+        const json = JSON.stringify({
+          landscape: { ...calib.landscape, lineY: calib.lineY },
+          portrait: { ...calib.portrait, lineY: calib.lineY }
+        }, null, 2);
+
+        try{
+          await navigator.clipboard.writeText(json);
+          copyHint.textContent = "kopie gereed, plak hem waar je wilt";
+        }catch(e){
+          copyHint.textContent = "kopiëren lukt niet automatisch, selecteer en kopieer via je browser";
+          alert(json);
+        }
+      });
+
+      toggleLevelsBtn.addEventListener("click", () => {
+        beep("tap");
+        calib.hideLevels = !calib.hideLevels;
+        saveCalib();
+        applyTimelineLevelsVisibility();
       });
 
       /* start */
@@ -2040,7 +2053,8 @@
         startOverlay.style.display = "none";
         syncUI();
 
-        applyTimelinePlacement();
+        applyTimelineLevelsVisibility();
+        applyTimelineGroupTransform();
         setAnchorToLevel(LEVEL, { noTransition: true });
         showOnlyStill();
 
@@ -2066,25 +2080,43 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
+      /* reflow */
+      let reflowTimer = null;
+      function onReflow(){
+        applyTimelineLevelsVisibility();
+        applyTimelineGroupTransform();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+
+        if(!started) return;
+        if(reflowTimer) clearTimeout(reflowTimer);
+
+        reflowTimer = setTimeout(async () => {
+          locked = true;
+          previewToken++;
+          answersEl.classList.add("answersHidden");
+          answersEl.innerHTML = "";
+          clearBoard();
+          await wait(120);
+          renderAnswers(correct, onPick);
+          await wait(WAIT_BEFORE_IN_MS);
+          await animateInButtons();
+          locked = false;
+          previewCardsNonBlocking();
+        }, 220);
+      }
+      window.addEventListener("resize", onReflow);
+      window.addEventListener("orientationchange", onReflow);
+
       /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
-
-      setLevelsVisible(loadLevelsVisible());
-
       initTimeline();
-      applyTimelinePlacement();
+      applyTimelineLevelsVisibility();
+      applyTimelineGroupTransform();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
-
-      function onAnyResize(){
-        applyTimelinePlacement();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-      window.addEventListener("resize", onAnyResize);
-      window.addEventListener("orientationchange", onAnyResize);
 
     })();
   </script>
