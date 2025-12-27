@@ -26,13 +26,14 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      --activeFill: rgba(229, 140, 116, 0.18);
-
-      /* Vraagvak Y offset, alleen iPad horizontaal */
+      /* iPad horizontaal, vraagvak omhoog of omlaag */
       --questionYOffsetLandscape: 0px;
 
-      /* Antwoordknoppen grootte, alleen iPad horizontaal */
+      /* iPad horizontaal, knoppen maat */
       --answerBtnSizeLandscape: 112px;
+
+      /* hoe ver de clip begint na de middenlijn */
+      --clipAfterSeam: 22px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -81,12 +82,10 @@
     .scan-surface{
       background:#ffffff;
       position: relative;
+      overflow:hidden;
       min-height: 0;
       transition: background 140ms ease;
       z-index: 1;
-
-      /* BELANGRIJK: clip alles zodat knoppen nooit over de middenlijn zichtbaar zijn */
-      overflow:hidden;
     }
 
     @media (orientation: landscape){
@@ -153,8 +152,6 @@
       justify-content:center;
       padding: 10px 6px;
       min-height: 0;
-      position: relative;
-      overflow:hidden;
     }
 
     .gameCard{
@@ -220,6 +217,32 @@
       max-height: 100%;
     }
 
+    /* De clip container */
+    .answerClip{
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+    }
+
+    @media (orientation: landscape){
+      .answerClip{
+        left: calc(6px + var(--clipAfterSeam));
+        right: 0;
+        top: 0;
+        bottom: 0;
+      }
+    }
+
+    @media (orientation: portrait){
+      .answerClip{
+        top: calc(6px + var(--clipAfterSeam));
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    }
+
     .scanStage{
       position:absolute;
       inset:0;
@@ -228,6 +251,8 @@
       justify-content:center;
       padding: 18px;
       z-index: 10;
+      overflow: visible;
+      pointer-events:auto;
     }
 
     @media (min-aspect-ratio: 4/3){
@@ -362,13 +387,12 @@
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Instellingen, transparanter */
     .tunePanel{
       position: fixed;
       right: 18px;
       bottom: 18px;
-      width: min(640px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.62);
+      width: min(620px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.55);
       backdrop-filter: blur(10px);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -411,13 +435,13 @@
 
     .tuneRow{
       display:grid;
-      grid-template-columns: 170px 1fr 92px;
+      grid-template-columns: 170px 1fr 84px;
       gap: 10px;
       align-items:center;
       margin: 10px 0;
     }
     @media (max-width: 520px){
-      .tuneRow{ grid-template-columns: 130px 1fr 84px; }
+      .tuneRow{ grid-template-columns: 130px 1fr 70px; }
     }
 
     .tuneLabel{
@@ -452,6 +476,7 @@
       cursor:pointer;
       box-shadow: 0 14px 26px rgba(0,0,0,0.12);
       font-size: 14px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
     .tuneBtnSmall.secondary{
       background:#f8c3b0;
@@ -459,7 +484,6 @@
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Kaarten flip, zoals goede versie */
     .cardWrap{
       width:100%;
       height:100%;
@@ -469,7 +493,6 @@
       place-items:center;
       perspective: 900px;
     }
-
     .cardInner{
       width:100%;
       height:100%;
@@ -477,9 +500,7 @@
       transform-style: preserve-3d;
       -webkit-transform-style: preserve-3d;
       transition: transform 420ms cubic-bezier(.22,.61,.35,1);
-      transform: translateZ(0);
     }
-
     .cardBack,
     .cardFront{
       position:absolute;
@@ -491,7 +512,6 @@
       border-radius:18px;
       overflow:hidden;
     }
-
     .cardBack{
       background:#f8c3b0;
       font-size:32px;
@@ -500,19 +520,16 @@
       background-position: center;
       background-repeat: no-repeat;
     }
-
     .cardFront{
       background:#ffffff;
       transform: rotateY(180deg);
       -webkit-transform: rotateY(180deg);
     }
-
     .ansBtn.cardOpen .cardInner{
       transform: rotateY(180deg);
       -webkit-transform: rotateY(180deg);
     }
 
-    /* Timeline overlay */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -531,14 +548,17 @@
       pointer-events:none;
     }
 
-    /* Dit is het zichtbare blok met levels.png */
     .progressTimeline{
       position:absolute;
-      left: 0;
-      top: 0;
+      top: calc(18px + env(safe-area-inset-top));
+      right: calc(14px + env(safe-area-inset-right));
       width: min(520px, 58vw);
       height: 96px;
       z-index: 20;
+    }
+
+    @media (orientation: landscape){
+      .progressTimeline{ top: calc(24px + env(safe-area-inset-top)); }
     }
 
     .progressLine{
@@ -547,10 +567,6 @@
       width:100%;
       height:100%;
       object-fit: contain;
-    }
-
-    .progressLine.levelsHidden{
-      opacity: 0;
     }
 
     .progressChickAnchor{
@@ -593,13 +609,18 @@
       .chickLayer{ width: 78px; }
     }
 
-    /* Kalibratie panel, ook transparanter */
+    /* alleen levels.png verbergen */
+    .hideLevels #levelsImg{
+      opacity: 0;
+      visibility: hidden;
+    }
+
     .calPanel{
       position: fixed;
       left: 18px;
       bottom: 18px;
-      width: min(680px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.62);
+      width: min(640px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.55);
       backdrop-filter: blur(10px);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -652,7 +673,9 @@
       padding: 10px 12px;
       border-radius: 14px;
       cursor:pointer;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
+    .tabBtn:active{ transform: translateY(1px) scale(0.99); }
     .tabBtn.active{
       background: var(--brand);
       border-color: rgba(229,140,116,0.95);
@@ -660,32 +683,12 @@
     }
 
     .hintLine{
-      margin-top: 8px;
+      margin-top: 6px;
       font-size: 13px;
       font-weight: 850;
       color: rgba(77,74,72,0.78);
       line-height: 1.3;
       text-transform: lowercase;
-    }
-
-    .copyBox{
-      width:100%;
-      margin-top:10px;
-      display:grid;
-      gap: 8px;
-    }
-    .copyBox textarea{
-      width:100%;
-      min-height: 92px;
-      resize: vertical;
-      border-radius: 14px;
-      border: 2px solid rgba(245,180,152,0.45);
-      padding: 10px 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
-      color:#2f2c2a;
-      background: rgba(255,255,255,0.70);
-      outline:none;
     }
   </style>
 </head>
@@ -716,18 +719,19 @@
   </section>
 
   <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
-    <div class="scanStage">
-      <div class="answersWrap" id="answersWrap">
-        <div class="answers answersHidden" id="answers"></div>
+    <div class="answerClip" id="answerClip">
+      <div class="scanStage">
+        <div class="answersWrap" id="answersWrap">
+          <div class="answers answersHidden" id="answers"></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Tijdlijngroep bovenop alles -->
   <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
     <div class="timelineGroup" id="timelineGroup">
       <div class="progressTimeline" id="timeline">
-        <img class="progressLine" id="levelsImg" src="levels.png" alt="" draggable="false">
+        <img class="progressLine" id="levelsImg" src="levels.png" alt="">
         <div class="progressChickAnchor" id="chickAnchor">
           <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
           <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
@@ -760,11 +764,6 @@
       <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
         level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
       </div>
-
-      <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
-        <button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
-      </div>
     </div>
 
     <div class="tuneSection">
@@ -774,6 +773,12 @@
         <div class="tuneLabel">flitstijd</div>
         <input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
         <div class="tuneValue" id="flashMsValue">300</div>
+      </div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">kijktijd kaarten</div>
+        <input type="range" id="previewMsRange" min="0" max="5000" step="100" value="1000" />
+        <div class="tuneValue" id="previewMsValue">1000</div>
       </div>
     </div>
 
@@ -785,8 +790,13 @@
       </div>
 
       <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png tonen</button>
+        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level omlaag</button>
+        <button class="tuneBtnSmall secondary" id="levelUpBtn" type="button">level omhoog</button>
+      </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
         <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
+        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">verberg levels</button>
       </div>
     </div>
   </div>
@@ -800,41 +810,37 @@
     <div class="calTabs">
       <button class="tabBtn active" id="tabLandscape" type="button">horizontaal</button>
       <button class="tabBtn" id="tabPortrait" type="button">vertikaal</button>
-      <button class="tabBtn" id="tabDesktop" type="button">laptop</button>
+      <button class="tabBtn" id="tabDesktop" type="button">desktop</button>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">groep x</div>
-      <input type="range" id="gX" min="-2000" max="2000" step="1" value="0" />
+      <input type="range" id="gX" min="-1400" max="1400" step="1" value="0" />
       <div class="tuneValue" id="gXv">0</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">groep y</div>
-      <input type="range" id="gY" min="-2000" max="2000" step="1" value="0" />
+      <input type="range" id="gY" min="-1400" max="1400" step="1" value="0" />
       <div class="tuneValue" id="gYv">0</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">groep schaal</div>
-      <input type="range" id="gS" min="0.30" max="3.00" step="0.01" value="1.00" />
+      <input type="range" id="gS" min="0.50" max="2.50" step="0.01" value="1.00" />
       <div class="tuneValue" id="gSv">1.00</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">kuiken lijn</div>
-      <input type="range" id="lineY" min="-260" max="260" step="1" value="-10" />
+      <input type="range" id="lineY" min="-200" max="200" step="1" value="-10" />
       <div class="tuneValue" id="lineYv">-10</div>
     </div>
 
     <div class="tuneButtons">
       <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
       <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
-      <button class="tuneBtnSmall secondary" id="copyBtn" type="button">kopieer json</button>
-    </div>
-
-    <div class="copyBox">
-      <textarea id="jsonOut" spellcheck="false"></textarea>
+      <button class="tuneBtnSmall secondary" id="gCopyBtn" type="button">kopieer waarden</button>
     </div>
 
     <div class="hintLine">
@@ -861,7 +867,6 @@
       const startBtn = $("startBtn");
 
       const titlePill = $("titlePill");
-      const gameCard = $("gameCard");
 
       const homeBtn = $("homeBtn");
       const tuneBtn = $("tuneBtn");
@@ -871,20 +876,23 @@
       const flashMsRange = $("flashMsRange");
       const flashMsValue = $("flashMsValue");
 
+      const previewMsRange = $("previewMsRange");
+      const previewMsValue = $("previewMsValue");
+
       const tuneLevelValue = $("tuneLevelValue");
 
       const newRoundBtn = $("newRoundBtn");
       const testWrongBtn = $("testWrongBtn");
       const testGoodBtn = $("testGoodBtn");
 
-      const levelUpBtn = $("levelUpBtn");
       const levelDownBtn = $("levelDownBtn");
+      const levelUpBtn = $("levelUpBtn");
 
-      const toggleLevelsBtn = $("toggleLevelsBtn");
       const openCalBtn = $("openCalBtn");
+      const toggleLevelsBtn = $("toggleLevelsBtn");
+
       const calPanel = $("calPanel");
       const calClose = $("calClose");
-
       const tabLandscape = $("tabLandscape");
       const tabPortrait = $("tabPortrait");
       const tabDesktop = $("tabDesktop");
@@ -901,12 +909,12 @@
 
       const gResetBtn = $("gResetBtn");
       const gSaveBtn = $("gSaveBtn");
-      const copyBtn = $("copyBtn");
-      const jsonOut = $("jsonOut");
+      const gCopyBtn = $("gCopyBtn");
 
       const flashSvg = $("flashSvg");
       const answersEl = $("answers");
       const scanArea = $("scanArea");
+      const answerClip = $("answerClip");
 
       const timelineGroup = $("timelineGroup");
       const timeline = $("timeline");
@@ -924,7 +932,7 @@
 
       const PREVIEW_GAP_MS = 120;
 
-      let previewMs = 1700;
+      let previewMs = previewMsRange ? Number(previewMsRange.value) : 1700;
       let flashMs = Number(flashMsRange.value);
 
       let LEVEL = 1;
@@ -932,25 +940,20 @@
       let streakGood = 0;
       let streakBad = 0;
 
+      function usesAnswerCards(){ return LEVEL >= 2; }
+
       function isPortrait(){
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
-      function isAutoFitDesktop(){
-        const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-        const likelyIPad = coarse && (Math.max(window.innerWidth, window.innerHeight) >= 900);
-        return !likelyIPad;
-      }
-
-      function usesAnswerCards(){
-        return LEVEL >= 2;
+      function isDesktopLike(){
+        return window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
       }
 
       function setLevel(n){
         LEVEL = clamp(n, 1, 5);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -964,9 +967,7 @@
       function pickNumberWeighted(cap){
         const w1 = 0.30;
         const weights = [];
-        for(let i=1;i<=cap;i++){
-          weights.push(i === 1 ? w1 : 1);
-        }
+        for(let i=1;i<=cap;i++) weights.push(i === 1 ? w1 : 1);
         const sum = weights.reduce((a,b) => a + b, 0);
         let r = Math.random() * sum;
         for(let i=0;i<weights.length;i++){
@@ -1010,14 +1011,11 @@
         5: [P.tl, P.tr, P.mc, P.bl, P.br],
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
-
       function patternDice(n){
-        return [{
-          dots: diceFaces[n],
-          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
-        }];
+        return [{ dots: diceFaces[n], box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88} }];
       }
 
+      /* variaties */
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
         d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
@@ -1025,35 +1023,16 @@
         r:[0.86,0.50],
         l:[0.14,0.50]
       };
-
       const V = {
         l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
         r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
       };
-
       const VARS_1TO4 = {
-        1: [
-          [L.m],
-          [L.b],
-          [L.e]
-        ],
-        2: [
-          [L.a, L.c],
-          [L.b, L.e],
-          [L.a, L.f]
-        ],
-        3: [
-          [L.a, L.b, L.c],
-          [L.a, L.m, L.f],
-          [L.a, L.d, L.f]
-        ],
-        4: [
-          [L.a, L.c, L.d, L.f],
-          [L.a, L.b, L.c, L.m],
-          [L.a, L.d, L.f, L.b]
-        ]
+        1: [[L.m],[L.b],[L.e]],
+        2: [[L.a, L.c],[L.b, L.e],[L.a, L.f]],
+        3: [[L.a, L.b, L.c],[L.a, L.m, L.f],[L.a, L.d, L.f]],
+        4: [[L.a, L.c, L.d, L.f],[L.a, L.b, L.c, L.m],[L.a, L.d, L.f, L.b]]
       };
-
       const VARS_5 = [
         [L.a, L.b, L.c, L.d, L.e],
         [L.a, L.c, L.d, L.f, L.m],
@@ -1083,7 +1062,6 @@
         }
         return 1;
       }
-
       function pickVariantIndexForQuestion(n){
         const k = allowedVariantCountQuestion(n);
         if(k <= 1) return 0;
@@ -1136,12 +1114,8 @@
       }
 
       function patternAnswer(n){
-        if(n <= 4){
-          return patternDice(n);
-        }
-        if(n === 5){
-          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-        }
+        if(n <= 4) return patternDice(n);
+        if(n === 5) return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
         return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
       }
 
@@ -1194,10 +1168,7 @@
             options.add(c);
             if(options.size >= 3) break;
           }
-
-          while(options.size < 3){
-            options.add(randInt(1, cap));
-          }
+          while(options.size < 3) options.add(randInt(1, cap));
 
           const arr = [...options];
           for(let i=arr.length-1;i>0;i--){
@@ -1224,18 +1195,17 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      /* animatie: schuiven alleen zichtbaar binnen scan-surface (overflow hidden) */
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
-        const a = scanArea.getBoundingClientRect();
-        const extra = 16;
+        const clip = (answerClip || scanArea).getBoundingClientRect();
+        const extra = 10;
 
         if(isPortrait()){
-          const seamY = a.top;
+          const seamY = clip.top;
           const dy = -((b.bottom - seamY) + extra);
           return { x: 0, y: dy };
         }else{
-          const seamX = a.left;
+          const seamX = clip.left;
           const dx = -((b.right - seamX) + extra);
           return { x: dx, y: 0 };
         }
@@ -1243,11 +1213,8 @@
 
       function sortedButtonsForExit(btns){
         const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
-        if(isPortrait()){
-          rects.sort((u,v) => v.r.left - u.r.left);
-        }else{
-          rects.sort((u,v) => v.r.top - u.r.top);
-        }
+        if(isPortrait()) rects.sort((u,v) => v.r.left - u.r.left);
+        else rects.sort((u,v) => v.r.top - u.r.top);
         return rects.map(x => x.b);
       }
 
@@ -1304,7 +1271,6 @@
         });
 
         await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
-
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
@@ -1345,7 +1311,6 @@
       }
 
       let previewToken = 0;
-
       async function previewCardsNonBlocking(){
         if(!usesAnswerCards()) return;
         if(previewMs <= 0) return;
@@ -1370,16 +1335,17 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* tijdlijngroep kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v7";
+      /* tijdlijn kalibratie */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v8";
+      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
 
+      /* jouw nieuwste waarden winnen */
       const DEFAULT_CALIB = {
-      landscape: { x: -30,  y: 515, s: 1.42 },
-      portrait:  { x: -164, y: 363, s: 1.70 },
-      desktop:   { x: -330, y: -162, s: 1.85 },
-      lineY: -10,
-      levelsVisible: true
-};
+        landscape: { x: -30,  y: 515,  s: 1.42 },
+        portrait:  { x: -164, y: 363,  s: 1.70 },
+        desktop:   { x: -330, y: -162, s: 1.85 },
+        lineY: -10
+      };
 
       let calib = loadCalib() || deepClone(DEFAULT_CALIB);
 
@@ -1396,16 +1362,37 @@
         try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
       }
 
+      function loadLevelsVisible(){
+        try{
+          const raw = localStorage.getItem(LEVELS_VIS_KEY);
+          if(raw === "0") return false;
+        }catch(e){}
+        return true;
+      }
+
+      function setLevelsVisible(isVisible){
+        const on = !!isVisible;
+        document.body.classList.toggle("hideLevels", !on);
+        try{ localStorage.setItem(LEVELS_VIS_KEY, on ? "1" : "0"); }catch(e){}
+        if(toggleLevelsBtn){
+          toggleLevelsBtn.textContent = on ? "verberg levels" : "toon levels";
+        }
+      }
+
+      if(toggleLevelsBtn){
+        toggleLevelsBtn.addEventListener("click", () => {
+          beep("tap");
+          const currentlyVisible = !document.body.classList.contains("hideLevels");
+          setLevelsVisible(!currentlyVisible);
+        });
+      }
+
       function activeModeKey(){
-        if(isAutoFitDesktop()) return "desktop";
+        if(isDesktopLike()) return "desktop";
         return isPortrait() ? "portrait" : "landscape";
       }
 
-      function timelineReady(){
-        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
-      }
-
-      /* levels mapping, nu 1 tot en met 5, later uitbreiden */
+      /* levels mapping */
       const TL_LEVEL_MIN = 1;
       const TL_LEVEL_MAX = 9;
 
@@ -1422,6 +1409,10 @@
 
       let chickPlaying = false;
       let chickXAnim = null;
+
+      function timelineReady(){
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
+      }
 
       function tickPercentForLevel(level){
         const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
@@ -1458,6 +1449,14 @@
         return c.padX + (c.drawW * p);
       }
 
+      function applyTimelineGroupTransform(){
+        if(!timelineGroup) return;
+        const k = activeModeKey();
+        const c = calib[k] || DEFAULT_CALIB[k];
+        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+
       function setAnchorToLevel(level, opts = {}){
         if(!timelineReady()) return;
 
@@ -1492,8 +1491,20 @@
         if(animCanvas) animCanvas.classList.add("active");
       }
 
-      function stopVideo(v){
-        try{ v.pause(); }catch(e){}
+      function safePause(videoEl){
+        try{ videoEl.pause(); }catch(e){}
+      }
+
+      function hardResetVideo(videoEl){
+        if(!videoEl) return;
+        try{
+          safePause(videoEl);
+          if(!Number.isFinite(videoEl.duration)) {
+            try{ videoEl.load(); }catch(e){}
+          }
+          try{ videoEl.currentTime = 0; }catch(e){}
+          try{ videoEl.load(); }catch(e){}
+        }catch(e){}
       }
 
       function setCanvasSizeToVideo(videoEl){
@@ -1528,7 +1539,9 @@
       }
 
       async function ensureReady(videoEl){
+        if(!videoEl) return false;
         if(videoEl.readyState >= 2) return true;
+
         return await new Promise(resolve => {
           let done = false;
           const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
@@ -1536,12 +1549,17 @@
           const cleanup = () => {
             videoEl.removeEventListener("loadeddata", ok);
             videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("canplay", ok);
             videoEl.removeEventListener("error", bad);
           };
+
           videoEl.addEventListener("loadeddata", ok, { once:true });
           videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("canplay", ok, { once:true });
           videoEl.addEventListener("error", bad, { once:true });
+
           try{ videoEl.load(); }catch(e){}
+
           setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
         });
       }
@@ -1568,33 +1586,61 @@
             videoEl.removeEventListener("seeked", onSeeked);
             videoEl.removeEventListener("error", onErr);
           };
+
           videoEl.addEventListener("seeked", onSeeked, { once:true });
           videoEl.addEventListener("error", onErr, { once:true });
 
-          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
-          catch(e){ cleanup(); resolve(false); return; }
+          try{
+            const t = Math.max(0, Number(timeSec) || 0);
+            if(videoEl.ended) {
+              try{ videoEl.currentTime = 0; }catch(e){}
+            }
+            videoEl.currentTime = t;
+          }catch(e){
+            cleanup();
+            resolve(false);
+            return;
+          }
 
           setTimeout(() => finish(true), 700);
         });
       }
 
       async function playSegmentOnCanvasNoFlash(videoEl, cfg){
-        if(!animCanvas || !chickCtx) return false;
+        if(!animCanvas || !chickCtx || !videoEl) return false;
 
         cancelChickXAnim();
+
+        /* iOS: elke keer opnieuw netjes resetten */
+        try{
+          videoEl.muted = true;
+          videoEl.playsInline = true;
+          videoEl.playbackRate = 1;
+        }catch(e){}
 
         const ready = await ensureReady(videoEl);
         if(!ready) return false;
 
         const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
 
-        stopVideo(videoEl);
+        safePause(videoEl);
+
+        /* extra hard reset bij ended state */
+        if(videoEl.ended){
+          try{ videoEl.currentTime = 0; }catch(e){}
+          try{ videoEl.load(); }catch(e){}
+        }
+
         await seekTo(videoEl, times.start);
 
         animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
 
         let playingOk = true;
-        try{ await videoEl.play(); }catch(e){ playingOk = false; }
+        try{
+          await videoEl.play();
+        }catch(e){
+          playingOk = false;
+        }
         if(!playingOk) return false;
 
         const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
@@ -1628,7 +1674,7 @@
         });
 
         if(!gotFirstFrame){
-          try{ videoEl.pause(); }catch(e){}
+          safePause(videoEl);
           return false;
         }
 
@@ -1644,116 +1690,79 @@
           { duration: times.durMs, easing: "linear", fill: "forwards" }
         );
 
-        if(useRVFC){
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
+        const doneOk = await (useRVFC
+          ? new Promise(resolve => {
+              const step = () => {
+                drawFrame(videoEl);
+                if(videoEl.currentTime >= times.end || videoEl.ended){
+                  resolve(true);
+                  return;
+                }
+                videoEl.requestVideoFrameCallback(step);
+              };
               videoEl.requestVideoFrameCallback(step);
-            };
-            videoEl.requestVideoFrameCallback(step);
-          });
-        }else{
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
+            })
+          : new Promise(resolve => {
+              const step = () => {
+                drawFrame(videoEl);
+                if(videoEl.currentTime >= times.end || videoEl.ended){
+                  resolve(true);
+                  return;
+                }
+                requestAnimationFrame(step);
+              };
               requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-          });
-        }
+            })
+        );
 
-        try{ videoEl.pause(); }catch(e){}
+        safePause(videoEl);
         cancelChickXAnim();
-        return true;
+
+        /* belangrijk: klaarzetten voor volgende run */
+        try{ videoEl.currentTime = 0; }catch(e){}
+        try{ videoEl.load(); }catch(e){}
+
+        return !!doneOk;
       }
 
       async function animateTimeline(fromLevel, toLevel){
         if(!timelineReady()) return;
 
-        setAnchorToLevel(fromLevel, { noTransition: true });
-        showOnlyStill();
-
-        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
-        if(!hasMp4){
-          setAnchorToLevel(toLevel, { noTransition: true });
-          return;
-        }
-
+        /* blokkeer stapel animaties */
         if(chickPlaying) return;
         chickPlaying = true;
-
-        stopVideo(upVid);
-        stopVideo(downVid);
 
         const dir = toLevel > fromLevel ? "up" : "down";
         const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
         const vid = dir === "up" ? upVid : downVid;
 
-        await playSegmentOnCanvasNoFlash(vid, cfg);
+        try{
+          /* startpunt */
+          setAnchorToLevel(fromLevel, { noTransition: true });
+          showOnlyStill();
 
-        setAnchorToLevel(toLevel, { noTransition: true });
+          /* reset beide video’s elke run, voorkomt iOS rare states */
+          hardResetVideo(upVid);
+          hardResetVideo(downVid);
 
-        stillImg.classList.add("active");
-        await raf();
-        if(animCanvas) animCanvas.classList.remove("active");
+          await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        chickPlaying = false;
-      }
+          /* direct op eindpunt */
+          setAnchorToLevel(toLevel, { noTransition: true });
 
-      function updateLevelsVisibilityUI(){
-        const on = !!calib.levelsVisible;
-        toggleLevelsBtn.textContent = on ? "levels png tonen" : "levels png verbergen";
-        if(on){
-          levelsImg.classList.remove("levelsHidden");
-        }else{
-          levelsImg.classList.add("levelsHidden");
+          stillImg.classList.add("active");
+          await raf();
+          if(animCanvas) animCanvas.classList.remove("active");
+        }finally{
+          chickPlaying = false;
         }
-      }
-
-      function applyTimelineGroupTransform(){
-        if(!timelineReady()) return;
-
-        updateLevelsVisibilityUI();
-
-        const k = activeModeKey();
-
-        if(k === "desktop"){
-          const r = gameCard.getBoundingClientRect();
-
-          const desiredW = Math.max(260, Math.round(r.width - 36));
-          const desiredH = Math.max(86, Math.round(Math.min(120, r.height * 0.22)));
-
-          timeline.style.width = desiredW + "px";
-          timeline.style.height = desiredH + "px";
-
-          const x = Math.round(r.left + 18);
-          const y = Math.round(r.bottom + 6);
-
-          const c = calib.desktop || DEFAULT_CALIB.desktop;
-          timelineGroup.style.transform = `translate(${x + (c.x||0)}px, ${y + (c.y||0)}px) scale(${c.s||1})`;
-
-          setAnchorToLevel(LEVEL, { noTransition: true });
-          return;
-        }
-
-        timeline.style.width = "";
-        timeline.style.height = "";
-
-        const c = calib[k] || DEFAULT_CALIB[k];
-        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
-        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function initTimeline(){
         if(!timelineReady()) return;
+
+        applyTimelineGroupTransform();
+        showOnlyStill();
 
         const apply = () => {
           applyTimelineGroupTransform();
@@ -1766,7 +1775,6 @@
         if(typeof ResizeObserver === "function"){
           const ro = new ResizeObserver(() => apply());
           ro.observe(timeline);
-          ro.observe(gameCard);
         }
 
         window.addEventListener("resize", apply);
@@ -1779,10 +1787,7 @@
       let correct = 1;
       let questionVariantIndex = 0;
 
-      function resetStreaks(){
-        streakGood = 0;
-        streakBad = 0;
-      }
+      function resetStreaks(){ streakGood = 0; streakBad = 0; }
 
       async function handleAutoLevelOnGood(){
         streakGood += 1;
@@ -1922,6 +1927,7 @@
       /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
+        if(previewMsValue) previewMsValue.textContent = String(previewMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
       }
 
@@ -1939,6 +1945,13 @@
         flashMs = Number(flashMsRange.value);
         syncUI();
       });
+
+      if(previewMsRange){
+        previewMsRange.addEventListener("input", () => {
+          previewMs = Number(previewMsRange.value);
+          syncUI();
+        });
+      }
 
       newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
 
@@ -1958,32 +1971,24 @@
         if(btns[0]) await onPick(btns[0], correct);
       });
 
-      levelUpBtn.addEventListener("click", async () => {
-        beep("tap");
+      async function manualLevelDelta(delta){
+        if(!started) return;
         if(locked) return;
-        const before = LEVEL;
-        setLevel(LEVEL + 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
-        }
-      });
 
-      levelDownBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(locked) return;
         const before = LEVEL;
-        setLevel(LEVEL - 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
-        }
-      });
+        setLevel(LEVEL + delta);
+        syncUI();
 
-      toggleLevelsBtn.addEventListener("click", () => {
-        beep("tap");
-        calib.levelsVisible = !calib.levelsVisible;
-        saveCalib();
-        applyTimelineGroupTransform();
-      });
+        if(LEVEL !== before){
+          beep("level");
+          await animateTimeline(before, LEVEL);
+        }else{
+          setAnchorToLevel(LEVEL, { noTransition: true });
+        }
+      }
+
+      levelUpBtn.addEventListener("click", async () => { beep("tap"); await manualLevelDelta(1); });
+      levelDownBtn.addEventListener("click", async () => { beep("tap"); await manualLevelDelta(-1); });
 
       /* kalibratie ui */
       let calMode = "landscape";
@@ -1996,6 +2001,13 @@
         loadSlidersFromCalib();
       }
 
+      function syncCalNumbers(){
+        gXv.textContent = String(gX.value);
+        gYv.textContent = String(gY.value);
+        gSv.textContent = Number(gS.value).toFixed(2);
+        lineYv.textContent = String(lineY.value);
+      }
+
       function loadSlidersFromCalib(){
         const c = calib[calMode] || DEFAULT_CALIB[calMode];
         gX.value = String(c.x ?? 0);
@@ -2004,27 +2016,11 @@
         lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
         syncCalNumbers();
         applyTimelineGroupTransform();
-        refreshJsonOut();
-      }
-
-      function syncCalNumbers(){
-        gXv.textContent = String(gX.value);
-        gYv.textContent = String(gY.value);
-        gSv.textContent = Number(gS.value).toFixed(2);
-        lineYv.textContent = String(lineY.value);
       }
 
       function writeSlidersToCalib(){
         calib[calMode] = { x: Number(gX.value), y: Number(gY.value), s: Number(gS.value) };
         calib.lineY = Number(lineY.value);
-      }
-
-      function refreshJsonOut(){
-        const obj = {
-          landscape: { ...calib.landscape, lineY: calib.lineY },
-          portrait:  { ...calib.portrait,  lineY: calib.lineY }
-        };
-        jsonOut.value = JSON.stringify(obj, null, 2);
       }
 
       function openCal(){ calPanel.classList.remove("hidden"); setCalMode(calMode); }
@@ -2041,7 +2037,6 @@
         writeSlidersToCalib();
         syncCalNumbers();
         applyTimelineGroupTransform();
-        refreshJsonOut();
       }));
 
       gResetBtn.addEventListener("click", () => {
@@ -2050,7 +2045,6 @@
         setCalMode(calMode);
         applyTimelineGroupTransform();
         saveCalib();
-        refreshJsonOut();
       });
 
       gSaveBtn.addEventListener("click", () => {
@@ -2059,21 +2053,46 @@
         saveCalib();
         applyTimelineGroupTransform();
         setAnchorToLevel(LEVEL, { noTransition: true });
-        refreshJsonOut();
       });
 
-      copyBtn.addEventListener("click", async () => {
-        beep("tap");
-        refreshJsonOut();
+      function buildCopyPayload(){
+        const obj = {
+          landscape: { x: calib.landscape?.x ?? DEFAULT_CALIB.landscape.x, y: calib.landscape?.y ?? DEFAULT_CALIB.landscape.y, s: calib.landscape?.s ?? DEFAULT_CALIB.landscape.s, lineY: calib.lineY ?? DEFAULT_CALIB.lineY },
+          portrait:  { x: calib.portrait?.x  ?? DEFAULT_CALIB.portrait.x,  y: calib.portrait?.y  ?? DEFAULT_CALIB.portrait.y,  s: calib.portrait?.s  ?? DEFAULT_CALIB.portrait.s,  lineY: calib.lineY ?? DEFAULT_CALIB.lineY },
+          desktop:   { x: calib.desktop?.x   ?? DEFAULT_CALIB.desktop.x,   y: calib.desktop?.y   ?? DEFAULT_CALIB.desktop.y,   s: calib.desktop?.s   ?? DEFAULT_CALIB.desktop.s,   lineY: calib.lineY ?? DEFAULT_CALIB.lineY }
+        };
+        return JSON.stringify(obj, null, 2);
+      }
+
+      async function copyToClipboard(text){
         try{
-          await navigator.clipboard.writeText(jsonOut.value);
-        }catch(e){
-          try{
-            jsonOut.focus();
-            jsonOut.select();
-            document.execCommand("copy");
-          }catch(err){}
-        }
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+        }catch(e){}
+        try{
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          ta.style.top = "0";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return !!ok;
+        }catch(e){}
+        return false;
+      }
+
+      gCopyBtn.addEventListener("click", async () => {
+        beep("tap");
+        const text = buildCopyPayload();
+        const ok = await copyToClipboard(text);
+        gCopyBtn.textContent = ok ? "gekopieerd" : "kopieer waarden";
+        setTimeout(() => { gCopyBtn.textContent = "kopieer waarden"; }, 900);
       });
 
       /* start */
@@ -2113,43 +2132,26 @@
         try{ window.location.href = "index.html"; }catch(e){}
       });
 
-      /* reflow game knoppen bij oriëntatie, zonder timing te veranderen */
-      let reflowTimer = null;
-      function onReflow(){
-        if(!started) return;
-        if(reflowTimer) clearTimeout(reflowTimer);
-        reflowTimer = setTimeout(async () => {
-          locked = true;
-          previewToken++;
-          answersEl.classList.add("answersHidden");
-          answersEl.innerHTML = "";
-          clearBoard();
-          await wait(120);
-          renderAnswers(correct, onPick);
-          await wait(WAIT_BEFORE_IN_MS);
-          await animateInButtons();
-          locked = false;
-          previewCardsNonBlocking();
-
-          applyTimelineGroupTransform();
-          setAnchorToLevel(LEVEL, { noTransition: true });
-        }, 220);
-      }
-      window.addEventListener("resize", onReflow);
-      window.addEventListener("orientationchange", onReflow);
-
       /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
-      initTimeline();
 
+      setLevelsVisible(loadLevelsVisible());
+
+      initTimeline();
       applyTimelineGroupTransform();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
-      updateLevelsVisibilityUI();
-      refreshJsonOut();
+
+      /* extra: bij oriëntatie wissel netjes opnieuw positioneren */
+      function onAnyResize(){
+        applyTimelineGroupTransform();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+      window.addEventListener("resize", onAnyResize);
+      window.addEventListener("orientationchange", onAnyResize);
 
     })();
   </script>
