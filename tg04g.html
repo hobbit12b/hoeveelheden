@@ -1,71 +1,829 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Slim Kijken</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React & ReactDOM (UMD for simple single-file usage without build steps) -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    
-    <!-- Babel Standalone to compile JSX in browser -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Slim kijken</title>
 
-    <style>
-      body {
-        -webkit-tap-highlight-color: transparent;
-        touch-action: none;
-        user-select: none;
-        -webkit-user-select: none;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        background-color: #ffffff; /* Fallback */
-      }
-      
-      /* 3D Utilities & Animation */
-      .preserve-3d {
-        transform-style: preserve-3d;
-        -webkit-transform-style: preserve-3d;
-      }
-      .backface-hidden {
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-      }
-      .rotate-y-180 {
-        transform: rotateY(180deg);
-        -webkit-transform: rotateY(180deg);
-      }
-      
-      @keyframes pressBounce {
-        0% { transform: translateY(0); }
-        42% { transform: translateY(2px); }
-        100% { transform: translateY(0); }
-      }
-      .animate-pressBounce {
-        animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
+  <style>
+    :root{
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --text:#6f6b68;
 
-    <script type="text/babel">
-      // --- GLOBALS ---
-      const { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } = React;
-      const { createRoot } = ReactDOM;
+      --midLine: rgba(245,180,152,0.85);
 
-      // --- UTILS & CONSTANTS ---
+      --card-radius:28px;
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+
+      --pressDown: 2px;
+
+      --wrongFill: rgba(248, 197, 197, 0.85);
+      --wrongBorder: rgba(229, 140, 116, 0.45);
+
+      --correctFill: rgba(210, 244, 214, 0.92);
+      --correctBorder: rgba(144, 204, 152, 0.70);
+
+      --activeFill: rgba(229, 140, 116, 0.18);
+
+      /* Vraagvak Y offset, alleen iPad horizontaal (mag blijven voor jouw layout) */
+      --questionYOffsetLandscape: 0px;
+
+      /* Antwoordknoppen grootte, alleen iPad horizontaal (mag blijven voor jouw layout) */
+      --answerBtnSizeLandscape: 112px;
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overflow:hidden;
+    }
+
+    body{
+      display:grid;
+      grid-template-columns: 58fr 42fr;
+      height: 100%;
+      position: relative;
+      overflow:hidden;
+      isolation:isolate;
+    }
+
+    @media (orientation: portrait){
+      body{
+        grid-template-columns: 1fr;
+        grid-template-rows: 54fr 46fr;
+      }
+    }
+
+    .left{
+      background: var(--bg-left);
+      padding: 28px 26px 22px 26px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+      z-index: 1;
+    }
+
+    .scan-surface{
+      background:#ffffff;
+      position: relative;
+      min-height: 0;
+      transition: background 140ms ease;
+      z-index: 1;
+
+      /* clip alles zodat knoppen nooit over de middenlijn zichtbaar zijn */
+      overflow:hidden;
+    }
+
+    @media (orientation: landscape){
+      .scan-surface{ border-left: 6px dashed var(--midLine); }
+    }
+    @media (orientation: portrait){
+      .scan-surface{ border-top: 6px dashed var(--midLine); }
+      .left{ padding: 22px; gap: 16px; }
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap: 18px;
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    .homeBtn,
+    .tuneBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+      font-size: 30px;
+      line-height: 1;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+    }
+    .homeBtn:active,
+    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+
+    .homeBtn svg{ width: 42px; height: 42px; display:block; }
+
+    .titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.1vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 64px;
+      width: min(660px, 100%);
+      text-transform: lowercase;
+    }
+
+    .content{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+      min-height: 0;
+      position: relative;
+      overflow:hidden;
+    }
+
+    .gameCard{
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
+      border: 6px solid rgba(245,180,152,0.85);
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      position:relative;
+      overflow: hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      transform: translateY(0px);
+    }
+
+    @media (min-aspect-ratio: 4/3){
+      .gameCard{
+        transform: translateY(var(--questionYOffsetLandscape));
+      }
+    }
+
+    @media (orientation: portrait){
+      .gameCard{ height: min(420px, 34vh); }
+    }
+
+    .flashBoard{
+      width: 100%;
+      height: 100%;
+      border-radius: 26px;
+      background:#ffffff;
+      border: 2px solid rgba(245,180,152,0.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      position:relative;
+      aspect-ratio: 520 / 380;
+    }
+
+    @media (orientation: portrait){
+      .flashBoard{
+        width: min(440px, 92%);
+        height: auto;
+        transform: none;
+      }
+    }
+
+    .flashSvg{
+      width: 100%;
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .flashSvg svg{
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .scanStage{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 10;
+    }
+
+    @media (min-aspect-ratio: 4/3){
+      .scanStage{ padding: 12px; }
+    }
+
+    .answersWrap{
+      width: min(560px, 92%);
+      max-width: 560px;
+    }
+
+    .answers{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      justify-items:center;
+      align-items:center;
+    }
+
+    @media (orientation: portrait){
+      .answers{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .answersWrap{ width: min(640px, 92%); }
+    }
+
+    .ansBtn{
+      appearance:none;
+      border:none;
+      background:#ffffff;
+      border-radius: 22px;
+      border: 3px solid rgba(245,180,152,0.85);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+      cursor:pointer;
+
+      display:grid;
+      place-items:center;
+      padding: 10px;
+
+      aspect-ratio: 1 / 1;
+      width: 100%;
+
+      transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
+      transform: translateZ(0);
+      will-change: transform, opacity;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (orientation: landscape){
+      .answersWrap{ width: min(360px, 92%); }
+      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+    }
+
+    @media (min-aspect-ratio: 4/3){
+      .answers{ gap: 12px; }
+      .ansBtn{
+        width: min(var(--answerBtnSizeLandscape), 26vh);
+        padding: 8px;
+      }
+    }
+
+    .ansBtn:active{
+      transform: translateY(var(--pressDown));
+      box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+    }
+
+    .ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
+    @keyframes pressBounce{
+      0%{ transform: translateY(0); }
+      42%{ transform: translateY(var(--pressDown)); }
+      100%{ transform: translateY(0); }
+    }
+
+    .ansBtn.wrongHold{
+      background: var(--wrongFill);
+      border-color: var(--wrongBorder);
+    }
+
+    .ansBtn.correctHold{
+      background: var(--correctFill);
+      border-color: var(--correctBorder);
+    }
+
+    .answersHidden{ opacity:0; pointer-events:none; }
+
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.55);
+      backdrop-filter: blur(2px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index: 999;
+      padding: 24px;
+    }
+    .startCard{
+      width: min(740px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align:center;
+    }
+    .startCard h1{
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #4d4a48;
+      text-transform: lowercase;
+    }
+    .startCard p{
+      margin: 0 0 14px 0;
+      color: rgba(77,74,72,0.82);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .startBtn{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+    }
+    .startBtn:active{ transform: translateY(1px) scale(0.99); }
+
+    /* Instellingen, transparanter */
+    .tunePanel{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(640px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.62);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 2200;
+      color: #4d4a48;
+    }
+    .tunePanel.hidden{ display:none; }
+    .tuneHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .tuneTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .tuneClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .tuneClose:active{ transform: translateY(1px) scale(0.99); }
+
+    .tuneSection{
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top:2px solid rgba(245,180,152,0.45);
+    }
+
+    .tuneRow{
+      display:grid;
+      grid-template-columns: 170px 1fr 92px;
+      gap: 10px;
+      align-items:center;
+      margin: 10px 0;
+    }
+    @media (max-width: 520px){
+      .tuneRow{ grid-template-columns: 130px 1fr 84px; }
+    }
+
+    .tuneLabel{
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      text-transform: lowercase;
+    }
+    .tuneValue{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 13px;
+      text-align:right;
+      color: rgba(77,74,72,0.86);
+    }
+    .tuneRow input[type="range"]{ width: 100%; }
+
+    .tuneButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .tuneBtnSmall{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      font-size: 14px;
+    }
+    .tuneBtnSmall.secondary{
+      background:#f8c3b0;
+      color:#4d4a48;
+    }
+    .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+
+    /* Kaarten flip */
+    .cardWrap{
+      width:100%;
+      height:100%;
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      perspective: 900px;
+    }
+
+    .cardInner{
+      width:100%;
+      height:100%;
+      position:relative;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transition: transform 420ms cubic-bezier(.22,.61,.35,1);
+      transform: translateZ(0);
+    }
+
+    .cardBack,
+    .cardFront{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius:18px;
+      overflow:hidden;
+    }
+
+    .cardBack{
+      background:#f8c3b0;
+      font-size:32px;
+      background-image: url("vogeltje_achterkantkaart.png");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .cardFront{
+      background:#ffffff;
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+
+    .ansBtn.cardOpen .cardInner{
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+
+    /* Timeline overlay */
+    .timelineOverlay{
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      pointer-events:none;
+      user-select:none;
+      overflow: visible;
+    }
+
+    .timelineGroup{
+      position:absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      pointer-events:none;
+    }
+
+    /* Zichtbare blok met levels.png, basismaat blijft, scale komt via timelineGroup */
+    .progressTimeline{
+      position:absolute;
+      left: 0;
+      top: 0;
+      width: min(520px, 58vw);
+      height: 96px;
+      z-index: 20;
+    }
+
+    .progressLine{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: contain;
+    }
+
+    .progressLine.levelsHidden{
+      opacity: 0;
+    }
+
+    .progressChickAnchor{
+      position:absolute;
+      bottom: -10px;
+      transform: translateX(-50%);
+      width: 82px;
+      height: 82px;
+      pointer-events:none;
+      transition: left 520ms cubic-bezier(.22,.61,.35,1);
+      will-change: left, transform;
+    }
+    .progressChickAnchor.noMove{ transition: none !important; }
+
+    .chickLayer{
+      position:absolute;
+      left:0;
+      bottom:0;
+      width: 82px;
+      height: auto;
+      opacity: 0;
+      pointer-events:none;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+      display:block;
+    }
+    .chickLayer.active{ opacity: 1; }
+    .stillLayer{ z-index: 3; }
+    .animLayer{ z-index: 2; }
+
+    #animCanvas{ opacity:0; }
+    #animCanvas.active{ opacity:1; }
+
+    @media (orientation: portrait){
+      .progressTimeline{
+        width: min(680px, 92vw);
+        height: 100px;
+      }
+      .progressChickAnchor{ width: 78px; height: 78px; }
+      .chickLayer{ width: 78px; }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="left" aria-label="Spel">
+    <div class="topbar">
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
+          <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
+          <path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
+      <div class="titlePill" id="titlePill">slim kijken</div>
+    </div>
+
+    <div class="content">
+      <div class="gameCard" id="gameCard" aria-label="Vraagvak">
+        <div class="flashBoard" id="flashBoard">
+          <div class="flashSvg" id="flashSvg"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
+    <div class="scanStage">
+      <div class="answersWrap" id="answersWrap">
+        <div class="answers answersHidden" id="answers"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tijdlijngroep bovenop alles -->
+  <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
+    <div class="timelineGroup" id="timelineGroup">
+      <div class="progressTimeline" id="timeline">
+        <img class="progressLine" id="levelsImg" src="levels.png" alt="" draggable="false">
+        <div class="progressChickAnchor" id="chickAnchor">
+          <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+          <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <h1>tik om te starten</h1>
+      <p>Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.</p>
+      <button class="startBtn" id="startBtn" type="button">Start</button>
+    </div>
+  </div>
+
+  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">instellingen</div>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
+    </div>
+
+    <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
+      <div style="font-weight:900; font-size:16px; text-transform: lowercase;">
+        huidig level: <span id="tuneLevelValue">1</span>
+      </div>
+      <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
+        level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
+      </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
+        <button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
+      </div>
+    </div>
+
+    <div class="tuneSection">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">flitstijd</div>
+        <input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
+        <div class="tuneValue" id="flashMsValue">300</div>
+      </div>
+    </div>
+
+    <div class="tuneSection" style="padding-top:12px;">
+      <div class="tuneButtons">
+        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
+      </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png tonen</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+      const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
+      const $ = (id) => document.getElementById(id);
+
+      const startOverlay = $("startOverlay");
+      const startBtn = $("startBtn");
+
+      const titlePill = $("titlePill");
+      const gameCard = $("gameCard");
+      const flashBoard = $("flashBoard");
+
+      const homeBtn = $("homeBtn");
+      const tuneBtn = $("tuneBtn");
+      const tunePanel = $("tunePanel");
+      const tuneClose = $("tuneClose");
+
+      const flashMsRange = $("flashMsRange");
+      const flashMsValue = $("flashMsValue");
+
+      const tuneLevelValue = $("tuneLevelValue");
+
+      const newRoundBtn = $("newRoundBtn");
+      const testWrongBtn = $("testWrongBtn");
+      const testGoodBtn = $("testGoodBtn");
+
+      const levelUpBtn = $("levelUpBtn");
+      const levelDownBtn = $("levelDownBtn");
+
+      const toggleLevelsBtn = $("toggleLevelsBtn");
+
+      const flashSvg = $("flashSvg");
+      const answersEl = $("answers");
+      const scanArea = $("scanArea");
+
+      const timelineGroup = $("timelineGroup");
+      const timeline = $("timeline");
+      const levelsImg = $("levelsImg");
+      const chickAnchor = $("chickAnchor");
+      const stillImg = $("stillImg");
+      const upVid = $("upVid");
+      const downVid = $("downVid");
+      const animCanvas = $("animCanvas");
+      const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
+
+      const WAIT_BEFORE_IN_MS = 0;
+      const IN_DUR_MS = 800;
+      const OUT_DUR_MS = 750;
+
+      const PREVIEW_GAP_MS = 120;
+
+      let previewMs = 1700;
+      let flashMs = Number(flashMsRange.value);
+
+      let LEVEL = 1;
+
+      let streakGood = 0;
+      let streakBad = 0;
+
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
+
+      function usesAnswerCards(){
+        return LEVEL >= 2;
+      }
+
+      function setLevel(n){
+        LEVEL = clamp(n, 1, 5);
+        titlePill.textContent = `slim kijken, level ${LEVEL}`;
+        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+
+      function maxForLevel(){
+        if(LEVEL === 1) return 4;
+        if(LEVEL === 2) return 4;
+        if(LEVEL === 3) return 4;
+        if(LEVEL === 4) return 6;
+        return 6;
+      }
+
+      function pickNumberWeighted(cap){
+        const w1 = 0.30;
+        const weights = [];
+        for(let i=1;i<=cap;i++){
+          weights.push(i === 1 ? w1 : 1);
+        }
+        const sum = weights.reduce((a,b) => a + b, 0);
+        let r = Math.random() * sum;
+        for(let i=0;i<weights.length;i++){
+          r -= weights[i];
+          if(r <= 0) return i + 1;
+        }
+        return cap;
+      }
+
+      let audioCtx = null;
+      function beep(type){
+        try{
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          const t = audioCtx.currentTime;
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = "sine";
+          if(type === "ok") o.frequency.setValueAtTime(740, t);
+          if(type === "no") o.frequency.setValueAtTime(220, t);
+          if(type === "tap") o.frequency.setValueAtTime(520, t);
+          if(type === "level") o.frequency.setValueAtTime(620, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(t); o.stop(t + 0.22);
+        }catch(e){}
+      }
+
+      /* dobbelpunten */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
         bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
       };
-
       const diceFaces = {
         1: [P.mc],
         2: [P.tl, P.br],
@@ -75,10 +833,12 @@
         6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
       };
 
-      const patternDice = (n) => [{
-        dots: diceFaces[n] || [],
-        box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
-      }];
+      function patternDice(n){
+        return [{
+          dots: diceFaces[n],
+          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
+        }];
+      }
 
       const L = {
         a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
@@ -94,10 +854,26 @@
       };
 
       const VARS_1TO4 = {
-        1: [[L.m], [L.b], [L.e]],
-        2: [[L.a, L.c], [L.b, L.e], [L.a, L.f]],
-        3: [[L.a, L.b, L.c], [L.a, L.m, L.f], [L.a, L.d, L.f]],
-        4: [[L.a, L.c, L.d, L.f], [L.a, L.b, L.c, L.m], [L.a, L.d, L.f, L.b]]
+        1: [
+          [L.m],
+          [L.b],
+          [L.e]
+        ],
+        2: [
+          [L.a, L.c],
+          [L.b, L.e],
+          [L.a, L.f]
+        ],
+        3: [
+          [L.a, L.b, L.c],
+          [L.a, L.m, L.f],
+          [L.a, L.d, L.f]
+        ],
+        4: [
+          [L.a, L.c, L.d, L.f],
+          [L.a, L.b, L.c, L.m],
+          [L.a, L.d, L.f, L.b]
+        ]
       };
 
       const VARS_5 = [
@@ -105,38 +881,23 @@
         [L.a, L.c, L.d, L.f, L.m],
         [L.a, L.c, L.d, L.f, L.b]
       ];
-
       const VARS_6 = [
         [L.a, L.b, L.c, L.d, L.e, L.f],
         [V.l1, V.l2, V.l3, V.r1, V.r2, V.r3],
         [L.a, L.c, L.m, L.d, L.f, L.r]
       ];
 
-      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-      const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-      const wait = (ms) => new Promise(r => setTimeout(r, ms));
-      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
-
-      function maxForLevel(level) {
-        if(level === 1) return 4;
-        if(level === 2) return 4;
-        if(level === 3) return 4;
-        if(level === 4) return 6;
-        return 6;
-      }
-
-      function allowedVariantCountQuestion(n, level){
-        if(level === 1) return 1;
-        if(level === 2) return 1;
-        if(level === 3) return (n<=4) ? 3 : 0;
-        if(level === 4){
+      function allowedVariantCountQuestion(n){
+        if(LEVEL === 1) return 1;
+        if(LEVEL === 2) return 1;
+        if(LEVEL === 3) return (n<=4) ? 3 : 0;
+        if(LEVEL === 4){
           if(n<=4) return 3;
           if(n===5) return 2;
           if(n===6) return 3;
           return 0;
         }
-        if(level === 5){
+        if(LEVEL === 5){
           if(n<=4) return 3;
           if(n===5) return 3;
           if(n===6) return 3;
@@ -145,22 +906,23 @@
         return 1;
       }
 
-      function pickVariantIndexForQuestion(n, level){
-        const k = allowedVariantCountQuestion(n, level);
+      function pickVariantIndexForQuestion(n){
+        const k = allowedVariantCountQuestion(n);
         if(k <= 1) return 0;
         return randInt(0, k - 1);
       }
 
-      function patternQuestion(n, variantIndex, level) {
-        if(level === 1 || level === 2) return patternDice(n);
+      function patternQuestion(n, variantIndex){
+        if(LEVEL === 1) return patternDice(n);
+        if(LEVEL === 2) return patternDice(n);
 
-        if(level === 3){
+        if(LEVEL === 3){
           const arr = VARS_1TO4[n] || [];
           const dots = arr[clamp(variantIndex, 0, arr.length-1)] || [];
           return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
         }
 
-        if(level === 4 || level === 5){
+        if(LEVEL === 4){
           if(n<=4){
             const arr = VARS_1TO4[n] || [];
             const dots = arr[clamp(variantIndex, 0, 2)] || [];
@@ -175,19 +937,74 @@
             return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
           }
         }
+
+        if(LEVEL === 5){
+          if(n<=4){
+            const arr = VARS_1TO4[n] || [];
+            const dots = arr[clamp(variantIndex, 0, 2)] || [];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n===5){
+            const dots = VARS_5[clamp(variantIndex, 0, 2)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+          if(n===6){
+            const dots = VARS_6[clamp(variantIndex, 0, 2)];
+            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+          }
+        }
+
         return patternDice(n);
       }
 
-      function patternAnswer(n) {
-        if(n <= 4) return patternDice(n);
-        if(n === 5) return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+      function patternAnswer(n){
+        if(n <= 4){
+          return patternDice(n);
+        }
+        if(n === 5){
+          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
+        }
         return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
       }
 
-      function buildOptions(correct, level) {
-        const cap = maxForLevel(level);
+      function svgForDots(dotSets, opts = {}){
+        const { dotRadius = 14, dotColor = "rgba(25,25,25,.92)" } = opts;
+        const w = 520, h = 380;
 
-        if(level === 5){
+        const circles = [];
+        dotSets.forEach(set => {
+          const b = set.box;
+          set.dots.forEach(([x,y]) => {
+            const X = (b.x0 + x*(b.x1-b.x0)) * w;
+            const Y = (b.y0 + y*(b.y1-b.y0)) * h;
+            circles.push({X,Y});
+          });
+        });
+
+        const cs = circles.map(c => `
+          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" />
+        `).join("");
+
+        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cs}</svg>`;
+      }
+
+      function setBoard(html){ flashSvg.innerHTML = html; }
+      function clearBoard(){ setBoard(svgForDots([], {dotRadius: 1})); }
+
+      function dissolveBoard(ms){
+        flashSvg.style.transition = `opacity ${ms}ms ease`;
+        flashSvg.style.opacity = "0";
+        setTimeout(() => {
+          clearBoard();
+          flashSvg.style.transition = "";
+          flashSvg.style.opacity = "1";
+        }, ms + 40);
+      }
+
+      function buildOptions(correct){
+        const cap = maxForLevel();
+
+        if(LEVEL === 5){
           const options = new Set([correct]);
           const candidates = [
             correct - 1, correct + 1,
@@ -199,7 +1016,10 @@
             options.add(c);
             if(options.size >= 3) break;
           }
-          while(options.size < 3) options.add(randInt(1, cap));
+
+          while(options.size < 3){
+            options.add(randInt(1, cap));
+          }
 
           const arr = [...options];
           for(let i=arr.length-1;i>0;i--){
@@ -223,561 +1043,950 @@
         return arr;
       }
 
-      function pickNumberWeighted(cap){
-        const w1 = 0.30;
-        const weights = [];
-        for(let i=1;i<=cap;i++){
-          weights.push(i === 1 ? w1 : 1);
+      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
+
+      /* animatie: schuiven alleen zichtbaar binnen scan-surface (overflow hidden) */
+      function slideVectorForButton(btn){
+        const b = btn.getBoundingClientRect();
+        const a = scanArea.getBoundingClientRect();
+        const extra = 16;
+
+        if(isPortrait()){
+          const seamY = a.top;
+          const dy = -((b.bottom - seamY) + extra);
+          return { x: 0, y: dy };
+        }else{
+          const seamX = a.left;
+          const dx = -((b.right - seamX) + extra);
+          return { x: dx, y: 0 };
         }
-        const sum = weights.reduce((a,b) => a + b, 0);
-        let r = Math.random() * sum;
-        for(let i=0;i<weights.length;i++){
-          r -= weights[i];
-          if(r <= 0) return i + 1;
-        }
-        return cap;
       }
 
-      // --- COMPONENTS ---
+      function sortedButtonsForExit(btns){
+        const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
+        if(isPortrait()){
+          rects.sort((u,v) => v.r.left - u.r.left);
+        }else{
+          rects.sort((u,v) => v.r.top - u.r.top);
+        }
+        return rects.map(x => x.b);
+      }
 
-      // Timeline Logic & Constants
-      const TL_TICK_START = 8.1;
-      const TL_TICK_END = 48.7;
+      async function animateInButtons(){
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
+
+        hideAnswers();
+        await raf(); await raf();
+
+        btns.forEach(btn => {
+          const v = slideVectorForButton(btn);
+          btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
+          btn.style.opacity = "0";
+        });
+
+        showAnswers();
+        await raf();
+
+        const easing = "cubic-bezier(.22,.61,.35,1)";
+
+        btns.forEach((btn, i) => {
+          btn.animate(
+            [
+              { transform: btn.style.transform, opacity: 0 },
+              { transform: "translate(0px, 0px)", opacity: 1 }
+            ],
+            { duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
+          );
+        });
+
+        await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
+
+        btns.forEach(btn => {
+          btn.style.transform = "translate(0px, 0px)";
+          btn.style.opacity = "1";
+        });
+      }
+
+      async function animateOutButtons(btns, staggerMs){
+        if(!btns.length) return;
+
+        const easing = "cubic-bezier(.22,.61,.35,1)";
+
+        btns.forEach((btn, i) => {
+          const v = slideVectorForButton(btn);
+          btn.animate(
+            [
+              { transform: "translate(0px, 0px)", opacity: 1 },
+              { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
+            ],
+            { duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+          );
+        });
+
+        await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
+
+        btns.forEach(btn => { btn.style.opacity = "0"; });
+      }
+
+      function renderAnswers(correct, onPick){
+        const arr = buildOptions(correct);
+        answersEl.innerHTML = "";
+
+        arr.forEach(v => {
+          const btn = document.createElement("button");
+          btn.className = "ansBtn";
+          btn.type = "button";
+
+          btn.addEventListener("pointerdown", () => {
+            btn.classList.remove("pressBounce");
+            void btn.offsetWidth;
+            btn.classList.add("pressBounce");
+          }, {passive:true});
+
+          btn.addEventListener("click", () => onPick(btn, v));
+
+          if(usesAnswerCards()){
+            const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
+            btn.innerHTML = `
+              <div class="cardWrap">
+                <div class="cardInner">
+                  <div class="cardBack" aria-hidden="true"></div>
+                  <div class="cardFront">${svg}</div>
+                </div>
+              </div>
+            `;
+          }else{
+            const svg = svgForDots(patternDice(v), {dotRadius: 12});
+            btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
+          }
+
+          answersEl.appendChild(btn);
+        });
+      }
+
+      let previewToken = 0;
+
+      async function previewCardsNonBlocking(){
+        if(!usesAnswerCards()) return;
+        if(previewMs <= 0) return;
+
+        const myToken = ++previewToken;
+
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(!btns.length) return;
+
+        await wait(PREVIEW_GAP_MS);
+
+        for(let i=0;i<btns.length;i++){
+          if(previewToken !== myToken) return;
+          btns[i].classList.add("cardOpen");
+          await wait(90);
+        }
+
+        if(previewToken !== myToken) return;
+        await wait(previewMs);
+
+        if(previewToken !== myToken) return;
+        btns.forEach(b => b.classList.remove("cardOpen"));
+      }
+
+      /* timeline mapping, nu 1 tot en met 9 */
+      function timelineReady(){
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && flashBoard;
+      }
+
+      const TL_LEVEL_MIN = 1;
+      const TL_LEVEL_MAX = 9;
+
       const TL_CALIB_MIN = 1;
       const TL_CALIB_MAX = 5;
+
+      const TL_TICK_START = 8.1;
+      const TL_TICK_END = 48.7;
+
       const TL_WHITE_THRESH = 255;
-      const CHICK_Y_OFFSET = -10;
 
       const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
       const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
 
-      const Timeline = forwardRef(({ level, targetRect, visible }, ref) => {
-        const groupRef = useRef(null);
-        const containerRef = useRef(null);
-        const levelsImgRef = useRef(null);
-        const chickAnchorRef = useRef(null);
-        const stillImgRef = useRef(null);
-        const animCanvasRef = useRef(null);
-        
-        const upVidRef = useRef(null);
-        const downVidRef = useRef(null);
+      let chickPlaying = false;
+      let chickXAnim = null;
 
-        const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
+      function tickPercentForLevel(level){
+        const lv = clamp(level, TL_LEVEL_MIN, TL_LEVEL_MAX);
+        const within = clamp(lv, TL_CALIB_MIN, TL_CALIB_MAX);
+        const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
+        const step = (TL_TICK_END - TL_TICK_START) / denom;
+        const p = TL_TICK_START + step * (within - TL_CALIB_MIN);
+        return clamp(p, 0, 100);
+      }
 
-        // AUTOMATIC SCALING & POSITIONING LOGIC
-        const updateLayout = useCallback(() => {
-          if (!groupRef.current || !levelsImgRef.current || !targetRect) return;
+      function getContainedRectLocal(imgEl){
+        const w = imgEl.clientWidth || 0;
+        const h = imgEl.clientHeight || 0;
+        const iw = imgEl.naturalWidth || 0;
+        const ih = imgEl.naturalHeight || 0;
 
-          const img = levelsImgRef.current;
-          // Fallback if image isn't loaded yet
-          const nw = img.naturalWidth || 520; 
-          const nh = img.naturalHeight || 96;
+        if(!w || !h || !iw || !ih) return null;
 
-          if (nw !== naturalSize.w || nh !== naturalSize.h) {
-            setNaturalSize({ w: nw, h: nh });
-          }
+        const s = Math.min(w / iw, h / ih);
+        const drawW = iw * s;
+        const drawH = ih * s;
 
-          // Calculate Scale: Width of game card / Width of timeline image
-          const scale = targetRect.width / nw;
-          
-          // Position: Bottom-Left corner of Game Card
-          const x = targetRect.left;
-          const y = targetRect.bottom;
+        const padX = (w - drawW) / 2;
+        const padY = (h - drawH) / 2;
 
-          groupRef.current.style.transformOrigin = '0 0';
-          // Apply transformation to place it exactly below the card with correct width
-          groupRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
-          
-          if (containerRef.current) {
-            containerRef.current.style.width = `${nw}px`;
-            containerRef.current.style.height = `${nh}px`;
-          }
+        return { padX, padY, drawW, drawH };
+      }
 
-          // Update chick position relative to new size
-          updateChickPosition(level, nw);
-        }, [targetRect, level, naturalSize]);
+      function currentTickXLocalForLevel(level){
+        if(!levelsImg) return null;
+        const c = getContainedRectLocal(levelsImg);
+        if(!c) return null;
+        const p = tickPercentForLevel(level) / 100;
+        return c.padX + (c.drawW * p);
+      }
 
-        useEffect(() => {
-          updateLayout();
-        }, [updateLayout]);
+      /* automatische layout voor timelineGroup */
+      const CHICK_LINE_Y = -10;
+      const TL_FUDGE_X = 0;
+      const TL_FUDGE_Y = 0;
 
-        const updateChickPosition = (lvl, totalWidth, noTransition = true) => {
-          if (!chickAnchorRef.current) return;
+      const TL_UI_STORE_KEY = "slim_kijken_timeline_ui_v1";
+      let levelsVisible = true;
+      try{
+        const raw = localStorage.getItem(TL_UI_STORE_KEY);
+        if(raw){
+          const obj = JSON.parse(raw);
+          if(obj && typeof obj.levelsVisible === "boolean") levelsVisible = obj.levelsVisible;
+        }
+      }catch(e){}
 
-          const lv = clamp(lvl, 1, 9);
-          const within = clamp(lv, TL_CALIB_MIN, TL_CALIB_MAX);
-          const denom = Math.max(1, (TL_CALIB_MAX - TL_CALIB_MIN));
-          const step = (TL_TICK_END - TL_TICK_START) / denom;
-          const p = (TL_TICK_START + step * (within - TL_CALIB_MIN)) / 100;
+      function saveTimelineUI(){
+        try{ localStorage.setItem(TL_UI_STORE_KEY, JSON.stringify({ levelsVisible })); }catch(e){}
+      }
 
-          const xLocal = totalWidth * p;
-          
-          if (noTransition) chickAnchorRef.current.style.transition = 'none';
-          chickAnchorRef.current.style.left = `${xLocal}px`;
-          chickAnchorRef.current.style.transform = `translateX(-50%) translate(0px, ${CHICK_Y_OFFSET}px)`;
-          
-          if (noTransition) {
-             void chickAnchorRef.current.offsetHeight; // Force reflow
-             chickAnchorRef.current.style.transition = ''; 
-          }
-        };
+      function updateLevelsVisibilityUI(){
+        const on = !!levelsVisible;
+        toggleLevelsBtn.textContent = on ? "levels png tonen" : "levels png verbergen";
+        if(on) levelsImg.classList.remove("levelsHidden");
+        else levelsImg.classList.add("levelsHidden");
+      }
 
-        const drawFrame = (video) => {
-          const canvas = animCanvasRef.current;
-          if (!canvas) return false;
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          if (!ctx) return false;
+      let levelsAnalysis = null;
 
-          if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
-          if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+      function waitForImage(imgEl){
+        if(imgEl.complete && imgEl.naturalWidth) return Promise.resolve(true);
+        return new Promise(resolve => {
+          const ok = () => resolve(true);
+          const bad = () => resolve(false);
+          imgEl.addEventListener("load", ok, { once:true });
+          imgEl.addEventListener("error", bad, { once:true });
+        });
+      }
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(video, 0, 0);
+      async function analyzeLevelsPng(imgEl){
+        const ok = await waitForImage(imgEl);
+        if(!ok) return null;
 
-          // Chroma Key (White -> Transparent)
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const d = imgData.data;
-          for (let i = 0; i < d.length; i += 4) {
-            if (d[i] >= TL_WHITE_THRESH && d[i+1] >= TL_WHITE_THRESH && d[i+2] >= TL_WHITE_THRESH) {
-              d[i+3] = 0;
-            }
-          }
-          ctx.putImageData(imgData, 0, 0);
+        const w = imgEl.naturalWidth || 0;
+        const h = imgEl.naturalHeight || 0;
+        if(!w || !h) return null;
+
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext("2d", { willReadFrequently:true });
+        ctx.drawImage(imgEl, 0, 0);
+
+        const img = ctx.getImageData(0, 0, w, h);
+        const d = img.data;
+
+        const colCount = new Uint32Array(w);
+        const colTop = new Int32Array(w);
+        for(let x=0; x<w; x++) colTop[x] = h;
+
+        const isInk = (r,g,b,a) => {
+          if(a < 18) return false;
+          const lum = (r + g + b) / 3;
+          if(lum > 245) return false;
           return true;
         };
 
-        const playSegment = async (video, cfg) => {
-          if (!animCanvasRef.current) return;
-          
-          const fps = Math.max(1, cfg.fps);
-          const startT = Math.max(0, cfg.startFrame / fps);
-          const endT = Math.max(startT + 0.01, cfg.endFrame / fps);
-          const durMs = (endT - startT) * 1000;
+        for(let y=0; y<h; y++){
+          const row = y * w;
+          for(let x=0; x<w; x++){
+            const i = (row + x) * 4;
+            const r = d[i], g = d[i+1], b = d[i+2], a = d[i+3];
+            if(!isInk(r,g,b,a)) continue;
+            colCount[x] += 1;
+            if(y < colTop[x]) colTop[x] = y;
+          }
+        }
 
-          video.pause();
-          video.currentTime = startT;
-          await new Promise(resolve => setTimeout(resolve, 100));
+        let maxCount = 0;
+        for(let x=0; x<w; x++) if(colCount[x] > maxCount) maxCount = colCount[x];
+        if(maxCount < 6) return { leftXf: 0.0, rightXf: 1.0, yTopf: 0.0 };
 
-          const canvas = animCanvasRef.current;
-          canvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
-          
-          try {
-            await video.play();
-          } catch(e) { console.error(e); return; }
+        const threshold = Math.max(6, Math.floor(maxCount * 0.55));
 
-          if (stillImgRef.current) stillImgRef.current.style.opacity = '0';
-          canvas.style.opacity = '1';
+        const clusters = [];
+        let start = -1;
+        for(let x=0; x<w; x++){
+          const strong = colCount[x] >= threshold;
+          if(strong && start < 0) start = x;
+          if(!strong && start >= 0){
+            clusters.push([start, x-1]);
+            start = -1;
+          }
+        }
+        if(start >= 0) clusters.push([start, w-1]);
 
-          const startTime = performance.now();
-          
-          const kf = canvas.animate([
-            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
-            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
-          ], { duration: durMs, easing: 'linear', fill: 'forwards' });
-          
-          return new Promise((resolve) => {
-             const tick = () => {
-               const now = performance.now();
-               drawFrame(video);
-               if (video.currentTime >= endT || video.ended || (now - startTime > durMs + 100)) {
-                 video.pause();
-                 kf.cancel();
-                 resolve();
-               } else {
-                 requestAnimationFrame(tick);
-               }
-             };
-             tick();
-          });
+        if(clusters.length < 2){
+          return { leftXf: 0.0, rightXf: 1.0, yTopf: 0.0 };
+        }
+
+        const leftCl = clusters[0];
+        const rightCl = clusters[clusters.length - 1];
+
+        const clusterMeanX = (cl) => {
+          let sumW = 0;
+          let sumX = 0;
+          for(let x=cl[0]; x<=cl[1]; x++){
+            const wgt = colCount[x] || 0;
+            sumW += wgt;
+            sumX += x * wgt;
+          }
+          if(sumW <= 0) return (cl[0] + cl[1]) / 2;
+          return sumX / sumW;
         };
 
-        useImperativeHandle(ref, () => ({
-          updateLayout,
-          animateTimeline: async (from, to) => {
-            updateChickPosition(from, levelsImgRef.current?.naturalWidth || 520, true);
-            
-            const dir = to > from ? 'up' : 'down';
-            const vid = dir === 'up' ? upVidRef.current : downVidRef.current;
-            const cfg = dir === 'up' ? CHICK_UP : CHICK_DOWN;
-            
-            if (vid && animCanvasRef.current) {
-               await playSegment(vid, cfg);
-            } else {
-               await new Promise(r => setTimeout(r, 800));
-            }
-
-            updateChickPosition(to, levelsImgRef.current?.naturalWidth || 520, true);
-            
-            if (stillImgRef.current) stillImgRef.current.style.opacity = '1';
-            if (animCanvasRef.current) animCanvasRef.current.style.opacity = '0';
+        const clusterTopY = (cl) => {
+          let top = h;
+          for(let x=cl[0]; x<=cl[1]; x++){
+            const t = colTop[x];
+            if(t < top) top = t;
           }
-        }));
+          return top >= h ? 0 : top;
+        };
 
-        return (
-          <div className="fixed inset-0 z-[2000] pointer-events-none overflow-visible select-none">
-            <div 
-              ref={groupRef}
-              className="absolute left-0 top-0 origin-top-left will-change-transform"
-            >
-              <div ref={containerRef} className="relative">
-                 <img 
-                   ref={levelsImgRef}
-                   src="levels.png" 
-                   alt="levels" 
-                   className={`absolute inset-0 w-full h-full object-contain ${visible ? '' : 'opacity-0'}`}
-                   onLoad={updateLayout}
-                   draggable={false}
-                 />
-                 <div 
-                   ref={chickAnchorRef}
-                   className="absolute w-[82px] h-[82px] pointer-events-none transition-[left] duration-500 ease-[cubic-bezier(.22,.61,.35,1)]"
-                   style={{ bottom: '-10px' }}
-                 >
-                    <img 
-                      ref={stillImgRef} 
-                      src="ballerina_still.png" 
-                      className="absolute left-0 bottom-0 w-[82px] h-auto origin-bottom-center z-10 transition-opacity duration-100"
-                      alt=""
-                    />
-                    <canvas 
-                      ref={animCanvasRef}
-                      className="absolute left-0 bottom-0 w-[82px] h-auto origin-bottom-center z-20 opacity-0"
-                    />
-                    <video ref={upVidRef} src="ballerina_springt.mp4" muted playsInline preload="auto" className="hidden" />
-                    <video ref={downVidRef} src="ballerina_terug.mp4" muted playsInline preload="auto" className="hidden" />
-                 </div>
-              </div>
-            </div>
-          </div>
-        );
-      });
+        const leftX = clusterMeanX(leftCl);
+        const rightX = clusterMeanX(rightCl);
+        const yTop = Math.min(clusterTopY(leftCl), clusterTopY(rightCl));
 
-      const HomeIcon = () => (
-        <svg viewBox="0 0 64 64" className="w-[42px] h-[42px] block" aria-hidden="true">
-          <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
-          <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
-          <path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      );
+        const leftXf = (w <= 1) ? 0 : leftX / (w - 1);
+        const rightXf = (w <= 1) ? 1 : rightX / (w - 1);
+        const yTopf = (h <= 1) ? 0 : yTop / (h - 1);
 
-      const DotsSvg = ({ patterns, radius = 14 }) => {
-        if (!patterns || !patterns.length) return null;
-        
-        const w = 520, h = 380;
-        const circles = [];
-        
-        patterns.forEach((p, pi) => {
-          const b = p.box;
-          p.dots.forEach((d, di) => {
-            const cx = (b.x0 + d[0] * (b.x1 - b.x0)) * w;
-            const cy = (b.y0 + d[1] * (b.y1 - b.y0)) * h;
-            circles.push(
-              <circle key={`${pi}-${di}`} cx={cx.toFixed(1)} cy={cy.toFixed(1)} r={radius} fill="rgba(25,25,25,.92)" />
-            );
-          });
+        return {
+          leftXf: Math.max(0, Math.min(1, leftXf)),
+          rightXf: Math.max(0, Math.min(1, rightXf)),
+          yTopf: Math.max(0, Math.min(1, yTopf))
+        };
+      }
+
+      function imgFracToLocal(imgEl, fx, fy){
+        const c = getContainedRectLocal(imgEl);
+        if(!c) return null;
+        return {
+          x: c.padX + c.drawW * fx,
+          y: c.padY + c.drawH * fy
+        };
+      }
+
+      let tlLayoutRaf = 0;
+      function scheduleTimelineLayout(){
+        if(tlLayoutRaf) cancelAnimationFrame(tlLayoutRaf);
+        tlLayoutRaf = requestAnimationFrame(() => {
+          tlLayoutRaf = 0;
+          applyTimelineAutoTransform();
+        });
+      }
+
+      function applyTimelineAutoTransform(){
+        if(!timelineReady()) return;
+        if(!levelsAnalysis) return;
+
+        updateLevelsVisibilityUI();
+
+        const q = flashBoard.getBoundingClientRect();
+        const targetW = q.width;
+
+        const leftPt = imgFracToLocal(levelsImg, levelsAnalysis.leftXf, levelsAnalysis.yTopf);
+        const rightPt = imgFracToLocal(levelsImg, levelsAnalysis.rightXf, levelsAnalysis.yTopf);
+        if(!leftPt || !rightPt) return;
+
+        const dxLocal = rightPt.x - leftPt.x;
+        if(dxLocal < 8) return;
+
+        const s = targetW / dxLocal;
+
+        const tx = (q.left - leftPt.x * s) + TL_FUDGE_X;
+        const ty = (q.bottom - leftPt.y * s) + TL_FUDGE_Y;
+
+        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+
+      function setAnchorToLevel(level, opts = {}){
+        if(!timelineReady()) return;
+
+        const xLocal = currentTickXLocalForLevel(level);
+        if(xLocal == null) return;
+
+        const y = CHICK_LINE_Y;
+
+        if(opts.noTransition){
+          chickAnchor.classList.add("noMove");
+          chickAnchor.style.left = `${xLocal}px`;
+          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+          chickAnchor.offsetHeight;
+          chickAnchor.classList.remove("noMove");
+          return;
+        }
+
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+      }
+
+      function cancelChickXAnim(){
+        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+        chickXAnim = null;
+      }
+
+      function showOnlyStill(){
+        stillImg.classList.add("active");
+        if(animCanvas) animCanvas.classList.remove("active");
+      }
+      function showCanvas(){
+        if(animCanvas) animCanvas.classList.add("active");
+      }
+
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+      }
+
+      function setCanvasSizeToVideo(videoEl){
+        if(!animCanvas) return false;
+        const w = videoEl.videoWidth || 0;
+        const h = videoEl.videoHeight || 0;
+        if(!w || !h) return false;
+        if(animCanvas.width !== w) animCanvas.width = w;
+        if(animCanvas.height !== h) animCanvas.height = h;
+        return true;
+      }
+
+      function applyChromaKeyWhite(){
+        if(!chickCtx || !animCanvas) return;
+        const t = TL_WHITE_THRESH;
+        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+        const d = img.data;
+        for(let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i+1], b = d[i+2];
+          if(r >= t && g >= t && b >= t) d[i+3] = 0;
+        }
+        chickCtx.putImageData(img, 0, 0);
+      }
+
+      function drawFrame(videoEl){
+        if(!chickCtx || !animCanvas) return false;
+        if(!setCanvasSizeToVideo(videoEl)) return false;
+        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+        chickCtx.drawImage(videoEl, 0, 0);
+        applyChromaKeyWhite();
+        return true;
+      }
+
+      async function ensureReady(videoEl){
+        if(videoEl.readyState >= 2) return true;
+        return await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+          const cleanup = () => {
+            videoEl.removeEventListener("loadeddata", ok);
+            videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("error", bad);
+          };
+          videoEl.addEventListener("loadeddata", ok, { once:true });
+          videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("error", bad, { once:true });
+          try{ videoEl.load(); }catch(e){}
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+        });
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const f = Math.max(1, Number(fps));
+        const s = Math.max(0, Number(startFrame) / f);
+        const e = Math.max(s + (1 / f), Number(endFrame) / f);
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      async function seekTo(videoEl, timeSec){
+        return await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(ok);
+          };
+          const onSeeked = () => finish(true);
+          const onErr = () => finish(false);
+          const cleanup = () => {
+            videoEl.removeEventListener("seeked", onSeeked);
+            videoEl.removeEventListener("error", onErr);
+          };
+          videoEl.addEventListener("seeked", onSeeked, { once:true });
+          videoEl.addEventListener("error", onErr, { once:true });
+
+          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+          catch(e){ cleanup(); resolve(false); return; }
+
+          setTimeout(() => finish(true), 700);
+        });
+      }
+
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+        if(!animCanvas || !chickCtx) return false;
+
+        cancelChickXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+
+        stopVideo(videoEl);
+        await seekTo(videoEl, times.start);
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+        let playingOk = true;
+        try{ await videoEl.play(); }catch(e){ playingOk = false; }
+        if(!playingOk) return false;
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        const gotFirstFrame = await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+          const maxWait = setTimeout(() => finish(false), 900);
+
+          if(useRVFC){
+            videoEl.requestVideoFrameCallback(() => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }else{
+            const onTime = () => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.addEventListener("timeupdate", onTime, { once:true });
+
+            requestAnimationFrame(() => {
+              if(done) return;
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }
         });
 
-        return (
-          <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            {circles}
-          </svg>
+        if(!gotFirstFrame){
+          try{ videoEl.pause(); }catch(e){}
+          return false;
+        }
+
+        showCanvas();
+        stillImg.classList.remove("active");
+        await raf();
+
+        chickXAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: times.durMs, easing: "linear", fill: "forwards" }
         );
-      };
 
-      function App() {
-        const [level, setLevel] = useState(1);
-        const [started, setStarted] = useState(false);
-        const [showSettings, setShowSettings] = useState(false);
-        const [flashMs, setFlashMs] = useState(300);
-        const [showLevelsPng, setShowLevelsPng] = useState(true);
-        
-        const [boardContent, setBoardContent] = useState([]);
-        const [boardVisible, setBoardVisible] = useState(true);
-        const [answers, setAnswers] = useState([]);
-        const [answersVisible, setAnswersVisible] = useState(false);
-        const [answerState, setAnswerState] = useState('idle');
-        
-        const correctRef = useRef(1);
-        const streakGood = useRef(0);
-        const streakBad = useRef(0);
-        const variantIndexRef = useRef(0);
-        
-        const gameCardRef = useRef(null);
-        const timelineRef = useRef(null);
-        const [gameCardRect, setGameCardRect] = useState(null);
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
 
-        const audioCtxRef = useRef(null);
+        try{ videoEl.pause(); }catch(e){}
+        cancelChickXAnim();
+        return true;
+      }
 
-        const beep = (type) => {
-          try {
-            if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-            const ctx = audioCtxRef.current;
-            const t = ctx.currentTime;
-            const o = ctx.createOscillator();
-            const g = ctx.createGain();
-            o.type = "sine";
-            
-            if (type === "ok") o.frequency.setValueAtTime(740, t);
-            else if (type === "no") o.frequency.setValueAtTime(220, t);
-            else if (type === "tap") o.frequency.setValueAtTime(520, t);
-            else if (type === "level") o.frequency.setValueAtTime(620, t);
-            
-            g.gain.setValueAtTime(0.0001, t);
-            g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-            o.connect(g); g.connect(ctx.destination);
-            o.start(t); o.stop(t + 0.22);
-          } catch(e) {}
-        };
+      async function animateTimeline(fromLevel, toLevel){
+        if(!timelineReady()) return;
 
-        useEffect(() => {
-          if (!gameCardRef.current) return;
-          const updateRect = () => {
-             if(gameCardRef.current) setGameCardRect(gameCardRef.current.getBoundingClientRect());
-          };
-          
-          const ro = new ResizeObserver(updateRect);
-          ro.observe(gameCardRef.current);
-          updateRect(); // Initial
-          
-          window.addEventListener('resize', updateRect);
-          window.addEventListener('orientationchange', updateRect);
-          
-          return () => {
-             ro.disconnect();
-             window.removeEventListener('resize', updateRect);
-             window.removeEventListener('orientationchange', updateRect);
-          };
-        }, []);
+        setAnchorToLevel(fromLevel, { noTransition: true });
+        showOnlyStill();
 
-        const startRound = useCallback(async () => {
-          setAnswerState('locked');
-          setAnswersVisible(false);
-          setBoardContent([]);
-          setBoardVisible(true);
+        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+        if(!hasMp4){
+          setAnchorToLevel(toLevel, { noTransition: true });
+          return;
+        }
 
-          const cap = (level >= 4) ? 6 : 4;
-          correctRef.current = pickNumberWeighted(cap);
-          variantIndexRef.current = pickVariantIndexForQuestion(correctRef.current, level);
+        if(chickPlaying) return;
+        chickPlaying = true;
 
+        stopVideo(upVid);
+        stopVideo(downVid);
+
+        const dir = toLevel > fromLevel ? "up" : "down";
+        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+        const vid = dir === "up" ? upVid : downVid;
+
+        await playSegmentOnCanvasNoFlash(vid, cfg);
+
+        setAnchorToLevel(toLevel, { noTransition: true });
+
+        stillImg.classList.add("active");
+        await raf();
+        if(animCanvas) animCanvas.classList.remove("active");
+
+        chickPlaying = false;
+      }
+
+      async function initTimeline(){
+        if(!timelineReady()) return;
+
+        levelsAnalysis = await analyzeLevelsPng(levelsImg);
+
+        scheduleTimelineLayout();
+
+        if(typeof ResizeObserver === "function"){
+          const ro = new ResizeObserver(() => scheduleTimelineLayout());
+          ro.observe(flashBoard);
+          ro.observe(gameCard);
+          ro.observe(timeline);
+        }
+
+        window.addEventListener("resize", scheduleTimelineLayout);
+        window.addEventListener("orientationchange", scheduleTimelineLayout);
+      }
+
+      /* game */
+      let started = false;
+      let locked = false;
+      let correct = 1;
+      let questionVariantIndex = 0;
+
+      function resetStreaks(){
+        streakGood = 0;
+        streakBad = 0;
+      }
+
+      async function handleAutoLevelOnGood(){
+        streakGood += 1;
+        streakBad = 0;
+
+        if(streakGood >= 5){
+          const before = LEVEL;
+          setLevel(LEVEL + 1);
+          resetStreaks();
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      async function handleAutoLevelOnBad(){
+        streakBad += 1;
+        streakGood = 0;
+
+        if(streakBad >= 2){
+          const before = LEVEL;
+          setLevel(LEVEL - 1);
+          resetStreaks();
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      async function flashAndAsk(){
+        locked = true;
+        previewToken++;
+
+        answersEl.classList.add("answersHidden");
+        answersEl.innerHTML = "";
+        clearBoard();
+
+        await wait(160);
+
+        questionVariantIndex = pickVariantIndexForQuestion(correct);
+        const qPattern = patternQuestion(correct, questionVariantIndex);
+        setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
+        await wait(flashMs);
+
+        clearBoard();
+        await wait(260);
+
+        renderAnswers(correct, onPick);
+        await wait(WAIT_BEFORE_IN_MS);
+        await animateInButtons();
+
+        locked = false;
+        previewCardsNonBlocking();
+      }
+
+      function nextRound(){
+        const cap = maxForLevel();
+        correct = pickNumberWeighted(cap);
+        flashAndAsk();
+      }
+
+      async function onPick(btn, value){
+        if(!started || locked) return;
+
+        locked = true;
+        previewToken++;
+
+        const all = [...answersEl.querySelectorAll(".ansBtn")];
+        all.forEach(b => b.style.pointerEvents = "none");
+
+        if(usesAnswerCards()){
+          btn.classList.add("cardOpen");
+          await wait(110);
+        }
+
+        if(value === correct){
+          beep("ok");
+          btn.classList.add("correctHold");
+
+          const qPattern = patternQuestion(correct, questionVariantIndex);
+          setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
+          await wait(520);
+          dissolveBoard(260);
+
+          const exitOrder = sortedButtonsForExit(all);
+          await animateOutButtons(exitOrder, 140);
+
+          btn.classList.remove("correctHold");
+          if(usesAnswerCards()) btn.classList.remove("cardOpen");
+
+          answersEl.classList.add("answersHidden");
+          all.forEach(b => b.style.pointerEvents = "");
           await wait(160);
 
-          setBoardContent(patternQuestion(correctRef.current, variantIndexRef.current, level));
-          
-          await wait(flashMs);
+          await handleAutoLevelOnGood();
+          nextRound();
+          return;
+        }
 
-          setBoardContent([]);
-          await wait(260);
+        beep("no");
 
-          setAnswers(buildOptions(correctRef.current, level));
-          
-          await wait(0); 
-          setAnswersVisible(true);
-          setAnswerState('idle');
-          
-        }, [level, flashMs]);
+        const notChosen = all.filter(b => b !== btn);
+        const chosen = btn;
 
-        const handleLevelChange = async (newLevel) => {
-           const oldLevel = level;
-           setLevel(newLevel);
-           if (oldLevel !== newLevel) {
-             beep('level');
-             await timelineRef.current?.animateTimeline(oldLevel, newLevel);
-           }
-        };
+        chosen.classList.add("wrongHold");
+        await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-        const handlePick = async (val, btnIdx) => {
-          if (answerState === 'locked') return;
-          setAnswerState('locked');
+        const qPattern = patternQuestion(correct, questionVariantIndex);
+        setBoard(svgForDots(qPattern, {dotRadius: 16}));
 
-          if (val === correctRef.current) {
-            beep('ok');
-            setBoardContent(patternQuestion(correctRef.current, variantIndexRef.current, level));
-            
-            await wait(520);
-            setBoardVisible(false);
-            await wait(300);
-            setAnswersVisible(false);
-            await wait(200);
+        await wait(1200);
+        dissolveBoard(320);
 
-            streakGood.current++;
-            streakBad.current = 0;
-            if (streakGood.current >= 5) {
-               streakGood.current = 0;
-               await handleLevelChange(level + 1);
-            }
-            
-            setBoardVisible(true);
-            startRound();
+        await wait(120);
+        await animateOutButtons([chosen], 0);
 
-          } else {
-            beep('no');
-            streakGood.current = 0;
-            streakBad.current++;
+        chosen.classList.remove("wrongHold");
+        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
 
-            setBoardContent(patternQuestion(correctRef.current, variantIndexRef.current, level));
-            await wait(1200);
-            setBoardVisible(false);
-            await wait(300);
-            setAnswersVisible(false);
-            await wait(200);
+        answersEl.classList.add("answersHidden");
+        await wait(240);
 
-            if (streakBad.current >= 2) {
-              streakBad.current = 0;
-              await handleLevelChange(level - 1);
-            }
-            
-            setBoardVisible(true);
-            startRound();
-          }
-        };
+        all.forEach(b => b.style.pointerEvents = "");
 
-        const startGame = () => {
-          setStarted(true);
-          setLevel(1);
-          streakGood.current = 0;
-          streakBad.current = 0;
-          startRound();
-        };
-
-        return (
-          <div className="w-full h-full bg-white text-[#6f6b68] overflow-hidden grid grid-cols-1 grid-rows-[54fr_46fr] portrait:grid-cols-1 portrait:grid-rows-[54fr_46fr] landscape:grid-cols-[58fr_42fr] landscape:grid-rows-1">
-            
-            <section className="bg-[#fdeeea] p-[22px] portrait:p-[22px] landscape:p-[28px_26px_22px_26px] flex flex-col gap-[16px] landscape:gap-[22px] relative overflow-hidden z-10">
-              
-              <div className="flex items-center gap-[18px] flex-none relative z-20">
-                <button 
-                   onClick={() => { beep('tap'); window.location.reload(); }}
-                   className="w-[72px] h-[72px] rounded-[18px] bg-[#f8c3b0] border-none shadow-[0_8px_18px_rgba(0,0,0,0.1)] flex items-center justify-center cursor-pointer active:scale-[0.99] active:translate-y-[1px] transition-transform"
-                   aria-label="Home"
-                >
-                  <HomeIcon />
-                </button>
-                <button 
-                   onClick={() => { beep('tap'); setShowSettings(true); }}
-                   className="w-[72px] h-[72px] rounded-[18px] bg-[#f8c3b0] border-none shadow-[0_8px_18px_rgba(0,0,0,0.1)] flex items-center justify-center cursor-pointer text-[30px] active:scale-[0.99] active:translate-y-[1px] transition-transform"
-                   aria-label="Settings"
-                >
-                  ⚙️
-                </button>
-                <div className="px-[44px] py-[18px] rounded-[22px] bg-[#e58c74] text-white font-extrabold text-[clamp(22px,2.1vw,34px)] tracking-wide shadow-[0_16px_40px_rgba(0,0,0,0.08)] leading-none flex items-center justify-center min-h-[64px] w-full max-w-[660px] lowercase">
-                  slim kijken{level > 0 && `, level ${level}`}
-                </div>
-              </div>
-
-              <div className="flex-1 flex items-center justify-center p-[10px_6px] min-h-0 relative overflow-hidden">
-                <div 
-                   ref={gameCardRef}
-                   className="w-full max-w-[980px] h-[min(420px,34vh)] landscape:h-[min(520px,58vh)] bg-white border-[6px] border-[rgba(245,180,152,0.85)] rounded-[28px] shadow-[0_10px_22px_rgba(0,0,0,0.08)] relative overflow-hidden flex items-center justify-center p-[18px]"
-                >
-                   <div className="w-full h-full max-w-[440px] landscape:max-w-full rounded-[26px] bg-white border-[2px] border-[rgba(245,180,152,0.55)] flex items-center justify-center overflow-hidden relative aspect-[520/380]">
-                      <div 
-                        className={`w-full h-full transition-opacity duration-300 ${boardVisible ? 'opacity-100' : 'opacity-0'}`}
-                      >
-                         <DotsSvg patterns={boardContent} radius={16} />
-                      </div>
-                   </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white relative min-h-0 transition-colors z-10 border-t-[6px] landscape:border-t-0 landscape:border-l-[6px] border-dashed border-[rgba(245,180,152,0.85)] overflow-hidden flex items-center justify-center p-[18px]">
-              <div className="w-full max-w-[640px] landscape:max-w-[360px]">
-                 <div className={`grid grid-cols-3 landscape:grid-cols-1 gap-[12px] landscape:gap-[14px] items-center justify-items-center transition-opacity duration-300 ${answersVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                    {answers.map((ans, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handlePick(ans, idx)}
-                        disabled={answerState === 'locked'}
-                        className={`
-                          w-full aspect-square bg-white rounded-[22px] border-[3px] border-[rgba(245,180,152,0.85)] shadow-[0_12px_24px_rgba(0,0,0,0.1)]
-                          flex items-center justify-center p-[10px] cursor-pointer relative overflow-hidden
-                          active:translate-y-[2px] active:shadow-sm transition-all duration-200
-                          animate-pressBounce
-                          landscape:w-[clamp(86px,10.5vw,120px)]
-                        `}
-                      >
-                        {level >= 2 ? (
-                          <div className="w-full h-full rounded-[18px] perspective-[900px]">
-                            <div className={`w-full h-full relative preserve-3d transition-transform duration-500 ${(answersVisible && !started) ? 'rotate-y-0' : 'rotate-y-180'} ${'rotate-y-180'}`}>
-                               <div className="absolute inset-0 backface-hidden bg-[#f8c3b0] flex items-center justify-center rounded-[18px]">?</div>
-                               <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-[18px] flex items-center justify-center">
-                                 <div className="w-full h-full"><DotsSvg patterns={patternAnswer(ans)} radius={12} /></div>
-                               </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                             <DotsSvg patterns={patternAnswer(ans)} radius={12} />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                 </div>
-              </div>
-            </section>
-
-            <Timeline 
-               ref={timelineRef}
-               level={level}
-               targetRect={gameCardRect}
-               visible={showLevelsPng}
-            />
-
-            {!started && (
-              <div className="fixed inset-0 bg-[rgba(253,238,234,0.55)] backdrop-blur-[2px] flex items-center justify-center z-[3000] p-6" onClick={() => { beep('tap'); startGame(); }}>
-                 <div className="w-full max-w-[740px] bg-white rounded-[24px] shadow-[0_16px_40px_rgba(0,0,0,0.08)] p-[22px_20px] text-center" onClick={(e) => e.stopPropagation()}>
-                    <h1 className="m-0 mb-[10px] text-[28px] text-[#4d4a48] lowercase">tik om te starten</h1>
-                    <p className="m-0 mb-[14px] text-[18px] text-[rgba(77,74,72,0.82)] leading-snug">
-                      Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.
-                    </p>
-                    <button onClick={() => { beep('tap'); startGame(); }} className="bg-[#e58c74] text-white font-black px-[18px] py-[14px] rounded-[18px] text-[18px] shadow-[0_14px_26px_rgba(0,0,0,0.12)] active:translate-y-[1px] active:scale-[0.99] transition-transform">
-                      Start
-                    </button>
-                 </div>
-              </div>
-            )}
-
-            {showSettings && (
-              <div className="fixed right-[18px] bottom-[18px] w-[min(640px,calc(100vw-36px))] bg-[rgba(255,255,255,0.62)] backdrop-blur-[10px] rounded-[18px] shadow-[0_18px_50px_rgba(0,0,0,0.16)] border-[2px] border-[rgba(245,180,152,0.75)] p-[14px] z-[2200] text-[#4d4a48]">
-                 <div className="flex items-center justify-between mb-[10px]">
-                   <div className="font-black text-[18px] lowercase">instellingen</div>
-                   <button onClick={() => setShowSettings(false)} className="bg-[#f8c3b0] rounded-[12px] px-[12px] py-[10px] font-black shadow-sm active:scale-95">Sluit</button>
-                 </div>
-                 
-                 <div className="mt-2 pt-2 border-t-[2px] border-[rgba(245,180,152,0.45)]">
-                   <div className="font-bold text-sm mb-2 lowercase">flitstijd</div>
-                   <div className="flex items-center gap-2">
-                     <input 
-                       type="range" min="100" max="2400" step="50" 
-                       value={flashMs} onChange={(e) => setFlashMs(Number(e.target.value))} 
-                       className="flex-1"
-                     />
-                     <span className="font-black tabular-nums">{flashMs}</span>
-                   </div>
-                 </div>
-
-                 <div className="mt-2 pt-2 border-t-[2px] border-[rgba(245,180,152,0.45)] flex flex-wrap gap-2">
-                    <button onClick={() => setShowLevelsPng(!showLevelsPng)} className="bg-[#f8c3b0] px-3 py-2 rounded-[14px] text-sm font-bold shadow-sm active:scale-95">
-                      {showLevelsPng ? 'verberg levels' : 'toon levels'}
-                    </button>
-                    <button onClick={() => handleLevelChange(Math.max(1, level - 1))} className="bg-[#f8c3b0] px-3 py-2 rounded-[14px] text-sm font-bold shadow-sm active:scale-95">level -</button>
-                    <button onClick={() => handleLevelChange(Math.min(9, level + 1))} className="bg-[#e58c74] text-white px-3 py-2 rounded-[14px] text-sm font-bold shadow-sm active:scale-95">level +</button>
-                 </div>
-              </div>
-            )}
-
-          </div>
-        );
+        await handleAutoLevelOnBad();
+        nextRound();
       }
 
-      // --- MOUNT ---
-      const rootElement = document.getElementById('root');
-      if (rootElement) {
-        const root = createRoot(rootElement);
-        root.render(<App />);
+      /* tune ui */
+      function syncUI(){
+        flashMsValue.textContent = String(flashMs);
+        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
       }
-    </script>
-  </body>
+
+      function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
+      function closeTune(){ tunePanel.classList.add("hidden"); }
+
+      tuneBtn.addEventListener("click", () => {
+        beep("tap");
+        if(tunePanel.classList.contains("hidden")) openTune();
+        else closeTune();
+      });
+      tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+
+      flashMsRange.addEventListener("input", () => {
+        flashMs = Number(flashMsRange.value);
+        syncUI();
+      });
+
+      newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
+      testWrongBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(!started || locked) return;
+        const cap = maxForLevel();
+        const wrong = (correct === cap) ? 1 : correct + 1;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) await onPick(btns[0], wrong);
+      });
+
+      testGoodBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(!started || locked) return;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) await onPick(btns[0], correct);
+      });
+
+      levelUpBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(locked) return;
+        const before = LEVEL;
+        setLevel(LEVEL + 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
+        }
+      });
+
+      levelDownBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(locked) return;
+        const before = LEVEL;
+        setLevel(LEVEL - 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
+        }
+      });
+
+      toggleLevelsBtn.addEventListener("click", () => {
+        beep("tap");
+        levelsVisible = !levelsVisible;
+        saveTimelineUI();
+        scheduleTimelineLayout();
+      });
+
+      /* start */
+      function startGame(){
+        if(started) return;
+        started = true;
+
+        setLevel(1);
+        resetStreaks();
+
+        startOverlay.style.display = "none";
+        syncUI();
+
+        scheduleTimelineLayout();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+        showOnlyStill();
+
+        nextRound();
+      }
+
+      startBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        beep("tap");
+        startGame();
+      });
+
+      startOverlay.addEventListener("click", (e) => {
+        if(e.target === startOverlay){
+          beep("tap");
+          startGame();
+        }
+      });
+
+      homeBtn.addEventListener("click", () => {
+        beep("tap");
+        try{ window.location.href = "index.html"; }catch(e){}
+      });
+
+      /* reflow game knoppen bij oriëntatie, zonder timing te veranderen */
+      let reflowTimer = null;
+      function onReflow(){
+        if(!started) return;
+        if(reflowTimer) clearTimeout(reflowTimer);
+        reflowTimer = setTimeout(async () => {
+          locked = true;
+          previewToken++;
+          answersEl.classList.add("answersHidden");
+          answersEl.innerHTML = "";
+          clearBoard();
+          await wait(120);
+          renderAnswers(correct, onPick);
+          await wait(WAIT_BEFORE_IN_MS);
+          await animateInButtons();
+          locked = false;
+          previewCardsNonBlocking();
+
+          scheduleTimelineLayout();
+          setAnchorToLevel(LEVEL, { noTransition: true });
+        }, 220);
+      }
+      window.addEventListener("resize", onReflow);
+      window.addEventListener("orientationchange", onReflow);
+
+      /* init */
+      clearBoard();
+      setLevel(1);
+      resetStreaks();
+      syncUI();
+
+      initTimeline();
+
+      scheduleTimelineLayout();
+      setAnchorToLevel(LEVEL, { noTransition: true });
+      showOnlyStill();
+      updateLevelsVisibilityUI();
+
+    })();
+  </script>
+</body>
 </html>
