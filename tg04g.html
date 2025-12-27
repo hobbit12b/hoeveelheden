@@ -47,7 +47,7 @@
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
-      grid-template-rows: 1fr; /* FIX: voorkomt witte balk onderin op desktop */
+      grid-template-rows: 1fr; /* FIX, voorkomt witte balk onderin */
       height: 100%;
       position: relative;
       overflow:hidden;
@@ -79,8 +79,7 @@
       min-height: 0;
       transition: background 140ms ease;
       z-index: 1;
-
-      overflow:hidden; /* clip alles zodat knoppen nooit over de middenlijn zichtbaar zijn */
+      overflow:hidden;
     }
 
     @media (orientation: landscape){
@@ -342,7 +341,6 @@
     }
     .startBtn:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Instellingen */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -439,7 +437,6 @@
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Kaarten flip */
     .cardWrap{
       width:100%;
       height:100%;
@@ -512,13 +509,11 @@
       pointer-events:none;
     }
 
-    /* Dit is het zichtbare blok met levels.png */
     .progressTimeline{
       position:absolute;
       left: 0;
       top: 0;
-      width: 520px;          /* basismaat, wordt via transform geschaald */
-      aspect-ratio: 10 / 1;  /* wordt in JS exact gezet op basis van echte afbeelding */
+      width: 520px; /* basis, wordt via transform geschaald */
       height: auto;
       z-index: 20;
     }
@@ -531,25 +526,27 @@
       object-fit: fill;
     }
 
-    .progressLine.levelsHidden{ opacity: 0; }
+    .progressLine.levelsHidden{
+      opacity: 0;
+    }
 
-    /* Kuiken anker, top wordt in JS gezet zodat ogen op de lijn vallen */
     .progressChickAnchor{
       position:absolute;
       left: 0;
       top: 0;
+      transform: translateX(-50%);
       width: 82px;
       height: 82px;
       pointer-events:none;
       transition: left 520ms cubic-bezier(.22,.61,.35,1);
       will-change: left, transform, top;
-      transform: translateX(-50%);
     }
     .progressChickAnchor.noMove{ transition: none !important; }
 
     .chickLayer{
       position:absolute;
-      inset:0;
+      left:0;
+      top:0;
       width: 100%;
       height: 100%;
       opacity: 0;
@@ -601,7 +598,6 @@
     </div>
   </section>
 
-  <!-- Tijdlijngroep bovenop alles -->
   <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
     <div class="timelineGroup" id="timelineGroup">
       <div class="progressTimeline" id="timeline">
@@ -684,7 +680,6 @@
 
       const titlePill = $("titlePill");
       const gameCard = $("gameCard");
-      const flashBoard = $("flashBoard");
 
       const homeBtn = $("homeBtn");
       const tuneBtn = $("tuneBtn");
@@ -1019,7 +1014,6 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      /* animatie: schuiven alleen zichtbaar binnen scan-surface */
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
@@ -1166,62 +1160,822 @@
       }
 
       /* =========================
-         TIMELINE: auto schalen en positioneren
+         TIMELINE auto fit
          ========================= */
 
       const LV_MIN = 1;
       const LV_MAX = 9;
 
-      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v1";
+      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
       let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
 
       let tlMeta = null;          // { leftFrac, rightFrac, baseFrac }
-      let chickEyeFrac = 0.42;    // y positie ogen als fractie (0..1) in stillImg
-      let baselineLocalY = 0;     // baseline y in timeline local px
+      let chickEyeFrac = null;    // fractie 0..1
+      let baselineLocalY = 0;
 
       function timelineReady(){
-        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && flashBoard;
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
       }
 
-      function luminance(r,g,b){
+      function lum(r,g,b){
         return 0.2126*r + 0.7152*g + 0.0722*b;
       }
 
+      function safeDefaultTlMeta(){
+        return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
+      }
+
       function analyzeLevelsPng(imgEl){
-        const w = imgEl.naturalWidth || 0;
-        const h = imgEl.naturalHeight || 0;
-        if(!w || !h) return null;
+        try{
+          const w = imgEl.naturalWidth || 0;
+          const h = imgEl.naturalHeight || 0;
+          if(!w || !h) return safeDefaultTlMeta();
 
-        const cv = document.createElement("canvas");
-        cv.width = w;
-        cv.height = h;
-        const ctx = cv.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(imgEl, 0, 0);
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(imgEl, 0, 0);
 
-        const img = ctx.getImageData(0, 0, w, h);
-        const d = img.data;
+          const img = ctx.getImageData(0, 0, w, h);
+          const d = img.data;
 
-        // Baseline: rij met meeste "ink" pixels in onderste helft
-        const yStart = Math.floor(h * 0.45);
-        let bestY = Math.floor(h * 0.85);
-        let bestCount = -1;
+          const yStart = Math.floor(h * 0.55);
+          let bestY = Math.floor(h * 0.85);
+          let bestCount = -1;
 
-        for(let y=yStart; y<h; y++){
-          let c = 0;
-          const row = y * w * 4;
+          for(let y=yStart; y<h; y++){
+            let c = 0;
+            const row = y * w * 4;
+            for(let x=0; x<w; x++){
+              const i = row + x*4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L > 245) continue;
+              c++;
+            }
+            if(c > bestCount){
+              bestCount = c;
+              bestY = y;
+            }
+          }
+
+          const col = new Array(w).fill(0);
+          let maxC = 0;
+
+          const yBot = Math.floor(h * 0.55);
           for(let x=0; x<w; x++){
-            const i = row + x*4;
-            const a = d[i+3];
-            if(a < 32) continue;
-            const lum = luminance(d[i], d[i+1], d[i+2]);
-            if(lum > 245) continue;
-            c++;
+            let c = 0;
+            for(let y=yBot; y<h; y++){
+              const i = (y*w + x) * 4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L > 245) continue;
+              c++;
+            }
+            col[x] = c;
+            if(c > maxC) maxC = c;
           }
-          if(c > bestCount){
-            bestCount = c;
-            bestY = y;
+
+          const thresh = maxC * 0.70;
+          const xs = [];
+          for(let x=0; x<w; x++){
+            if(col[x] >= thresh) xs.push(x);
           }
+
+          let clusters = [];
+          if(xs.length){
+            let s = xs[0], p = xs[0];
+            for(let i=1;i<xs.length;i++){
+              const x = xs[i];
+              if(x === p + 1){ p = x; continue; }
+              clusters.push([s,p]);
+              s = x; p = x;
+            }
+            clusters.push([s,p]);
+          }
+
+          const maxClusterW = w * 0.06;
+          clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
+
+          let leftX = w * 0.06;
+          let rightX = w * 0.94;
+
+          if(clusters.length >= 2){
+            leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
+            rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
+          }else if(xs.length >= 2){
+            leftX = xs[Math.floor(xs.length * 0.02)];
+            rightX = xs[Math.floor(xs.length * 0.98)];
+          }
+
+          leftX = clamp(leftX, w*0.01, w*0.45);
+          rightX = clamp(rightX, w*0.55, w*0.99);
+
+          return {
+            leftFrac: leftX / w,
+            rightFrac: rightX / w,
+            baseFrac: bestY / h
+          };
+        }catch(e){
+          return safeDefaultTlMeta();
+        }
+      }
+
+      function analyzeChickEyes(imgEl){
+        try{
+          const w = imgEl.naturalWidth || 0;
+          const h = imgEl.naturalHeight || 0;
+          if(!w || !h) return 0.42;
+
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(imgEl, 0, 0);
+
+          const img = ctx.getImageData(0, 0, w, h);
+          const d = img.data;
+
+          const ys = [];
+          const yMax = Math.floor(h * 0.60);
+          const x0 = Math.floor(w * 0.25);
+          const x1 = Math.floor(w * 0.75);
+
+          for(let y=0; y<yMax; y++){
+            const row = y * w * 4;
+            for(let x=x0; x<x1; x++){
+              const i = row + x*4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L < 55){
+                ys.push(y);
+              }
+            }
+          }
+
+          if(ys.length < 24) return 0.42;
+
+          ys.sort((a,b) => a-b);
+          const med = ys[Math.floor(ys.length/2)];
+          return clamp(med / h, 0.18, 0.62);
+        }catch(e){
+          return 0.42;
+        }
+      }
+
+      function tickTForLevel(level){
+        const lv = clamp(level, LV_MIN, LV_MAX);
+        const denom = Math.max(1, (LV_MAX - LV_MIN));
+        return (lv - LV_MIN) / denom;
+      }
+
+      function currentTickXLocalForLevel(level){
+        if(!tlMeta) return 0;
+        const w = timeline.clientWidth || 0;
+        const xL = tlMeta.leftFrac * w;
+        const xR = tlMeta.rightFrac * w;
+        return xL + tickTForLevel(level) * (xR - xL);
+      }
+
+      function setAnchorToLevel(level, opts = {}){
+        if(!timelineReady()) return;
+        if(!tlMeta) return;
+        if(chickEyeFrac == null) chickEyeFrac = 0.42;
+
+        const xLocal = currentTickXLocalForLevel(level);
+
+        const aH = chickAnchor.clientHeight || 0;
+        const eyeLocalY = chickEyeFrac * aH;
+        const topLocal = baselineLocalY - eyeLocalY;
+
+        if(opts.noTransition){
+          chickAnchor.classList.add("noMove");
+          chickAnchor.style.left = `${xLocal}px`;
+          chickAnchor.style.top = `${topLocal}px`;
+          chickAnchor.offsetHeight;
+          chickAnchor.classList.remove("noMove");
+          return;
         }
 
-        // Verticale ticks: kolommen met hoogste "ink" pixels
-        const col
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.top = `${topLocal}px`;
+      }
+
+      function updateLevelsVisibilityUI(){
+        toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
+        if(levelsVisible) levelsImg.classList.remove("levelsHidden");
+        else levelsImg.classList.add("levelsHidden");
+      }
+
+      let fitQueued = false;
+      function scheduleFit(){
+        if(fitQueued) return;
+        fitQueued = true;
+        requestAnimationFrame(() => {
+          fitQueued = false;
+          fitTimelineToQuestion();
+        });
+      }
+
+      function fitTimelineToQuestion(){
+        if(!timelineReady()) return;
+        if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
+
+        if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+        if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+
+        timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
+
+        const r = gameCard.getBoundingClientRect();
+        const cs = getComputedStyle(gameCard);
+        const bw = parseFloat(cs.borderLeftWidth) || 0;
+
+        const targetLeft = r.left + bw;
+        const targetRight = r.right - bw;
+
+        const targetBaselineY = r.bottom - (bw * 0.5);
+
+        const baseW = 520;
+        timeline.style.width = `${baseW}px`;
+
+        const w = timeline.clientWidth || 1;
+        const h = timeline.clientHeight || 1;
+
+        const xL = tlMeta.leftFrac * w;
+        const xR = tlMeta.rightFrac * w;
+        const yB = tlMeta.baseFrac * h;
+
+        baselineLocalY = yB;
+
+        const denom = Math.max(1, (xR - xL));
+        const s = (targetRight - targetLeft) / denom;
+
+        const tx = targetLeft - s * xL;
+        const ty = targetBaselineY - s * yB;
+
+        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+
+      function initTimelineAuto(){
+        if(!timelineReady()) return;
+
+        updateLevelsVisibilityUI();
+
+        const tryInit = () => {
+          if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+            tlMeta = analyzeLevelsPng(levelsImg);
+            if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+            scheduleFit();
+          }
+        };
+
+        if(levelsImg.complete) tryInit();
+        levelsImg.addEventListener("load", tryInit);
+
+        if(stillImg.complete && stillImg.naturalWidth) tryInit();
+        stillImg.addEventListener("load", tryInit);
+
+        if(typeof ResizeObserver === "function"){
+          const ro = new ResizeObserver(() => scheduleFit());
+          ro.observe(gameCard);
+          ro.observe(document.body);
+        }
+
+        window.addEventListener("resize", scheduleFit);
+        window.addEventListener("orientationchange", scheduleFit);
+      }
+
+      /* =========================
+         Animatie kuiken, zoals je had
+         ========================= */
+
+      const TL_WHITE_THRESH = 255;
+
+      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+
+      let chickPlaying = false;
+      let chickXAnim = null;
+
+      function cancelChickXAnim(){
+        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+        chickXAnim = null;
+      }
+
+      function showOnlyStill(){
+        stillImg.classList.add("active");
+        if(animCanvas) animCanvas.classList.remove("active");
+      }
+      function showCanvas(){
+        if(animCanvas) animCanvas.classList.add("active");
+      }
+
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+      }
+
+      function setCanvasSizeToVideo(videoEl){
+        if(!animCanvas) return false;
+        const w = videoEl.videoWidth || 0;
+        const h = videoEl.videoHeight || 0;
+        if(!w || !h) return false;
+        if(animCanvas.width !== w) animCanvas.width = w;
+        if(animCanvas.height !== h) animCanvas.height = h;
+        return true;
+      }
+
+      function applyChromaKeyWhite(){
+        if(!chickCtx || !animCanvas) return;
+        const t = TL_WHITE_THRESH;
+        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+        const d = img.data;
+        for(let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i+1], b = d[i+2];
+          if(r >= t && g >= t && b >= t) d[i+3] = 0;
+        }
+        chickCtx.putImageData(img, 0, 0);
+      }
+
+      function drawFrame(videoEl){
+        if(!chickCtx || !animCanvas) return false;
+        if(!setCanvasSizeToVideo(videoEl)) return false;
+        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+        chickCtx.drawImage(videoEl, 0, 0);
+        applyChromaKeyWhite();
+        return true;
+      }
+
+      async function ensureReady(videoEl){
+        if(videoEl.readyState >= 2) return true;
+        return await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+          const cleanup = () => {
+            videoEl.removeEventListener("loadeddata", ok);
+            videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("error", bad);
+          };
+          videoEl.addEventListener("loadeddata", ok, { once:true });
+          videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("error", bad, { once:true });
+          try{ videoEl.load(); }catch(e){}
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+        });
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const f = Math.max(1, Number(fps));
+        const s = Math.max(0, Number(startFrame) / f);
+        const e = Math.max(s + (1 / f), Number(endFrame) / f);
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      async function seekTo(videoEl, timeSec){
+        return await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(ok);
+          };
+          const onSeeked = () => finish(true);
+          const onErr = () => finish(false);
+          const cleanup = () => {
+            videoEl.removeEventListener("seeked", onSeeked);
+            videoEl.removeEventListener("error", onErr);
+          };
+          videoEl.addEventListener("seeked", onSeeked, { once:true });
+          videoEl.addEventListener("error", onErr, { once:true });
+
+          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+          catch(e){ cleanup(); resolve(false); return; }
+
+          setTimeout(() => finish(true), 700);
+        });
+      }
+
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+        if(!animCanvas || !chickCtx) return false;
+
+        cancelChickXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+
+        stopVideo(videoEl);
+        await seekTo(videoEl, times.start);
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+        let playingOk = true;
+        try{ await videoEl.play(); }catch(e){ playingOk = false; }
+        if(!playingOk) return false;
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        const gotFirstFrame = await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+          const maxWait = setTimeout(() => finish(false), 900);
+
+          if(useRVFC){
+            videoEl.requestVideoFrameCallback(() => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }else{
+            const onTime = () => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.addEventListener("timeupdate", onTime, { once:true });
+
+            requestAnimationFrame(() => {
+              if(done) return;
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }
+        });
+
+        if(!gotFirstFrame){
+          try{ videoEl.pause(); }catch(e){}
+          return false;
+        }
+
+        showCanvas();
+        stillImg.classList.remove("active");
+        await raf();
+
+        chickXAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: times.durMs, easing: "linear", fill: "forwards" }
+        );
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        cancelChickXAnim();
+        return true;
+      }
+
+      async function animateTimeline(fromLevel, toLevel){
+        if(!timelineReady()) return;
+
+        setAnchorToLevel(fromLevel, { noTransition: true });
+        showOnlyStill();
+
+        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+        if(!hasMp4){
+          setAnchorToLevel(toLevel, { noTransition: true });
+          return;
+        }
+
+        if(chickPlaying) return;
+        chickPlaying = true;
+
+        stopVideo(upVid);
+        stopVideo(downVid);
+
+        const dir = toLevel > fromLevel ? "up" : "down";
+        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+        const vid = dir === "up" ? upVid : downVid;
+
+        await playSegmentOnCanvasNoFlash(vid, cfg);
+
+        setAnchorToLevel(toLevel, { noTransition: true });
+
+        stillImg.classList.add("active");
+        await raf();
+        if(animCanvas) animCanvas.classList.remove("active");
+
+        chickPlaying = false;
+      }
+
+      /* game */
+      let started = false;
+      let locked = false;
+      let correct = 1;
+      let questionVariantIndex = 0;
+
+      function resetStreaks(){
+        streakGood = 0;
+        streakBad = 0;
+      }
+
+      async function handleAutoLevelOnGood(){
+        streakGood += 1;
+        streakBad = 0;
+
+        if(streakGood >= 5){
+          const before = LEVEL;
+          setLevel(LEVEL + 1);
+          resetStreaks();
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      async function handleAutoLevelOnBad(){
+        streakBad += 1;
+        streakGood = 0;
+
+        if(streakBad >= 2){
+          const before = LEVEL;
+          setLevel(LEVEL - 1);
+          resetStreaks();
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      async function flashAndAsk(){
+        locked = true;
+        previewToken++;
+
+        answersEl.classList.add("answersHidden");
+        answersEl.innerHTML = "";
+        clearBoard();
+
+        await wait(160);
+
+        questionVariantIndex = pickVariantIndexForQuestion(correct);
+        const qPattern = patternQuestion(correct, questionVariantIndex);
+        setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
+        await wait(flashMs);
+
+        clearBoard();
+        await wait(260);
+
+        renderAnswers(correct, onPick);
+        await wait(WAIT_BEFORE_IN_MS);
+        await animateInButtons();
+
+        locked = false;
+        previewCardsNonBlocking();
+      }
+
+      function nextRound(){
+        const cap = maxForLevel();
+        correct = pickNumberWeighted(cap);
+        flashAndAsk();
+      }
+
+      async function onPick(btn, value){
+        if(!started || locked) return;
+
+        locked = true;
+        previewToken++;
+
+        const all = [...answersEl.querySelectorAll(".ansBtn")];
+        all.forEach(b => b.style.pointerEvents = "none");
+
+        if(usesAnswerCards()){
+          btn.classList.add("cardOpen");
+          await wait(110);
+        }
+
+        if(value === correct){
+          beep("ok");
+          btn.classList.add("correctHold");
+
+          const qPattern = patternQuestion(correct, questionVariantIndex);
+          setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
+          await wait(520);
+          dissolveBoard(260);
+
+          const exitOrder = sortedButtonsForExit(all);
+          await animateOutButtons(exitOrder, 140);
+
+          btn.classList.remove("correctHold");
+          if(usesAnswerCards()) btn.classList.remove("cardOpen");
+
+          answersEl.classList.add("answersHidden");
+          all.forEach(b => b.style.pointerEvents = "");
+          await wait(160);
+
+          await handleAutoLevelOnGood();
+          nextRound();
+          return;
+        }
+
+        beep("no");
+
+        const notChosen = all.filter(b => b !== btn);
+        const chosen = btn;
+
+        chosen.classList.add("wrongHold");
+        await animateOutButtons(sortedButtonsForExit(notChosen), 120);
+
+        const qPattern = patternQuestion(correct, questionVariantIndex);
+        setBoard(svgForDots(qPattern, {dotRadius: 16}));
+
+        await wait(1200);
+        dissolveBoard(320);
+
+        await wait(120);
+        await animateOutButtons([chosen], 0);
+
+        chosen.classList.remove("wrongHold");
+        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
+
+        answersEl.classList.add("answersHidden");
+        await wait(240);
+
+        all.forEach(b => b.style.pointerEvents = "");
+
+        await handleAutoLevelOnBad();
+        nextRound();
+      }
+
+      /* tune ui */
+      function syncUI(){
+        flashMsValue.textContent = String(flashMs);
+        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+      }
+
+      function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
+      function closeTune(){ tunePanel.classList.add("hidden"); }
+
+      tuneBtn.addEventListener("click", () => {
+        beep("tap");
+        if(tunePanel.classList.contains("hidden")) openTune();
+        else closeTune();
+      });
+      tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+
+      flashMsRange.addEventListener("input", () => {
+        flashMs = Number(flashMsRange.value);
+        syncUI();
+      });
+
+      newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
+      testWrongBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(!started || locked) return;
+        const cap = maxForLevel();
+        const wrong = (correct === cap) ? 1 : correct + 1;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) await onPick(btns[0], wrong);
+      });
+
+      testGoodBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(!started || locked) return;
+        const btns = [...answersEl.querySelectorAll(".ansBtn")];
+        if(btns[0]) await onPick(btns[0], correct);
+      });
+
+      levelUpBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(locked) return;
+        const before = LEVEL;
+        setLevel(LEVEL + 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
+        }
+      });
+
+      levelDownBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(locked) return;
+        const before = LEVEL;
+        setLevel(LEVEL - 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
+        }
+      });
+
+      toggleLevelsBtn.addEventListener("click", () => {
+        beep("tap");
+        levelsVisible = !levelsVisible;
+        try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
+        updateLevelsVisibilityUI();
+      });
+
+      /* start */
+      function startGame(){
+        if(started) return;
+        started = true;
+
+        setLevel(1);
+        resetStreaks();
+
+        startOverlay.style.display = "none";
+        syncUI();
+
+        scheduleFit();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+        showOnlyStill();
+
+        nextRound();
+      }
+
+      startBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        beep("tap");
+        startGame();
+      });
+
+      startOverlay.addEventListener("click", (e) => {
+        if(e.target === startOverlay){
+          beep("tap");
+          startGame();
+        }
+      });
+
+      homeBtn.addEventListener("click", () => {
+        beep("tap");
+        try{ window.location.href = "index.html"; }catch(e){}
+      });
+
+      let reflowTimer = null;
+      function onReflow(){
+        if(!started) return;
+        if(reflowTimer) clearTimeout(reflowTimer);
+        reflowTimer = setTimeout(async () => {
+          locked = true;
+          previewToken++;
+          answersEl.classList.add("answersHidden");
+          answersEl.innerHTML = "";
+          clearBoard();
+          await wait(120);
+          renderAnswers(correct, onPick);
+          await wait(WAIT_BEFORE_IN_MS);
+          await animateInButtons();
+          locked = false;
+          previewCardsNonBlocking();
+
+          scheduleFit();
+          setAnchorToLevel(LEVEL, { noTransition: true });
+        }, 220);
+      }
+      window.addEventListener("resize", onReflow);
+      window.addEventListener("orientationchange", onReflow);
+
+      /* init */
+      clearBoard();
+      setLevel(1);
+      resetStreaks();
+      syncUI();
+      initTimelineAuto();
+      scheduleFit();
+      setAnchorToLevel(LEVEL, { noTransition: true });
+      showOnlyStill();
+      updateLevelsVisibilityUI();
+
+    })();
+  </script>
+</body>
+</html>
