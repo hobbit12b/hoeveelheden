@@ -26,7 +26,12 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      --activeFill: rgba(229, 140, 116, 0.18);
+      /* vraagvak schaal */
+      --qScale: 0.78;      /* levels 1 t/m 5: kleiner */
+      --qTopNudge: -1.5%;  /* subtiele verticale uitlijning */
+
+      /* extra dots */
+      --dotSize: 12.6%; /* wordt ook in JS exact gemaakt obv svg dot */
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -198,16 +203,87 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      overflow:hidden;
+      position: relative;
     }
 
-    .flashSvg svg,
-    .flashSvg img{
+    /* kern fix: vraagimage krijgt een eigen container die we kunnen schalen en verticaal nudgen */
+    .qWrap{
       width: 100%;
       height: 100%;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .qWrapInner{
+      width: 100%;
+      height: 100%;
+      display:grid;
+      place-items:center;
+      transform: translateY(var(--qTopNudge)) scale(var(--qScale));
+      transform-origin: 50% 50%;
+    }
+
+    .qImg{
       max-width: 100%;
       max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
       display:block;
+    }
+
+    /* count on: dobbelsteenlaag, dots worden exact gepositioneerd en geschaald */
+    .diceLayer{
+      position: relative;
+      width: min(92%, 520px);
+      height: auto;
+      aspect-ratio: 1 / 1;
+      display:grid;
+      place-items:center;
+    }
+    .diceLayer .qImg{
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display:block;
+    }
+
+    .extraDot{
+      position: absolute;
+      width: var(--dotSize);
+      height: var(--dotSize);
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      background: rgba(25,25,25,0.30);
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.92);
+      will-change: transform, opacity, background;
+    }
+
+    /* tegelijk verschijnen: zelfde delay, zelfde animatie */
+    .extraDot.show,
+    .extraDot.blacken{
+      animation: dotAppear 520ms cubic-bezier(.22,.61,.35,1) forwards;
+      animation-delay: var(--appearDelay, 320ms);
+    }
+
+    .extraDot.blacken{
+      animation: dotAppear 520ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 380ms ease forwards;
+      animation-delay: var(--appearDelay, 320ms), var(--blackDelay, 980ms);
+    }
+
+    @keyframes dotAppear{
+      0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.78); }
+      70%{ opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+      100%{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    }
+
+    @keyframes dotBlacken{
+      from{ background: rgba(25,25,25,0.30); }
+      to{ background: rgba(25,25,25,0.92); }
     }
 
     .scanStage{
@@ -291,8 +367,8 @@
     }
 
     .ansBtn.correctHold{
-      background: var(--correctFill);
-      border-color: var(--correctBorder);
+      background: rgba(210, 244, 214, 0.92);
+      border-color: rgba(144, 204, 152, 0.70);
     }
 
     .answersHidden{ opacity:0; pointer-events:none; }
@@ -492,6 +568,36 @@
       -webkit-transform: rotateY(180deg);
     }
 
+    /* antwoordfaces */
+    .numFace{
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      font-weight: 1000;
+      font-size: clamp(36px, 7vw, 72px);
+      color: rgba(25,25,25,.92);
+    }
+
+    /* marbotic perfect centreren */
+    .marboticFace{
+      width: 100%;
+      height: 100%;
+      display:grid;
+      place-items:center;
+      padding: 10%;
+    }
+    .marboticFace img{
+      width: 78%;
+      height: 78%;
+      object-fit: contain;
+      display:block;
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-drag:none;
+      transform: translateY(2%);
+    }
+
     /* Timeline overlay */
     .timelineOverlay{
       position: fixed;
@@ -510,8 +616,7 @@
       transform-origin: 0 0;
       will-change: transform;
       pointer-events:none;
-      /* FIX: nooit onzichtbaar door rare compositing */
-      transform: translate(0px, 0px) scale(1);
+      transform: translate3d(0,0,0) scale(1);
     }
 
     .progressTimeline{
@@ -531,20 +636,23 @@
       object-fit: fill;
     }
 
-    .progressLine.levelsHidden{
-      opacity: 0;
-    }
+    .progressLine.levelsHidden{ opacity: 0; }
 
+    /* FIX: anchor altijd op de zelfde compositing laag en zonder “spring” */
     .progressChickAnchor{
       position:absolute;
       left: 0;
       top: 0;
-      transform: translateX(-50%);
+      transform: translate3d(-50%, 0, 0);
       width: 82px;
       height: 82px;
       pointer-events:none;
       transition: left 520ms cubic-bezier(.22,.61,.35,1), top 520ms cubic-bezier(.22,.61,.35,1);
       will-change: left, transform, top;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
     }
     .progressChickAnchor.noMove{ transition: none !important; }
 
@@ -560,6 +668,9 @@
       will-change: transform, opacity;
       display:block;
       object-fit: contain;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translate3d(0,0,0);
     }
     .chickLayer.active{ opacity: 1; }
     .stillLayer{ z-index: 3; }
@@ -567,99 +678,6 @@
 
     #animCanvas{ opacity:0; }
     #animCanvas.active{ opacity:1; }
-
-    /* dobbelsteen assets */
-    .qWrap{
-      width: 100%;
-      height: 100%;
-      display: grid;
-      place-items: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .layoutImg{
-      width: auto;
-      height: auto;
-      max-width: 92%;
-      max-height: 92%;
-      object-fit: contain;
-      display: block;
-    }
-
-    .qWrap .diceMain{
-      width: auto;
-      height: auto;
-      max-width: 86%;
-      max-height: 92%;
-    }
-
-    .ansBtn .layoutImg{
-      width: 100%;
-      height: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .numFace{
-      width: 100%;
-      height: 100%;
-      display: grid;
-      place-items: center;
-      font-weight: 1000;
-      font-size: clamp(36px, 7vw, 72px);
-      color: rgba(25,25,25,.92);
-    }
-
-    .marboticFace{
-      width: 100%;
-      height: 100%;
-      display: grid;
-      place-items: center;
-    }
-    .marboticFace img{
-      width: 100%;
-      height: 100%;
-      max-width: 88%;
-      max-height: 88%;
-      object-fit: contain;
-      display:block;
-      pointer-events:none;
-      user-select:none;
-      -webkit-user-drag:none;
-    }
-
-    .extraDot{
-      position: absolute;
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: rgba(25,25,25,0.30);
-      opacity: 0;
-      transform: translate(-50%, -50%) scale(0.65);
-      will-change: transform, opacity, background;
-    }
-
-    .extraDot.show{
-      animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards;
-      animation-delay: var(--appearDelay, 260ms);
-    }
-
-    .extraDot.blacken{
-      animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 520ms ease forwards;
-      animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms);
-    }
-
-    @keyframes dotAppear{
-      0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
-      60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
-      100%{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-    }
-
-    @keyframes dotBlacken{
-      from{ background: rgba(25,25,25,0.30); }
-      to{ background: rgba(25,25,25,0.92); }
-    }
   </style>
 </head>
 
@@ -831,36 +849,27 @@
       }
 
       function usesAnswerCards(){
-        return LEVEL >= 2;
+        return LEVEL >= 2; /* kaarten blijven voor dobbelsteenantwoorden */
       }
 
-      function safeFitFallback(){
-        if(!timelineGroup || !timeline || !gameCard) return;
-        const r = gameCard.getBoundingClientRect();
-        const baseW = 520;
-        timeline.style.width = baseW + "px";
-        const targetLeft = r.left + 6;
-        const targetRight = r.right - 6;
-        const denom = baseW * 0.88;
-        const s = Math.max(0.25, Math.min(3.0, (targetRight - targetLeft) / Math.max(1, denom)));
-        const tx = targetLeft - (baseW * 0.06) * s;
-        const ty = (r.bottom - 6) - (timeline.clientHeight * 0.82) * s;
-        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+      function applyQuestionScale(){
+        const r = document.documentElement.style;
+        if(LEVEL <= 5){
+          r.setProperty("--qScale", "0.78");
+          r.setProperty("--qTopNudge", "-1.5%");
+        }else{
+          r.setProperty("--qScale", "0.92");
+          r.setProperty("--qTopNudge", "0%");
+        }
       }
 
-      function scheduleFitHard(){
-        requestAnimationFrame(() => {
-          fitTimelineToQuestion();
-          safeFitFallback();
-        });
-      }
-
-      function setLevel(n){
+      function applyLevel(n, opts = {}){
+        const syncAnchor = opts.syncAnchor !== false;
         LEVEL = clamp(n, 1, 9);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        scheduleFitHard();
-        setAnchorToLevel(LEVEL, { noTransition: true });
+        applyQuestionScale();
+        if(syncAnchor) setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -968,22 +977,99 @@
         return arr.length ? pick(arr) : standardLayoutId(n);
       }
 
+      /* vraag board */
       function boardHtmlForLayout(layoutId){
-        return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+        return `
+          <div class="qWrap">
+            <div class="qWrapInner">
+              <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
+            </div>
+          </div>
+        `;
+      }
+
+      /* dot-plaatsing en dot-grootte automatisch matchen met de svg */
+      let dotSizePct = null;
+
+      function computeDotSizePctFromCurrentSvg(){
+        try{
+          const img = flashSvg.querySelector(".diceLayer img.qImg");
+          if(!img) return null;
+
+          const layer = flashSvg.querySelector(".diceLayer");
+          if(!layer) return null;
+
+          const w = img.naturalWidth || 0;
+          const h = img.naturalHeight || 0;
+          if(!w || !h) return null;
+
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(img, 0, 0);
+          const data = ctx.getImageData(0, 0, w, h).data;
+
+          const isDark = (r,g,b,a) => a > 60 && (0.2126*r + 0.7152*g + 0.0722*b) < 70;
+
+          /* neem een horizontale scan door het midden, zoek de breedte van een stip */
+          const y = Math.floor(h * 0.5);
+          let bestRun = 0;
+          let run = 0;
+          for(let x=0; x<w; x++){
+            const i = (y*w + x) * 4;
+            const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+            if(isDark(r,g,b,a)){
+              run++;
+              if(run > bestRun) bestRun = run;
+            }else{
+              run = 0;
+            }
+          }
+
+          if(bestRun < 6) return null;
+
+          /* bestRun is pixels in de svg, vertaal naar percentage van diceLayer */
+          const pct = (bestRun / w) * 100;
+          return clamp(pct, 8, 18);
+        }catch(e){
+          return null;
+        }
+      }
+
+      function applyDotSizePct(pct){
+        if(!pct) return;
+        dotSizePct = pct;
+        document.documentElement.style.setProperty("--dotSize", `${pct}%`);
       }
 
       function boardHtmlForCountOn(layoutId, extraCount, side, blacken){
-        const x = side === "left" ? 18 : 82;
-        const ys = extraCount === 1 ? [50] : [44, 56];
+        const x = side === "left" ? 20 : 80;
 
-        const dots = ys.slice(0, extraCount).map((y, i) => {
-          const appear = i === 0 ? 260 : 720;
-          const black = i === 0 ? 1060 : 1520;
+        /* 2 stippen: gelijke tussenruimte, vergelijkbaar met kaarten */
+        const y1 = 43.5;
+        const y2 = 56.5;
+        const ys = extraCount === 1 ? [50] : [y1, y2];
+
+        /* tegelijk verschijnen */
+        const appearDelay = 360;
+        const blackDelay = 1040;
+
+        const dots = ys.slice(0, extraCount).map((y) => {
           const cls = blacken ? "extraDot blacken" : "extraDot show";
-          return `<div class="${cls}" style="left:${x}%; top:${y}%; --appearDelay:${appear}ms; --blackDelay:${black}ms;"></div>`;
+          return `<div class="${cls}" style="left:${x}%; top:${y}%; --appearDelay:${appearDelay}ms; --blackDelay:${blackDelay}ms;"></div>`;
         }).join("");
 
-        return `<div class="qWrap"><img class="layoutImg diceMain" src="${diceSrc(layoutId)}" alt="" draggable="false">${dots}</div>`;
+        return `
+          <div class="qWrap">
+            <div class="qWrapInner" style="transform: translateY(0%) scale(0.92);">
+              <div class="diceLayer">
+                <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
+                ${dots}
+              </div>
+            </div>
+          </div>
+        `;
       }
 
       function setBoard(html){ flashSvg.innerHTML = html; }
@@ -999,6 +1085,7 @@
         }, ms + 40);
       }
 
+      /* antwoorden */
       function buildOptions(correct){
         const cap = maxForLevel();
 
@@ -1127,12 +1214,31 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
+      function answerFaceHtml(v){
+        const answersAreMarbotic = (LEVEL === 6 || LEVEL === 7); /* FIX: level 6 ook marbotic */
+        const answersAreNumbers = (LEVEL >= 8);
+
+        if(answersAreMarbotic){
+          return `<div class="marboticFace"><img src="marbotic${v}.png" alt="${v}" draggable="false"></div>`;
+        }
+
+        if(answersAreNumbers){
+          return `<div class="numFace">${v}</div>`;
+        }
+
+        const layoutId = standardLayoutId(v);
+        return `
+          <div class="qWrap">
+            <div class="qWrapInner" style="transform: translateY(0%) scale(0.92);">
+              <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
+            </div>
+          </div>
+        `;
+      }
+
       function renderAnswers(correct, onPick){
         const arr = buildOptions(correct);
         answersEl.innerHTML = "";
-
-        const answersUseMarbotic = LEVEL >= 7;
-        const answersAreNumbers = (LEVEL >= 6) && !answersUseMarbotic;
 
         arr.forEach(v => {
           const btn = document.createElement("button");
@@ -1147,26 +1253,19 @@
 
           btn.addEventListener("click", () => onPick(btn, v));
 
-          if(answersUseMarbotic){
-            btn.innerHTML = `<div class="marboticFace"><img src="marbotic${v}.png" alt="${v}" draggable="false"></div>`;
-          }else if(answersAreNumbers){
-            btn.innerHTML = `<div class="numFace">${v}</div>`;
-          }else{
-            const layoutId = standardLayoutId(v);
-            const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+          const face = answerFaceHtml(v);
 
-            if(usesAnswerCards()){
-              btn.innerHTML = `
-                <div class="cardWrap">
-                  <div class="cardInner">
-                    <div class="cardBack" aria-hidden="true"></div>
-                    <div class="cardFront">${face}</div>
-                  </div>
+          if(usesAnswerCards() && LEVEL <= 5){
+            btn.innerHTML = `
+              <div class="cardWrap">
+                <div class="cardInner">
+                  <div class="cardBack" aria-hidden="true"></div>
+                  <div class="cardFront">${face}</div>
                 </div>
-              `;
-            }else{
-              btn.innerHTML = face;
-            }
+              </div>
+            `;
+          }else{
+            btn.innerHTML = face;
           }
 
           answersEl.appendChild(btn);
@@ -1176,7 +1275,7 @@
       let previewToken = 0;
 
       async function previewCardsNonBlocking(){
-        if(!usesAnswerCards()) return;
+        if(!(usesAnswerCards() && LEVEL <= 5)) return;
         if(previewMs <= 0) return;
 
         const myToken = ++previewToken;
@@ -1199,6 +1298,7 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
+      /* timeline auto fit */
       const LV_MIN = 1;
       const LV_MAX = 9;
 
@@ -1414,13 +1514,16 @@
         requestAnimationFrame(() => {
           fitQueued = false;
           fitTimelineToQuestion();
-          safeFitFallback();
         });
+      }
+
+      function snapPx(v){
+        const dpr = window.devicePixelRatio || 1;
+        return Math.round(v * dpr) / dpr;
       }
 
       function fitTimelineToQuestion(){
         if(!timelineReady()) return;
-
         if(levelsImg.naturalWidth && levelsImg.naturalHeight){
           if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
           timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
@@ -1438,7 +1541,6 @@
 
         const targetLeft = r.left + bw;
         const targetRight = r.right - bw;
-
         const targetBaselineY = r.bottom - (bw * 0.5);
 
         const baseW = 520;
@@ -1459,7 +1561,7 @@
         const tx = targetLeft - s * xL;
         const ty = targetBaselineY - s * yB;
 
-        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+        timelineGroup.style.transform = `translate3d(${snapPx(tx)}px, ${snapPx(ty)}px, 0) scale(${s})`;
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
@@ -1469,7 +1571,7 @@
         updateLevelsVisibilityUI();
 
         const tryInit = () => {
-          scheduleFitHard();
+          scheduleFit();
         };
 
         if(levelsImg.complete) tryInit();
@@ -1488,6 +1590,7 @@
         window.addEventListener("orientationchange", scheduleFit);
       }
 
+      /* animatie kuiken */
       const TL_WHITE_THRESH = 255;
 
       const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
@@ -1559,7 +1662,7 @@
           videoEl.addEventListener("loadedmetadata", ok, { once:true });
           videoEl.addEventListener("error", bad, { once:true });
           try{ videoEl.load(); }catch(e){}
-          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 1200);
         });
       }
 
@@ -1591,11 +1694,14 @@
           try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
           catch(e){ cleanup(); resolve(false); return; }
 
-          setTimeout(() => finish(true), 700);
+          setTimeout(() => finish(true), 900);
         });
       }
 
-      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+      /* FIX: ballerina_terug mp4 kan soms “hangen”. Dit maakt de loop fail safe:
+         - forced deadline
+         - als currentTime niet meer verandert: break en ga door */
+      async function playSegmentOnCanvasSafe(videoEl, cfg){
         if(!animCanvas || !chickCtx) return false;
 
         cancelChickXAnim();
@@ -1619,7 +1725,7 @@
         const gotFirstFrame = await new Promise(resolve => {
           let done = false;
           const finish = (ok) => { if(done) return; done = true; resolve(ok); };
-          const maxWait = setTimeout(() => finish(false), 900);
+          const maxWait = setTimeout(() => finish(false), 1200);
 
           if(useRVFC){
             videoEl.requestVideoFrameCallback(() => {
@@ -1661,41 +1767,57 @@
           { duration: times.durMs, easing: "linear", fill: "forwards" }
         );
 
-        if(useRVFC){
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
+        let lastT = videoEl.currentTime;
+        let staleCount = 0;
+
+        const hardDeadlineMs = times.durMs + 1400;
+        const startedAt = performance.now();
+
+        const loop = await new Promise(resolve => {
+          const step = () => {
+            drawFrame(videoEl);
+
+            const now = performance.now();
+            if(now - startedAt > hardDeadlineMs){
+              resolve(true);
+              return;
+            }
+
+            const ct = videoEl.currentTime || 0;
+            if(Math.abs(ct - lastT) < 0.0005) staleCount++;
+            else staleCount = 0;
+            lastT = ct;
+
+            if(staleCount > 22){
+              resolve(true);
+              return;
+            }
+
+            if(ct >= times.end || videoEl.ended){
+              resolve(true);
+              return;
+            }
+
+            if(useRVFC){
               videoEl.requestVideoFrameCallback(step);
-            };
-            videoEl.requestVideoFrameCallback(step);
-          });
-        }else{
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
+            }else{
               requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-          });
-        }
+            }
+          };
+
+          if(useRVFC) videoEl.requestVideoFrameCallback(step);
+          else requestAnimationFrame(step);
+        });
 
         try{ videoEl.pause(); }catch(e){}
         cancelChickXAnim();
-        return true;
+        return !!loop;
       }
 
       async function animateTimeline(fromLevel, toLevel){
         if(!timelineReady()) return;
 
-        scheduleFitHard();
+        scheduleFit();
         setAnchorToLevel(fromLevel, { noTransition: true });
         showOnlyStill();
 
@@ -1715,9 +1837,9 @@
         const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
         const vid = dir === "up" ? upVid : downVid;
 
-        await playSegmentOnCanvasNoFlash(vid, cfg);
+        await playSegmentOnCanvasSafe(vid, cfg);
 
-        scheduleFitHard();
+        scheduleFit();
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1727,6 +1849,7 @@
         chickPlaying = false;
       }
 
+      /* game */
       let started = false;
       let locked = false;
 
@@ -1792,11 +1915,13 @@
 
         if(streakGood >= 5){
           const before = LEVEL;
-          setLevel(LEVEL + 1);
+          const after = clamp(LEVEL + 1, 1, 9);
           resetStreaks();
-          if(LEVEL !== before){
+
+          if(after !== before){
+            applyLevel(after, { syncAnchor: false });
             beep("level");
-            await animateTimeline(before, LEVEL);
+            await animateTimeline(before, after);
           }
           return true;
         }
@@ -1809,11 +1934,13 @@
 
         if(streakBad >= 2){
           const before = LEVEL;
-          setLevel(LEVEL - 1);
+          const after = clamp(LEVEL - 1, 1, 9);
           resetStreaks();
-          if(LEVEL !== before){
+
+          if(after !== before){
+            applyLevel(after, { syncAnchor: false });
             beep("level");
-            await animateTimeline(before, LEVEL);
+            await animateTimeline(before, after);
           }
           return true;
         }
@@ -1834,6 +1961,15 @@
 
         if(questionState.kind === "counton"){
           setBoard(boardHtmlForCountOn(questionState.layoutId, questionState.extraCount, questionState.side, questionState.blacken));
+          await raf();
+          await wait(40);
+
+          /* dot size matchen na render, één keer per sessie is genoeg */
+          if(dotSizePct == null){
+            const pct = computeDotSizePctFromCurrentSvg();
+            if(pct) applyDotSizePct(pct);
+          }
+
           await wait(120);
         }else{
           setBoard(boardHtmlForLayout(questionState.layoutId));
@@ -1847,13 +1983,13 @@
         await animateInButtons();
 
         if(questionState.kind === "counton"){
-          const extraWait = questionState.extraCount === 2 ? 780 : 520;
+          const extraWait = questionState.extraCount === 2 ? 720 : 520;
           await wait(extraWait);
         }
 
         locked = false;
         previewCardsNonBlocking();
-        scheduleFitHard();
+        scheduleFit();
       }
 
       function nextRound(){
@@ -1869,7 +2005,7 @@
         const all = [...answersEl.querySelectorAll(".ansBtn")];
         all.forEach(b => b.style.pointerEvents = "none");
 
-        if(usesAnswerCards()){
+        if(usesAnswerCards() && LEVEL <= 5){
           btn.classList.add("cardOpen");
           await wait(110);
         }
@@ -1892,7 +2028,7 @@
           await animateOutButtons(exitOrder, 140);
 
           btn.classList.remove("correctHold");
-          if(usesAnswerCards()) btn.classList.remove("cardOpen");
+          if(usesAnswerCards() && LEVEL <= 5) btn.classList.remove("cardOpen");
 
           answersEl.classList.add("answersHidden");
           all.forEach(b => b.style.pointerEvents = "");
@@ -1925,7 +2061,7 @@
         await animateOutButtons([chosen], 0);
 
         chosen.classList.remove("wrongHold");
-        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
+        if(usesAnswerCards() && LEVEL <= 5) chosen.classList.remove("cardOpen");
 
         answersEl.classList.add("answersHidden");
         await wait(240);
@@ -1936,6 +2072,7 @@
         nextRound();
       }
 
+      /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
@@ -1974,24 +2111,23 @@
         if(btns[0]) await onPick(btns[0], questionState.correct);
       });
 
-      /* FIX: levelknoppen nooit blokkeren door locked, dit is een debug tool */
       levelUpBtn.addEventListener("click", async () => {
         beep("tap");
         const before = LEVEL;
-        setLevel(LEVEL + 1);
-        syncUI();
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
+        const after = clamp(LEVEL + 1, 1, 9);
+        if(after !== before){
+          applyLevel(after, { syncAnchor: false });
+          await animateTimeline(before, after);
         }
       });
 
       levelDownBtn.addEventListener("click", async () => {
         beep("tap");
         const before = LEVEL;
-        setLevel(LEVEL - 1);
-        syncUI();
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
+        const after = clamp(LEVEL - 1, 1, 9);
+        if(after !== before){
+          applyLevel(after, { syncAnchor: false });
+          await animateTimeline(before, after);
         }
       });
 
@@ -2000,20 +2136,21 @@
         levelsVisible = !levelsVisible;
         try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
         updateLevelsVisibilityUI();
-        scheduleFitHard();
+        scheduleFit();
       });
 
+      /* start */
       function startGame(){
         if(started) return;
         started = true;
 
-        setLevel(1);
+        applyLevel(1, { syncAnchor: true });
         resetStreaks();
 
         startOverlay.style.display = "none";
         syncUI();
 
-        scheduleFitHard();
+        scheduleFit();
         setAnchorToLevel(LEVEL, { noTransition: true });
         showOnlyStill();
 
@@ -2056,19 +2193,21 @@
           locked = false;
           previewCardsNonBlocking();
 
-          scheduleFitHard();
+          scheduleFit();
           setAnchorToLevel(LEVEL, { noTransition: true });
         }, 220);
       }
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
+      /* init */
       clearBoard();
-      setLevel(1);
+      applyLevel(1, { syncAnchor: true });
       resetStreaks();
       syncUI();
+      applyQuestionScale();
       initTimelineAuto();
-      scheduleFitHard();
+      scheduleFit();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
       updateLevelsVisibilityUI();
