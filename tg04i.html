@@ -389,6 +389,71 @@
       place-items: center;
     }
     .back{ transform: rotateY(180deg); }
+  
+    /* Coaching and start overlay */
+    .panel.isWaiting{
+      outline: 2px solid rgba(17,24,39,0.10);
+    }
+    .panel.isInteractive{
+      outline: 2px solid rgba(17,24,39,0.12);
+      box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 6px rgba(17,24,39,0.06);
+      animation: pulseRing 1400ms ease-in-out infinite;
+    }
+    @keyframes pulseRing{
+      0%{ box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 4px rgba(17,24,39,0.05); }
+      55%{ box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 10px rgba(17,24,39,0.08); }
+      100%{ box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 4px rgba(17,24,39,0.05); }
+    }
+
+    .startOverlay{
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(246,247,251,0.82);
+      backdrop-filter: blur(2px);
+    }
+    .startCard{
+      width: min(720px, 92vw);
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 22px;
+      box-shadow: 0 18px 54px rgba(0,0,0,0.18);
+      padding: 16px 16px 14px 16px;
+      display: grid;
+      gap: 10px;
+      text-align: center;
+    }
+    .startTitle{
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: 0.2px;
+    }
+    .startText{
+      font-size: 16px;
+      color: rgba(27,27,31,0.78);
+      line-height: 1.35;
+      display: grid;
+      gap: 6px;
+    }
+    .startBtn{
+      justify-self: center;
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 18px;
+      background: var(--btn);
+      color: var(--btnInk);
+      font-weight: 900;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+      transition: transform 140ms ease;
+    }
+    .startBtn:active{ transform: translateY(1px) scale(0.99); }
+
   </style>
 </head>
 
@@ -423,13 +488,28 @@
         </div>
       </div>
 
-      <div class="panel answerArea">
+      <div class="panel answerArea" id="answerPanel">
         <div class="panelHeader">
           <span>Antwoorden</span>
           <span id="answerHeader"></span>
         </div>
         <div class="options" id="options"></div>
       </div>
+    </div>
+  </div>
+
+
+  <!-- Start overlay -->
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <div class="startTitle">Slim kijken</div>
+      <div class="startText">
+        <div>Kijk naar de stippen.</div>
+        <div>Als er plaatjes staan, tik het plaatje met evenveel.</div>
+        <div>Soms kijk je even alleen, dan gaat het vanzelf verder.</div>
+        <div>Bij cijfers leg je een cijfer op het vak.</div>
+      </div>
+      <button class="startBtn" id="startBtn" type="button">Start</button>
     </div>
   </div>
 
@@ -502,7 +582,9 @@
       observations: []
     };
 
-    let lockInput = false;
+    let lockInput = true;
+    let gameStarted = false;
+    let coachRoundsLeft = 10;
     let activeRound = null;
     let rtStart = null;
 
@@ -532,6 +614,9 @@
     const elCard = document.getElementById("card");
     const elQuestionWrap = document.getElementById("questionWrap");
     const elHintLine = document.getElementById("hintLine");
+    const elStartOverlay = document.getElementById("startOverlay");
+    const btnStart = document.getElementById("startBtn");
+
     const elOptions = document.getElementById("options");
 
     /* =========================
@@ -557,18 +642,42 @@
     }
 
     function setHeadersForRound(type){
-      const labelMap = {
-        look: "Kijken",
-        think: "Meedenken",
-        choose: "Kiezen",
-        marbotic: "Marbotic"
-      };
-      elPlayHeader.textContent = labelMap[type] || "Kijken";
-      elAnswerHeader.textContent = (type === "look") ? "" : "";
+      elPlayHeader.textContent = "Kijken";
+      if(type === "look"){
+        elAnswerHeader.textContent = "Even wachten";
+      }else if(type === "marbotic"){
+        elAnswerHeader.textContent = "Leg het cijfer";
+      }else{
+        elAnswerHeader.textContent = "Tik het plaatje";
+      }
     }
 
     function updateMicroStatus(){
-      elMicroStatus.textContent = "POS " + state.pos;
+      // Geen level of pos taal zichtbaar voor de leerling
+      elMicroStatus.textContent = "";
+    }
+
+    function applyStudentCoach(round){
+      const answerPanel = document.getElementById("answerPanel");
+      if(answerPanel){
+        answerPanel.classList.toggle("isInteractive", round.type === "think" || round.type === "choose" || round.type === "marbotic");
+        answerPanel.classList.toggle("isWaiting", round.type === "look");
+      }
+
+      if(coachRoundsLeft <= 0) return;
+
+      if(round.type === "look"){
+        setHint("Kijk goed, nog niet tikken.", true);
+      }else if(round.type === "marbotic"){
+        setHint("Leg een cijfer op het vak.", true);
+      }else{
+        setHint("Tik het plaatje met evenveel.", true);
+      }
+      coachRoundsLeft -= 1;
+
+      setTimeout(() => {
+        if(coachRoundsLeft <= 0) setHint("", false);
+      }, 1400);
     }
 
     function moveChickToPos(pos){
@@ -677,7 +786,8 @@
       });
       moveChickToPos(state.pos);
       closeTeacherMode();
-      startNextRound();
+      if(gameStarted){ startNextRound(); }
+      else { showStartOverlay(); }
     });
 
     btnToPos9.addEventListener("click", async () => {
@@ -688,7 +798,8 @@
       state.startLookRoundsRemaining = 0;
       moveChickToPos(state.pos);
       closeTeacherMode();
-      startNextRound();
+      if(gameStarted){ startNextRound(); }
+      else { showStartOverlay(); }
     });
 
     btnExport.addEventListener("click", () => {
@@ -1297,6 +1408,7 @@ unlocked variants: ${unlocked.length ? unlocked.join(", ") : "(nog niet)"}`;
 
     async function renderThinkOrChoose(round){
       setHeadersForRound(round.type);
+      applyStudentCoach(round);
       renderQuestion(round.question, {role:"question", allowVariant:false});
       renderOptions(round.options, round.correct);
 
@@ -1931,7 +2043,7 @@ unlocked variants: ${unlocked.length ? unlocked.join(", ") : "(nog niet)"}`;
       if(correct){
         setHint("", false);
       }else{
-        setHint("Nog een keer kijken.", true);
+        setHint("Kijk nog eens.", true);
         setTimeout(() => setHint("", false), 650);
       }
 
@@ -1964,6 +2076,7 @@ unlocked variants: ${unlocked.length ? unlocked.join(", ") : "(nog niet)"}`;
 
     function startNextRound(){
       if(lockInput) return;
+      if(!gameStarted) return;
 
       // Hard rule: direct Marbotic when eligible, no extra phase
       const round = generateRound();
@@ -1989,8 +2102,30 @@ unlocked variants: ${unlocked.length ? unlocked.join(", ") : "(nog niet)"}`;
     moveChickToPos(state.pos);
     updateMicroStatus();
 
-    loadCalibration().finally(() => {
+    function showStartOverlay(){
+      elStartOverlay.style.display = "flex";
+    }
+    function hideStartOverlay(){
+      elStartOverlay.style.display = "none";
+    }
+
+    btnStart.addEventListener("click", () => {
+      if(gameStarted) return;
+      gameStarted = true;
+      lockInput = false;
+      hideStartOverlay();
       startNextRound();
+    });
+
+    elStartOverlay.addEventListener("click", (e) => {
+      if(e.target === elStartOverlay) btnStart.click();
+    });
+
+    loadCalibration().finally(() => {
+      showStartOverlay();
+      updateMicroStatus();
+      moveChickToPos(state.pos);
+      chickShowStill();
     });
 
   })();
