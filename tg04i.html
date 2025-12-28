@@ -1,0 +1,1999 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Slim kijken</title>
+  <style>
+    :root{
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --ink: #1b1b1f;
+      --muted: rgba(27,27,31,0.65);
+      --shadow: 0 14px 40px rgba(0,0,0,0.12);
+      --radius: 20px;
+      --gap: 14px;
+      --btn: #111827;
+      --btnInk: #ffffff;
+      --soft: rgba(17,24,39,0.08);
+      --soft2: rgba(17,24,39,0.12);
+      --ok: rgba(16,185,129,0.18);
+      --warn: rgba(245,158,11,0.18);
+    }
+    html, body { height: 100%; margin: 0; }
+    body{
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      touch-action: manipulation;
+    }
+
+    /* Layout */
+    .app{
+      position: relative;
+      height: 100%;
+      padding: 14px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: var(--gap);
+    }
+
+    .topbar{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      z-index: 30;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .titlePill{
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.10);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      touch-action: none;
+    }
+
+    .grid{
+      height: 100%;
+      display: grid;
+      gap: var(--gap);
+      min-height: 0;
+    }
+
+    /* Default: portrait like */
+    .grid{
+      grid-template-rows: 1.1fr 0.9fr;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-aspect-ratio: 4/3){
+      .grid{
+        grid-template-columns: 1.1fr 0.9fr;
+        grid-template-rows: 1fr;
+      }
+    }
+
+    .panel{
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panelHeader{
+      padding: 12px 14px;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .playArea{
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .stage{
+      position: relative;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+    }
+
+    .card{
+      width: min(520px, 92%);
+      max-width: 520px;
+      aspect-ratio: 4 / 3;
+      background: linear-gradient(180deg, rgba(17,24,39,0.03), rgba(17,24,39,0.01));
+      border-radius: 26px;
+      border: 1px solid rgba(0,0,0,0.06);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.10);
+      transform: translateZ(0);
+    }
+
+    .questionWrap{
+      display: grid;
+      gap: 18px;
+      place-items: center;
+      padding: 18px;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    .groupRow{
+      display: grid;
+      grid-auto-flow: column;
+      gap: 18px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .group{
+      width: min(210px, 34vw);
+      height: min(160px, 26vw);
+      max-width: 210px;
+      max-height: 160px;
+      background: rgba(255,255,255,0.72);
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,0.06);
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .group img, .group svg{
+      width: 92%;
+      height: 92%;
+      object-fit: contain;
+    }
+
+    .hintLine{
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.85);
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.06);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+    .hintLine.show{ opacity: 1; }
+
+    /* Answer area */
+    .answerArea{
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .options{
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      min-height: 0;
+      align-content: start;
+    }
+
+    @media (max-aspect-ratio: 4/3){
+      .options{
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .optBtn{
+      border: 0;
+      border-radius: 18px;
+      background: rgba(17,24,39,0.06);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      padding: 10px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 90px;
+      touch-action: manipulation;
+    }
+    .optBtn:active{ transform: scale(0.99); }
+
+    .optBtn .mini{
+      width: 92%;
+      height: 92%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.70);
+      border-radius: 14px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .optBtn img, .optBtn svg{
+      width: 90%;
+      height: 90%;
+      object-fit: contain;
+    }
+
+    /* Timeline overlay */
+    .timelineOverlay{
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 60px;
+      height: 58px;
+      z-index: 25;
+      pointer-events: none;
+    }
+    @media (min-aspect-ratio: 4/3){
+      .timelineOverlay{ top: 68px; height: 62px; }
+    }
+    .timelineGroup{
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+    .timelineBg{
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0.92;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.10));
+    }
+    .chickAnchor{
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -58%);
+      width: 70px;
+      height: 70px;
+      display: grid;
+      place-items: center;
+    }
+    .chickAnchor img, .chickAnchor video{
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      border-radius: 16px;
+      background: transparent;
+    }
+
+    /* Teacher mode */
+    .teacherOverlay{
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(0,0,0,0.38);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .teacherPanel{
+      width: min(560px, 100%);
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.30);
+      padding: 16px;
+      touch-action: auto;
+    }
+    .teacherTitle{
+      font-weight: 900;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .teacherRow{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .tbtn{
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: var(--btn);
+      color: var(--btnInk);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tbtn.soft{
+      background: rgba(17,24,39,0.10);
+      color: var(--ink);
+    }
+    .statusBox{
+      margin-top: 10px;
+      background: rgba(17,24,39,0.06);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* Marbotic scan */
+    .scanSurface{
+      width: min(520px, 92%);
+      max-width: 520px;
+      height: min(340px, 48vh);
+      border-radius: 26px;
+      border: 1px dashed rgba(0,0,0,0.20);
+      background: rgba(255,255,255,0.70);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .scanHint{
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .dotsCanvas{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* Subtle transitions */
+    .fadeIn{ animation: fadeIn 180ms ease-out both; }
+    @keyframes fadeIn{ from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .flip{
+      transform-style: preserve-3d;
+      transition: transform 220ms ease;
+    }
+    .flip.isFlipped{ transform: rotateY(180deg); }
+    .face{
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      display: grid;
+      place-items: center;
+    }
+    .back{ transform: rotateY(180deg); }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="appRoot">
+    <div class="topbar">
+      <div class="titlePill" id="titlePill">Slim kijken</div>
+    </div>
+
+    <div class="timelineOverlay" aria-hidden="true">
+      <div class="timelineGroup">
+        <img class="timelineBg" src="assets/levels.png" alt="" />
+        <div class="chickAnchor" id="chickAnchor" style="left: 0%;">
+          <img id="chickStill" src="assets/ballerina_still.png" alt="" />
+          <video id="chickVidUp" src="assets/ballerina_springt.mp4" playsinline muted preload="auto" style="display:none"></video>
+          <video id="chickVidDown" src="assets/ballerina_terug.mp4" playsinline muted preload="auto" style="display:none"></video>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel playArea">
+        <div class="panelHeader">
+          <span id="playHeader">Kijken</span>
+          <span id="microStatus"></span>
+        </div>
+        <div class="stage" id="stage">
+          <div class="card" id="card">
+            <div class="questionWrap" id="questionWrap"></div>
+            <div class="hintLine" id="hintLine"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel answerArea">
+        <div class="panelHeader">
+          <span>Antwoorden</span>
+          <span id="answerHeader"></span>
+        </div>
+        <div class="options" id="options"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teacher mode -->
+  <div class="teacherOverlay" id="teacherOverlay" aria-hidden="true">
+    <div class="teacherPanel" role="dialog" aria-modal="true">
+      <div class="teacherTitle">Leerkrachtmodus</div>
+      <div class="teacherRow">
+        <button class="tbtn" id="btnExport">Exporteer sessie JSON</button>
+        <button class="tbtn soft" id="btnReset">Reset sessie</button>
+        <button class="tbtn soft" id="btnToPos9">Naar POS 9</button>
+        <button class="tbtn soft" id="btnCloseTeacher">Sluit</button>
+      </div>
+      <div class="teacherRow" id="scanSimRow" style="display:none"></div>
+      <div class="statusBox" id="teacherStatus"></div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    "use strict";
+
+    /* =========================
+       V5 constants and state
+    ========================== */
+    const RT_FAST = 1200;
+    const RT_MID  = 2000;
+
+    const STAB_UP_THRESHOLD = 100;
+    const HELP_BACK_THRESHOLD = 3;
+
+    const HOLD_MS = 900;
+    const MAX_MOVE_PX = 12;
+
+    const ASSETS = {
+      diceBase: "assets/dice/",
+      levels: "assets/levels.png",
+      ballerinaStill: "assets/ballerina_still.png",
+      ballerinaUp: "assets/ballerina_springt.mp4",
+      ballerinaDown: "assets/ballerina_terug.mp4",
+      calibration: "assets/calibration.json"
+    };
+
+    const DICE = {
+      1: { canonical: ["1a.svg"], variants: [] },
+      2: { canonical: ["2a.svg"], variants: ["2b.svg","2c.svg","2d.svg"] },
+      3: { canonical: ["3a.svg"], variants: ["3b.svg","3c.svg","3d.svg"] },
+      4: { canonical: ["4a.svg"], variants: ["4b.svg","4c.svg"] },
+      5: { canonical: ["5a.svg"], variants: ["5b.svg","5c.svg"] }, // 5 has no canonical flash, only end image
+      6: { canonical: ["6a.svg"], variants: ["6b.svg"] },
+    };
+
+    const state = {
+      sessionId: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2),
+      startedAt: new Date().toISOString(),
+      endedAt: null,
+
+      pos: 1,
+      stability: 0,
+      helpDebt: 0,
+      forcedHelpRounds: 0,
+      startLookRoundsRemaining: 2,
+
+      lastRoundType: null,
+      lastRoundWasWrong: false,
+      lastRTms: null,
+
+      numStability: Array.from({length: 10}, () => 0), // 0..9
+      rounds: [],
+      observations: []
+    };
+
+    let lockInput = false;
+    let activeRound = null;
+    let rtStart = null;
+
+    /* =========================
+       DOM refs
+    ========================== */
+    const elTitle = document.getElementById("titlePill");
+    const elTeacherOverlay = document.getElementById("teacherOverlay");
+    const elTeacherStatus = document.getElementById("teacherStatus");
+    const elScanSimRow = document.getElementById("scanSimRow");
+
+    const btnExport = document.getElementById("btnExport");
+    const btnReset = document.getElementById("btnReset");
+    const btnToPos9 = document.getElementById("btnToPos9");
+    const btnCloseTeacher = document.getElementById("btnCloseTeacher");
+
+    const elChickAnchor = document.getElementById("chickAnchor");
+    const elChickStill = document.getElementById("chickStill");
+    const elChickUp = document.getElementById("chickVidUp");
+    const elChickDown = document.getElementById("chickVidDown");
+
+    const elPlayHeader = document.getElementById("playHeader");
+    const elMicroStatus = document.getElementById("microStatus");
+    const elAnswerHeader = document.getElementById("answerHeader");
+
+    const elStage = document.getElementById("stage");
+    const elCard = document.getElementById("card");
+    const elQuestionWrap = document.getElementById("questionWrap");
+    const elHintLine = document.getElementById("hintLine");
+    const elOptions = document.getElementById("options");
+
+    /* =========================
+       Utility
+    ========================== */
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+    function nowMs(){ return performance && performance.now ? performance.now() : Date.now(); }
+
+    function shuffle(arr){
+      for(let i = arr.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function setHint(text, show){
+      elHintLine.textContent = text || "";
+      if(show) elHintLine.classList.add("show");
+      else elHintLine.classList.remove("show");
+    }
+
+    function setHeadersForRound(type){
+      const labelMap = {
+        look: "Kijken",
+        think: "Meedenken",
+        choose: "Kiezen",
+        marbotic: "Marbotic"
+      };
+      elPlayHeader.textContent = labelMap[type] || "Kijken";
+      elAnswerHeader.textContent = (type === "look") ? "" : "";
+    }
+
+    function updateMicroStatus(){
+      elMicroStatus.textContent = "POS " + state.pos;
+    }
+
+    function moveChickToPos(pos){
+      const pct = (pos <= 1) ? 0 : (pos >= 9) ? 100 : ((pos - 1) / 8) * 100;
+      elChickAnchor.style.left = pct + "%";
+    }
+
+    function chickShowStill(){
+      elChickStill.style.display = "";
+      elChickUp.style.display = "none";
+      elChickDown.style.display = "none";
+    }
+
+    async function playChickVideo(which){
+      // which: "up" | "down"
+      lockInput = true;
+      elChickStill.style.display = "none";
+      const vid = which === "up" ? elChickUp : elChickDown;
+      const other = which === "up" ? elChickDown : elChickUp;
+      other.pause();
+      other.currentTime = 0;
+      other.style.display = "none";
+      vid.style.display = "";
+      vid.currentTime = 0;
+
+      try{
+        await vid.play();
+      }catch(e){
+        // If autoplay blocked, just fall back to still
+        vid.pause();
+        vid.style.display = "none";
+        chickShowStill();
+        lockInput = false;
+        return;
+      }
+
+      await new Promise(resolve => {
+        const onEnd = () => {
+          vid.removeEventListener("ended", onEnd);
+          resolve();
+        };
+        vid.addEventListener("ended", onEnd);
+        // safety timeout
+        setTimeout(resolve, 1400);
+      });
+
+      vid.pause();
+      vid.style.display = "none";
+      chickShowStill();
+      lockInput = false;
+    }
+
+    function shouldChickStandStillForRound(round){
+      if(!round) return true;
+      if(round.type === "look") return true;
+      if(round.neededHelp) return true;
+      if(state.helpDebt > 0) return true;
+      return false;
+    }
+
+    /* =========================
+       Teacher mode
+    ========================== */
+    let teacherIdleTimer = null;
+
+    function resetTeacherIdle(){
+      if(teacherIdleTimer) clearTimeout(teacherIdleTimer);
+      teacherIdleTimer = setTimeout(closeTeacherMode, 25000);
+    }
+
+    function openTeacherMode(){
+      elTeacherOverlay.style.display = "flex";
+      elTeacherOverlay.setAttribute("aria-hidden","false");
+      refreshTeacherStatus();
+      resetTeacherIdle();
+    }
+    function closeTeacherMode(){
+      elTeacherOverlay.style.display = "none";
+      elTeacherOverlay.setAttribute("aria-hidden","true");
+      if(teacherIdleTimer) clearTimeout(teacherIdleTimer);
+      teacherIdleTimer = null;
+    }
+
+    btnCloseTeacher.addEventListener("click", closeTeacherMode);
+
+    elTeacherOverlay.addEventListener("pointerdown", resetTeacherIdle, {passive:true});
+    elTeacherOverlay.addEventListener("pointermove", resetTeacherIdle, {passive:true});
+    elTeacherOverlay.addEventListener("pointerup", resetTeacherIdle, {passive:true});
+
+    btnReset.addEventListener("click", () => {
+      Object.assign(state, {
+        sessionId: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2),
+        startedAt: new Date().toISOString(),
+        endedAt: null,
+        pos: 1,
+        stability: 0,
+        helpDebt: 0,
+        forcedHelpRounds: 0,
+        startLookRoundsRemaining: 2,
+        lastRoundType: null,
+        lastRoundWasWrong: false,
+        lastRTms: null,
+        numStability: Array.from({length: 10}, () => 0),
+        rounds: [],
+        observations: []
+      });
+      moveChickToPos(state.pos);
+      closeTeacherMode();
+      startNextRound();
+    });
+
+    btnToPos9.addEventListener("click", async () => {
+      state.pos = 9;
+      state.stability = 60;
+      state.helpDebt = 0;
+      state.forcedHelpRounds = 0;
+      state.startLookRoundsRemaining = 0;
+      moveChickToPos(state.pos);
+      closeTeacherMode();
+      startNextRound();
+    });
+
+    btnExport.addEventListener("click", () => {
+      state.endedAt = new Date().toISOString();
+      state.observations = buildObservations();
+
+      const payload = {
+        sessionId: state.sessionId,
+        startedAt: state.startedAt,
+        endedAt: state.endedAt,
+        start: { pos: 1 },
+        end: { pos: state.pos },
+        rounds: state.rounds,
+        observations: state.observations
+      };
+
+      const text = JSON.stringify(payload, null, 2);
+      const blob = new Blob([text], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const stamp = new Date();
+      const y = stamp.getFullYear();
+      const m = String(stamp.getMonth() + 1).padStart(2, "0");
+      const d = String(stamp.getDate()).padStart(2, "0");
+      const hh = String(stamp.getHours()).padStart(2, "0");
+      const mm = String(stamp.getMinutes()).padStart(2, "0");
+      const ss = String(stamp.getSeconds()).padStart(2, "0");
+      const filename = `slimkijken_session_${y}${m}${d}_${hh}${mm}${ss}.json`;
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+      resetTeacherIdle();
+    });
+
+    function refreshTeacherStatus(){
+      const unlocked = [];
+      for(let n=1; n<=6; n++){
+        if(isVariantUnlocked(n)) unlocked.push(String(n));
+      }
+      const txt =
+`pos: ${state.pos}
+stability: ${state.stability}
+helpDebt: ${state.helpDebt}
+forcedHelpRounds: ${state.forcedHelpRounds}
+startLookRoundsRemaining: ${state.startLookRoundsRemaining}
+lastRound: ${state.lastRoundType || "-"}
+lastRTms: ${state.lastRTms == null ? "-" : Math.round(state.lastRTms)}
+unlocked variants: ${unlocked.length ? unlocked.join(", ") : "(nog niet)"}`;
+      elTeacherStatus.textContent = txt;
+    }
+
+    function buildObservations(){
+      const rounds = state.rounds.filter(r => r.type !== "look");
+      const rts = rounds.filter(r => typeof r.rtMs === "number").map(r => r.rtMs);
+      const avg = rts.length ? Math.round(rts.reduce((a,b)=>a+b,0)/rts.length) : null;
+
+      const helped = state.rounds.filter(r => r.neededHelp).length;
+      const wrongs = state.rounds.filter(r => r.type !== "look" && r.correct === false).length;
+
+      const lines = [];
+      if(avg != null){
+        if(avg < 1200) lines.push("Reageert vaak vlot, keuzes komen meestal snel.");
+        else if(avg < 2000) lines.push("Neemt even de tijd om te kijken, maar kiest meestal zelfstandig.");
+        else lines.push("Kijkt lang en zorgvuldig, extra rust helpt.");
+      }else{
+        lines.push("Speelde vooral kijkrondes, rustig kennismaken met patronen.");
+      }
+
+      if(helped === 0) lines.push("Had weinig extra hulp nodig in deze sessie.");
+      else lines.push("Had af en toe extra hulp nodig, het spel schakelde naar rustiger rondes.");
+
+      if(wrongs === 0 && rounds.length > 3) lines.push("Koppelt hoeveelheden meestal direct aan het juiste antwoord.");
+      else if(wrongs > 0) lines.push("Bij twijfel helpt het om eerst het grootste groepje te benoemen.");
+
+      if(state.pos >= 9) lines.push("Bereikte de Marbotic fase en oefende met symbool en hoeveelheid.");
+      else lines.push("Werkte aan direct zien en handig samenstellen tot en met 9.");
+
+      return lines.slice(0, 5);
+    }
+
+    /* Long press on title */
+    (function installLongPress(){
+      let timer = null;
+      let startX = 0;
+      let startY = 0;
+      let activeId = null;
+
+      function clear(){
+        if(timer) clearTimeout(timer);
+        timer = null;
+        activeId = null;
+      }
+
+      elTitle.addEventListener("pointerdown", (e) => {
+        if(elTeacherOverlay.style.display === "flex") return;
+        activeId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+        timer = setTimeout(() => openTeacherMode(), HOLD_MS);
+      });
+
+      elTitle.addEventListener("pointermove", (e) => {
+        if(activeId !== e.pointerId || !timer) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if(Math.hypot(dx, dy) > MAX_MOVE_PX) clear();
+      });
+
+      elTitle.addEventListener("pointerup", clear);
+      elTitle.addEventListener("pointercancel", clear);
+    })();
+
+    /* =========================
+       Asset helpers
+    ========================== */
+    function diceSrc(filename){
+      return ASSETS.diceBase + filename;
+    }
+
+    function isVariantUnlocked(n){
+      if(n < 2 || n > 6) return false;
+      return state.numStability[n] >= 60;
+    }
+
+    function chooseAssetForNumber(n, role, allowVariant){
+      // role: "question" | "correct" | "distractor" | "buildEnd"
+      // Hard rules:
+      // - correct answer always canonical
+      // - max one variant per answer set (enforced outside)
+      // - 5 never as flash question
+      // - 7..9 never as single dice
+      const pack = DICE[n];
+      if(!pack) return null;
+
+      if(role === "correct"){
+        return pick(pack.canonical);
+      }
+
+      if(role === "buildEnd"){
+        // For 5 end image, use 5a by default
+        return pack.canonical[0] || pack.variants[0] || null;
+      }
+
+      if(allowVariant && role === "distractor" && pack.variants.length && isVariantUnlocked(n)){
+        return pick(pack.variants);
+      }
+
+      // default canonical
+      return pick(pack.canonical) || (pack.variants.length ? pack.variants[0] : null);
+    }
+
+    /* =========================
+       Round generation
+    ========================== */
+    function marboticEligible(){
+      return state.pos === 9 && state.stability >= 60 && state.helpDebt === 0;
+    }
+
+    function startPhaseLookRequired(){
+      return state.startLookRoundsRemaining > 0;
+    }
+
+    function forcedLookAfterWrongChoose(){
+      return state.lastRoundType === "choose" && state.lastRoundWasWrong === true;
+    }
+
+    function forcedHelpRoundRequired(){
+      return state.forcedHelpRounds > 0;
+    }
+
+    function roundTypeByStability(){
+      // Stability bands
+      const s = state.stability;
+
+      function weightedPick(list){
+        // list: [{t:"look", w:60}, ...]
+        const total = list.reduce((a,b)=>a+b.w,0);
+        let r = Math.random() * total;
+        for(const it of list){
+          r -= it.w;
+          if(r <= 0) return it.t;
+        }
+        return list[list.length - 1].t;
+      }
+
+      if(s <= 35){
+        return weightedPick([{t:"look", w:60},{t:"think", w:40}]);
+      }
+      if(s <= 70){
+        return weightedPick([{t:"look", w:25},{t:"think", w:45},{t:"choose", w:30}]);
+      }
+      return weightedPick([{t:"look", w:15},{t:"think", w:30},{t:"choose", w:55}]);
+    }
+
+    function generateRound(){
+      // Priority 1: Marbotic
+      if(marboticEligible()){
+        return makeMarboticRound(false);
+      }
+
+      // Priority 2: start phase
+      if(startPhaseLookRequired()){
+        state.startLookRoundsRemaining -= 1;
+        return makeLookRound({maxTotal: 4, canonicalOnly: true});
+      }
+
+      // Priority 3: recovery after wrong choose
+      if(forcedLookAfterWrongChoose()){
+        return makeLookRound({maxTotal: clamp(state.pos + 2, 4, 6), canonicalOnly: true});
+      }
+
+      // Priority 4: forced help after moving back
+      if(forcedHelpRoundRequired()){
+        state.forcedHelpRounds -= 1;
+        // pos 1-2: prefer look to keep it calm
+        if(state.pos <= 2) return makeLookRound({maxTotal: 4, canonicalOnly: true, neededHelp: true});
+        return makeThinkRound({neededHelp: true});
+      }
+
+      // Normal selection
+      const t = roundTypeByStability();
+      if(t === "look") return makeLookRound({maxTotal: maxTotalForPos(state.pos), canonicalOnly: state.pos <= 2});
+      if(t === "think") return makeThinkRound({neededHelp: false});
+      return makeChooseRound({neededHelp: false});
+    }
+
+    function maxTotalForPos(pos){
+      if(pos <= 1) return 3;
+      if(pos <= 2) return 4;
+      if(pos <= 3) return 4;
+      if(pos <= 4) return 5;
+      if(pos <= 5) return 6;
+      if(pos <= 6) return 7;
+      return 9;
+    }
+
+    function allowedTotalsForPos(pos){
+      const m = maxTotalForPos(pos);
+      const list = [];
+      for(let n=1; n<=m; n++) list.push(n);
+      return list;
+    }
+
+    function makeQuestionSpecForPos(pos, opts){
+      // Returns {kind:"single"|"sum", groups:[a] or [a,b], total, buildUp?:{flashGroup, flashMs, endMs}}
+      // opts: {maxTotal, canonicalOnly, mustBuildTo5}
+      const maxTotal = opts.maxTotal ?? maxTotalForPos(pos);
+
+      // POS 4 and sometimes: build to 5 (4 -> 5)
+      const shouldBuildTo5 = (pos === 4 && Math.random() < 0.55) || opts.mustBuildTo5 === true;
+
+      if(shouldBuildTo5 && maxTotal >= 5){
+        // Build: flash 4, end 5
+        return {
+          kind: "single",
+          groups: [5],
+          total: 5,
+          buildUp: { flashGroup: 4, flashMs: 650, endMs: 900 }
+        };
+      }
+
+      // POS 5 and later: compositions
+      const allowSums = pos >= 5 && maxTotal >= 6;
+
+      if(allowSums && Math.random() < 0.65){
+        // choose a target total in range 6..maxTotal
+        const tMin = Math.min(6, maxTotal);
+        const total = randInt(tMin, maxTotal);
+
+        const pairs = sumPairsForPos(pos, total);
+        const pair = pick(pairs);
+
+        // POS 8: biggest first
+        let a = pair[0], b = pair[1];
+        if(pos >= 8){
+          if(b > a) [a,b] = [b,a];
+        }else{
+          // often biggest first from POS 7, mild push
+          if(pos >= 7 && Math.random() < 0.7 && b > a) [a,b] = [b,a];
+        }
+
+        return {
+          kind: "sum",
+          groups: [a,b],
+          total
+        };
+      }
+
+      // Single totals 1..maxTotal but never flash 5, handled above
+      let total = randInt(1, maxTotal);
+      if(total === 5 && pos <= 4){
+        total = 4; // keep early phase steady
+      }
+      return {
+        kind: "single",
+        groups: [total],
+        total
+      };
+    }
+
+    function sumPairsForPos(pos, total){
+      // ensure groups are within 1..6, no 7..9 single dice
+      const pairs = [];
+      for(let a=1; a<=6; a++){
+        for(let b=1; b<=6; b++){
+          if(a + b === total){
+            // POS 5 guide: 3+3,4+2 frequently
+            pairs.push([a,b]);
+          }
+        }
+      }
+      // filter based on anchor guidance
+      if(pos === 5){
+        const preferred = pairs.filter(p => (p[0]===3 && p[1]===3) || (p[0]===4 && p[1]===2) || (p[0]===2 && p[1]===4));
+        if(preferred.length) return preferred;
+      }
+      if(pos === 6){
+        const anchored = pairs.filter(p => p[0]===4 || p[1]===4);
+        if(anchored.length) return anchored;
+      }
+      if(pos === 7){
+        const anchored = pairs.filter(p => p[0]===5 || p[1]===5 || p[0]===6 || p[1]===6);
+        if(anchored.length) return anchored;
+      }
+      // else
+      return pairs.length ? pairs : [[Math.min(6,total-1), Math.max(1,total - Math.min(6,total-1))]];
+    }
+
+    function randInt(a,b){
+      return Math.floor(Math.random() * (b - a + 1)) + a;
+    }
+
+    function makeLookRound(opts){
+      const maxTotal = opts.maxTotal ?? maxTotalForPos(state.pos);
+      const canonicalOnly = !!opts.canonicalOnly;
+      const neededHelp = !!opts.neededHelp;
+
+      const q = makeQuestionSpecForPos(state.pos, {maxTotal});
+      // hard rule: 5 never as flash, only build
+      if(q.kind === "single" && q.total === 5 && !q.buildUp){
+        // convert to build up
+        q.buildUp = {flashGroup: 4, flashMs: 650, endMs: 900};
+      }
+
+      return {
+        type: "look",
+        neededHelp,
+        question: q,
+        canonicalOnly,
+        showMs: 900
+      };
+    }
+
+    function makeThinkRound(opts){
+      const neededHelp = !!opts.neededHelp;
+      const maxTotal = maxTotalForPos(state.pos);
+      const q = makeQuestionSpecForPos(state.pos, {maxTotal});
+
+      const correct = q.total;
+      const distractor = chooseNearbyNumber(correct, maxTotal);
+
+      const options = buildAnswerOptions([correct, distractor], {correct, canonicalOnly: false});
+      return {
+        type: "think",
+        neededHelp,
+        question: q,
+        options,
+        correct
+      };
+    }
+
+    function chooseNearbyNumber(correct, maxTotal){
+      const candidates = [];
+      for(let n=1; n<=maxTotal; n++){
+        if(n !== correct) candidates.push(n);
+      }
+      // prefer close distractor
+      candidates.sort((a,b)=> (Math.abs(a-correct) - Math.abs(b-correct)));
+      const top = candidates.slice(0, Math.min(4, candidates.length));
+      return pick(top);
+    }
+
+    function makeChooseRound(opts){
+      const neededHelp = !!opts.neededHelp;
+      const maxTotal = maxTotalForPos(state.pos);
+      const q = makeQuestionSpecForPos(state.pos, {maxTotal});
+
+      const correct = q.total;
+      const pool = [];
+      for(let n=1; n<=maxTotal; n++) if(n !== correct) pool.push(n);
+
+      const numOptions = (state.pos <= 2) ? 2 : 3;
+      shuffle(pool);
+      const distractors = pool.slice(0, numOptions - 1);
+
+      const options = buildAnswerOptions([correct, ...distractors], {correct, canonicalOnly: false});
+      return {
+        type: "choose",
+        neededHelp,
+        question: q,
+        options,
+        correct
+      };
+    }
+
+    function buildAnswerOptions(numbers, {correct, canonicalOnly}){
+      // correct always canonical
+      // max one variant asset per set, only on a distractor, only if unlocked
+      const allowVariant = !canonicalOnly;
+      let variantUsed = false;
+
+      const opts = numbers.map(n => {
+        let role = (n === correct) ? "correct" : "distractor";
+        let allow = false;
+
+        if(role === "distractor" && allowVariant && !variantUsed){
+          // only one distractor can be variant
+          allow = true;
+        }
+
+        const filename = chooseAssetForNumber(n, role, allow);
+        if(role === "distractor" && allow && filename && DICE[n] && DICE[n].variants.includes(filename)){
+          variantUsed = true;
+        }
+
+        return { n, filename };
+      });
+
+      // if a distractor got a variant, ensure no other distractor uses variant
+      // handled by variantUsed flag
+
+      return shuffle(opts);
+    }
+
+    function makeMarboticRound(isHelpRepeat){
+      const target = randInt(1, 9);
+      // Never show single dice for 7..9, use sum visuals as quantity prompt for flash and confirm
+      // For prompt, we show quantity as groups
+      let qSpec = null;
+      if(target <= 6){
+        qSpec = { kind: "single", groups: [target], total: target };
+      }else{
+        // choose a pair
+        const pairs = sumPairsForPos(8, target);
+        const pair = pick(pairs);
+        let a = pair[0], b = pair[1];
+        if(b > a) [a,b] = [b,a];
+        qSpec = { kind: "sum", groups: [a,b], total: target };
+      }
+
+      return {
+        type: "marbotic",
+        neededHelp: !!isHelpRepeat,
+        question: qSpec,
+        attempts: 0,
+        maxAttempts: 3,
+        promptMs: isHelpRepeat ? 1400 : 700,
+        targetDigit: target,
+        recognizedDigit: null
+      };
+    }
+
+    /* =========================
+       Rendering
+    ========================== */
+    function clearOptions(){
+      elOptions.innerHTML = "";
+    }
+
+    function setOptionsDisabled(disabled){
+      [...elOptions.querySelectorAll("button")].forEach(b => b.disabled = disabled);
+    }
+
+    function renderDiceInto(container, n, role, allowVariant){
+      const filename = chooseAssetForNumber(n, role, allowVariant);
+      if(!filename){
+        container.textContent = "";
+        return;
+      }
+      const img = document.createElement("img");
+      img.alt = "";
+      img.src = diceSrc(filename);
+      container.appendChild(img);
+    }
+
+    function renderQuestion(spec, opts){
+      elQuestionWrap.innerHTML = "";
+      setHint("", false);
+
+      const isMarboticScan = opts && opts.scanSurface;
+
+      if(isMarboticScan){
+        // Build scan surface
+        const surface = document.createElement("div");
+        surface.className = "scanSurface fadeIn";
+        surface.id = "scanSurface";
+
+        const canvas = document.createElement("canvas");
+        canvas.className = "dotsCanvas";
+        canvas.id = "dotsCanvas";
+        surface.appendChild(canvas);
+
+        const hint = document.createElement("div");
+        hint.className = "scanHint";
+        hint.id = "scanHint";
+        hint.textContent = "Leg een cijfer op het vlak.";
+        surface.appendChild(hint);
+
+        elQuestionWrap.appendChild(surface);
+        return;
+      }
+
+      const row = document.createElement("div");
+      row.className = "groupRow fadeIn";
+
+      if(spec.kind === "single"){
+        const g = document.createElement("div");
+        g.className = "group";
+        const role = (opts && opts.role) ? opts.role : "question";
+        const allowVariant = (opts && opts.allowVariant) ? true : false;
+        renderDiceInto(g, spec.groups[0], role, allowVariant);
+        row.appendChild(g);
+      }else{
+        const [a,b] = spec.groups;
+        const g1 = document.createElement("div");
+        const g2 = document.createElement("div");
+        g1.className = "group";
+        g2.className = "group";
+        // in sums, question groups are always canonical to reduce confusion
+        renderDiceInto(g1, a, "question", false);
+        renderDiceInto(g2, b, "question", false);
+        row.appendChild(g1);
+        row.appendChild(g2);
+      }
+
+      elQuestionWrap.appendChild(row);
+    }
+
+    function renderOptions(optionList, correct){
+      clearOptions();
+
+      const cols = optionList.length === 2 ? 2 : 3;
+      elOptions.style.gridTemplateColumns = "repeat(" + cols + ", 1fr)";
+
+      optionList.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "optBtn fadeIn";
+        btn.type = "button";
+
+        const inner = document.createElement("div");
+        inner.className = "mini";
+        btn.appendChild(inner);
+
+        const img = document.createElement("img");
+        img.alt = "";
+        img.src = diceSrc(opt.filename);
+        inner.appendChild(img);
+
+        btn.addEventListener("click", () => {
+          if(lockInput) return;
+          handleAnswer(opt.n);
+        });
+
+        elOptions.appendChild(btn);
+      });
+
+      // RT starts when options are ready
+      rtStart = nowMs();
+    }
+
+    async function renderLookRound(round){
+      setHeadersForRound("look");
+      clearOptions();
+      setOptionsDisabled(true);
+
+      // ballerina still in look rounds
+      chickShowStill();
+
+      // Build up rule for 5: flash then end
+      if(round.question.buildUp){
+        const flashN = round.question.buildUp.flashGroup;
+        const endN = round.question.total;
+
+        // flash
+        renderQuestion({kind:"single", groups:[flashN], total:flashN}, {role:"question", allowVariant:false});
+        await sleep(round.question.buildUp.flashMs);
+
+        // end
+        renderQuestion({kind:"single", groups:[endN], total:endN}, {role:"question", allowVariant:false});
+        await sleep(round.question.buildUp.endMs);
+      }else{
+        renderQuestion(round.question, {role:"question", allowVariant:false});
+        await sleep(round.showMs);
+      }
+
+      // Auto advance, no RT
+      finishRound({correct: true, rtMs: null, selected: null});
+    }
+
+    async function renderThinkOrChoose(round){
+      setHeadersForRound(round.type);
+      renderQuestion(round.question, {role:"question", allowVariant:false});
+      renderOptions(round.options, round.correct);
+
+      // ballerina stand still if neededHelp or helpDebt > 0
+      if(shouldChickStandStillForRound(round)) chickShowStill();
+    }
+
+    async function renderMarbotic(round){
+      setHeadersForRound("marbotic");
+      clearOptions();
+
+      // Step 1: show quantity prompt for promptMs
+      renderQuestion(round.question, {role:"question", allowVariant:false});
+      setHint("", false);
+      chickShowStill();
+
+      await sleep(round.promptMs);
+
+      // Step 2: show scan surface
+      renderQuestion(round.question, {scanSurface:true});
+      setHint("", false);
+
+      const surface = document.getElementById("scanSurface");
+      const hint = document.getElementById("scanHint");
+      const canvas = document.getElementById("dotsCanvas");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas(){
+        const rect = surface.getBoundingClientRect();
+        canvas.width = Math.round(rect.width * devicePixelRatio);
+        canvas.height = Math.round(rect.height * devicePixelRatio);
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // RT starts when scan becomes active
+      rtStart = nowMs();
+
+      const scanSession = createScanSession({surface, hint, canvas, ctx});
+      scanSession.onDigit = async (digit) => {
+        if(lockInput) return;
+        if(activeRound !== round) return;
+
+        if(digit == null) return; // unknown, ignore
+        round.recognizedDigit = digit;
+
+        if(digit === round.targetDigit){
+          // confirmation: show quantity again briefly
+          setHint("", false);
+          scanSession.disable();
+          await showConfirmQuantity(round.question);
+          finishRound({correct: true, rtMs: computeRT(), selected: digit});
+        }else{
+          // neutral retry
+          round.attempts += 1;
+          scanSession.resetLatch();
+
+          if(round.attempts >= round.maxAttempts){
+            // help repeat
+            scanSession.disable();
+            window.removeEventListener("resize", resizeCanvas);
+            activeRound = null;
+
+            // log this as wrong outcome for current round
+            finishRound({correct: false, rtMs: computeRT(), selected: digit, preventNextStart:true});
+
+            // start the same marbotic round in help mode
+            setTimeout(() => {
+              startSpecificRound(makeMarboticRound(true));
+            }, 260);
+          }else{
+            hint.textContent = "Even opnieuw, rustig kijken.";
+          }
+        }
+      };
+
+      scanSession.enable();
+
+      // store cleanup on round end
+      round._cleanup = () => {
+        scanSession.disable();
+        window.removeEventListener("resize", resizeCanvas);
+      };
+    }
+
+    async function showConfirmQuantity(qSpec){
+      // brief confirmation, 700 ms
+      renderQuestion(qSpec, {role:"question", allowVariant:false});
+      await sleep(700);
+    }
+
+    function computeRT(){
+      if(rtStart == null) return null;
+      const v = nowMs() - rtStart;
+      state.lastRTms = v;
+      return v;
+    }
+
+    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    /* =========================
+       Scan recognition (Marbotic)
+       Based on doc approach: 3 points, feature vector, nearest neighbor, thresholds
+    ========================== */
+    let calibration = {
+      expectedTouchPoints: 3,
+      samplesByDigit: {} // digit -> [{points:[{x,y}...], features:[...]}]
+    };
+    let thresholds = { base: 0.20, unknown: 0.28 }; // will be recomputed if calibration has data
+
+    async function loadCalibration(){
+      try{
+        const res = await fetch(ASSETS.calibration, { cache: "no-store" });
+        if(!res.ok) throw new Error("calibration fetch failed");
+        const data = await res.json();
+        if(data && typeof data.expectedTouchPoints === "number"){
+          calibration.expectedTouchPoints = data.expectedTouchPoints;
+        }
+        if(data && data.samplesByDigit){
+          calibration.samplesByDigit = data.samplesByDigit;
+        }
+      }catch(e){
+        // keep defaults
+      }
+      preprocessCalibration();
+      buildScanSimButtonsIfNeeded();
+    }
+
+    function preprocessCalibration(){
+      // ensure features exist
+      for(const k of Object.keys(calibration.samplesByDigit || {})){
+        const arr = calibration.samplesByDigit[k] || [];
+        for(const s of arr){
+          if(!s.points || !Array.isArray(s.points) || s.points.length < 3) continue;
+          if(!s.features) s.features = buildFeatureVector(s.points);
+        }
+      }
+      recomputeThresholds();
+    }
+
+    function distance(a, b){
+      let sum = 0;
+      const n = Math.min(a.length, b.length);
+      for(let i=0; i<n; i++){
+        const d = a[i] - b[i];
+        sum += d * d;
+      }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeThresholds(){
+      // Compute average intra digit distances to set base threshold
+      const all = [];
+      const allSamples = [];
+      for(const digit of Object.keys(calibration.samplesByDigit || {})){
+        const arr = calibration.samplesByDigit[digit] || [];
+        for(const s of arr){
+          if(s.features) allSamples.push({digit: Number(digit), features: s.features});
+        }
+      }
+      if(allSamples.length < 6){
+        thresholds.base = 0.22;
+        thresholds.unknown = 0.30;
+        return;
+      }
+
+      const dists = [];
+      for(let i=0; i<allSamples.length; i++){
+        for(let j=i+1; j<allSamples.length; j++){
+          const di = allSamples[i].digit, dj = allSamples[j].digit;
+          const dist = distance(allSamples[i].features, allSamples[j].features);
+          if(di === dj) dists.push(dist);
+        }
+      }
+      if(dists.length < 4){
+        thresholds.base = 0.22;
+        thresholds.unknown = 0.30;
+        return;
+      }
+      dists.sort((a,b)=>a-b);
+      const median = dists[Math.floor(dists.length * 0.5)];
+      thresholds.base = clamp(median * 1.85, 0.14, 0.36);
+      thresholds.unknown = clamp(thresholds.base * 1.22, 0.18, 0.46);
+    }
+
+    function normalizePoints(points){
+      // points: [{x,y}...] in surface normalized 0..1
+      // sort points by x then y
+      const pts = points.slice().sort((p,q) => (p.x - q.x) || (p.y - q.y));
+      return pts;
+    }
+
+    function triangleSide(a,b){
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.hypot(dx, dy);
+    }
+
+    function buildFeatureVector(points){
+      // Expect 3 points
+      const pts = normalizePoints(points);
+      if(pts.length < 3) return [1,1,1, 0,0, 0,0,0, 1];
+
+      const p0 = pts[0], p1 = pts[1], p2 = pts[2];
+
+      // Sides
+      const s01 = triangleSide(p0,p1);
+      const s12 = triangleSide(p1,p2);
+      const s02 = triangleSide(p0,p2);
+
+      const sides = [s01, s12, s02].sort((a,b)=>a-b);
+      const maxSide = Math.max(sides[2], 1e-6);
+      const minSide = Math.max(sides[0], 1e-6);
+
+      const ratio1 = sides[0]/maxSide;
+      const ratio2 = sides[1]/maxSide;
+      const ratio3 = sides[2]/maxSide; // always 1
+
+      // orientation: signed area
+      const area2 = (p1.x-p0.x)*(p2.y-p0.y) - (p1.y-p0.y)*(p2.x-p0.x);
+      const orientation = Math.tanh(area2 * 4.5); // keep bounded
+
+      // angle cos at middle point p1
+      const v1x = p0.x - p1.x, v1y = p0.y - p1.y;
+      const v2x = p2.x - p1.x, v2y = p2.y - p1.y;
+      const dot = v1x*v2x + v1y*v2y;
+      const mag = Math.max(1e-6, Math.hypot(v1x,v1y) * Math.hypot(v2x,v2y));
+      const cosAngle = clamp(dot / mag, -1, 1);
+
+      // yNorm and xPattern
+      const ys = [p0.y, p1.y, p2.y].slice().sort((a,b)=>a-b);
+      const xs = [p0.x, p1.x, p2.x].slice().sort((a,b)=>a-b);
+      const ySpread = ys[2] - ys[0];
+      const xSpread = xs[2] - xs[0];
+
+      const yNorm = ySpread; // already 0..1-ish
+      const xPattern = (xs[1] - xs[0]) / Math.max(1e-6, xSpread);
+
+      // aspect
+      const aspect = xSpread / Math.max(1e-6, ySpread);
+
+      // weights are implicit by feature selection and later threshold
+      return [
+        ratio1, ratio2, ratio3,
+        orientation, cosAngle,
+        yNorm, xPattern, xSpread, ySpread,
+        aspect
+      ];
+    }
+
+    function recognizeDigit(points){
+      // points: normalized {x,y} length expectedTouchPoints
+      if(points.length !== calibration.expectedTouchPoints) return null;
+
+      const features = buildFeatureVector(points);
+
+      let best = {digit: null, dist: Infinity};
+      for(const k of Object.keys(calibration.samplesByDigit || {})){
+        const digit = Number(k);
+        const arr = calibration.samplesByDigit[k] || [];
+        for(const s of arr){
+          if(!s.features) continue;
+          const dist = distance(features, s.features);
+          if(dist < best.dist){
+            best = {digit, dist};
+          }
+        }
+      }
+
+      if(best.digit == null) return null;
+      if(best.dist > thresholds.base) return null;
+      return best.digit;
+    }
+
+    function createScanSession({surface, hint, canvas, ctx}){
+      let enabled = false;
+      let hasResultForCurrentTouches = false;
+
+      function surfaceRect(){
+        return surface.getBoundingClientRect();
+      }
+
+      function clearCanvas(){
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+
+      function drawPoints(normPts){
+        clearCanvas();
+        const rect = surfaceRect();
+        ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+        const w = rect.width, h = rect.height;
+
+        for(const p of normPts){
+          const x = p.x * w;
+          const y = p.y * h;
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(17,24,39,0.12)";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(17,24,39,0.20)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      function pointsFromTouches(e){
+        const rect = surfaceRect();
+        const touches = (e.touches && e.touches.length) ? Array.from(e.touches) : [];
+        const pts = [];
+        for(const t of touches){
+          const x = t.clientX, y = t.clientY;
+          if(x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) continue;
+          pts.push({ x: (x - rect.left) / rect.width, y: (y - rect.top) / rect.height });
+        }
+        return pts;
+      }
+
+      function onTouchStart(e){
+        if(!enabled) return;
+        if(lockInput) return;
+        hasResultForCurrentTouches = false;
+        const pts = pointsFromTouches(e);
+        if(pts.length === 0){
+          hint.textContent = "Leg een cijfer op het vlak.";
+          clearCanvas();
+          return;
+        }
+        drawPoints(pts);
+        if(pts.length !== calibration.expectedTouchPoints){
+          hint.textContent = "Even stil houden.";
+          return;
+        }
+        hint.textContent = "We lezen de puntjes.";
+      }
+
+      function onTouchMove(e){
+        if(!enabled) return;
+        if(lockInput) return;
+        const pts = pointsFromTouches(e);
+        if(pts.length === 0){
+          clearCanvas();
+          hint.textContent = "Leg een cijfer op het vlak.";
+          hasResultForCurrentTouches = false;
+          return;
+        }
+        drawPoints(pts);
+        if(pts.length !== calibration.expectedTouchPoints){
+          hint.textContent = "Even stil houden.";
+          hasResultForCurrentTouches = false;
+          return;
+        }
+        hint.textContent = "We lezen de puntjes.";
+      }
+
+      function onTouchEnd(e){
+        if(!enabled) return;
+        if(lockInput) return;
+        if(hasResultForCurrentTouches) return;
+
+        const pts = pointsFromTouches(e);
+        // touchend has fewer touches, use changedTouches fallback
+        let usePts = pts;
+        if(usePts.length !== calibration.expectedTouchPoints && e.changedTouches && e.changedTouches.length){
+          // attempt: combine remaining touches plus changed ones if inside
+          const rect = surfaceRect();
+          const all = [];
+          const addTouch = (t) => {
+            const x=t.clientX, y=t.clientY;
+            if(x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
+            all.push({ x: (x - rect.left)/rect.width, y: (y - rect.top)/rect.height });
+          };
+          Array.from(e.touches || []).forEach(addTouch);
+          Array.from(e.changedTouches || []).forEach(addTouch);
+          usePts = all;
+        }
+
+        if(usePts.length !== calibration.expectedTouchPoints){
+          hint.textContent = "Even stil houden.";
+          hasResultForCurrentTouches = false;
+          return;
+        }
+
+        const digit = recognizeDigit(usePts);
+        hasResultForCurrentTouches = true;
+
+        if(digit == null){
+          hint.textContent = "Nog even proberen.";
+          api.onDigit(null);
+        }else{
+          hint.textContent = "Ik zie een " + digit + ".";
+          api.onDigit(digit);
+        }
+      }
+
+      function onTouchCancel(){
+        if(!enabled) return;
+        hasResultForCurrentTouches = false;
+        hint.textContent = "Leg een cijfer op het vlak.";
+        clearCanvas();
+      }
+
+      const api = {
+        onDigit: (digit) => {},
+        enable: () => {
+          if(enabled) return;
+          enabled = true;
+          hasResultForCurrentTouches = false;
+          surface.addEventListener("touchstart", onTouchStart, {passive:true});
+          surface.addEventListener("touchmove", onTouchMove, {passive:true});
+          surface.addEventListener("touchend", onTouchEnd, {passive:true});
+          surface.addEventListener("touchcancel", onTouchCancel, {passive:true});
+        },
+        disable: () => {
+          if(!enabled) return;
+          enabled = false;
+          surface.removeEventListener("touchstart", onTouchStart);
+          surface.removeEventListener("touchmove", onTouchMove);
+          surface.removeEventListener("touchend", onTouchEnd);
+          surface.removeEventListener("touchcancel", onTouchCancel);
+        },
+        resetLatch: () => { hasResultForCurrentTouches = false; },
+        clear: () => { clearCanvas(); }
+      };
+      return api;
+    }
+
+    function buildScanSimButtonsIfNeeded(){
+      // If no calibration data, show sim buttons in teacher mode
+      let sampleCount = 0;
+      for(const k of Object.keys(calibration.samplesByDigit || {})){
+        sampleCount += (calibration.samplesByDigit[k] || []).length;
+      }
+      if(sampleCount >= 6){
+        elScanSimRow.style.display = "none";
+        elScanSimRow.innerHTML = "";
+        return;
+      }
+
+      elScanSimRow.style.display = "flex";
+      elScanSimRow.style.gap = "8px";
+      elScanSimRow.style.flexWrap = "wrap";
+      elScanSimRow.innerHTML = "";
+
+      const label = document.createElement("div");
+      label.style.fontSize = "13px";
+      label.style.opacity = "0.75";
+      label.style.marginTop = "6px";
+      label.textContent = "Simuleer scan:";
+      elScanSimRow.appendChild(label);
+
+      for(let n=1; n<=9; n++){
+        const b = document.createElement("button");
+        b.className = "tbtn soft";
+        b.textContent = String(n);
+        b.addEventListener("click", () => {
+          // Only affects active marbotic round
+          if(activeRound && activeRound.type === "marbotic"){
+            activeRound.recognizedDigit = n;
+            // simulate callback by calling handler directly
+            if(n === activeRound.targetDigit){
+              finishRound({correct:true, rtMs: computeRT(), selected:n});
+            }else{
+              activeRound.attempts += 1;
+              if(activeRound.attempts >= activeRound.maxAttempts){
+                finishRound({correct:false, rtMs: computeRT(), selected:n, preventNextStart:true});
+                setTimeout(() => startSpecificRound(makeMarboticRound(true)), 260);
+              }else{
+                setHint("Even opnieuw, rustig kijken.", true);
+              }
+            }
+          }
+          refreshTeacherStatus();
+          resetTeacherIdle();
+        });
+        elScanSimRow.appendChild(b);
+      }
+    }
+
+    /* =========================
+       Core game flow
+    ========================== */
+    function computeNeededHelpForRound(round){
+      // Hard definition:
+      // neededHelp true iff:
+      // - forcedHelpRounds was active (already set in round)
+      // - marbotic help repeat round
+      // - optional calm repeat in think after two slow, not implemented as separate repeat, so only these
+      return !!round.neededHelp;
+    }
+
+    function updateNumStabilityFromRound(round, result){
+      // Only when quantity involved and correct and neededHelp false
+      if(!result || result.correct !== true) return;
+      if(round.neededHelp) return;
+
+      const rt = result.rtMs;
+      let delta = 12;
+      if(rt != null){
+        if(rt < RT_FAST) delta = 20;
+        else if(rt < RT_MID) delta = 12;
+        else delta = 6;
+      }
+
+      // quantities involved
+      const q = round.question;
+      const groups = (q && q.groups) ? q.groups : [];
+      const uniq = Array.from(new Set(groups.map(Number)));
+      for(const n of uniq){
+        if(n < 1 || n > 9) continue;
+        state.numStability[n] = clamp(state.numStability[n] + delta, 0, 100);
+      }
+    }
+
+    async function applyOutcomeAndMaybeMove(round, result){
+      // Update order:
+      // 1 RT already captured
+      // 2 neededHelp update
+      const neededHelp = computeNeededHelpForRound(round);
+
+      if(neededHelp){
+        state.helpDebt += 1;
+        state.stability -= 15;
+      }
+
+      // 3 correctness update
+      if(result.correct === false){
+        state.helpDebt += 1;
+        state.stability -= 10;
+      }else{
+        const rt = result.rtMs;
+        if(rt == null){
+          // look rounds do not move stability
+        }else if(rt < RT_FAST){
+          state.stability += 20;
+        }else if(rt < RT_MID){
+          state.stability += 12;
+        }else{
+          state.stability += 6;
+        }
+      }
+
+      // 4 clamp stability
+      state.stability = clamp(state.stability, 0, 120);
+
+      // Update per quantity stability for variants
+      updateNumStabilityFromRound(round, result);
+
+      // 5 POS transition checks
+      if(state.stability >= STAB_UP_THRESHOLD && state.helpDebt === 0){
+        if(state.pos < 9){
+          state.pos += 1;
+          moveChickToPos(state.pos);
+          await playChickVideo("up");
+          state.stability = 0;
+        }else{
+          state.stability = 0;
+        }
+      }else if(state.helpDebt >= HELP_BACK_THRESHOLD){
+        if(state.pos > 1){
+          state.pos -= 1;
+          moveChickToPos(state.pos);
+          await playChickVideo("down");
+        }
+        state.helpDebt = 0;
+        state.forcedHelpRounds = 2;
+      }
+
+      // 6 last flags
+      state.lastRoundType = round.type;
+      state.lastRoundWasWrong = (round.type !== "look" && result.correct === false);
+
+      updateMicroStatus();
+      refreshTeacherStatus();
+    }
+
+    function logRound(round, result){
+      const q = round.question || {};
+      const entry = {
+        type: round.type,
+        pos: state.pos,
+        neededHelp: !!round.neededHelp,
+        correct: result.correct,
+        rtMs: result.rtMs == null ? null : Math.round(result.rtMs),
+        quantities: Array.isArray(q.groups) ? q.groups.slice() : [],
+        total: q.total ?? null,
+        selected: result.selected ?? null
+      };
+      state.rounds.push(entry);
+      // keep log bounded for performance
+      if(state.rounds.length > 220) state.rounds.shift();
+    }
+
+    async function finishRound(result){
+      // When preventNextStart is true, we only apply updates and do not start next round automatically
+      const round = activeRound;
+      if(!round) return;
+      lockInput = true;
+
+      // cleanup if needed
+      if(round._cleanup){
+        try{ round._cleanup(); }catch(e){}
+        round._cleanup = null;
+      }
+
+      const rtMs = (result.rtMs === undefined) ? computeRT() : result.rtMs;
+      const finalResult = Object.assign({}, result, { rtMs });
+
+      logRound(round, finalResult);
+      await applyOutcomeAndMaybeMove(round, finalResult);
+
+      activeRound = null;
+      rtStart = null;
+      lockInput = false;
+
+      if(finalResult.preventNextStart) return;
+
+      // After wrong choose, next will be forced look by generator
+      startNextRound();
+    }
+
+    function handleAnswer(n){
+      if(!activeRound) return;
+      if(activeRound.type !== "think" && activeRound.type !== "choose") return;
+
+      const rt = computeRT();
+      const correct = (n === activeRound.correct);
+
+      // No explicit wrong feedback, but we can show a gentle neutral hint very briefly
+      if(correct){
+        setHint("", false);
+      }else{
+        setHint("Nog een keer kijken.", true);
+        setTimeout(() => setHint("", false), 650);
+      }
+
+      // disable buttons right away
+      setOptionsDisabled(true);
+
+      finishRound({correct, rtMs: rt, selected: n});
+    }
+
+    function startSpecificRound(round){
+      if(lockInput) return;
+      activeRound = round;
+      updateMicroStatus();
+      setHeadersForRound(round.type);
+
+      // ballerina still in look and in help or helpDebt > 0
+      if(shouldChickStandStillForRound(round)) chickShowStill();
+
+      // Render based on round type
+      if(round.type === "look"){
+        renderLookRound(round);
+      }else if(round.type === "think" || round.type === "choose"){
+        renderThinkOrChoose(round);
+      }else{
+        renderMarbotic(round);
+      }
+
+      refreshTeacherStatus();
+    }
+
+    function startNextRound(){
+      if(lockInput) return;
+
+      // Hard rule: direct Marbotic when eligible, no extra phase
+      const round = generateRound();
+      startSpecificRound(round);
+    }
+
+    /* =========================
+       Startup
+    ========================== */
+    function unlockMedia(){
+      // Videos are muted and playsinline, still iOS can be picky, we attempt to play/pause quickly on user gesture
+      try{
+        elChickUp.muted = true;
+        elChickDown.muted = true;
+        // attempt play pause
+        elChickUp.play().then(()=>{ elChickUp.pause(); elChickUp.currentTime = 0; }).catch(()=>{});
+        elChickDown.play().then(()=>{ elChickDown.pause(); elChickDown.currentTime = 0; }).catch(()=>{});
+      }catch(e){}
+      window.removeEventListener("pointerdown", unlockMedia);
+    }
+    window.addEventListener("pointerdown", unlockMedia, {once:true});
+
+    moveChickToPos(state.pos);
+    updateMicroStatus();
+
+    loadCalibration().finally(() => {
+      startNextRound();
+    });
+
+  })();
+  </script>
+</body>
+</html>
