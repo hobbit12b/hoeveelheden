@@ -27,20 +27,6 @@
       --correctBorder: rgba(144, 204, 152, 0.70);
 
       --activeFill: rgba(229, 140, 116, 0.18);
-
-      /* ---------------------------------------------------------
-         AANPASSEN Y POSITIE VRAAGVAK (ALLEEN iPad HORIZONTAAL)
-         Zet dit bijvoorbeeld op -18px als het vraagvak omhoog moet,
-         of op 12px als het vraagvak omlaag moet
-      --------------------------------------------------------- */
-      --questionYOffsetLandscape: 0px;
-
-      /* ---------------------------------------------------------
-         AANPASSEN GROOTTE ANTWOORDKNOPPEN (ALLEEN iPad HORIZONTAAL)
-         Als knoppen soms buiten beeld vallen, maak dit kleiner,
-         bijvoorbeeld 104px of 98px
-      --------------------------------------------------------- */
-      --answerBtnSizeLandscape: 112px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -61,7 +47,11 @@
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
+      grid-template-rows: 1fr; /* FIX, voorkomt witte balk onderin */
       height: 100%;
+      position: relative;
+      overflow:hidden;
+      isolation:isolate;
     }
 
     @media (orientation: portrait){
@@ -80,14 +70,16 @@
       position: relative;
       overflow:hidden;
       min-height: 0;
+      z-index: 1;
     }
 
     .scan-surface{
       background:#ffffff;
       position: relative;
-      overflow:hidden;
       min-height: 0;
       transition: background 140ms ease;
+      z-index: 1;
+      overflow:hidden;
     }
 
     @media (orientation: landscape){
@@ -103,6 +95,8 @@
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .homeBtn,
@@ -152,6 +146,8 @@
       justify-content:center;
       padding: 10px 6px;
       min-height: 0;
+      position: relative;
+      overflow:hidden;
     }
 
     .gameCard{
@@ -168,13 +164,6 @@
       justify-content:center;
       padding: 18px;
       transform: translateY(0px);
-    }
-
-    /* iPad horizontaal, verplaats vraagvak met 1 variabele (betrouwbaar) */
-    @media (min-aspect-ratio: 4/3){
-      .gameCard{
-        transform: translateY(var(--questionYOffsetLandscape));
-      }
     }
 
     @media (orientation: portrait){
@@ -228,7 +217,6 @@
       z-index: 10;
     }
 
-    /* iPad horizontaal, iets minder padding zodat knoppen sneller passen */
     @media (min-aspect-ratio: 4/3){
       .scanStage{ padding: 12px; }
     }
@@ -280,15 +268,6 @@
     @media (orientation: landscape){
       .answersWrap{ width: min(360px, 92%); }
       .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
-    }
-
-    /* iPad horizontaal, maak knoppen voorspelbaar, zodat ze altijd in beeld blijven */
-    @media (min-aspect-ratio: 4/3){
-      .answers{ gap: 12px; }
-      .ansBtn{
-        width: min(var(--answerBtnSizeLandscape), 26vh);
-        padding: 8px;
-      }
     }
 
     .ansBtn:active{
@@ -366,13 +345,14 @@
       position: fixed;
       right: 18px;
       bottom: 18px;
-      width: min(620px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.98);
+      width: min(640px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.62);
+      backdrop-filter: blur(10px);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1200;
+      z-index: 2200;
       color: #4d4a48;
     }
     .tunePanel.hidden{ display:none; }
@@ -409,13 +389,13 @@
 
     .tuneRow{
       display:grid;
-      grid-template-columns: 170px 1fr 84px;
+      grid-template-columns: 170px 1fr 92px;
       gap: 10px;
       align-items:center;
       margin: 10px 0;
     }
     @media (max-width: 520px){
-      .tuneRow{ grid-template-columns: 130px 1fr 70px; }
+      .tuneRow{ grid-template-columns: 130px 1fr 84px; }
     }
 
     .tuneLabel{
@@ -457,7 +437,6 @@
     }
     .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
-    /* Kaarten, flip zoals jouw goede versie, hoeveelheden verschijnen na omdraaien */
     .cardWrap{
       width:100%;
       height:100%;
@@ -475,6 +454,7 @@
       transform-style: preserve-3d;
       -webkit-transform-style: preserve-3d;
       transition: transform 420ms cubic-bezier(.22,.61,.35,1);
+      transform: translateZ(0);
     }
 
     .cardBack,
@@ -508,6 +488,80 @@
       transform: rotateY(180deg);
       -webkit-transform: rotateY(180deg);
     }
+
+    /* Timeline overlay */
+    .timelineOverlay{
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      pointer-events:none;
+      user-select:none;
+      overflow: visible;
+      background: transparent;
+    }
+
+    .timelineGroup{
+      position:absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      pointer-events:none;
+    }
+
+    .progressTimeline{
+      position:absolute;
+      left: 0;
+      top: 0;
+      width: 520px; /* basis, wordt via transform geschaald */
+      height: auto;
+      z-index: 20;
+    }
+
+    .progressLine{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: fill;
+    }
+
+    .progressLine.levelsHidden{
+      opacity: 0;
+    }
+
+    .progressChickAnchor{
+      position:absolute;
+      left: 0;
+      top: 0;
+      transform: translateX(-50%);
+      width: 82px;
+      height: 82px;
+      pointer-events:none;
+      transition: left 520ms cubic-bezier(.22,.61,.35,1);
+      will-change: left, transform, top;
+    }
+    .progressChickAnchor.noMove{ transition: none !important; }
+
+    .chickLayer{
+      position:absolute;
+      left:0;
+      top:0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      pointer-events:none;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+      display:block;
+      object-fit: contain;
+    }
+    .chickLayer.active{ opacity: 1; }
+    .stillLayer{ z-index: 3; }
+    .animLayer{ z-index: 2; }
+
+    #animCanvas{ opacity:0; }
+    #animCanvas.active{ opacity:1; }
   </style>
 </head>
 
@@ -544,6 +598,20 @@
     </div>
   </section>
 
+  <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
+    <div class="timelineGroup" id="timelineGroup">
+      <div class="progressTimeline" id="timeline">
+        <img class="progressLine" id="levelsImg" src="levels.png" alt="" draggable="false">
+        <div class="progressChickAnchor" id="chickAnchor">
+          <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+          <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+          <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
     <div class="startCard">
       <h1>tik om te starten</h1>
@@ -566,6 +634,11 @@
       <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
         level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
       </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
+        <button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
+      </div>
     </div>
 
     <div class="tuneSection">
@@ -576,12 +649,6 @@
         <input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
         <div class="tuneValue" id="flashMsValue">300</div>
       </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">kijktijd kaarten</div>
-        <input type="range" id="previewMsRange" min="0" max="5000" step="100" value="1000" />
-        <div class="tuneValue" id="previewMsValue">1000</div>
-      </div>
     </div>
 
     <div class="tuneSection" style="padding-top:12px;">
@@ -589,6 +656,10 @@
         <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
         <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
+      </div>
+
+      <div class="tuneButtons" style="margin-top:10px;">
+        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
       </div>
     </div>
   </div>
@@ -602,32 +673,46 @@
       const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
+      const $ = (id) => document.getElementById(id);
 
-      const startOverlay = document.getElementById("startOverlay");
-      const startBtn = document.getElementById("startBtn");
+      const startOverlay = $("startOverlay");
+      const startBtn = $("startBtn");
 
-      const titlePill = document.getElementById("titlePill");
+      const titlePill = $("titlePill");
+      const gameCard = $("gameCard");
 
-      const homeBtn = document.getElementById("homeBtn");
-      const tuneBtn = document.getElementById("tuneBtn");
-      const tunePanel = document.getElementById("tunePanel");
-      const tuneClose = document.getElementById("tuneClose");
+      const homeBtn = $("homeBtn");
+      const tuneBtn = $("tuneBtn");
+      const tunePanel = $("tunePanel");
+      const tuneClose = $("tuneClose");
 
-      const flashMsRange = document.getElementById("flashMsRange");
-      const flashMsValue = document.getElementById("flashMsValue");
+      const flashMsRange = $("flashMsRange");
+      const flashMsValue = $("flashMsValue");
 
-      const previewMsRange = document.getElementById("previewMsRange");
-      const previewMsValue = document.getElementById("previewMsValue");
+      const tuneLevelValue = $("tuneLevelValue");
 
-      const tuneLevelValue = document.getElementById("tuneLevelValue");
+      const newRoundBtn = $("newRoundBtn");
+      const testWrongBtn = $("testWrongBtn");
+      const testGoodBtn = $("testGoodBtn");
 
-      const newRoundBtn = document.getElementById("newRoundBtn");
-      const testWrongBtn = document.getElementById("testWrongBtn");
-      const testGoodBtn = document.getElementById("testGoodBtn");
+      const levelUpBtn = $("levelUpBtn");
+      const levelDownBtn = $("levelDownBtn");
 
-      const flashSvg = document.getElementById("flashSvg");
-      const answersEl = document.getElementById("answers");
-      const scanArea = document.getElementById("scanArea");
+      const toggleLevelsBtn = $("toggleLevelsBtn");
+
+      const flashSvg = $("flashSvg");
+      const answersEl = $("answers");
+      const scanArea = $("scanArea");
+
+      const timelineGroup = $("timelineGroup");
+      const timeline = $("timeline");
+      const levelsImg = $("levelsImg");
+      const chickAnchor = $("chickAnchor");
+      const stillImg = $("stillImg");
+      const upVid = $("upVid");
+      const downVid = $("downVid");
+      const animCanvas = $("animCanvas");
+      const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
 
       const WAIT_BEFORE_IN_MS = 0;
       const IN_DUR_MS = 800;
@@ -635,7 +720,7 @@
 
       const PREVIEW_GAP_MS = 120;
 
-      let previewMs = previewMsRange ? Number(previewMsRange.value) : 1700;
+      let previewMs = 1700;
       let flashMs = Number(flashMsRange.value);
 
       let LEVEL = 1;
@@ -643,14 +728,19 @@
       let streakGood = 0;
       let streakBad = 0;
 
+      function isPortrait(){
+        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+      }
+
       function usesAnswerCards(){
         return LEVEL >= 2;
       }
 
       function setLevel(n){
-        LEVEL = clamp(n, 1, 5);
+        LEVEL = clamp(n, 1, 9);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -696,6 +786,7 @@
         }catch(e){}
       }
 
+      /* dobbelpunten */
       const P = {
         tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
         ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
@@ -923,14 +1014,10 @@
       function hideAnswers(){ answersEl.classList.add("answersHidden"); }
       function showAnswers(){ answersEl.classList.remove("answersHidden"); }
 
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-      }
-
       function slideVectorForButton(btn){
         const b = btn.getBoundingClientRect();
         const a = scanArea.getBoundingClientRect();
-        const extra = 10;
+        const extra = 16;
 
         if(isPortrait()){
           const seamY = a.top;
@@ -1072,6 +1159,539 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
+      /* =========================
+         TIMELINE auto fit
+         ========================= */
+
+      const LV_MIN = 1;
+      const LV_MAX = 9;
+
+      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
+      let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
+
+      let tlMeta = null;          // { leftFrac, rightFrac, baseFrac }
+      let chickEyeFrac = null;    // fractie 0..1
+      let baselineLocalY = 0;
+
+      function timelineReady(){
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
+      }
+
+      function lum(r,g,b){
+        return 0.2126*r + 0.7152*g + 0.0722*b;
+      }
+
+      function safeDefaultTlMeta(){
+        return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
+      }
+
+      function analyzeLevelsPng(imgEl){
+        try{
+          const w = imgEl.naturalWidth || 0;
+          const h = imgEl.naturalHeight || 0;
+          if(!w || !h) return safeDefaultTlMeta();
+
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(imgEl, 0, 0);
+
+          const img = ctx.getImageData(0, 0, w, h);
+          const d = img.data;
+
+          const yStart = Math.floor(h * 0.55);
+          let bestY = Math.floor(h * 0.85);
+          let bestCount = -1;
+
+          for(let y=yStart; y<h; y++){
+            let c = 0;
+            const row = y * w * 4;
+            for(let x=0; x<w; x++){
+              const i = row + x*4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L > 245) continue;
+              c++;
+            }
+            if(c > bestCount){
+              bestCount = c;
+              bestY = y;
+            }
+          }
+
+          const col = new Array(w).fill(0);
+          let maxC = 0;
+
+          const yBot = Math.floor(h * 0.55);
+          for(let x=0; x<w; x++){
+            let c = 0;
+            for(let y=yBot; y<h; y++){
+              const i = (y*w + x) * 4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L > 245) continue;
+              c++;
+            }
+            col[x] = c;
+            if(c > maxC) maxC = c;
+          }
+
+          const thresh = maxC * 0.70;
+          const xs = [];
+          for(let x=0; x<w; x++){
+            if(col[x] >= thresh) xs.push(x);
+          }
+
+          let clusters = [];
+          if(xs.length){
+            let s = xs[0], p = xs[0];
+            for(let i=1;i<xs.length;i++){
+              const x = xs[i];
+              if(x === p + 1){ p = x; continue; }
+              clusters.push([s,p]);
+              s = x; p = x;
+            }
+            clusters.push([s,p]);
+          }
+
+          const maxClusterW = w * 0.06;
+          clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
+
+          let leftX = w * 0.06;
+          let rightX = w * 0.94;
+
+          if(clusters.length >= 2){
+            leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
+            rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
+          }else if(xs.length >= 2){
+            leftX = xs[Math.floor(xs.length * 0.02)];
+            rightX = xs[Math.floor(xs.length * 0.98)];
+          }
+
+          leftX = clamp(leftX, w*0.01, w*0.45);
+          rightX = clamp(rightX, w*0.55, w*0.99);
+
+          return {
+            leftFrac: leftX / w,
+            rightFrac: rightX / w,
+            baseFrac: bestY / h
+          };
+        }catch(e){
+          return safeDefaultTlMeta();
+        }
+      }
+
+      function analyzeChickEyes(imgEl){
+        try{
+          const w = imgEl.naturalWidth || 0;
+          const h = imgEl.naturalHeight || 0;
+          if(!w || !h) return 0.42;
+
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(imgEl, 0, 0);
+
+          const img = ctx.getImageData(0, 0, w, h);
+          const d = img.data;
+
+          const ys = [];
+          const yMax = Math.floor(h * 0.60);
+          const x0 = Math.floor(w * 0.25);
+          const x1 = Math.floor(w * 0.75);
+
+          for(let y=0; y<yMax; y++){
+            const row = y * w * 4;
+            for(let x=x0; x<x1; x++){
+              const i = row + x*4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L < 55){
+                ys.push(y);
+              }
+            }
+          }
+
+          if(ys.length < 24) return 0.42;
+
+          ys.sort((a,b) => a-b);
+          const med = ys[Math.floor(ys.length/2)];
+          return clamp(med / h, 0.18, 0.62);
+        }catch(e){
+          return 0.42;
+        }
+      }
+
+      function tickTForLevel(level){
+        const lv = clamp(level, LV_MIN, LV_MAX);
+        const denom = Math.max(1, (LV_MAX - LV_MIN));
+        return (lv - LV_MIN) / denom;
+      }
+
+      function currentTickXLocalForLevel(level){
+        if(!tlMeta) return 0;
+        const w = timeline.clientWidth || 0;
+        const xL = tlMeta.leftFrac * w;
+        const xR = tlMeta.rightFrac * w;
+        return xL + tickTForLevel(level) * (xR - xL);
+      }
+
+      function setAnchorToLevel(level, opts = {}){
+        if(!timelineReady()) return;
+        if(!tlMeta) return;
+        if(chickEyeFrac == null) chickEyeFrac = 0.42;
+
+        const xLocal = currentTickXLocalForLevel(level);
+
+        const aH = chickAnchor.clientHeight || 0;
+        const eyeLocalY = chickEyeFrac * aH;
+        const topLocal = baselineLocalY - eyeLocalY;
+
+        if(opts.noTransition){
+          chickAnchor.classList.add("noMove");
+          chickAnchor.style.left = `${xLocal}px`;
+          chickAnchor.style.top = `${topLocal}px`;
+          chickAnchor.offsetHeight;
+          chickAnchor.classList.remove("noMove");
+          return;
+        }
+
+        chickAnchor.style.left = `${xLocal}px`;
+        chickAnchor.style.top = `${topLocal}px`;
+      }
+
+      function updateLevelsVisibilityUI(){
+        toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
+        if(levelsVisible) levelsImg.classList.remove("levelsHidden");
+        else levelsImg.classList.add("levelsHidden");
+      }
+
+      let fitQueued = false;
+      function scheduleFit(){
+        if(fitQueued) return;
+        fitQueued = true;
+        requestAnimationFrame(() => {
+          fitQueued = false;
+          fitTimelineToQuestion();
+        });
+      }
+
+      function fitTimelineToQuestion(){
+        if(!timelineReady()) return;
+        if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
+
+        if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+        if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+
+        timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
+
+        const r = gameCard.getBoundingClientRect();
+        const cs = getComputedStyle(gameCard);
+        const bw = parseFloat(cs.borderLeftWidth) || 0;
+
+        const targetLeft = r.left + bw;
+        const targetRight = r.right - bw;
+
+        const targetBaselineY = r.bottom - (bw * 0.5);
+
+        const baseW = 520;
+        timeline.style.width = `${baseW}px`;
+
+        const w = timeline.clientWidth || 1;
+        const h = timeline.clientHeight || 1;
+
+        const xL = tlMeta.leftFrac * w;
+        const xR = tlMeta.rightFrac * w;
+        const yB = tlMeta.baseFrac * h;
+
+        baselineLocalY = yB;
+
+        const denom = Math.max(1, (xR - xL));
+        const s = (targetRight - targetLeft) / denom;
+
+        const tx = targetLeft - s * xL;
+        const ty = targetBaselineY - s * yB;
+
+        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+        setAnchorToLevel(LEVEL, { noTransition: true });
+      }
+
+      function initTimelineAuto(){
+        if(!timelineReady()) return;
+
+        updateLevelsVisibilityUI();
+
+        const tryInit = () => {
+          if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+            tlMeta = analyzeLevelsPng(levelsImg);
+            if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+            scheduleFit();
+          }
+        };
+
+        if(levelsImg.complete) tryInit();
+        levelsImg.addEventListener("load", tryInit);
+
+        if(stillImg.complete && stillImg.naturalWidth) tryInit();
+        stillImg.addEventListener("load", tryInit);
+
+        if(typeof ResizeObserver === "function"){
+          const ro = new ResizeObserver(() => scheduleFit());
+          ro.observe(gameCard);
+          ro.observe(document.body);
+        }
+
+        window.addEventListener("resize", scheduleFit);
+        window.addEventListener("orientationchange", scheduleFit);
+      }
+
+      /* =========================
+         Animatie kuiken, zoals je had
+         ========================= */
+
+      const TL_WHITE_THRESH = 255;
+
+      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+
+      let chickPlaying = false;
+      let chickXAnim = null;
+
+      function cancelChickXAnim(){
+        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+        chickXAnim = null;
+      }
+
+      function showOnlyStill(){
+        stillImg.classList.add("active");
+        if(animCanvas) animCanvas.classList.remove("active");
+      }
+      function showCanvas(){
+        if(animCanvas) animCanvas.classList.add("active");
+      }
+
+      function stopVideo(v){
+        try{ v.pause(); }catch(e){}
+      }
+
+      function setCanvasSizeToVideo(videoEl){
+        if(!animCanvas) return false;
+        const w = videoEl.videoWidth || 0;
+        const h = videoEl.videoHeight || 0;
+        if(!w || !h) return false;
+        if(animCanvas.width !== w) animCanvas.width = w;
+        if(animCanvas.height !== h) animCanvas.height = h;
+        return true;
+      }
+
+      function applyChromaKeyWhite(){
+        if(!chickCtx || !animCanvas) return;
+        const t = TL_WHITE_THRESH;
+        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+        const d = img.data;
+        for(let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i+1], b = d[i+2];
+          if(r >= t && g >= t && b >= t) d[i+3] = 0;
+        }
+        chickCtx.putImageData(img, 0, 0);
+      }
+
+      function drawFrame(videoEl){
+        if(!chickCtx || !animCanvas) return false;
+        if(!setCanvasSizeToVideo(videoEl)) return false;
+        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+        chickCtx.drawImage(videoEl, 0, 0);
+        applyChromaKeyWhite();
+        return true;
+      }
+
+      async function ensureReady(videoEl){
+        if(videoEl.readyState >= 2) return true;
+        return await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+          const cleanup = () => {
+            videoEl.removeEventListener("loadeddata", ok);
+            videoEl.removeEventListener("loadedmetadata", ok);
+            videoEl.removeEventListener("error", bad);
+          };
+          videoEl.addEventListener("loadeddata", ok, { once:true });
+          videoEl.addEventListener("loadedmetadata", ok, { once:true });
+          videoEl.addEventListener("error", bad, { once:true });
+          try{ videoEl.load(); }catch(e){}
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+        });
+      }
+
+      function segmentTimes(startFrame, endFrame, fps){
+        const f = Math.max(1, Number(fps));
+        const s = Math.max(0, Number(startFrame) / f);
+        const e = Math.max(s + (1 / f), Number(endFrame) / f);
+        return { start: s, end: e, durMs: (e - s) * 1000 };
+      }
+
+      async function seekTo(videoEl, timeSec){
+        return await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => {
+            if(done) return;
+            done = true;
+            cleanup();
+            resolve(ok);
+          };
+          const onSeeked = () => finish(true);
+          const onErr = () => finish(false);
+          const cleanup = () => {
+            videoEl.removeEventListener("seeked", onSeeked);
+            videoEl.removeEventListener("error", onErr);
+          };
+          videoEl.addEventListener("seeked", onSeeked, { once:true });
+          videoEl.addEventListener("error", onErr, { once:true });
+
+          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+          catch(e){ cleanup(); resolve(false); return; }
+
+          setTimeout(() => finish(true), 700);
+        });
+      }
+
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+        if(!animCanvas || !chickCtx) return false;
+
+        cancelChickXAnim();
+
+        const ready = await ensureReady(videoEl);
+        if(!ready) return false;
+
+        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+
+        stopVideo(videoEl);
+        await seekTo(videoEl, times.start);
+
+        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+        let playingOk = true;
+        try{ await videoEl.play(); }catch(e){ playingOk = false; }
+        if(!playingOk) return false;
+
+        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+
+        const gotFirstFrame = await new Promise(resolve => {
+          let done = false;
+          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+          const maxWait = setTimeout(() => finish(false), 900);
+
+          if(useRVFC){
+            videoEl.requestVideoFrameCallback(() => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }else{
+            const onTime = () => {
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            };
+            videoEl.addEventListener("timeupdate", onTime, { once:true });
+
+            requestAnimationFrame(() => {
+              if(done) return;
+              const ok = drawFrame(videoEl);
+              clearTimeout(maxWait);
+              finish(!!ok);
+            });
+          }
+        });
+
+        if(!gotFirstFrame){
+          try{ videoEl.pause(); }catch(e){}
+          return false;
+        }
+
+        showCanvas();
+        stillImg.classList.remove("active");
+        await raf();
+
+        chickXAnim = animCanvas.animate(
+          [
+            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+          ],
+          { duration: times.durMs, easing: "linear", fill: "forwards" }
+        );
+
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              videoEl.requestVideoFrameCallback(step);
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+
+        try{ videoEl.pause(); }catch(e){}
+        cancelChickXAnim();
+        return true;
+      }
+
+      async function animateTimeline(fromLevel, toLevel){
+        if(!timelineReady()) return;
+
+        setAnchorToLevel(fromLevel, { noTransition: true });
+        showOnlyStill();
+
+        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+        if(!hasMp4){
+          setAnchorToLevel(toLevel, { noTransition: true });
+          return;
+        }
+
+        if(chickPlaying) return;
+        chickPlaying = true;
+
+        stopVideo(upVid);
+        stopVideo(downVid);
+
+        const dir = toLevel > fromLevel ? "up" : "down";
+        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+        const vid = dir === "up" ? upVid : downVid;
+
+        await playSegmentOnCanvasNoFlash(vid, cfg);
+
+        setAnchorToLevel(toLevel, { noTransition: true });
+
+        stillImg.classList.add("active");
+        await raf();
+        if(animCanvas) animCanvas.classList.remove("active");
+
+        chickPlaying = false;
+      }
+
+      /* game */
       let started = false;
       let locked = false;
       let correct = 1;
@@ -1082,7 +1702,7 @@
         streakBad = 0;
       }
 
-      function handleAutoLevelOnGood(){
+      async function handleAutoLevelOnGood(){
         streakGood += 1;
         streakBad = 0;
 
@@ -1090,13 +1710,16 @@
           const before = LEVEL;
           setLevel(LEVEL + 1);
           resetStreaks();
-          if(LEVEL !== before) beep("level");
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
           return true;
         }
         return false;
       }
 
-      function handleAutoLevelOnBad(){
+      async function handleAutoLevelOnBad(){
         streakBad += 1;
         streakGood = 0;
 
@@ -1104,7 +1727,10 @@
           const before = LEVEL;
           setLevel(LEVEL - 1);
           resetStreaks();
-          if(LEVEL !== before) beep("level");
+          if(LEVEL !== before){
+            beep("level");
+            await animateTimeline(before, LEVEL);
+          }
           return true;
         }
         return false;
@@ -1177,7 +1803,7 @@
           all.forEach(b => b.style.pointerEvents = "");
           await wait(160);
 
-          handleAutoLevelOnGood();
+          await handleAutoLevelOnGood();
           nextRound();
           return;
         }
@@ -1207,13 +1833,13 @@
 
         all.forEach(b => b.style.pointerEvents = "");
 
-        handleAutoLevelOnBad();
+        await handleAutoLevelOnBad();
         nextRound();
       }
 
+      /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
-        if(previewMsValue) previewMsValue.textContent = String(previewMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
       }
 
@@ -1231,13 +1857,6 @@
         flashMs = Number(flashMsRange.value);
         syncUI();
       });
-
-      if(previewMsRange){
-        previewMsRange.addEventListener("input", () => {
-          previewMs = Number(previewMsRange.value);
-          syncUI();
-        });
-      }
 
       newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
 
@@ -1257,6 +1876,34 @@
         if(btns[0]) await onPick(btns[0], correct);
       });
 
+      levelUpBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(locked) return;
+        const before = LEVEL;
+        setLevel(LEVEL + 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
+        }
+      });
+
+      levelDownBtn.addEventListener("click", async () => {
+        beep("tap");
+        if(locked) return;
+        const before = LEVEL;
+        setLevel(LEVEL - 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
+        }
+      });
+
+      toggleLevelsBtn.addEventListener("click", () => {
+        beep("tap");
+        levelsVisible = !levelsVisible;
+        try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
+        updateLevelsVisibilityUI();
+      });
+
+      /* start */
       function startGame(){
         if(started) return;
         started = true;
@@ -1266,6 +1913,11 @@
 
         startOverlay.style.display = "none";
         syncUI();
+
+        scheduleFit();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+        showOnlyStill();
+
         nextRound();
       }
 
@@ -1304,15 +1956,25 @@
           await animateInButtons();
           locked = false;
           previewCardsNonBlocking();
+
+          scheduleFit();
+          setAnchorToLevel(LEVEL, { noTransition: true });
         }, 220);
       }
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
+      /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
+      initTimelineAuto();
+      scheduleFit();
+      setAnchorToLevel(LEVEL, { noTransition: true });
+      showOnlyStill();
+      updateLevelsVisibilityUI();
+
     })();
   </script>
 </body>
