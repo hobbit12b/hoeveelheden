@@ -26,12 +26,9 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      /* vraagvak schaal, nu voor alle levels gelijk */
+      /* vraagvak schaal, gelijk voor alle levels */
       --qScale: 0.78;
       --qTopNudge: -1.5%;
-
-      /* extra dots */
-      --dotSize: 12.6%; /* wordt ook in JS exact gemaakt obv svg dot */
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -235,54 +232,50 @@
       display:block;
     }
 
-    /* count on */
-    .diceLayer{
+    /* twee svg's naast elkaar in levels 6 tot en met 9 */
+    .pairRow{
+      width: min(96%, 720px);
+      height: 100%;
+      display:flex;
+      align-items:center;
+      gap: 2.5%;
+      justify-content: flex-end;
       position: relative;
-      width: min(92%, 520px);
-      height: auto;
-      aspect-ratio: 1 / 1;
+    }
+    .pairRow.alignLeft{ justify-content: flex-start; }
+    .pairRow.alignRight{ justify-content: flex-end; }
+
+    .pairCell{
+      flex: 0 0 48.5%;
+      height: 100%;
       display:grid;
       place-items:center;
+      position: relative;
     }
-    .diceLayer .qImg{
+
+    .pairCell img{
       width: 100%;
       height: 100%;
       object-fit: contain;
       display:block;
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-drag:none;
     }
 
-    .extraDot{
-      position: absolute;
-      width: var(--dotSize);
-      height: var(--dotSize);
-      aspect-ratio: 1 / 1;
-      border-radius: 999px;
-      background: rgba(25,25,25,0.30);
+    .pairAddWrap{
+      width: 100%;
+      height: 100%;
+      display:grid;
+      place-items:center;
       opacity: 0;
-      transform: translate(-50%, -50%) scale(0.92);
-      will-change: transform, opacity, background;
+      transform: scale(0.92);
+      transition: opacity 280ms cubic-bezier(.22,.61,.35,1), transform 280ms cubic-bezier(.22,.61,.35,1);
+      will-change: opacity, transform;
     }
-
-    .extraDot.show,
-    .extraDot.blacken{
-      animation: dotAppear 520ms cubic-bezier(.22,.61,.35,1) forwards;
-      animation-delay: var(--appearDelay, 320ms);
-    }
-
-    .extraDot.blacken{
-      animation: dotAppear 520ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 380ms ease forwards;
-      animation-delay: var(--appearDelay, 320ms), var(--blackDelay, 980ms);
-    }
-
-    @keyframes dotAppear{
-      0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.78); }
-      70%{ opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-      100%{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-    }
-
-    @keyframes dotBlacken{
-      from{ background: rgba(25,25,25,0.30); }
-      to{ background: rgba(25,25,25,0.92); }
+    .pairRow.showAdd .pairAddWrap{
+      opacity: 1;
+      transform: scale(1.0);
     }
 
     .scanStage{
@@ -567,7 +560,6 @@
       -webkit-transform: rotateY(180deg);
     }
 
-    /* antwoordfaces */
     .numFace{
       width: 100%;
       height: 100%;
@@ -596,7 +588,6 @@
       transform: translateY(2%);
     }
 
-    /* Timeline overlay, terug naar de stabiele group aanpak */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -676,7 +667,6 @@
       .chickLayer{ width: 78px; }
     }
 
-    /* kalibratie paneel */
     .calPanel{
       position: fixed;
       left: 18px;
@@ -1025,10 +1015,9 @@
       }
 
       function usesAnswerCards(){
-        return LEVEL >= 2; /* kaarten blijven voor dobbelsteenantwoorden */
+        return LEVEL >= 2;
       }
 
-      /* 1, vraag svg schaal, levels 6 tot en met 9 nu gelijk aan 1 tot en met 5 */
       function applyQuestionScale(){
         const r = document.documentElement.style;
         r.setProperty("--qScale", "0.78");
@@ -1098,6 +1087,7 @@
         return STD_LAYOUT[n] || `${n}a`;
       }
 
+      /* layouts voor de basis dobbelsteen */
       function allowedQuestionLayouts(level, n){
         if(n === 1) return ["1a"];
 
@@ -1149,6 +1139,20 @@
         return arr.length ? pick(arr) : standardLayoutId(n);
       }
 
+      /* layouts voor de extra (kleinere) dobbelsteen, precies zoals jij vroeg */
+      function pickAddLayout(level, addCount){
+        if(addCount === 1) return "1a";
+        if(addCount === 2){
+          if(level >= 7) return pick(["2a","2b","2c","2d"]);
+          return "2a";
+        }
+        if(addCount === 3){
+          if(level === 9) return pick(["3a","3c"]);
+          return "3a";
+        }
+        return standardLayoutId(addCount);
+      }
+
       function boardHtmlForLayout(layoutId){
         return `
           <div class="qWrap">
@@ -1159,310 +1163,20 @@
         `;
       }
 
-      /* dot size matchen met svg */
-      let dotSizePct = null;
-
-      function computeDotSizePctFromImg(imgEl){
-        try{
-          if(!imgEl) return null;
-          const w = imgEl.naturalWidth || 0;
-          const h = imgEl.naturalHeight || 0;
-          if(!w || !h) return null;
-
-          const cv = document.createElement("canvas");
-          cv.width = w;
-          cv.height = h;
-          const ctx = cv.getContext("2d", { willReadFrequently: true });
-          ctx.drawImage(imgEl, 0, 0);
-          const data = ctx.getImageData(0, 0, w, h).data;
-
-          const isDark = (r,g,b,a) => a > 60 && (0.2126*r + 0.7152*g + 0.0722*b) < 70;
-
-          const y = Math.floor(h * 0.5);
-          let bestRun = 0;
-          let run = 0;
-          for(let x=0; x<w; x++){
-            const i = (y*w + x) * 4;
-            const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
-            if(isDark(r,g,b,a)){
-              run++;
-              if(run > bestRun) bestRun = run;
-            }else{
-              run = 0;
-            }
-          }
-
-          if(bestRun < 6) return null;
-
-          const pct = (bestRun / w) * 100;
-          return clamp(pct, 8, 18);
-        }catch(e){
-          return null;
-        }
-      }
-
-      function applyDotSizePct(pct){
-        if(!pct) return;
-        dotSizePct = pct;
-        document.documentElement.style.setProperty("--dotSize", `${pct}%`);
-      }
-
-      /* 2, extra stippen plaatsen met gelijke witruimte, geen overlap */
-      function detectDotCentersFromImg(imgEl){
-        try{
-          const w0 = imgEl.naturalWidth || 0;
-          const h0 = imgEl.naturalHeight || 0;
-          if(!w0 || !h0) return [];
-
-          const target = 260;
-          const s = Math.min(1, target / Math.max(w0, h0));
-          const w = Math.max(40, Math.round(w0 * s));
-          const h = Math.max(40, Math.round(h0 * s));
-
-          const cv = document.createElement("canvas");
-          cv.width = w;
-          cv.height = h;
-          const ctx = cv.getContext("2d", { willReadFrequently: true });
-          ctx.drawImage(imgEl, 0, 0, w, h);
-
-          const img = ctx.getImageData(0, 0, w, h);
-          const d = img.data;
-
-          const mask = new Uint8Array(w*h);
-          const isDark = (r,g,b,a) => a > 50 && (0.2126*r + 0.7152*g + 0.0722*b) < 80;
-
-          for(let i=0;i<w*h;i++){
-            const k = i*4;
-            const r = d[k], g = d[k+1], b = d[k+2], a = d[k+3];
-            mask[i] = isDark(r,g,b,a) ? 1 : 0;
-          }
-
-          const seen = new Uint8Array(w*h);
-          const centers = [];
-          const q = new Int32Array(w*h);
-          let qh=0, qt=0;
-
-          const push = (idx) => { q[qt++] = idx; };
-          const pop = () => q[qh++];
-
-          for(let y=0;y<h;y++){
-            for(let x=0;x<w;x++){
-              const idx = y*w + x;
-              if(!mask[idx] || seen[idx]) continue;
-
-              let minX=x, maxX=x, minY=y, maxY=y;
-              let sumX=0, sumY=0, count=0;
-
-              seen[idx]=1;
-              qh=0; qt=0;
-              push(idx);
-
-              while(qh<qt){
-                const cur = pop();
-                const cy = Math.floor(cur / w);
-                const cx = cur - cy*w;
-
-                count++;
-                sumX += cx;
-                sumY += cy;
-                if(cx<minX) minX=cx;
-                if(cx>maxX) maxX=cx;
-                if(cy<minY) minY=cy;
-                if(cy>maxY) maxY=cy;
-
-                for(let dy=-1; dy<=1; dy++){
-                  for(let dx=-1; dx<=1; dx++){
-                    if(dx===0 && dy===0) continue;
-                    const nx = cx + dx;
-                    const ny = cy + dy;
-                    if(nx<0||ny<0||nx>=w||ny>=h) continue;
-                    const ni = ny*w + nx;
-                    if(seen[ni] || !mask[ni]) continue;
-                    seen[ni]=1;
-                    push(ni);
-                  }
-                }
-              }
-
-              const bw = (maxX - minX + 1);
-              const bh = (maxY - minY + 1);
-              const area = bw * bh;
-
-              if(count < 60) continue;
-              if(area < 120) continue;
-              if(bw < 8 || bh < 8) continue;
-              if(bw > w*0.45 || bh > h*0.45) continue;
-
-              const cx = (sumX / count) / w0 * (w0 / w);
-              const cy = (sumY / count) / h0 * (h0 / h);
-
-              centers.push({ x: (sumX / count) / w, y: (sumY / count) / h });
-            }
-          }
-
-          return centers;
-        }catch(e){
-          return [];
-        }
-      }
-
-      function bestExtraDotPlacement(extraCount, preferredSide, centersPx, w, h, dotDiaPx){
-        const minDistBase = dotDiaPx * 1.35;
-        const edgePad = dotDiaPx * 0.85;
-
-        const bandsForSide = (side) => {
-          if(side === "left") return { x0: 0.18*w, x1: 0.36*w };
-          return { x0: 0.64*w, x1: 0.82*w };
-        };
-
-        const y0 = 0.22*h;
-        const y1 = 0.78*h;
-
-        const dist = (ax,ay,bx,by) => {
-          const dx = ax-bx, dy = ay-by;
-          return Math.hypot(dx,dy);
-        };
-
-        const scorePoint = (x,y, minDist, others=[]) => {
-          let m = Infinity;
-
-          m = Math.min(m, x - edgePad, (w - edgePad) - x, y - edgePad, (h - edgePad) - y);
-
-          for(const c of centersPx){
-            m = Math.min(m, dist(x,y,c.x,c.y) - minDist);
-          }
-          for(const o of others){
-            m = Math.min(m, dist(x,y,o.x,o.y) - minDist);
-          }
-          return m;
-        };
-
-        const buildCandidates = (side, widen=0) => {
-          const b = bandsForSide(side);
-          const x0 = clamp(b.x0 - widen, edgePad, w - edgePad);
-          const x1 = clamp(b.x1 + widen, edgePad, w - edgePad);
-
-          const xs = [0.22,0.26,0.30,0.34].map(t => x0 + (x1 - x0) * ((t - 0.18) / (0.36 - 0.18)));
-          const cand = [];
-
-          for(let yy = y0; yy <= y1 + 0.1; yy += (h*0.035)){
-            for(const xx of xs){
-              cand.push({ x: clamp(xx, edgePad, w-edgePad), y: clamp(yy, edgePad, h-edgePad) });
-            }
-          }
-          for(let i=0;i<16;i++){
-            const rx = x0 + Math.random()*(x1-x0);
-            const ry = y0 + Math.random()*(y1-y0);
-            cand.push({ x: clamp(rx, edgePad, w-edgePad), y: clamp(ry, edgePad, h-edgePad) });
-          }
-
-          return cand;
-        };
-
-        const trySide = (side) => {
-          for(let loosen = 0; loosen < 6; loosen++){
-            const widen = dotDiaPx * 0.25 * loosen;
-            const minDist = minDistBase * (1 - loosen*0.06);
-
-            const cand = buildCandidates(side, widen);
-
-            if(extraCount === 1){
-              let best = null;
-              let bestS = -Infinity;
-              for(const p of cand){
-                const s = scorePoint(p.x,p.y,minDist);
-                if(s > bestS){ bestS = s; best = p; }
-              }
-              if(best) return { points: [best], ok: bestS >= -dotDiaPx*0.10 };
-            }
-
-            if(extraCount === 2){
-              let bestPair = null;
-              let bestS = -Infinity;
-
-              const scored = cand
-                .map(p => ({ p, s: scorePoint(p.x,p.y,minDist) }))
-                .sort((a,b) => b.s - a.s)
-                .slice(0, 80);
-
-              for(let i=0;i<scored.length;i++){
-                for(let j=i+1;j<scored.length;j++){
-                  const a = scored[i].p, b = scored[j].p;
-                  if(dist(a.x,a.y,b.x,b.y) < minDist) continue;
-
-                  const s1 = scorePoint(a.x,a.y,minDist,[b]);
-                  const s2 = scorePoint(b.x,b.y,minDist,[a]);
-                  const s = Math.min(s1,s2);
-
-                  if(s > bestS){
-                    bestS = s;
-                    bestPair = [a,b].sort((u,v) => u.y - v.y);
-                  }
-                }
-              }
-
-              if(bestPair) return { points: bestPair, ok: bestS >= -dotDiaPx*0.10 };
-            }
-          }
-          return null;
-        };
-
-        const first = trySide(preferredSide);
-        if(first && first.ok) return first.points;
-
-        const otherSide = preferredSide === "left" ? "right" : "left";
-        const second = trySide(otherSide);
-        if(second && second.ok) return second.points;
-
-        const fallback = trySide(preferredSide);
-        return fallback ? fallback.points : [];
-      }
-
-      async function placeExtraDotsForCurrentBoard(extraCount, side){
-        const layer = flashSvg.querySelector(".diceLayer");
-        const img = flashSvg.querySelector(".diceLayer img.qImg");
-        if(!layer || !img) return;
-
-        try{ await img.decode(); }catch(e){}
-
-        if(dotSizePct == null){
-          const pct = computeDotSizePctFromImg(img);
-          if(pct) applyDotSizePct(pct);
-        }
-
-        const w = layer.clientWidth || 0;
-        const h = layer.clientHeight || 0;
-        if(!w || !h) return;
-
-        const centers01 = detectDotCentersFromImg(img);
-        const centersPx = centers01.map(c => ({ x: c.x * w, y: c.y * h }));
-
-        const diaPx = (dotSizePct ? (dotSizePct/100) * w : 0.12*w);
-        const pts = bestExtraDotPlacement(extraCount, side, centersPx, w, h, diaPx);
-
-        const dots = [...flashSvg.querySelectorAll(".extraDot")].slice(0, extraCount);
-        dots.forEach((el, i) => {
-          const p = pts[i] || { x: (side==="left" ? 0.24*w : 0.76*w), y: (extraCount===2 ? (i?0.60*h:0.40*h) : 0.50*h) };
-          el.style.left = `${(p.x / w) * 100}%`;
-          el.style.top = `${(p.y / h) * 100}%`;
-        });
-      }
-
-      function boardHtmlForCountOn(layoutId, extraCount, side, blacken){
-        const cls = blacken ? "extraDot blacken" : "extraDot show";
-        const appearDelay = 360;
-        const blackDelay = 1040;
-
-        const dots = Array.from({length: extraCount}).map((_, i) => {
-          return `<div class="${cls}" data-idx="${i}" style="--appearDelay:${appearDelay}ms; --blackDelay:${blackDelay}ms;"></div>`;
-        }).join("");
-
+      function boardHtmlForPair(baseLayoutId, addLayoutId, align){
+        const cls = align === "left" ? "pairRow alignLeft" : "pairRow alignRight";
         return `
           <div class="qWrap">
             <div class="qWrapInner">
-              <div class="diceLayer">
-                <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
-                ${dots}
+              <div class="${cls}" id="pairRow">
+                <div class="pairCell">
+                  <img src="${diceSrc(baseLayoutId)}" alt="" draggable="false">
+                </div>
+                <div class="pairCell">
+                  <div class="pairAddWrap" id="pairAddWrap">
+                    <img src="${diceSrc(addLayoutId)}" alt="" draggable="false">
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1694,7 +1408,7 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* 3, timelineGroup terug naar oude, stabiele versie, met kalibratie */
+      /* timelineGroup, kalibratie */
       const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v8";
 
       const DEFAULT_CALIB = {
@@ -2290,16 +2004,66 @@
       let questionState = {
         kind: "flash",
         correct: 1,
-        base: 1,
-        extraCount: 0,
-        side: "left",
-        blacken: true,
-        layoutId: "1a"
+        layoutId: "1a",
+
+        baseCount: 0,
+        addCount: 0,
+        baseLayoutId: "1a",
+        addLayoutId: "1a",
+        align: "right"
       };
 
       function resetStreaks(){
         streakGood = 0;
         streakBad = 0;
+      }
+
+      function pickAlignMostlyRight(){
+        return Math.random() < 0.78 ? "right" : "left";
+      }
+
+      function buildPairState(){
+        const cap = maxForLevel();
+
+        let addCount = 1;
+        if(LEVEL === 6) addCount = 1;
+        else if(LEVEL === 7 || LEVEL === 8) addCount = Math.random() < 0.55 ? 1 : 2;
+        else if(LEVEL === 9){
+          const r = Math.random();
+          addCount = (r < 0.45) ? 1 : (r < 0.82) ? 2 : 3;
+        }
+
+        let baseCount = 2;
+        let tries = 0;
+
+        while(tries < 80){
+          baseCount = randInt(1, 6);
+
+          const okSmaller = addCount < baseCount;
+          const okSum = (baseCount + addCount) <= cap;
+
+          if(okSmaller && okSum) break;
+
+          tries++;
+        }
+
+        if(!(addCount < baseCount) || (baseCount + addCount) > cap){
+          addCount = 1;
+          baseCount = clamp(cap - 1, 2, 6);
+        }
+
+        const baseLayoutId = pickQuestionLayout(LEVEL, baseCount);
+        const addLayoutId = pickAddLayout(LEVEL, addCount);
+
+        return {
+          kind: "pair",
+          correct: baseCount + addCount,
+          baseCount,
+          addCount,
+          baseLayoutId,
+          addLayoutId,
+          align: pickAlignMostlyRight()
+        };
       }
 
       function buildQuestionState(){
@@ -2309,38 +2073,16 @@
           return {
             kind: "flash",
             correct: n,
-            base: n,
-            extraCount: 0,
-            side: "left",
-            blacken: true,
-            layoutId: pickQuestionLayout(LEVEL, n)
+            layoutId: pickQuestionLayout(LEVEL, n),
+
+            baseCount: 0,
+            addCount: 0,
+            baseLayoutId: "1a",
+            addLayoutId: "1a",
+            align: "right"
           };
         }
-
-        const cap = maxForLevel();
-        const extraCount = (LEVEL === 6) ? 1 : randInt(1, 2);
-        const side = Math.random() < 0.5 ? "left" : "right";
-        const blacken = (LEVEL !== 9);
-
-        let base = randInt(1, 6);
-        let correct = base + extraCount;
-
-        let tries = 0;
-        while(correct > cap && tries < 12){
-          base = randInt(1, 6);
-          correct = base + extraCount;
-          tries++;
-        }
-
-        return {
-          kind: "counton",
-          correct,
-          base,
-          extraCount,
-          side,
-          blacken,
-          layoutId: pickQuestionLayout(LEVEL, base)
-        };
+        return buildPairState();
       }
 
       async function handleAutoLevelOnGood(){
@@ -2381,6 +2123,13 @@
         return false;
       }
 
+      async function revealPairAdd(){
+        const row = $("pairRow");
+        if(!row) return;
+        await wait(260);
+        row.classList.add("showAdd");
+      }
+
       async function flashAndAsk(){
         locked = true;
         previewToken++;
@@ -2393,14 +2142,11 @@
 
         questionState = buildQuestionState();
 
-        if(questionState.kind === "counton"){
-          setBoard(boardHtmlForCountOn(questionState.layoutId, questionState.extraCount, questionState.side, questionState.blacken));
+        if(questionState.kind === "pair"){
+          setBoard(boardHtmlForPair(questionState.baseLayoutId, questionState.addLayoutId, questionState.align));
           await raf();
-          await wait(30);
-
-          await placeExtraDotsForCurrentBoard(questionState.extraCount, questionState.side);
-
-          await wait(120);
+          revealPairAdd();
+          await wait(140);
         }else{
           setBoard(boardHtmlForLayout(questionState.layoutId));
           await wait(flashMs);
@@ -2411,11 +2157,6 @@
         renderAnswers(questionState.correct, onPick);
         await wait(WAIT_BEFORE_IN_MS);
         await animateInButtons();
-
-        if(questionState.kind === "counton"){
-          const extraWait = questionState.extraCount === 2 ? 720 : 520;
-          await wait(extraWait);
-        }
 
         locked = false;
         previewCardsNonBlocking();
@@ -2609,9 +2350,22 @@
           answersEl.innerHTML = "";
           clearBoard();
           await wait(120);
+
+          /* dezelfde vraag opnieuw tekenen */
+          if(questionState.kind === "pair"){
+            setBoard(boardHtmlForPair(questionState.baseLayoutId, questionState.addLayoutId, questionState.align));
+            await raf();
+            $("pairRow")?.classList.add("showAdd");
+          }else{
+            setBoard(boardHtmlForLayout(questionState.layoutId));
+            await wait(140);
+            clearBoard();
+          }
+
           renderAnswers(questionState.correct, onPick);
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
+
           locked = false;
           previewCardsNonBlocking();
 
