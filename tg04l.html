@@ -26,9 +26,9 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      /* vraagvak schaal */
-      --qScale: 0.78;      /* levels 1 t/m 5: kleiner */
-      --qTopNudge: -1.5%;  /* subtiele verticale uitlijning */
+      /* vraagvak schaal, nu voor alle levels gelijk */
+      --qScale: 0.78;
+      --qTopNudge: -1.5%;
 
       /* extra dots */
       --dotSize: 12.6%; /* wordt ook in JS exact gemaakt obv svg dot */
@@ -207,7 +207,7 @@
       position: relative;
     }
 
-    /* kern fix: vraagimage krijgt een eigen container die we kunnen schalen en verticaal nudgen */
+    /* vraagimage schaal */
     .qWrap{
       width: 100%;
       height: 100%;
@@ -235,7 +235,7 @@
       display:block;
     }
 
-    /* count on: dobbelsteenlaag, dots worden exact gepositioneerd en geschaald */
+    /* count on */
     .diceLayer{
       position: relative;
       width: min(92%, 520px);
@@ -263,7 +263,6 @@
       will-change: transform, opacity, background;
     }
 
-    /* tegelijk verschijnen: zelfde delay, zelfde animatie */
     .extraDot.show,
     .extraDot.blacken{
       animation: dotAppear 520ms cubic-bezier(.22,.61,.35,1) forwards;
@@ -579,7 +578,6 @@
       color: rgba(25,25,25,.92);
     }
 
-    /* marbotic perfect centreren */
     .marboticFace{
       width: 100%;
       height: 100%;
@@ -598,7 +596,7 @@
       transform: translateY(2%);
     }
 
-    /* Timeline overlay */
+    /* Timeline overlay, terug naar de stabiele group aanpak */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -616,15 +614,14 @@
       transform-origin: 0 0;
       will-change: transform;
       pointer-events:none;
-      transform: translate3d(0,0,0) scale(1);
     }
 
     .progressTimeline{
       position:absolute;
       left: 0;
       top: 0;
-      width: 520px;
-      height: auto;
+      width: min(520px, 58vw);
+      height: 96px;
       z-index: 20;
     }
 
@@ -633,44 +630,35 @@
       inset:0;
       width:100%;
       height:100%;
-      object-fit: fill;
+      object-fit: contain;
     }
 
     .progressLine.levelsHidden{ opacity: 0; }
 
-    /* FIX: anchor altijd op de zelfde compositing laag en zonder “spring” */
     .progressChickAnchor{
       position:absolute;
-      left: 0;
-      top: 0;
-      transform: translate3d(-50%, 0, 0);
+      bottom: -10px;
+      transform: translateX(-50%);
       width: 82px;
       height: 82px;
       pointer-events:none;
-      transition: left 520ms cubic-bezier(.22,.61,.35,1), top 520ms cubic-bezier(.22,.61,.35,1);
-      will-change: left, transform, top;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      transform-style: preserve-3d;
-      -webkit-transform-style: preserve-3d;
+      transition: left 520ms cubic-bezier(.22,.61,.35,1);
+      will-change: left, transform;
     }
     .progressChickAnchor.noMove{ transition: none !important; }
 
     .chickLayer{
       position:absolute;
       left:0;
-      top:0;
-      width: 100%;
-      height: 100%;
+      bottom:0;
+      width: 82px;
+      height: auto;
       opacity: 0;
       pointer-events:none;
       transform-origin: 50% 100%;
       will-change: transform, opacity;
       display:block;
       object-fit: contain;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      transform: translate3d(0,0,0);
     }
     .chickLayer.active{ opacity: 1; }
     .stillLayer{ z-index: 3; }
@@ -678,6 +666,110 @@
 
     #animCanvas{ opacity:0; }
     #animCanvas.active{ opacity:1; }
+
+    @media (orientation: portrait){
+      .progressTimeline{
+        width: min(680px, 92vw);
+        height: 100px;
+      }
+      .progressChickAnchor{ width: 78px; height: 78px; }
+      .chickLayer{ width: 78px; }
+    }
+
+    /* kalibratie paneel */
+    .calPanel{
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      width: min(680px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.62);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 2300;
+      color: #4d4a48;
+    }
+    .calPanel.hidden{ display:none; }
+
+    .calHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .calTitle{
+      font-weight: 950;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .calClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 950;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+      color:#2f2c2a;
+    }
+    .calClose:active{ transform: translateY(1px) scale(0.99); }
+
+    .calTabs{
+      display:flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .tabBtn{
+      appearance:none;
+      border:none;
+      background: rgba(245,180,152,0.18);
+      border: 2px solid rgba(245,180,152,0.35);
+      color:#2f2c2a;
+      font-weight: 950;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      background: var(--brand);
+      border-color: rgba(229,140,116,0.95);
+      color:#fff;
+    }
+
+    .hintLine{
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 850;
+      color: rgba(77,74,72,0.78);
+      line-height: 1.3;
+      text-transform: lowercase;
+    }
+
+    .copyBox{
+      width:100%;
+      margin-top:10px;
+      display:grid;
+      gap: 8px;
+    }
+    .copyBox textarea{
+      width:100%;
+      min-height: 92px;
+      resize: vertical;
+      border-radius: 14px;
+      border: 2px solid rgba(245,180,152,0.45);
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color:#2f2c2a;
+      background: rgba(255,255,255,0.70);
+      outline:none;
+    }
   </style>
 </head>
 
@@ -771,12 +863,64 @@
       <div class="tuneButtons">
         <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
-        <button class="tuneBtnSmall secondary" id="testGoodBtn" type="button">Test goed</button>
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
 
       <div class="tuneButtons" style="margin-top:10px;">
         <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
+        <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
       </div>
+    </div>
+  </div>
+
+  <div class="calPanel hidden" id="calPanel" role="dialog" aria-modal="false" aria-label="Kalibratie tijdlijn">
+    <div class="calHeader">
+      <div class="calTitle">kalibratie tijdlijn</div>
+      <button class="calClose" id="calClose" type="button">Sluit</button>
+    </div>
+
+    <div class="calTabs">
+      <button class="tabBtn active" id="tabLandscape" type="button">horizontaal</button>
+      <button class="tabBtn" id="tabPortrait" type="button">vertikaal</button>
+      <button class="tabBtn" id="tabDesktop" type="button">laptop</button>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">groep x</div>
+      <input type="range" id="gX" min="-2000" max="2000" step="1" value="0" />
+      <div class="tuneValue" id="gXv">0</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">groep y</div>
+      <input type="range" id="gY" min="-2000" max="2000" step="1" value="0" />
+      <div class="tuneValue" id="gYv">0</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">groep schaal</div>
+      <input type="range" id="gS" min="0.30" max="3.00" step="0.01" value="1.00" />
+      <div class="tuneValue" id="gSv">1.00</div>
+    </div>
+
+    <div class="tuneRow">
+      <div class="tuneLabel">kuiken lijn</div>
+      <input type="range" id="lineY" min="-260" max="260" step="1" value="-10" />
+      <div class="tuneValue" id="lineYv">-10</div>
+    </div>
+
+    <div class="tuneButtons">
+      <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
+      <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
+      <button class="tuneBtnSmall secondary" id="copyBtn" type="button">kopieer json</button>
+    </div>
+
+    <div class="copyBox">
+      <textarea id="jsonOut" spellcheck="false"></textarea>
+    </div>
+
+    <div class="hintLine">
+      tip: schuif de groep over het linkervak om hem goed te kunnen afstellen, de overlay ligt altijd bovenop
     </div>
   </div>
 
@@ -790,6 +934,10 @@
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
       const $ = (id) => document.getElementById(id);
+
+      const deepClone = (o) => {
+        try{ return structuredClone(o); }catch(e){ return JSON.parse(JSON.stringify(o)); }
+      };
 
       const startOverlay = $("startOverlay");
       const startBtn = $("startBtn");
@@ -815,6 +963,28 @@
       const levelDownBtn = $("levelDownBtn");
 
       const toggleLevelsBtn = $("toggleLevelsBtn");
+      const openCalBtn = $("openCalBtn");
+      const calPanel = $("calPanel");
+      const calClose = $("calClose");
+
+      const tabLandscape = $("tabLandscape");
+      const tabPortrait = $("tabPortrait");
+      const tabDesktop = $("tabDesktop");
+
+      const gX = $("gX");
+      const gY = $("gY");
+      const gS = $("gS");
+      const lineY = $("lineY");
+
+      const gXv = $("gXv");
+      const gYv = $("gYv");
+      const gSv = $("gSv");
+      const lineYv = $("lineYv");
+
+      const gResetBtn = $("gResetBtn");
+      const gSaveBtn = $("gSaveBtn");
+      const copyBtn = $("copyBtn");
+      const jsonOut = $("jsonOut");
 
       const flashSvg = $("flashSvg");
       const answersEl = $("answers");
@@ -848,19 +1018,21 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
+      function isAutoFitDesktop(){
+        const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+        const likelyIPad = coarse && (Math.max(window.innerWidth, window.innerHeight) >= 900);
+        return !likelyIPad;
+      }
+
       function usesAnswerCards(){
         return LEVEL >= 2; /* kaarten blijven voor dobbelsteenantwoorden */
       }
 
+      /* 1, vraag svg schaal, levels 6 tot en met 9 nu gelijk aan 1 tot en met 5 */
       function applyQuestionScale(){
         const r = document.documentElement.style;
-        if(LEVEL <= 5){
-          r.setProperty("--qScale", "0.78");
-          r.setProperty("--qTopNudge", "-1.5%");
-        }else{
-          r.setProperty("--qScale", "0.92");
-          r.setProperty("--qTopNudge", "0%");
-        }
+        r.setProperty("--qScale", "0.78");
+        r.setProperty("--qTopNudge", "-1.5%");
       }
 
       function applyLevel(n, opts = {}){
@@ -977,7 +1149,6 @@
         return arr.length ? pick(arr) : standardLayoutId(n);
       }
 
-      /* vraag board */
       function boardHtmlForLayout(layoutId){
         return `
           <div class="qWrap">
@@ -988,31 +1159,25 @@
         `;
       }
 
-      /* dot-plaatsing en dot-grootte automatisch matchen met de svg */
+      /* dot size matchen met svg */
       let dotSizePct = null;
 
-      function computeDotSizePctFromCurrentSvg(){
+      function computeDotSizePctFromImg(imgEl){
         try{
-          const img = flashSvg.querySelector(".diceLayer img.qImg");
-          if(!img) return null;
-
-          const layer = flashSvg.querySelector(".diceLayer");
-          if(!layer) return null;
-
-          const w = img.naturalWidth || 0;
-          const h = img.naturalHeight || 0;
+          if(!imgEl) return null;
+          const w = imgEl.naturalWidth || 0;
+          const h = imgEl.naturalHeight || 0;
           if(!w || !h) return null;
 
           const cv = document.createElement("canvas");
           cv.width = w;
           cv.height = h;
           const ctx = cv.getContext("2d", { willReadFrequently: true });
-          ctx.drawImage(img, 0, 0);
+          ctx.drawImage(imgEl, 0, 0);
           const data = ctx.getImageData(0, 0, w, h).data;
 
           const isDark = (r,g,b,a) => a > 60 && (0.2126*r + 0.7152*g + 0.0722*b) < 70;
 
-          /* neem een horizontale scan door het midden, zoek de breedte van een stip */
           const y = Math.floor(h * 0.5);
           let bestRun = 0;
           let run = 0;
@@ -1029,7 +1194,6 @@
 
           if(bestRun < 6) return null;
 
-          /* bestRun is pixels in de svg, vertaal naar percentage van diceLayer */
           const pct = (bestRun / w) * 100;
           return clamp(pct, 8, 18);
         }catch(e){
@@ -1043,26 +1207,259 @@
         document.documentElement.style.setProperty("--dotSize", `${pct}%`);
       }
 
+      /* 2, extra stippen plaatsen met gelijke witruimte, geen overlap */
+      function detectDotCentersFromImg(imgEl){
+        try{
+          const w0 = imgEl.naturalWidth || 0;
+          const h0 = imgEl.naturalHeight || 0;
+          if(!w0 || !h0) return [];
+
+          const target = 260;
+          const s = Math.min(1, target / Math.max(w0, h0));
+          const w = Math.max(40, Math.round(w0 * s));
+          const h = Math.max(40, Math.round(h0 * s));
+
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(imgEl, 0, 0, w, h);
+
+          const img = ctx.getImageData(0, 0, w, h);
+          const d = img.data;
+
+          const mask = new Uint8Array(w*h);
+          const isDark = (r,g,b,a) => a > 50 && (0.2126*r + 0.7152*g + 0.0722*b) < 80;
+
+          for(let i=0;i<w*h;i++){
+            const k = i*4;
+            const r = d[k], g = d[k+1], b = d[k+2], a = d[k+3];
+            mask[i] = isDark(r,g,b,a) ? 1 : 0;
+          }
+
+          const seen = new Uint8Array(w*h);
+          const centers = [];
+          const q = new Int32Array(w*h);
+          let qh=0, qt=0;
+
+          const push = (idx) => { q[qt++] = idx; };
+          const pop = () => q[qh++];
+
+          for(let y=0;y<h;y++){
+            for(let x=0;x<w;x++){
+              const idx = y*w + x;
+              if(!mask[idx] || seen[idx]) continue;
+
+              let minX=x, maxX=x, minY=y, maxY=y;
+              let sumX=0, sumY=0, count=0;
+
+              seen[idx]=1;
+              qh=0; qt=0;
+              push(idx);
+
+              while(qh<qt){
+                const cur = pop();
+                const cy = Math.floor(cur / w);
+                const cx = cur - cy*w;
+
+                count++;
+                sumX += cx;
+                sumY += cy;
+                if(cx<minX) minX=cx;
+                if(cx>maxX) maxX=cx;
+                if(cy<minY) minY=cy;
+                if(cy>maxY) maxY=cy;
+
+                for(let dy=-1; dy<=1; dy++){
+                  for(let dx=-1; dx<=1; dx++){
+                    if(dx===0 && dy===0) continue;
+                    const nx = cx + dx;
+                    const ny = cy + dy;
+                    if(nx<0||ny<0||nx>=w||ny>=h) continue;
+                    const ni = ny*w + nx;
+                    if(seen[ni] || !mask[ni]) continue;
+                    seen[ni]=1;
+                    push(ni);
+                  }
+                }
+              }
+
+              const bw = (maxX - minX + 1);
+              const bh = (maxY - minY + 1);
+              const area = bw * bh;
+
+              if(count < 60) continue;
+              if(area < 120) continue;
+              if(bw < 8 || bh < 8) continue;
+              if(bw > w*0.45 || bh > h*0.45) continue;
+
+              const cx = (sumX / count) / w0 * (w0 / w);
+              const cy = (sumY / count) / h0 * (h0 / h);
+
+              centers.push({ x: (sumX / count) / w, y: (sumY / count) / h });
+            }
+          }
+
+          return centers;
+        }catch(e){
+          return [];
+        }
+      }
+
+      function bestExtraDotPlacement(extraCount, preferredSide, centersPx, w, h, dotDiaPx){
+        const minDistBase = dotDiaPx * 1.35;
+        const edgePad = dotDiaPx * 0.85;
+
+        const bandsForSide = (side) => {
+          if(side === "left") return { x0: 0.18*w, x1: 0.36*w };
+          return { x0: 0.64*w, x1: 0.82*w };
+        };
+
+        const y0 = 0.22*h;
+        const y1 = 0.78*h;
+
+        const dist = (ax,ay,bx,by) => {
+          const dx = ax-bx, dy = ay-by;
+          return Math.hypot(dx,dy);
+        };
+
+        const scorePoint = (x,y, minDist, others=[]) => {
+          let m = Infinity;
+
+          m = Math.min(m, x - edgePad, (w - edgePad) - x, y - edgePad, (h - edgePad) - y);
+
+          for(const c of centersPx){
+            m = Math.min(m, dist(x,y,c.x,c.y) - minDist);
+          }
+          for(const o of others){
+            m = Math.min(m, dist(x,y,o.x,o.y) - minDist);
+          }
+          return m;
+        };
+
+        const buildCandidates = (side, widen=0) => {
+          const b = bandsForSide(side);
+          const x0 = clamp(b.x0 - widen, edgePad, w - edgePad);
+          const x1 = clamp(b.x1 + widen, edgePad, w - edgePad);
+
+          const xs = [0.22,0.26,0.30,0.34].map(t => x0 + (x1 - x0) * ((t - 0.18) / (0.36 - 0.18)));
+          const cand = [];
+
+          for(let yy = y0; yy <= y1 + 0.1; yy += (h*0.035)){
+            for(const xx of xs){
+              cand.push({ x: clamp(xx, edgePad, w-edgePad), y: clamp(yy, edgePad, h-edgePad) });
+            }
+          }
+          for(let i=0;i<16;i++){
+            const rx = x0 + Math.random()*(x1-x0);
+            const ry = y0 + Math.random()*(y1-y0);
+            cand.push({ x: clamp(rx, edgePad, w-edgePad), y: clamp(ry, edgePad, h-edgePad) });
+          }
+
+          return cand;
+        };
+
+        const trySide = (side) => {
+          for(let loosen = 0; loosen < 6; loosen++){
+            const widen = dotDiaPx * 0.25 * loosen;
+            const minDist = minDistBase * (1 - loosen*0.06);
+
+            const cand = buildCandidates(side, widen);
+
+            if(extraCount === 1){
+              let best = null;
+              let bestS = -Infinity;
+              for(const p of cand){
+                const s = scorePoint(p.x,p.y,minDist);
+                if(s > bestS){ bestS = s; best = p; }
+              }
+              if(best) return { points: [best], ok: bestS >= -dotDiaPx*0.10 };
+            }
+
+            if(extraCount === 2){
+              let bestPair = null;
+              let bestS = -Infinity;
+
+              const scored = cand
+                .map(p => ({ p, s: scorePoint(p.x,p.y,minDist) }))
+                .sort((a,b) => b.s - a.s)
+                .slice(0, 80);
+
+              for(let i=0;i<scored.length;i++){
+                for(let j=i+1;j<scored.length;j++){
+                  const a = scored[i].p, b = scored[j].p;
+                  if(dist(a.x,a.y,b.x,b.y) < minDist) continue;
+
+                  const s1 = scorePoint(a.x,a.y,minDist,[b]);
+                  const s2 = scorePoint(b.x,b.y,minDist,[a]);
+                  const s = Math.min(s1,s2);
+
+                  if(s > bestS){
+                    bestS = s;
+                    bestPair = [a,b].sort((u,v) => u.y - v.y);
+                  }
+                }
+              }
+
+              if(bestPair) return { points: bestPair, ok: bestS >= -dotDiaPx*0.10 };
+            }
+          }
+          return null;
+        };
+
+        const first = trySide(preferredSide);
+        if(first && first.ok) return first.points;
+
+        const otherSide = preferredSide === "left" ? "right" : "left";
+        const second = trySide(otherSide);
+        if(second && second.ok) return second.points;
+
+        const fallback = trySide(preferredSide);
+        return fallback ? fallback.points : [];
+      }
+
+      async function placeExtraDotsForCurrentBoard(extraCount, side){
+        const layer = flashSvg.querySelector(".diceLayer");
+        const img = flashSvg.querySelector(".diceLayer img.qImg");
+        if(!layer || !img) return;
+
+        try{ await img.decode(); }catch(e){}
+
+        if(dotSizePct == null){
+          const pct = computeDotSizePctFromImg(img);
+          if(pct) applyDotSizePct(pct);
+        }
+
+        const w = layer.clientWidth || 0;
+        const h = layer.clientHeight || 0;
+        if(!w || !h) return;
+
+        const centers01 = detectDotCentersFromImg(img);
+        const centersPx = centers01.map(c => ({ x: c.x * w, y: c.y * h }));
+
+        const diaPx = (dotSizePct ? (dotSizePct/100) * w : 0.12*w);
+        const pts = bestExtraDotPlacement(extraCount, side, centersPx, w, h, diaPx);
+
+        const dots = [...flashSvg.querySelectorAll(".extraDot")].slice(0, extraCount);
+        dots.forEach((el, i) => {
+          const p = pts[i] || { x: (side==="left" ? 0.24*w : 0.76*w), y: (extraCount===2 ? (i?0.60*h:0.40*h) : 0.50*h) };
+          el.style.left = `${(p.x / w) * 100}%`;
+          el.style.top = `${(p.y / h) * 100}%`;
+        });
+      }
+
       function boardHtmlForCountOn(layoutId, extraCount, side, blacken){
-        const x = side === "left" ? 20 : 80;
-
-        /* 2 stippen: gelijke tussenruimte, vergelijkbaar met kaarten */
-        const y1 = 43.5;
-        const y2 = 56.5;
-        const ys = extraCount === 1 ? [50] : [y1, y2];
-
-        /* tegelijk verschijnen */
+        const cls = blacken ? "extraDot blacken" : "extraDot show";
         const appearDelay = 360;
         const blackDelay = 1040;
 
-        const dots = ys.slice(0, extraCount).map((y) => {
-          const cls = blacken ? "extraDot blacken" : "extraDot show";
-          return `<div class="${cls}" style="left:${x}%; top:${y}%; --appearDelay:${appearDelay}ms; --blackDelay:${blackDelay}ms;"></div>`;
+        const dots = Array.from({length: extraCount}).map((_, i) => {
+          return `<div class="${cls}" data-idx="${i}" style="--appearDelay:${appearDelay}ms; --blackDelay:${blackDelay}ms;"></div>`;
         }).join("");
 
         return `
           <div class="qWrap">
-            <div class="qWrapInner" style="transform: translateY(0%) scale(0.92);">
+            <div class="qWrapInner">
               <div class="diceLayer">
                 <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
                 ${dots}
@@ -1085,7 +1482,6 @@
         }, ms + 40);
       }
 
-      /* antwoorden */
       function buildOptions(correct){
         const cap = maxForLevel();
 
@@ -1215,7 +1611,7 @@
       }
 
       function answerFaceHtml(v){
-        const answersAreMarbotic = (LEVEL === 6 || LEVEL === 7); /* FIX: level 6 ook marbotic */
+        const answersAreMarbotic = (LEVEL === 6 || LEVEL === 7);
         const answersAreNumbers = (LEVEL >= 8);
 
         if(answersAreMarbotic){
@@ -1229,7 +1625,7 @@
         const layoutId = standardLayoutId(v);
         return `
           <div class="qWrap">
-            <div class="qWrapInner" style="transform: translateY(0%) scale(0.92);">
+            <div class="qWrapInner">
               <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
             </div>
           </div>
@@ -1298,19 +1694,39 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* timeline auto fit */
-      const LV_MIN = 1;
-      const LV_MAX = 9;
+      /* 3, timelineGroup terug naar oude, stabiele versie, met kalibratie */
+      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v8";
 
-      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
-      let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
+      const DEFAULT_CALIB = {
+        landscape: { x: 714,  y: 490, s: 1.42 },
+        portrait:  { x: 1012, y: 334, s: 1.70 },
+        desktop:   { x: 0,    y: 0,   s: 1.00 },
+        lineY: -10,
+        levelsVisible: true
+      };
 
-      let tlMeta = null;
-      let chickEyeFrac = null;
-      let baselineLocalY = 0;
+      let calib = loadCalib() || deepClone(DEFAULT_CALIB);
+
+      function loadCalib(){
+        try{
+          const raw = localStorage.getItem(TL_STORE_KEY);
+          if(!raw) return null;
+          const obj = JSON.parse(raw);
+          if(!obj || typeof obj !== "object") return null;
+          return obj;
+        }catch(e){ return null; }
+      }
+      function saveCalib(){
+        try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
+      }
+
+      function activeModeKey(){
+        if(isAutoFitDesktop()) return "desktop";
+        return isPortrait() ? "portrait" : "landscape";
+      }
 
       function timelineReady(){
-        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
       }
 
       function lum(r,g,b){
@@ -1318,8 +1734,10 @@
       }
 
       function safeDefaultTlMeta(){
-        return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
+        return { leftFrac: 0.06, rightFrac: 0.94 };
       }
+
+      let tlMeta = null;
 
       function analyzeLevelsPng(imgEl){
         try{
@@ -1335,27 +1753,6 @@
 
           const img = ctx.getImageData(0, 0, w, h);
           const d = img.data;
-
-          const yStart = Math.floor(h * 0.55);
-          let bestY = Math.floor(h * 0.85);
-          let bestCount = -1;
-
-          for(let y=yStart; y<h; y++){
-            let c = 0;
-            const row = y * w * 4;
-            for(let x=0; x<w; x++){
-              const i = row + x*4;
-              const a = d[i+3];
-              if(a < 32) continue;
-              const L = lum(d[i], d[i+1], d[i+2]);
-              if(L > 245) continue;
-              c++;
-            }
-            if(c > bestCount){
-              bestCount = c;
-              bestY = y;
-            }
-          }
 
           const col = new Array(w).fill(0);
           let maxC = 0;
@@ -1381,28 +1778,10 @@
             if(col[x] >= thresh) xs.push(x);
           }
 
-          let clusters = [];
-          if(xs.length){
-            let s = xs[0], p = xs[0];
-            for(let i=1;i<xs.length;i++){
-              const x = xs[i];
-              if(x === p + 1){ p = x; continue; }
-              clusters.push([s,p]);
-              s = x; p = x;
-            }
-            clusters.push([s,p]);
-          }
-
-          const maxClusterW = w * 0.06;
-          clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
-
           let leftX = w * 0.06;
           let rightX = w * 0.94;
 
-          if(clusters.length >= 2){
-            leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
-            rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
-          }else if(xs.length >= 2){
+          if(xs.length >= 2){
             leftX = xs[Math.floor(xs.length * 0.02)];
             rightX = xs[Math.floor(xs.length * 0.98)];
           }
@@ -1412,99 +1791,106 @@
 
           return {
             leftFrac: leftX / w,
-            rightFrac: rightX / w,
-            baseFrac: bestY / h
+            rightFrac: rightX / w
           };
         }catch(e){
           return safeDefaultTlMeta();
         }
       }
 
-      function analyzeChickEyes(imgEl){
-        try{
-          const w = imgEl.naturalWidth || 0;
-          const h = imgEl.naturalHeight || 0;
-          if(!w || !h) return 0.42;
-
-          const cv = document.createElement("canvas");
-          cv.width = w;
-          cv.height = h;
-          const ctx = cv.getContext("2d", { willReadFrequently: true });
-          ctx.drawImage(imgEl, 0, 0);
-
-          const img = ctx.getImageData(0, 0, w, h);
-          const d = img.data;
-
-          const ys = [];
-          const yMax = Math.floor(h * 0.60);
-          const x0 = Math.floor(w * 0.25);
-          const x1 = Math.floor(w * 0.75);
-
-          for(let y=0; y<yMax; y++){
-            const row = y * w * 4;
-            for(let x=x0; x<x1; x++){
-              const i = row + x*4;
-              const a = d[i+3];
-              if(a < 32) continue;
-              const L = lum(d[i], d[i+1], d[i+2]);
-              if(L < 55){
-                ys.push(y);
-              }
-            }
-          }
-
-          if(ys.length < 24) return 0.42;
-
-          ys.sort((a,b) => a-b);
-          const med = ys[Math.floor(ys.length/2)];
-          return clamp(med / h, 0.18, 0.62);
-        }catch(e){
-          return 0.42;
-        }
+      function tickTForLevel(level){
+        const lv = clamp(level, 1, 9);
+        return (lv - 1) / 8;
       }
 
-      function tickTForLevel(level){
-        const lv = clamp(level, LV_MIN, LV_MAX);
-        const denom = Math.max(1, (LV_MAX - LV_MIN));
-        return (lv - LV_MIN) / denom;
+      function getContainedRectLocal(imgEl){
+        const w = imgEl.clientWidth || 0;
+        const h = imgEl.clientHeight || 0;
+        const iw = imgEl.naturalWidth || 0;
+        const ih = imgEl.naturalHeight || 0;
+        if(!w || !h || !iw || !ih) return null;
+
+        const s = Math.min(w / iw, h / ih);
+        const drawW = iw * s;
+        const drawH = ih * s;
+
+        const padX = (w - drawW) / 2;
+        const padY = (h - drawH) / 2;
+
+        return { padX, padY, drawW, drawH };
       }
 
       function currentTickXLocalForLevel(level){
-        if(!tlMeta) return 0;
-        const w = timeline.clientWidth || 0;
-        const xL = tlMeta.leftFrac * w;
-        const xR = tlMeta.rightFrac * w;
-        return xL + tickTForLevel(level) * (xR - xL);
+        if(!levelsImg) return null;
+        const c = getContainedRectLocal(levelsImg);
+        if(!c) return null;
+        if(!tlMeta) tlMeta = safeDefaultTlMeta();
+
+        const t = tickTForLevel(level);
+        const frac = tlMeta.leftFrac + t * (tlMeta.rightFrac - tlMeta.leftFrac);
+        return c.padX + (c.drawW * frac);
       }
 
       function setAnchorToLevel(level, opts = {}){
         if(!timelineReady()) return;
-        if(!tlMeta) tlMeta = safeDefaultTlMeta();
-        if(chickEyeFrac == null) chickEyeFrac = 0.42;
 
         const xLocal = currentTickXLocalForLevel(level);
+        if(xLocal == null) return;
 
-        const aH = chickAnchor.clientHeight || 0;
-        const eyeLocalY = chickEyeFrac * aH;
-        const topLocal = baselineLocalY - eyeLocalY;
+        const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
 
         if(opts.noTransition){
           chickAnchor.classList.add("noMove");
           chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.top = `${topLocal}px`;
+          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
           chickAnchor.offsetHeight;
           chickAnchor.classList.remove("noMove");
           return;
         }
 
         chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.top = `${topLocal}px`;
+        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
       }
 
       function updateLevelsVisibilityUI(){
-        toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
-        if(levelsVisible) levelsImg.classList.remove("levelsHidden");
+        const on = !!calib.levelsVisible;
+        toggleLevelsBtn.textContent = on ? "levels png verbergen" : "levels png tonen";
+        if(on) levelsImg.classList.remove("levelsHidden");
         else levelsImg.classList.add("levelsHidden");
+      }
+
+      function applyTimelineGroupTransform(){
+        if(!timelineReady()) return;
+
+        updateLevelsVisibilityUI();
+
+        const k = activeModeKey();
+
+        if(k === "desktop"){
+          const r = gameCard.getBoundingClientRect();
+
+          const desiredW = Math.max(260, Math.round(r.width - 36));
+          const desiredH = Math.max(86, Math.round(Math.min(120, r.height * 0.22)));
+
+          timeline.style.width = desiredW + "px";
+          timeline.style.height = desiredH + "px";
+
+          const x = Math.round(r.left + 18);
+          const y = Math.round(r.bottom + 6);
+
+          const c = calib.desktop || DEFAULT_CALIB.desktop;
+          timelineGroup.style.transform = `translate(${x + (c.x||0)}px, ${y + (c.y||0)}px) scale(${c.s||1})`;
+
+          setAnchorToLevel(LEVEL, { noTransition: true });
+          return;
+        }
+
+        timeline.style.width = "";
+        timeline.style.height = "";
+
+        const c = calib[k] || DEFAULT_CALIB[k];
+        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
+        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       let fitQueued = false;
@@ -1513,81 +1899,31 @@
         fitQueued = true;
         requestAnimationFrame(() => {
           fitQueued = false;
-          fitTimelineToQuestion();
+          applyTimelineGroupTransform();
         });
-      }
-
-      function snapPx(v){
-        const dpr = window.devicePixelRatio || 1;
-        return Math.round(v * dpr) / dpr;
-      }
-
-      function fitTimelineToQuestion(){
-        if(!timelineReady()) return;
-        if(levelsImg.naturalWidth && levelsImg.naturalHeight){
-          if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
-          timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
-        }else{
-          if(!tlMeta) tlMeta = safeDefaultTlMeta();
-          timeline.style.aspectRatio = `520 / 120`;
-        }
-
-        if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
-        if(chickEyeFrac == null) chickEyeFrac = 0.42;
-
-        const r = gameCard.getBoundingClientRect();
-        const cs = getComputedStyle(gameCard);
-        const bw = parseFloat(cs.borderLeftWidth) || 0;
-
-        const targetLeft = r.left + bw;
-        const targetRight = r.right - bw;
-        const targetBaselineY = r.bottom - (bw * 0.5);
-
-        const baseW = 520;
-        timeline.style.width = `${baseW}px`;
-
-        const w = timeline.clientWidth || 1;
-        const h = timeline.clientHeight || 1;
-
-        const xL = tlMeta.leftFrac * w;
-        const xR = tlMeta.rightFrac * w;
-        const yB = tlMeta.baseFrac * h;
-
-        baselineLocalY = yB;
-
-        const denom = Math.max(1, (xR - xL));
-        const s = (targetRight - targetLeft) / denom;
-
-        const tx = targetLeft - s * xL;
-        const ty = targetBaselineY - s * yB;
-
-        timelineGroup.style.transform = `translate3d(${snapPx(tx)}px, ${snapPx(ty)}px, 0) scale(${s})`;
-        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function initTimelineAuto(){
         if(!timelineReady()) return;
 
-        updateLevelsVisibilityUI();
-
-        const tryInit = () => {
-          scheduleFit();
+        const apply = () => {
+          if(levelsImg.naturalWidth && !tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+          applyTimelineGroupTransform();
+          setAnchorToLevel(LEVEL, { noTransition: true });
         };
 
-        if(levelsImg.complete) tryInit();
-        levelsImg.addEventListener("load", tryInit);
-
-        if(stillImg.complete && stillImg.naturalWidth) tryInit();
-        stillImg.addEventListener("load", tryInit);
+        if(levelsImg.complete && levelsImg.naturalWidth) apply();
+        else levelsImg.addEventListener("load", apply, { once:true });
 
         if(typeof ResizeObserver === "function"){
-          const ro = new ResizeObserver(() => scheduleFit());
+          const ro = new ResizeObserver(() => apply());
+          ro.observe(timeline);
           ro.observe(gameCard);
           ro.observe(document.body);
         }
 
-        window.addEventListener("resize", scheduleFit);
-        window.addEventListener("orientationchange", scheduleFit);
+        window.addEventListener("resize", apply);
+        window.addEventListener("orientationchange", apply);
       }
 
       /* animatie kuiken */
@@ -1698,9 +2034,6 @@
         });
       }
 
-      /* FIX: ballerina_terug mp4 kan soms “hangen”. Dit maakt de loop fail safe:
-         - forced deadline
-         - als currentTime niet meer verandert: break en ga door */
       async function playSegmentOnCanvasSafe(videoEl, cfg){
         if(!animCanvas || !chickCtx) return false;
 
@@ -1849,6 +2182,107 @@
         chickPlaying = false;
       }
 
+      /* kalibratie ui */
+      let calMode = "landscape";
+
+      function setCalMode(mode){
+        calMode = (mode === "portrait" || mode === "desktop") ? mode : "landscape";
+        tabLandscape.classList.toggle("active", calMode === "landscape");
+        tabPortrait.classList.toggle("active", calMode === "portrait");
+        tabDesktop.classList.toggle("active", calMode === "desktop");
+        loadSlidersFromCalib();
+      }
+
+      function loadSlidersFromCalib(){
+        const c = calib[calMode] || DEFAULT_CALIB[calMode];
+        gX.value = String(c.x ?? 0);
+        gY.value = String(c.y ?? 0);
+        gS.value = String((c.s ?? 1.0).toFixed(2));
+        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
+        syncCalNumbers();
+        applyTimelineGroupTransform();
+        refreshJsonOut();
+      }
+
+      function syncCalNumbers(){
+        gXv.textContent = String(gX.value);
+        gYv.textContent = String(gY.value);
+        gSv.textContent = Number(gS.value).toFixed(2);
+        lineYv.textContent = String(lineY.value);
+      }
+
+      function writeSlidersToCalib(){
+        calib[calMode] = { x: Number(gX.value), y: Number(gY.value), s: Number(gS.value) };
+        calib.lineY = Number(lineY.value);
+      }
+
+      function refreshJsonOut(){
+        const obj = {
+          landscape: { ...calib.landscape, lineY: calib.lineY },
+          portrait:  { ...calib.portrait,  lineY: calib.lineY },
+          desktop:   { ...calib.desktop,   lineY: calib.lineY },
+          levelsVisible: !!calib.levelsVisible
+        };
+        jsonOut.value = JSON.stringify(obj, null, 2);
+      }
+
+      function openCal(){ calPanel.classList.remove("hidden"); setCalMode(calMode); }
+      function closeCal(){ calPanel.classList.add("hidden"); }
+
+      openCalBtn.addEventListener("click", () => { beep("tap"); openCal(); });
+      calClose.addEventListener("click", () => { beep("tap"); closeCal(); });
+
+      tabLandscape.addEventListener("click", () => { beep("tap"); setCalMode("landscape"); });
+      tabPortrait.addEventListener("click", () => { beep("tap"); setCalMode("portrait"); });
+      tabDesktop.addEventListener("click", () => { beep("tap"); setCalMode("desktop"); });
+
+      [gX, gY, gS, lineY].forEach(el => el.addEventListener("input", () => {
+        writeSlidersToCalib();
+        syncCalNumbers();
+        applyTimelineGroupTransform();
+        refreshJsonOut();
+      }));
+
+      gResetBtn.addEventListener("click", () => {
+        beep("tap");
+        calib = deepClone(DEFAULT_CALIB);
+        setCalMode(calMode);
+        applyTimelineGroupTransform();
+        saveCalib();
+        refreshJsonOut();
+      });
+
+      gSaveBtn.addEventListener("click", () => {
+        beep("tap");
+        writeSlidersToCalib();
+        saveCalib();
+        applyTimelineGroupTransform();
+        setAnchorToLevel(LEVEL, { noTransition: true });
+        refreshJsonOut();
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        beep("tap");
+        refreshJsonOut();
+        try{
+          await navigator.clipboard.writeText(jsonOut.value);
+        }catch(e){
+          try{
+            jsonOut.focus();
+            jsonOut.select();
+            document.execCommand("copy");
+          }catch(err){}
+        }
+      });
+
+      toggleLevelsBtn.addEventListener("click", () => {
+        beep("tap");
+        calib.levelsVisible = !calib.levelsVisible;
+        saveCalib();
+        updateLevelsVisibilityUI();
+        scheduleFit();
+      });
+
       /* game */
       let started = false;
       let locked = false;
@@ -1962,13 +2396,9 @@
         if(questionState.kind === "counton"){
           setBoard(boardHtmlForCountOn(questionState.layoutId, questionState.extraCount, questionState.side, questionState.blacken));
           await raf();
-          await wait(40);
+          await wait(30);
 
-          /* dot size matchen na render, één keer per sessie is genoeg */
-          if(dotSizePct == null){
-            const pct = computeDotSizePctFromCurrentSvg();
-            if(pct) applyDotSizePct(pct);
-          }
+          await placeExtraDotsForCurrentBoard(questionState.extraCount, questionState.side);
 
           await wait(120);
         }else{
@@ -2131,14 +2561,6 @@
         }
       });
 
-      toggleLevelsBtn.addEventListener("click", () => {
-        beep("tap");
-        levelsVisible = !levelsVisible;
-        try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
-        updateLevelsVisibilityUI();
-        scheduleFit();
-      });
-
       /* start */
       function startGame(){
         if(started) return;
@@ -2211,6 +2633,7 @@
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
       updateLevelsVisibilityUI();
+      refreshJsonOut();
 
     })();
   </script>
