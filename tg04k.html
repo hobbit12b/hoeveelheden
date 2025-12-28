@@ -47,7 +47,7 @@
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
-      grid-template-rows: 1fr;
+      grid-template-rows: 1fr; /* FIX, voorkomt witte balk onderin */
       height: 100%;
       position: relative;
       overflow:hidden;
@@ -200,13 +200,29 @@
       justify-content:center;
     }
 
-    .flashSvg svg,
-    .flashSvg img{
+    .flashSvg svg{
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    /* AANPASSING, svg in vraagvenster netjes centreren en schalen */
+    #flashSvg .qWrap{
+      width: 100%;
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 6%;
+    }
+    #flashSvg .layoutImg{
       width: 100%;
       height: 100%;
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      object-position: center;
       display:block;
     }
 
@@ -510,15 +526,13 @@
       transform-origin: 0 0;
       will-change: transform;
       pointer-events:none;
-      /* FIX: nooit onzichtbaar door rare compositing */
-      transform: translate(0px, 0px) scale(1);
     }
 
     .progressTimeline{
       position:absolute;
       left: 0;
       top: 0;
-      width: 520px;
+      width: 520px; /* basis, wordt via transform geschaald */
       height: auto;
       z-index: 20;
     }
@@ -543,7 +557,7 @@
       width: 82px;
       height: 82px;
       pointer-events:none;
-      transition: left 520ms cubic-bezier(.22,.61,.35,1), top 520ms cubic-bezier(.22,.61,.35,1);
+      transition: left 520ms cubic-bezier(.22,.61,.35,1);
       will-change: left, transform, top;
     }
     .progressChickAnchor.noMove{ transition: none !important; }
@@ -579,18 +593,16 @@
     }
 
     .layoutImg{
-      width: auto;
+      width: min(88%, 520px);
       height: auto;
-      max-width: 92%;
       max-height: 92%;
       object-fit: contain;
       display: block;
     }
 
     .qWrap .diceMain{
-      width: auto;
+      width: min(78%, 460px);
       height: auto;
-      max-width: 86%;
       max-height: 92%;
     }
 
@@ -598,7 +610,6 @@
       width: 100%;
       height: 100%;
       max-height: 100%;
-      object-fit: contain;
     }
 
     .numFace{
@@ -611,28 +622,23 @@
       color: rgba(25,25,25,.92);
     }
 
-    .marboticFace{
+    /* AANPASSING, marbotic in level 7 netjes schalen */
+    .marboticImg{
       width: 100%;
       height: 100%;
-      display: grid;
-      place-items: center;
-    }
-    .marboticFace img{
-      width: 100%;
-      height: 100%;
-      max-width: 88%;
-      max-height: 88%;
       object-fit: contain;
       display:block;
-      pointer-events:none;
-      user-select:none;
-      -webkit-user-drag:none;
+    }
+    .ansBtn .marboticImg{
+      width: 92%;
+      height: 92%;
     }
 
+    /* AANPASSING, extra punten even groot als op de kaart, en afstand bij twee punten groter */
     .extraDot{
       position: absolute;
-      width: 46px;
-      height: 46px;
+      width: clamp(28px, 9%, 54px);
+      height: clamp(28px, 9%, 54px);
       border-radius: 50%;
       background: rgba(25,25,25,0.30);
       opacity: 0;
@@ -753,7 +759,7 @@
       <div class="tuneButtons">
         <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
         <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
-        <button class="tuneBtnSmall secondary" id="testGoodBtn" type="button">Test goed</button>
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
       </div>
 
       <div class="tuneButtons" style="margin-top:10px;">
@@ -830,36 +836,15 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
+      /* AANPASSING, kaartjes omdraaien ook in level 3 t/m 7 */
       function usesAnswerCards(){
-        return LEVEL >= 2;
-      }
-
-      function safeFitFallback(){
-        if(!timelineGroup || !timeline || !gameCard) return;
-        const r = gameCard.getBoundingClientRect();
-        const baseW = 520;
-        timeline.style.width = baseW + "px";
-        const targetLeft = r.left + 6;
-        const targetRight = r.right - 6;
-        const denom = baseW * 0.88;
-        const s = Math.max(0.25, Math.min(3.0, (targetRight - targetLeft) / Math.max(1, denom)));
-        const tx = targetLeft - (baseW * 0.06) * s;
-        const ty = (r.bottom - 6) - (timeline.clientHeight * 0.82) * s;
-        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-      }
-
-      function scheduleFitHard(){
-        requestAnimationFrame(() => {
-          fitTimelineToQuestion();
-          safeFitFallback();
-        });
+        return LEVEL >= 2 && LEVEL <= 7;
       }
 
       function setLevel(n){
         LEVEL = clamp(n, 1, 9);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        scheduleFitHard();
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
@@ -908,6 +893,7 @@
         }catch(e){}
       }
 
+      /* dobbelstenen layouts */
       const DICE_DIR = "dobbelstenen";
       const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
 
@@ -974,7 +960,8 @@
 
       function boardHtmlForCountOn(layoutId, extraCount, side, blacken){
         const x = side === "left" ? 18 : 82;
-        const ys = extraCount === 1 ? [50] : [44, 56];
+        /* AANPASSING, bij twee punten meer afstand, en daarmee ook beter passend bij de kaart */
+        const ys = extraCount === 1 ? [50] : [36, 64];
 
         const dots = ys.slice(0, extraCount).map((y, i) => {
           const appear = i === 0 ? 260 : 720;
@@ -988,7 +975,6 @@
 
       function setBoard(html){ flashSvg.innerHTML = html; }
       function clearBoard(){ flashSvg.innerHTML = ""; }
-
       function dissolveBoard(ms){
         flashSvg.style.transition = `opacity ${ms}ms ease`;
         flashSvg.style.opacity = "0";
@@ -1127,12 +1113,25 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
+      /* AANPASSING, marbotic voor level 7, en kaartjes front content hergebruiken */
+      function answerFaceHtml(v){
+        const answersAreNumbers = LEVEL >= 6;
+
+        if(LEVEL === 7){
+          return `<div class="qWrap"><img class="marboticImg" src="marbotic${v}.png" alt="${v}" draggable="false"></div>`;
+        }
+
+        if(answersAreNumbers){
+          return `<div class="numFace">${v}</div>`;
+        }
+
+        const layoutId = standardLayoutId(v);
+        return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+      }
+
       function renderAnswers(correct, onPick){
         const arr = buildOptions(correct);
         answersEl.innerHTML = "";
-
-        const answersUseMarbotic = LEVEL >= 7;
-        const answersAreNumbers = (LEVEL >= 6) && !answersUseMarbotic;
 
         arr.forEach(v => {
           const btn = document.createElement("button");
@@ -1147,26 +1146,19 @@
 
           btn.addEventListener("click", () => onPick(btn, v));
 
-          if(answersUseMarbotic){
-            btn.innerHTML = `<div class="marboticFace"><img src="marbotic${v}.png" alt="${v}" draggable="false"></div>`;
-          }else if(answersAreNumbers){
-            btn.innerHTML = `<div class="numFace">${v}</div>`;
-          }else{
-            const layoutId = standardLayoutId(v);
-            const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+          const face = answerFaceHtml(v);
 
-            if(usesAnswerCards()){
-              btn.innerHTML = `
-                <div class="cardWrap">
-                  <div class="cardInner">
-                    <div class="cardBack" aria-hidden="true"></div>
-                    <div class="cardFront">${face}</div>
-                  </div>
+          if(usesAnswerCards()){
+            btn.innerHTML = `
+              <div class="cardWrap">
+                <div class="cardInner">
+                  <div class="cardBack" aria-hidden="true"></div>
+                  <div class="cardFront">${face}</div>
                 </div>
-              `;
-            }else{
-              btn.innerHTML = face;
-            }
+              </div>
+            `;
+          }else{
+            btn.innerHTML = face;
           }
 
           answersEl.appendChild(btn);
@@ -1199,14 +1191,18 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
+      /* =========================
+         TIMELINE auto fit
+         ========================= */
+
       const LV_MIN = 1;
       const LV_MAX = 9;
 
       const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
       let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
 
-      let tlMeta = null;
-      let chickEyeFrac = null;
+      let tlMeta = null;          // { leftFrac, rightFrac, baseFrac }
+      let chickEyeFrac = null;    // fractie 0..1
       let baselineLocalY = 0;
 
       function timelineReady(){
@@ -1379,7 +1375,7 @@
 
       function setAnchorToLevel(level, opts = {}){
         if(!timelineReady()) return;
-        if(!tlMeta) tlMeta = safeDefaultTlMeta();
+        if(!tlMeta) return;
         if(chickEyeFrac == null) chickEyeFrac = 0.42;
 
         const xLocal = currentTickXLocalForLevel(level);
@@ -1414,23 +1410,17 @@
         requestAnimationFrame(() => {
           fitQueued = false;
           fitTimelineToQuestion();
-          safeFitFallback();
         });
       }
 
       function fitTimelineToQuestion(){
         if(!timelineReady()) return;
+        if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
 
-        if(levelsImg.naturalWidth && levelsImg.naturalHeight){
-          if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
-          timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
-        }else{
-          if(!tlMeta) tlMeta = safeDefaultTlMeta();
-          timeline.style.aspectRatio = `520 / 120`;
-        }
-
+        if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
         if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
-        if(chickEyeFrac == null) chickEyeFrac = 0.42;
+
+        timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
 
         const r = gameCard.getBoundingClientRect();
         const cs = getComputedStyle(gameCard);
@@ -1469,7 +1459,11 @@
         updateLevelsVisibilityUI();
 
         const tryInit = () => {
-          scheduleFitHard();
+          if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+            tlMeta = analyzeLevelsPng(levelsImg);
+            if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+            scheduleFit();
+          }
         };
 
         if(levelsImg.complete) tryInit();
@@ -1487,6 +1481,10 @@
         window.addEventListener("resize", scheduleFit);
         window.addEventListener("orientationchange", scheduleFit);
       }
+
+      /* =========================
+         Animatie kuiken, zoals je had
+         ========================= */
 
       const TL_WHITE_THRESH = 255;
 
@@ -1695,7 +1693,6 @@
       async function animateTimeline(fromLevel, toLevel){
         if(!timelineReady()) return;
 
-        scheduleFitHard();
         setAnchorToLevel(fromLevel, { noTransition: true });
         showOnlyStill();
 
@@ -1717,7 +1714,6 @@
 
         await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        scheduleFitHard();
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1727,6 +1723,7 @@
         chickPlaying = false;
       }
 
+      /* game */
       let started = false;
       let locked = false;
 
@@ -1743,6 +1740,10 @@
       function resetStreaks(){
         streakGood = 0;
         streakBad = 0;
+      }
+
+      function isCountOnLevel(){
+        return LEVEL >= 6;
       }
 
       function buildQuestionState(){
@@ -1853,7 +1854,6 @@
 
         locked = false;
         previewCardsNonBlocking();
-        scheduleFitHard();
       }
 
       function nextRound(){
@@ -1936,6 +1936,7 @@
         nextRound();
       }
 
+      /* tune ui */
       function syncUI(){
         flashMsValue.textContent = String(flashMs);
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
@@ -1974,12 +1975,11 @@
         if(btns[0]) await onPick(btns[0], questionState.correct);
       });
 
-      /* FIX: levelknoppen nooit blokkeren door locked, dit is een debug tool */
       levelUpBtn.addEventListener("click", async () => {
         beep("tap");
+        if(locked) return;
         const before = LEVEL;
         setLevel(LEVEL + 1);
-        syncUI();
         if(LEVEL !== before){
           await animateTimeline(before, LEVEL);
         }
@@ -1987,9 +1987,9 @@
 
       levelDownBtn.addEventListener("click", async () => {
         beep("tap");
+        if(locked) return;
         const before = LEVEL;
         setLevel(LEVEL - 1);
-        syncUI();
         if(LEVEL !== before){
           await animateTimeline(before, LEVEL);
         }
@@ -2000,9 +2000,9 @@
         levelsVisible = !levelsVisible;
         try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
         updateLevelsVisibilityUI();
-        scheduleFitHard();
       });
 
+      /* start */
       function startGame(){
         if(started) return;
         started = true;
@@ -2013,7 +2013,7 @@
         startOverlay.style.display = "none";
         syncUI();
 
-        scheduleFitHard();
+        scheduleFit();
         setAnchorToLevel(LEVEL, { noTransition: true });
         showOnlyStill();
 
@@ -2056,19 +2056,20 @@
           locked = false;
           previewCardsNonBlocking();
 
-          scheduleFitHard();
+          scheduleFit();
           setAnchorToLevel(LEVEL, { noTransition: true });
         }, 220);
       }
       window.addEventListener("resize", onReflow);
       window.addEventListener("orientationchange", onReflow);
 
+      /* init */
       clearBoard();
       setLevel(1);
       resetStreaks();
       syncUI();
       initTimelineAuto();
-      scheduleFitHard();
+      scheduleFit();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
       updateLevelsVisibilityUI();
