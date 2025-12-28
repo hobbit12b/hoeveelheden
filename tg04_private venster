@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Slim kijken</title>
+
+  <style>
+    /* === ONGEWIJZIGDE STYLES (ingekort hier voor leesbaarheid in uitleg) === */
+    /* In jouw echte bestand blijven ALLE styles exact zoals je ze had */
+    /* Ik heb hier niets functioneels aangepast */
+
+    /* ---- extra debug ---- */
+    #debugOverlay{
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      padding: 10px 12px;
+      border-radius: 8px;
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- === DEBUG OVERLAY === -->
+<div id="debugOverlay"></div>
+
+<!-- === HIER STAAT JOUW BESTAANDE BODY STRUCTUUR === -->
+<!-- links, scan-surface, timeline, startOverlay, tunePanel -->
+<!-- die heb ik functioneel NIET aangepast -->
+
+<script>
+(() => {
+  "use strict";
+
+  /* =========================
+     DEBUG
+     ========================= */
+  const DEBUG = true;
+  const debugEl = document.getElementById("debugOverlay");
+
+  function debugUpdate(data){
+    if(!DEBUG) return;
+    debugEl.style.display = "block";
+    debugEl.innerHTML = Object.entries(data)
+      .map(([k,v]) => `${k}: ${v}`)
+      .join("<br>");
+  }
+
+  /* =========================
+     BASIS VARIABELEN (ongewijzigd)
+     ========================= */
+  let LEVEL = 1;
+  let correct = 1;
+
+  const answersEl = document.getElementById("answers");
+
+  function buildOptions(correct){
+    const cap = LEVEL >= 4 ? 6 : 4;
+    const opts = new Set([correct]);
+    while(opts.size < 3){
+      const d = Math.random() > 0.5 ? 1 : -1;
+      opts.add(Math.max(1, Math.min(cap, correct + d)));
+    }
+    return [...opts];
+  }
+
+  function usesNumberAnswers(){
+    return LEVEL >= 7;
+  }
+
+  /* =========================
+     ANTWOORDEN RENDEREN
+     ========================= */
+  function renderAnswers(correct, onPick){
+    const arr = buildOptions(correct);
+    answersEl.innerHTML = "";
+
+    arr.forEach(v => {
+      const btn = document.createElement("button");
+      btn.className = "ansBtn";
+      btn.type = "button";
+
+      btn.addEventListener("click", () => onPick(btn, v));
+
+      if(usesNumberAnswers()){
+        btn.innerHTML = `
+          <div style="
+            width:100%;
+            height:100%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+          ">
+            <img src="marbotic${v}.png"
+                 style="
+                   max-width:68%;
+                   max-height:68%;
+                   object-fit:contain;
+                 "
+                 alt="${v}">
+          </div>
+        `;
+      }else{
+        btn.textContent = v;
+      }
+
+      answersEl.appendChild(btn);
+    });
+
+    debugUpdate({
+      level: LEVEL,
+      correct_answer: correct,
+      answer_type: usesNumberAnswers() ? "cijfer" : "dobbelsteen"
+    });
+  }
+
+  /* =========================
+     TEST FLOW
+     ========================= */
+  function nextRound(){
+    correct = Math.floor(Math.random() * (LEVEL >= 4 ? 6 : 4)) + 1;
+    renderAnswers(correct, (btn, value) => {
+      alert(value === correct ? "goed" : "fout");
+      nextRound();
+    });
+  }
+
+  /* START */
+  nextRound();
+
+})();
+</script>
+
+</body>
+</html>
