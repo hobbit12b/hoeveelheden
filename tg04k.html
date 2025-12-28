@@ -47,7 +47,7 @@
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
-      grid-template-rows: 1fr; /* FIX, voorkomt witte balk onderin */
+      grid-template-rows: 1fr;
       height: 100%;
       position: relative;
       overflow:hidden;
@@ -198,6 +198,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      overflow:hidden;
     }
 
     .flashSvg svg{
@@ -205,25 +206,6 @@
       height: 100%;
       max-width: 100%;
       max-height: 100%;
-    }
-
-    /* AANPASSING, svg in vraagvenster netjes centreren en schalen */
-    #flashSvg .qWrap{
-      width: 100%;
-      height: 100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 6%;
-    }
-    #flashSvg .layoutImg{
-      width: 100%;
-      height: 100%;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      object-position: center;
-      display:block;
     }
 
     .scanStage{
@@ -532,7 +514,7 @@
       position:absolute;
       left: 0;
       top: 0;
-      width: 520px; /* basis, wordt via transform geschaald */
+      width: 520px;
       height: auto;
       z-index: 20;
     }
@@ -553,7 +535,7 @@
       position:absolute;
       left: 0;
       top: 0;
-      transform: translateX(-50%);
+      transform: translate3d(-50%, 0, 0);
       width: 82px;
       height: 82px;
       pointer-events:none;
@@ -574,6 +556,8 @@
       will-change: transform, opacity;
       display:block;
       object-fit: contain;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .chickLayer.active{ opacity: 1; }
     .stillLayer{ z-index: 3; }
@@ -582,7 +566,7 @@
     #animCanvas{ opacity:0; }
     #animCanvas.active{ opacity:1; }
 
-    /* dobbelsteen assets */
+    /* dobbelsteen assets, basis */
     .qWrap{
       width: 100%;
       height: 100%;
@@ -592,18 +576,44 @@
       overflow: hidden;
     }
 
+    /* vraagvenster: altijd passend binnen het kader */
+    #flashSvg .qWrap{
+      padding: 6%;
+    }
+    #flashSvg img.layoutImg{
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display:block;
+    }
+
+    /* count on: dots schalen mee met de dobbelsteen en staan exact bovenop het juiste vlak */
+    .diceLayer{
+      position: relative;
+      height: 92%;
+      aspect-ratio: 1 / 1;
+      width: auto;
+      max-width: 78%;
+      display: grid;
+      place-items: center;
+    }
+    #flashSvg .diceLayer img.layoutImg{
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display:block;
+    }
+
     .layoutImg{
       width: min(88%, 520px);
       height: auto;
       max-height: 92%;
       object-fit: contain;
       display: block;
-    }
-
-    .qWrap .diceMain{
-      width: min(78%, 460px);
-      height: auto;
-      max-height: 92%;
     }
 
     .ansBtn .layoutImg{
@@ -622,7 +632,7 @@
       color: rgba(25,25,25,.92);
     }
 
-    /* AANPASSING, marbotic in level 7 netjes schalen */
+    /* level 7: marbotic cijfers in de knoppen */
     .marboticImg{
       width: 100%;
       height: 100%;
@@ -630,15 +640,15 @@
       display:block;
     }
     .ansBtn .marboticImg{
-      width: 92%;
-      height: 92%;
+      width: 90%;
+      height: 90%;
     }
 
-    /* AANPASSING, extra punten even groot als op de kaart, en afstand bij twee punten groter */
+    /* extra dots: gelijk formaat en afstand, mee schalend met dobbelsteen */
     .extraDot{
       position: absolute;
-      width: clamp(28px, 9%, 54px);
-      height: clamp(28px, 9%, 54px);
+      width: clamp(28px, 12%, 54px);
+      height: clamp(28px, 12%, 54px);
       border-radius: 50%;
       background: rgba(25,25,25,0.30);
       opacity: 0;
@@ -836,16 +846,16 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
-      /* AANPASSING, kaartjes omdraaien ook in level 3 t/m 7 */
       function usesAnswerCards(){
         return LEVEL >= 2 && LEVEL <= 7;
       }
 
-      function setLevel(n){
+      function applyLevel(n, opts = {}){
+        const syncAnchor = opts.syncAnchor !== false;
         LEVEL = clamp(n, 1, 9);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        setAnchorToLevel(LEVEL, { noTransition: true });
+        if(syncAnchor) setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -960,8 +970,7 @@
 
       function boardHtmlForCountOn(layoutId, extraCount, side, blacken){
         const x = side === "left" ? 18 : 82;
-        /* AANPASSING, bij twee punten meer afstand, en daarmee ook beter passend bij de kaart */
-        const ys = extraCount === 1 ? [50] : [36, 64];
+        const ys = extraCount === 1 ? [50] : [44, 56];
 
         const dots = ys.slice(0, extraCount).map((y, i) => {
           const appear = i === 0 ? 260 : 720;
@@ -970,7 +979,14 @@
           return `<div class="${cls}" style="left:${x}%; top:${y}%; --appearDelay:${appear}ms; --blackDelay:${black}ms;"></div>`;
         }).join("");
 
-        return `<div class="qWrap"><img class="layoutImg diceMain" src="${diceSrc(layoutId)}" alt="" draggable="false">${dots}</div>`;
+        return `
+          <div class="qWrap">
+            <div class="diceLayer">
+              <img class="layoutImg diceMain" src="${diceSrc(layoutId)}" alt="" draggable="false">
+              ${dots}
+            </div>
+          </div>
+        `;
       }
 
       function setBoard(html){ flashSvg.innerHTML = html; }
@@ -1113,7 +1129,6 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
-      /* AANPASSING, marbotic voor level 7, en kaartjes front content hergebruiken */
       function answerFaceHtml(v){
         const answersAreNumbers = LEVEL >= 6;
 
@@ -1191,18 +1206,15 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* =========================
-         TIMELINE auto fit
-         ========================= */
-
+      /* timeline auto fit */
       const LV_MIN = 1;
       const LV_MAX = 9;
 
       const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
       let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
 
-      let tlMeta = null;          // { leftFrac, rightFrac, baseFrac }
-      let chickEyeFrac = null;    // fractie 0..1
+      let tlMeta = null;
+      let chickEyeFrac = null;
       let baselineLocalY = 0;
 
       function timelineReady(){
@@ -1413,6 +1425,11 @@
         });
       }
 
+      function snapPx(v){
+        const dpr = window.devicePixelRatio || 1;
+        return Math.round(v * dpr) / dpr;
+      }
+
       function fitTimelineToQuestion(){
         if(!timelineReady()) return;
         if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
@@ -1449,7 +1466,7 @@
         const tx = targetLeft - s * xL;
         const ty = targetBaselineY - s * yB;
 
-        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+        timelineGroup.style.transform = `translate3d(${snapPx(tx)}px, ${snapPx(ty)}px, 0) scale(${s})`;
         setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
@@ -1482,10 +1499,7 @@
         window.addEventListener("orientationchange", scheduleFit);
       }
 
-      /* =========================
-         Animatie kuiken, zoals je had
-         ========================= */
-
+      /* animatie kuiken */
       const TL_WHITE_THRESH = 255;
 
       const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
@@ -1742,10 +1756,6 @@
         streakBad = 0;
       }
 
-      function isCountOnLevel(){
-        return LEVEL >= 6;
-      }
-
       function buildQuestionState(){
         if(LEVEL <= 5){
           const cap = maxForLevel();
@@ -1793,11 +1803,13 @@
 
         if(streakGood >= 5){
           const before = LEVEL;
-          setLevel(LEVEL + 1);
+          const after = clamp(LEVEL + 1, 1, 9);
           resetStreaks();
-          if(LEVEL !== before){
+
+          if(after !== before){
+            applyLevel(after, { syncAnchor: false });
             beep("level");
-            await animateTimeline(before, LEVEL);
+            await animateTimeline(before, after);
           }
           return true;
         }
@@ -1810,11 +1822,13 @@
 
         if(streakBad >= 2){
           const before = LEVEL;
-          setLevel(LEVEL - 1);
+          const after = clamp(LEVEL - 1, 1, 9);
           resetStreaks();
-          if(LEVEL !== before){
+
+          if(after !== before){
+            applyLevel(after, { syncAnchor: false });
             beep("level");
-            await animateTimeline(before, LEVEL);
+            await animateTimeline(before, after);
           }
           return true;
         }
@@ -1978,20 +1992,24 @@
       levelUpBtn.addEventListener("click", async () => {
         beep("tap");
         if(locked) return;
+
         const before = LEVEL;
-        setLevel(LEVEL + 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
+        const after = clamp(LEVEL + 1, 1, 9);
+        if(after !== before){
+          applyLevel(after, { syncAnchor: false });
+          await animateTimeline(before, after);
         }
       });
 
       levelDownBtn.addEventListener("click", async () => {
         beep("tap");
         if(locked) return;
+
         const before = LEVEL;
-        setLevel(LEVEL - 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
+        const after = clamp(LEVEL - 1, 1, 9);
+        if(after !== before){
+          applyLevel(after, { syncAnchor: false });
+          await animateTimeline(before, after);
         }
       });
 
@@ -2007,7 +2025,7 @@
         if(started) return;
         started = true;
 
-        setLevel(1);
+        applyLevel(1, { syncAnchor: true });
         resetStreaks();
 
         startOverlay.style.display = "none";
@@ -2065,7 +2083,7 @@
 
       /* init */
       clearBoard();
-      setLevel(1);
+      applyLevel(1, { syncAnchor: true });
       resetStreaks();
       syncUI();
       initTimelineAuto();
