@@ -26,9 +26,7 @@
       --correctFill: rgba(210, 244, 214, 0.92);
       --correctBorder: rgba(144, 204, 152, 0.70);
 
-      /* vraagvak schaal, gelijk voor alle levels */
-      --qScale: 0.78;
-      --qTopNudge: -1.5%;
+      --activeFill: rgba(229, 140, 116, 0.18);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -49,7 +47,7 @@
     body{
       display:grid;
       grid-template-columns: 58fr 42fr;
-      grid-template-rows: 1fr;
+      grid-template-rows: 1fr; /* FIX, voorkomt witte balk onderin */
       height: 100%;
       position: relative;
       overflow:hidden;
@@ -200,82 +198,13 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      overflow:hidden;
-      position: relative;
     }
 
-    /* vraagimage schaal */
-    .qWrap{
+    .flashSvg svg{
       width: 100%;
       height: 100%;
-      display: grid;
-      place-items: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .qWrapInner{
-      width: 100%;
-      height: 100%;
-      display:grid;
-      place-items:center;
-      transform: translateY(var(--qTopNudge)) scale(var(--qScale));
-      transform-origin: 50% 50%;
-    }
-
-    .qImg{
       max-width: 100%;
       max-height: 100%;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      display:block;
-    }
-
-    /* twee svg's naast elkaar in levels 6 tot en met 9 */
-    .pairRow{
-      width: min(96%, 720px);
-      height: 100%;
-      display:flex;
-      align-items:center;
-      gap: 2.5%;
-      justify-content: flex-end;
-      position: relative;
-    }
-    .pairRow.alignLeft{ justify-content: flex-start; }
-    .pairRow.alignRight{ justify-content: flex-end; }
-
-    .pairCell{
-      flex: 0 0 48.5%;
-      height: 100%;
-      display:grid;
-      place-items:center;
-      position: relative;
-    }
-
-    .pairCell img{
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display:block;
-      pointer-events:none;
-      user-select:none;
-      -webkit-user-drag:none;
-    }
-
-    .pairAddWrap{
-      width: 100%;
-      height: 100%;
-      display:grid;
-      place-items:center;
-      opacity: 0;
-      transform: scale(0.92);
-      transition: opacity 280ms cubic-bezier(.22,.61,.35,1), transform 280ms cubic-bezier(.22,.61,.35,1);
-      will-change: opacity, transform;
-    }
-    .pairRow.showAdd .pairAddWrap{
-      opacity: 1;
-      transform: scale(1.0);
     }
 
     .scanStage{
@@ -359,8 +288,8 @@
     }
 
     .ansBtn.correctHold{
-      background: rgba(210, 244, 214, 0.92);
-      border-color: rgba(144, 204, 152, 0.70);
+      background: var(--correctFill);
+      border-color: var(--correctBorder);
     }
 
     .answersHidden{ opacity:0; pointer-events:none; }
@@ -560,34 +489,7 @@
       -webkit-transform: rotateY(180deg);
     }
 
-    .numFace{
-      width: 100%;
-      height: 100%;
-      display: grid;
-      place-items: center;
-      font-weight: 1000;
-      font-size: clamp(36px, 7vw, 72px);
-      color: rgba(25,25,25,.92);
-    }
-
-    .marboticFace{
-      width: 100%;
-      height: 100%;
-      display:grid;
-      place-items:center;
-      padding: 10%;
-    }
-    .marboticFace img{
-      width: 78%;
-      height: 78%;
-      object-fit: contain;
-      display:block;
-      pointer-events:none;
-      user-select:none;
-      -webkit-user-drag:none;
-      transform: translateY(2%);
-    }
-
+    /* Timeline overlay */
     .timelineOverlay{
       position: fixed;
       inset: 0;
@@ -611,8 +513,8 @@
       position:absolute;
       left: 0;
       top: 0;
-      width: min(520px, 58vw);
-      height: 96px;
+      width: 520px; /* basis, wordt via transform geschaald */
+      height: auto;
       z-index: 20;
     }
 
@@ -621,29 +523,32 @@
       inset:0;
       width:100%;
       height:100%;
-      object-fit: contain;
+      object-fit: fill;
     }
 
-    .progressLine.levelsHidden{ opacity: 0; }
+    .progressLine.levelsHidden{
+      opacity: 0;
+    }
 
     .progressChickAnchor{
       position:absolute;
-      bottom: -10px;
+      left: 0;
+      top: 0;
       transform: translateX(-50%);
       width: 82px;
       height: 82px;
       pointer-events:none;
       transition: left 520ms cubic-bezier(.22,.61,.35,1);
-      will-change: left, transform;
+      will-change: left, transform, top;
     }
     .progressChickAnchor.noMove{ transition: none !important; }
 
     .chickLayer{
       position:absolute;
       left:0;
-      bottom:0;
-      width: 82px;
-      height: auto;
+      top:0;
+      width: 100%;
+      height: 100%;
       opacity: 0;
       pointer-events:none;
       transform-origin: 50% 100%;
@@ -658,107 +563,126 @@
     #animCanvas{ opacity:0; }
     #animCanvas.active{ opacity:1; }
 
-    @media (orientation: portrait){
-      .progressTimeline{
-        width: min(680px, 92vw);
-        height: 100px;
-      }
-      .progressChickAnchor{ width: 78px; height: 78px; }
-      .chickLayer{ width: 78px; }
+    /* dobbelsteen assets */
+    .qWrap{
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
     }
 
-    .calPanel{
-      position: fixed;
-      left: 18px;
-      bottom: 18px;
-      width: min(680px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.62);
-      backdrop-filter: blur(10px);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
-      padding: 14px 14px 12px 14px;
-      z-index: 2300;
-      color: #4d4a48;
-    }
-    .calPanel.hidden{ display:none; }
-
-    .calHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .calTitle{
-      font-weight: 950;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      text-transform: lowercase;
-    }
-    .calClose{
-      appearance:none;
-      border:none;
-      background:#f8c3b0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 950;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-      color:#2f2c2a;
-    }
-    .calClose:active{ transform: translateY(1px) scale(0.99); }
-
-    .calTabs{
-      display:flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .tabBtn{
-      appearance:none;
-      border:none;
-      background: rgba(245,180,152,0.18);
-      border: 2px solid rgba(245,180,152,0.35);
-      color:#2f2c2a;
-      font-weight: 950;
-      padding: 10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-    }
-    .tabBtn.active{
-      background: var(--brand);
-      border-color: rgba(229,140,116,0.95);
-      color:#fff;
+    .layoutImg{
+      width: min(88%, 520px);
+      height: auto;
+      max-height: 92%;
+      object-fit: contain;
+      display: block;
     }
 
-    .hintLine{
-      margin-top: 8px;
-      font-size: 13px;
-      font-weight: 850;
-      color: rgba(77,74,72,0.78);
-      line-height: 1.3;
-      text-transform: lowercase;
+    .qWrap .diceMain{
+      width: min(78%, 460px);
+      height: auto;
+      max-height: 92%;
     }
 
-    .copyBox{
-      width:100%;
-      margin-top:10px;
-      display:grid;
-      gap: 8px;
+    .ansBtn .layoutImg{
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
     }
-    .copyBox textarea{
-      width:100%;
-      min-height: 92px;
-      resize: vertical;
-      border-radius: 14px;
-      border: 2px solid rgba(245,180,152,0.45);
-      padding: 10px 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
-      color:#2f2c2a;
-      background: rgba(255,255,255,0.70);
-      outline:none;
+
+    .numFace{
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      font-weight: 1000;
+      font-size: clamp(36px, 7vw, 72px);
+      color: rgba(25,25,25,.92);
+    }
+
+    .extraDot{
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(25,25,25,0.30);
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.65);
+      will-change: transform, opacity, background;
+    }
+
+    .extraDot.show{
+      animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards;
+      animation-delay: var(--appearDelay, 260ms);
+    }
+
+    .extraDot.blacken{
+      animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 520ms ease forwards;
+      animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms);
+    }
+
+    @keyframes dotAppear{
+      0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
+      60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+      100%{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    }
+
+    @keyframes dotBlacken{
+      from{ background: rgba(25,25,25,0.30); }
+      to{ background: rgba(25,25,25,0.92); }
+    }
+
+    /* level 6 t/m 9, twee svg’s naast elkaar in het vragenvenster */
+    .pairWrap{
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(10px, 2.2vw, 22px);
+      padding: clamp(10px, 2.2vw, 22px);
+    }
+
+    .pairItem{
+      flex: 0 0 46%;
+      max-width: 46%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .pairWrap .layoutImg{
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .pairItem.late{
+      opacity: 0;
+      transform: scale(0.985);
+    }
+
+    .pairItem.late.show{
+      animation: pairIn 360ms ease forwards;
+    }
+
+    @keyframes pairIn{
+      from{ opacity: 0; transform: scale(0.985); }
+      to{ opacity: 1; transform: scale(1); }
+    }
+
+    /* marbotic png in antwoordknoppen (level 6 t/m 9) */
+    .marboticImg{
+      width: 86%;
+      height: auto;
+      max-height: 88%;
+      object-fit: contain;
+      display: block;
     }
   </style>
 </head>
@@ -858,59 +782,7 @@
 
       <div class="tuneButtons" style="margin-top:10px;">
         <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
-        <button class="tuneBtnSmall secondary" id="openCalBtn" type="button">kalibratie tijdlijn</button>
       </div>
-    </div>
-  </div>
-
-  <div class="calPanel hidden" id="calPanel" role="dialog" aria-modal="false" aria-label="Kalibratie tijdlijn">
-    <div class="calHeader">
-      <div class="calTitle">kalibratie tijdlijn</div>
-      <button class="calClose" id="calClose" type="button">Sluit</button>
-    </div>
-
-    <div class="calTabs">
-      <button class="tabBtn active" id="tabLandscape" type="button">horizontaal</button>
-      <button class="tabBtn" id="tabPortrait" type="button">vertikaal</button>
-      <button class="tabBtn" id="tabDesktop" type="button">laptop</button>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">groep x</div>
-      <input type="range" id="gX" min="-2000" max="2000" step="1" value="0" />
-      <div class="tuneValue" id="gXv">0</div>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">groep y</div>
-      <input type="range" id="gY" min="-2000" max="2000" step="1" value="0" />
-      <div class="tuneValue" id="gYv">0</div>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">groep schaal</div>
-      <input type="range" id="gS" min="0.30" max="3.00" step="0.01" value="1.00" />
-      <div class="tuneValue" id="gSv">1.00</div>
-    </div>
-
-    <div class="tuneRow">
-      <div class="tuneLabel">kuiken lijn</div>
-      <input type="range" id="lineY" min="-260" max="260" step="1" value="-10" />
-      <div class="tuneValue" id="lineYv">-10</div>
-    </div>
-
-    <div class="tuneButtons">
-      <button class="tuneBtnSmall secondary" id="gResetBtn" type="button">reset</button>
-      <button class="tuneBtnSmall" id="gSaveBtn" type="button">opslaan</button>
-      <button class="tuneBtnSmall secondary" id="copyBtn" type="button">kopieer json</button>
-    </div>
-
-    <div class="copyBox">
-      <textarea id="jsonOut" spellcheck="false"></textarea>
-    </div>
-
-    <div class="hintLine">
-      tip: schuif de groep over het linkervak om hem goed te kunnen afstellen, de overlay ligt altijd bovenop
     </div>
   </div>
 
@@ -924,10 +796,6 @@
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raf = () => new Promise(r => requestAnimationFrame(() => r()));
       const $ = (id) => document.getElementById(id);
-
-      const deepClone = (o) => {
-        try{ return structuredClone(o); }catch(e){ return JSON.parse(JSON.stringify(o)); }
-      };
 
       const startOverlay = $("startOverlay");
       const startBtn = $("startBtn");
@@ -953,28 +821,6 @@
       const levelDownBtn = $("levelDownBtn");
 
       const toggleLevelsBtn = $("toggleLevelsBtn");
-      const openCalBtn = $("openCalBtn");
-      const calPanel = $("calPanel");
-      const calClose = $("calClose");
-
-      const tabLandscape = $("tabLandscape");
-      const tabPortrait = $("tabPortrait");
-      const tabDesktop = $("tabDesktop");
-
-      const gX = $("gX");
-      const gY = $("gY");
-      const gS = $("gS");
-      const lineY = $("lineY");
-
-      const gXv = $("gXv");
-      const gYv = $("gYv");
-      const gSv = $("gSv");
-      const lineYv = $("lineYv");
-
-      const gResetBtn = $("gResetBtn");
-      const gSaveBtn = $("gSaveBtn");
-      const copyBtn = $("copyBtn");
-      const jsonOut = $("jsonOut");
 
       const flashSvg = $("flashSvg");
       const answersEl = $("answers");
@@ -1008,29 +854,15 @@
         return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
       }
 
-      function isAutoFitDesktop(){
-        const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-        const likelyIPad = coarse && (Math.max(window.innerWidth, window.innerHeight) >= 900);
-        return !likelyIPad;
-      }
-
       function usesAnswerCards(){
-        return LEVEL >= 2;
+        return LEVEL === 2 || LEVEL >= 6;
       }
 
-      function applyQuestionScale(){
-        const r = document.documentElement.style;
-        r.setProperty("--qScale", "0.78");
-        r.setProperty("--qTopNudge", "-1.5%");
-      }
-
-      function applyLevel(n, opts = {}){
-        const syncAnchor = opts.syncAnchor !== false;
+      function setLevel(n){
         LEVEL = clamp(n, 1, 9);
         titlePill.textContent = `slim kijken, level ${LEVEL}`;
         if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        applyQuestionScale();
-        if(syncAnchor) setAnchorToLevel(LEVEL, { noTransition: true });
+        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function maxForLevel(){
@@ -1039,8 +871,7 @@
         if(LEVEL === 3) return 4;
         if(LEVEL === 4) return 6;
         if(LEVEL === 5) return 6;
-        if(LEVEL === 6) return 7;
-        return 8;
+        return 9;
       }
 
       function pickNumberWeighted(cap){
@@ -1078,8 +909,9 @@
         }catch(e){}
       }
 
-      const DICE_DIR = "dobbelstenen";
-      const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
+      /* dobbelstenen layouts */
+      const DICE_DIR = ""; // alles staat in dezelfde map als de html
+      const diceSrc = (id) => (DICE_DIR ? `${DICE_DIR}/${id}.svg` : `${id}.svg`);
 
       const STD_LAYOUT = { 1:"1a", 2:"2a", 3:"3a", 4:"4a", 5:"5a", 6:"6a" };
 
@@ -1087,47 +919,46 @@
         return STD_LAYOUT[n] || `${n}a`;
       }
 
-      /* layouts voor de basis dobbelsteen */
+      /* marbotic assets */
+      const MARBOTIC_DIR = ""; // alles staat in dezelfde map als de html
+      const marboticSrc = (n) => (MARBOTIC_DIR ? `${MARBOTIC_DIR}/marbotic${n}.png` : `marbotic${n}.png`);
+
+      function layoutValue(layoutId){
+        const m = /^(\d+)/.exec(String(layoutId || ""));
+        return m ? Number(m[1]) : 0;
+      }
+
       function allowedQuestionLayouts(level, n){
-        if(n === 1) return ["1a"];
-
-        const base = {
-          2: ["2a","2b","2c","2d"],
-          3: ["3a","3b","3c","3d"],
-          4: ["4a","4b","4c","4d"],
-          5: ["5a","5b","5c"],
-          6: ["6a","6b"]
-        };
-
         if(level === 1 || level === 2){
           if(n >= 1 && n <= 4) return [standardLayoutId(n)];
           return [];
         }
 
         if(level === 3){
-          if(n >= 2 && n <= 4) return base[n];
           if(n === 1) return ["1a"];
+          if(n === 2) return ["2b","2c","2d"];
+          if(n === 3) return ["3b","3c","3d"];
+          if(n === 4) return ["4b","4c","4d"];
           return [];
         }
 
         if(level === 4){
-          if(n <= 4) return base[n];
+          if(n === 1) return ["1a"];
+          if(n === 2) return ["2b","2c","2d"];
+          if(n === 3) return ["3b","3c","3d"];
+          if(n === 4) return ["4b","4c","4d"];
           if(n === 5) return ["5a"];
           if(n === 6) return ["6a"];
           return [];
         }
 
         if(level === 5){
-          if(n <= 4) return base[n];
-          if(n === 5) return ["5a","5b","5c"];
-          if(n === 6) return ["6a","6b"];
-          return [];
-        }
-
-        if(level >= 6){
-          if(n <= 4) return base[n];
-          if(n === 5) return ["5a"];
-          if(n === 6) return ["6a","6b"];
+          if(n === 1) return ["1a"];
+          if(n === 2) return ["2b","2c","2d"];
+          if(n === 3) return ["3b","3c","3d"];
+          if(n === 4) return ["4b","4c","4d"];
+          if(n === 5) return ["5b","5c"];
+          if(n === 6) return ["6b"];
           return [];
         }
 
@@ -1139,48 +970,62 @@
         return arr.length ? pick(arr) : standardLayoutId(n);
       }
 
-      /* layouts voor de extra (kleinere) dobbelsteen, precies zoals jij vroeg */
-      function pickAddLayout(level, addCount){
-        if(addCount === 1) return "1a";
-        if(addCount === 2){
-          if(level >= 7) return pick(["2a","2b","2c","2d"]);
-          return "2a";
-        }
-        if(addCount === 3){
-          if(level === 9) return pick(["3a","3c"]);
-          return "3a";
-        }
-        return standardLayoutId(addCount);
-      }
-
       function boardHtmlForLayout(layoutId){
-        return `
-          <div class="qWrap">
-            <div class="qWrapInner">
-              <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
+        return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+      }
+
+      function boardHtmlForCountOn(layoutId, extraCount, side, blacken){
+        const x = side === "left" ? 18 : 82;
+        const ys = extraCount === 1 ? [50] : [44, 56];
+
+        const dots = ys.slice(0, extraCount).map((y, i) => {
+          const appear = i === 0 ? 260 : 720;
+          const black = i === 0 ? 1060 : 1520;
+          const cls = blacken ? "extraDot blacken" : "extraDot show";
+          return `<div class="${cls}" style="left:${x}%; top:${y}%; --appearDelay:${appear}ms; --blackDelay:${black}ms;"></div>`;
+        }).join("");
+
+        return `<div class="qWrap"><img class="layoutImg diceMain" src="${diceSrc(layoutId)}" alt="" draggable="false">${dots}</div>`;
+      }
+
+      function boardHtmlForPair(bigLayoutId, smallLayoutId, smallSide){
+        const bigHtml = `<img class="layoutImg" src="${diceSrc(bigLayoutId)}" alt="" draggable="false">`;
+        const smallHtml = `<img class="layoutImg" src="${diceSrc(smallLayoutId)}" alt="" draggable="false">`;
+
+        if(smallSide === "left"){
+          return `
+            <div class="pairWrap">
+              <div class="pairItem late" id="pairSmall">${smallHtml}</div>
+              <div class="pairItem">${bigHtml}</div>
             </div>
+          `;
+        }
+
+        return `
+          <div class="pairWrap">
+            <div class="pairItem">${bigHtml}</div>
+            <div class="pairItem late" id="pairSmall">${smallHtml}</div>
           </div>
         `;
       }
 
-      function boardHtmlForPair(baseLayoutId, addLayoutId, align){
-        const cls = align === "left" ? "pairRow alignLeft" : "pairRow alignRight";
-        return `
-          <div class="qWrap">
-            <div class="qWrapInner">
-              <div class="${cls}" id="pairRow">
-                <div class="pairCell">
-                  <img src="${diceSrc(baseLayoutId)}" alt="" draggable="false">
-                </div>
-                <div class="pairCell">
-                  <div class="pairAddWrap" id="pairAddWrap">
-                    <img src="${diceSrc(addLayoutId)}" alt="" draggable="false">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+      let pairRevealToken = 0;
+
+      function schedulePairSmallReveal(delayMs){
+        const my = ++pairRevealToken;
+        const el = document.getElementById("pairSmall");
+        if(!el) return;
+        setTimeout(() => {
+          if(pairRevealToken !== my) return;
+          el.classList.add("show");
+          if(questionState && questionState.kind === "pair") questionState.smallRevealed = true;
+        }, delayMs);
+      }
+
+      function revealPairSmallNow(){
+        const el = document.getElementById("pairSmall");
+        if(el) el.classList.add("show");
+        if(questionState && questionState.kind === "pair") questionState.smallRevealed = true;
       }
 
       function setBoard(html){ flashSvg.innerHTML = html; }
@@ -1324,31 +1169,11 @@
         btns.forEach(btn => { btn.style.opacity = "0"; });
       }
 
-      function answerFaceHtml(v){
-        const answersAreMarbotic = (LEVEL === 6 || LEVEL === 7);
-        const answersAreNumbers = (LEVEL >= 8);
-
-        if(answersAreMarbotic){
-          return `<div class="marboticFace"><img src="marbotic${v}.png" alt="${v}" draggable="false"></div>`;
-        }
-
-        if(answersAreNumbers){
-          return `<div class="numFace">${v}</div>`;
-        }
-
-        const layoutId = standardLayoutId(v);
-        return `
-          <div class="qWrap">
-            <div class="qWrapInner">
-              <img class="qImg" src="${diceSrc(layoutId)}" alt="" draggable="false">
-            </div>
-          </div>
-        `;
-      }
-
       function renderAnswers(correct, onPick){
         const arr = buildOptions(correct);
         answersEl.innerHTML = "";
+
+        const answersAreMarbotic = LEVEL >= 6;
 
         arr.forEach(v => {
           const btn = document.createElement("button");
@@ -1363,19 +1188,36 @@
 
           btn.addEventListener("click", () => onPick(btn, v));
 
-          const face = answerFaceHtml(v);
-
-          if(usesAnswerCards() && LEVEL <= 5){
-            btn.innerHTML = `
-              <div class="cardWrap">
-                <div class="cardInner">
-                  <div class="cardBack" aria-hidden="true"></div>
-                  <div class="cardFront">${face}</div>
+          if(answersAreMarbotic){
+            const face = `<div class="qWrap"><img class="marboticImg" src="${marboticSrc(v)}" alt="${v}" draggable="false"></div>`;
+            if(usesAnswerCards()){
+              btn.innerHTML = `
+                <div class="cardWrap">
+                  <div class="cardInner">
+                    <div class="cardBack" aria-hidden="true"></div>
+                    <div class="cardFront">${face}</div>
+                  </div>
                 </div>
-              </div>
-            `;
+              `;
+            }else{
+              btn.innerHTML = face;
+            }
           }else{
-            btn.innerHTML = face;
+            const layoutId = standardLayoutId(v);
+            const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+
+            if(usesAnswerCards()){
+              btn.innerHTML = `
+                <div class="cardWrap">
+                  <div class="cardInner">
+                    <div class="cardBack" aria-hidden="true"></div>
+                    <div class="cardFront">${face}</div>
+                  </div>
+                </div>
+              `;
+            }else{
+              btn.innerHTML = face;
+            }
           }
 
           answersEl.appendChild(btn);
@@ -1385,7 +1227,7 @@
       let previewToken = 0;
 
       async function previewCardsNonBlocking(){
-        if(!(usesAnswerCards() && LEVEL <= 5)) return;
+        if(!usesAnswerCards()) return;
         if(previewMs <= 0) return;
 
         const myToken = ++previewToken;
@@ -1408,39 +1250,22 @@
         btns.forEach(b => b.classList.remove("cardOpen"));
       }
 
-      /* timelineGroup, kalibratie */
-      const TL_STORE_KEY = "slim_kijken_timeline_group_calib_v8";
+      /* =========================
+         TIMELINE auto fit
+         ========================= */
 
-      const DEFAULT_CALIB = {
-        landscape: { x: 714,  y: 490, s: 1.42 },
-        portrait:  { x: 1012, y: 334, s: 1.70 },
-        desktop:   { x: 0,    y: 0,   s: 1.00 },
-        lineY: -10,
-        levelsVisible: true
-      };
+      const LV_MIN = 1;
+      const LV_MAX = 9;
 
-      let calib = loadCalib() || deepClone(DEFAULT_CALIB);
+      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
+      let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
 
-      function loadCalib(){
-        try{
-          const raw = localStorage.getItem(TL_STORE_KEY);
-          if(!raw) return null;
-          const obj = JSON.parse(raw);
-          if(!obj || typeof obj !== "object") return null;
-          return obj;
-        }catch(e){ return null; }
-      }
-      function saveCalib(){
-        try{ localStorage.setItem(TL_STORE_KEY, JSON.stringify(calib)); }catch(e){}
-      }
-
-      function activeModeKey(){
-        if(isAutoFitDesktop()) return "desktop";
-        return isPortrait() ? "portrait" : "landscape";
-      }
+      let tlMeta = null;
+      let chickEyeFrac = null;
+      let baselineLocalY = 0;
 
       function timelineReady(){
-        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg;
+        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
       }
 
       function lum(r,g,b){
@@ -1448,10 +1273,8 @@
       }
 
       function safeDefaultTlMeta(){
-        return { leftFrac: 0.06, rightFrac: 0.94 };
+        return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
       }
-
-      let tlMeta = null;
 
       function analyzeLevelsPng(imgEl){
         try{
@@ -1467,6 +1290,27 @@
 
           const img = ctx.getImageData(0, 0, w, h);
           const d = img.data;
+
+          const yStart = Math.floor(h * 0.55);
+          let bestY = Math.floor(h * 0.85);
+          let bestCount = -1;
+
+          for(let y=yStart; y<h; y++){
+            let c = 0;
+            const row = y * w * 4;
+            for(let x=0; x<w; x++){
+              const i = row + x*4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L > 245) continue;
+              c++;
+            }
+            if(c > bestCount){
+              bestCount = c;
+              bestY = y;
+            }
+          }
 
           const col = new Array(w).fill(0);
           let maxC = 0;
@@ -1492,10 +1336,28 @@
             if(col[x] >= thresh) xs.push(x);
           }
 
+          let clusters = [];
+          if(xs.length){
+            let s = xs[0], p = xs[0];
+            for(let i=1;i<xs.length;i++){
+              const x = xs[i];
+              if(x === p + 1){ p = x; continue; }
+              clusters.push([s,p]);
+              s = x; p = x;
+            }
+            clusters.push([s,p]);
+          }
+
+          const maxClusterW = w * 0.06;
+          clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
+
           let leftX = w * 0.06;
           let rightX = w * 0.94;
 
-          if(xs.length >= 2){
+          if(clusters.length >= 2){
+            leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
+            rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
+          }else if(xs.length >= 2){
             leftX = xs[Math.floor(xs.length * 0.02)];
             rightX = xs[Math.floor(xs.length * 0.98)];
           }
@@ -1505,106 +1367,99 @@
 
           return {
             leftFrac: leftX / w,
-            rightFrac: rightX / w
+            rightFrac: rightX / w,
+            baseFrac: bestY / h
           };
         }catch(e){
           return safeDefaultTlMeta();
         }
       }
 
-      function tickTForLevel(level){
-        const lv = clamp(level, 1, 9);
-        return (lv - 1) / 8;
+      function analyzeChickEyes(imgEl){
+        try{
+          const w = imgEl.naturalWidth || 0;
+          const h = imgEl.naturalHeight || 0;
+          if(!w || !h) return 0.42;
+
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          const ctx = cv.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(imgEl, 0, 0);
+
+          const img = ctx.getImageData(0, 0, w, h);
+          const d = img.data;
+
+          const ys = [];
+          const yMax = Math.floor(h * 0.60);
+          const x0 = Math.floor(w * 0.25);
+          const x1 = Math.floor(w * 0.75);
+
+          for(let y=0; y<yMax; y++){
+            const row = y * w * 4;
+            for(let x=x0; x<x1; x++){
+              const i = row + x*4;
+              const a = d[i+3];
+              if(a < 32) continue;
+              const L = lum(d[i], d[i+1], d[i+2]);
+              if(L < 55){
+                ys.push(y);
+              }
+            }
+          }
+
+          if(ys.length < 24) return 0.42;
+
+          ys.sort((a,b) => a-b);
+          const med = ys[Math.floor(ys.length/2)];
+          return clamp(med / h, 0.18, 0.62);
+        }catch(e){
+          return 0.42;
+        }
       }
 
-      function getContainedRectLocal(imgEl){
-        const w = imgEl.clientWidth || 0;
-        const h = imgEl.clientHeight || 0;
-        const iw = imgEl.naturalWidth || 0;
-        const ih = imgEl.naturalHeight || 0;
-        if(!w || !h || !iw || !ih) return null;
-
-        const s = Math.min(w / iw, h / ih);
-        const drawW = iw * s;
-        const drawH = ih * s;
-
-        const padX = (w - drawW) / 2;
-        const padY = (h - drawH) / 2;
-
-        return { padX, padY, drawW, drawH };
+      function tickTForLevel(level){
+        const lv = clamp(level, LV_MIN, LV_MAX);
+        const denom = Math.max(1, (LV_MAX - LV_MIN));
+        return (lv - LV_MIN) / denom;
       }
 
       function currentTickXLocalForLevel(level){
-        if(!levelsImg) return null;
-        const c = getContainedRectLocal(levelsImg);
-        if(!c) return null;
-        if(!tlMeta) tlMeta = safeDefaultTlMeta();
-
-        const t = tickTForLevel(level);
-        const frac = tlMeta.leftFrac + t * (tlMeta.rightFrac - tlMeta.leftFrac);
-        return c.padX + (c.drawW * frac);
+        if(!tlMeta) return 0;
+        const w = timeline.clientWidth || 0;
+        const xL = tlMeta.leftFrac * w;
+        const xR = tlMeta.rightFrac * w;
+        return xL + tickTForLevel(level) * (xR - xL);
       }
 
       function setAnchorToLevel(level, opts = {}){
         if(!timelineReady()) return;
+        if(!tlMeta) return;
+        if(chickEyeFrac == null) chickEyeFrac = 0.42;
 
         const xLocal = currentTickXLocalForLevel(level);
-        if(xLocal == null) return;
 
-        const y = Number(calib.lineY ?? DEFAULT_CALIB.lineY);
+        const aH = chickAnchor.clientHeight || 0;
+        const eyeLocalY = chickEyeFrac * aH;
+        const topLocal = baselineLocalY - eyeLocalY;
 
         if(opts.noTransition){
           chickAnchor.classList.add("noMove");
           chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+          chickAnchor.style.top = `${topLocal}px`;
           chickAnchor.offsetHeight;
           chickAnchor.classList.remove("noMove");
           return;
         }
 
         chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.transform = `translateX(-50%) translate(0px, ${y}px)`;
+        chickAnchor.style.top = `${topLocal}px`;
       }
 
       function updateLevelsVisibilityUI(){
-        const on = !!calib.levelsVisible;
-        toggleLevelsBtn.textContent = on ? "levels png verbergen" : "levels png tonen";
-        if(on) levelsImg.classList.remove("levelsHidden");
+        toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
+        if(levelsVisible) levelsImg.classList.remove("levelsHidden");
         else levelsImg.classList.add("levelsHidden");
-      }
-
-      function applyTimelineGroupTransform(){
-        if(!timelineReady()) return;
-
-        updateLevelsVisibilityUI();
-
-        const k = activeModeKey();
-
-        if(k === "desktop"){
-          const r = gameCard.getBoundingClientRect();
-
-          const desiredW = Math.max(260, Math.round(r.width - 36));
-          const desiredH = Math.max(86, Math.round(Math.min(120, r.height * 0.22)));
-
-          timeline.style.width = desiredW + "px";
-          timeline.style.height = desiredH + "px";
-
-          const x = Math.round(r.left + 18);
-          const y = Math.round(r.bottom + 6);
-
-          const c = calib.desktop || DEFAULT_CALIB.desktop;
-          timelineGroup.style.transform = `translate(${x + (c.x||0)}px, ${y + (c.y||0)}px) scale(${c.s||1})`;
-
-          setAnchorToLevel(LEVEL, { noTransition: true });
-          return;
-        }
-
-        timeline.style.width = "";
-        timeline.style.height = "";
-
-        const c = calib[k] || DEFAULT_CALIB[k];
-        timelineGroup.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
-        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       let fitQueued = false;
@@ -1613,34 +1468,83 @@
         fitQueued = true;
         requestAnimationFrame(() => {
           fitQueued = false;
-          applyTimelineGroupTransform();
+          fitTimelineToQuestion();
         });
+      }
+
+      function fitTimelineToQuestion(){
+        if(!timelineReady()) return;
+        if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
+
+        if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+        if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+
+        timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
+
+        const r = gameCard.getBoundingClientRect();
+        const cs = getComputedStyle(gameCard);
+        const bw = parseFloat(cs.borderLeftWidth) || 0;
+
+        const targetLeft = r.left + bw;
+        const targetRight = r.right - bw;
+
+        const targetBaselineY = r.bottom - (bw * 0.5);
+
+        const baseW = 520;
+        timeline.style.width = `${baseW}px`;
+
+        const w = timeline.clientWidth || 1;
+        const h = timeline.clientHeight || 1;
+
+        const xL = tlMeta.leftFrac * w;
+        const xR = tlMeta.rightFrac * w;
+        const yB = tlMeta.baseFrac * h;
+
+        baselineLocalY = yB;
+
+        const denom = Math.max(1, (xR - xL));
+        const s = (targetRight - targetLeft) / denom;
+
+        const tx = targetLeft - s * xL;
+        const ty = targetBaselineY - s * yB;
+
+        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+        setAnchorToLevel(LEVEL, { noTransition: true });
       }
 
       function initTimelineAuto(){
         if(!timelineReady()) return;
 
-        const apply = () => {
-          if(levelsImg.naturalWidth && !tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
-          applyTimelineGroupTransform();
-          setAnchorToLevel(LEVEL, { noTransition: true });
+        updateLevelsVisibilityUI();
+
+        const tryInit = () => {
+          if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+            tlMeta = analyzeLevelsPng(levelsImg);
+            if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+            scheduleFit();
+          }
         };
 
-        if(levelsImg.complete && levelsImg.naturalWidth) apply();
-        else levelsImg.addEventListener("load", apply, { once:true });
+        if(levelsImg.complete) tryInit();
+        levelsImg.addEventListener("load", tryInit);
+
+        if(stillImg.complete && stillImg.naturalWidth) tryInit();
+        stillImg.addEventListener("load", tryInit);
 
         if(typeof ResizeObserver === "function"){
-          const ro = new ResizeObserver(() => apply());
-          ro.observe(timeline);
+          const ro = new ResizeObserver(() => scheduleFit());
           ro.observe(gameCard);
           ro.observe(document.body);
         }
 
-        window.addEventListener("resize", apply);
-        window.addEventListener("orientationchange", apply);
+        window.addEventListener("resize", scheduleFit);
+        window.addEventListener("orientationchange", scheduleFit);
       }
 
-      /* animatie kuiken */
+      /* =========================
+         Animatie kuiken, zoals je had
+         ========================= */
+
       const TL_WHITE_THRESH = 255;
 
       const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
@@ -1712,7 +1616,7 @@
           videoEl.addEventListener("loadedmetadata", ok, { once:true });
           videoEl.addEventListener("error", bad, { once:true });
           try{ videoEl.load(); }catch(e){}
-          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 1200);
+          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
         });
       }
 
@@ -1744,11 +1648,11 @@
           try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
           catch(e){ cleanup(); resolve(false); return; }
 
-          setTimeout(() => finish(true), 900);
+          setTimeout(() => finish(true), 700);
         });
       }
 
-      async function playSegmentOnCanvasSafe(videoEl, cfg){
+      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
         if(!animCanvas || !chickCtx) return false;
 
         cancelChickXAnim();
@@ -1772,7 +1676,7 @@
         const gotFirstFrame = await new Promise(resolve => {
           let done = false;
           const finish = (ok) => { if(done) return; done = true; resolve(ok); };
-          const maxWait = setTimeout(() => finish(false), 1200);
+          const maxWait = setTimeout(() => finish(false), 900);
 
           if(useRVFC){
             videoEl.requestVideoFrameCallback(() => {
@@ -1814,57 +1718,40 @@
           { duration: times.durMs, easing: "linear", fill: "forwards" }
         );
 
-        let lastT = videoEl.currentTime;
-        let staleCount = 0;
-
-        const hardDeadlineMs = times.durMs + 1400;
-        const startedAt = performance.now();
-
-        const loop = await new Promise(resolve => {
-          const step = () => {
-            drawFrame(videoEl);
-
-            const now = performance.now();
-            if(now - startedAt > hardDeadlineMs){
-              resolve(true);
-              return;
-            }
-
-            const ct = videoEl.currentTime || 0;
-            if(Math.abs(ct - lastT) < 0.0005) staleCount++;
-            else staleCount = 0;
-            lastT = ct;
-
-            if(staleCount > 22){
-              resolve(true);
-              return;
-            }
-
-            if(ct >= times.end || videoEl.ended){
-              resolve(true);
-              return;
-            }
-
-            if(useRVFC){
+        if(useRVFC){
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
               videoEl.requestVideoFrameCallback(step);
-            }else{
+            };
+            videoEl.requestVideoFrameCallback(step);
+          });
+        }else{
+          await new Promise(resolve => {
+            const step = () => {
+              drawFrame(videoEl);
+              if(videoEl.currentTime >= times.end || videoEl.ended){
+                resolve(true);
+                return;
+              }
               requestAnimationFrame(step);
-            }
-          };
-
-          if(useRVFC) videoEl.requestVideoFrameCallback(step);
-          else requestAnimationFrame(step);
-        });
+            };
+            requestAnimationFrame(step);
+          });
+        }
 
         try{ videoEl.pause(); }catch(e){}
         cancelChickXAnim();
-        return !!loop;
+        return true;
       }
 
       async function animateTimeline(fromLevel, toLevel){
         if(!timelineReady()) return;
 
-        scheduleFit();
         setAnchorToLevel(fromLevel, { noTransition: true });
         showOnlyStill();
 
@@ -1884,9 +1771,8 @@
         const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
         const vid = dir === "up" ? upVid : downVid;
 
-        await playSegmentOnCanvasSafe(vid, cfg);
+        await playSegmentOnCanvasNoFlash(vid, cfg);
 
-        scheduleFit();
         setAnchorToLevel(toLevel, { noTransition: true });
 
         stillImg.classList.add("active");
@@ -1896,107 +1782,6 @@
         chickPlaying = false;
       }
 
-      /* kalibratie ui */
-      let calMode = "landscape";
-
-      function setCalMode(mode){
-        calMode = (mode === "portrait" || mode === "desktop") ? mode : "landscape";
-        tabLandscape.classList.toggle("active", calMode === "landscape");
-        tabPortrait.classList.toggle("active", calMode === "portrait");
-        tabDesktop.classList.toggle("active", calMode === "desktop");
-        loadSlidersFromCalib();
-      }
-
-      function loadSlidersFromCalib(){
-        const c = calib[calMode] || DEFAULT_CALIB[calMode];
-        gX.value = String(c.x ?? 0);
-        gY.value = String(c.y ?? 0);
-        gS.value = String((c.s ?? 1.0).toFixed(2));
-        lineY.value = String(calib.lineY ?? DEFAULT_CALIB.lineY);
-        syncCalNumbers();
-        applyTimelineGroupTransform();
-        refreshJsonOut();
-      }
-
-      function syncCalNumbers(){
-        gXv.textContent = String(gX.value);
-        gYv.textContent = String(gY.value);
-        gSv.textContent = Number(gS.value).toFixed(2);
-        lineYv.textContent = String(lineY.value);
-      }
-
-      function writeSlidersToCalib(){
-        calib[calMode] = { x: Number(gX.value), y: Number(gY.value), s: Number(gS.value) };
-        calib.lineY = Number(lineY.value);
-      }
-
-      function refreshJsonOut(){
-        const obj = {
-          landscape: { ...calib.landscape, lineY: calib.lineY },
-          portrait:  { ...calib.portrait,  lineY: calib.lineY },
-          desktop:   { ...calib.desktop,   lineY: calib.lineY },
-          levelsVisible: !!calib.levelsVisible
-        };
-        jsonOut.value = JSON.stringify(obj, null, 2);
-      }
-
-      function openCal(){ calPanel.classList.remove("hidden"); setCalMode(calMode); }
-      function closeCal(){ calPanel.classList.add("hidden"); }
-
-      openCalBtn.addEventListener("click", () => { beep("tap"); openCal(); });
-      calClose.addEventListener("click", () => { beep("tap"); closeCal(); });
-
-      tabLandscape.addEventListener("click", () => { beep("tap"); setCalMode("landscape"); });
-      tabPortrait.addEventListener("click", () => { beep("tap"); setCalMode("portrait"); });
-      tabDesktop.addEventListener("click", () => { beep("tap"); setCalMode("desktop"); });
-
-      [gX, gY, gS, lineY].forEach(el => el.addEventListener("input", () => {
-        writeSlidersToCalib();
-        syncCalNumbers();
-        applyTimelineGroupTransform();
-        refreshJsonOut();
-      }));
-
-      gResetBtn.addEventListener("click", () => {
-        beep("tap");
-        calib = deepClone(DEFAULT_CALIB);
-        setCalMode(calMode);
-        applyTimelineGroupTransform();
-        saveCalib();
-        refreshJsonOut();
-      });
-
-      gSaveBtn.addEventListener("click", () => {
-        beep("tap");
-        writeSlidersToCalib();
-        saveCalib();
-        applyTimelineGroupTransform();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-        refreshJsonOut();
-      });
-
-      copyBtn.addEventListener("click", async () => {
-        beep("tap");
-        refreshJsonOut();
-        try{
-          await navigator.clipboard.writeText(jsonOut.value);
-        }catch(e){
-          try{
-            jsonOut.focus();
-            jsonOut.select();
-            document.execCommand("copy");
-          }catch(err){}
-        }
-      });
-
-      toggleLevelsBtn.addEventListener("click", () => {
-        beep("tap");
-        calib.levelsVisible = !calib.levelsVisible;
-        saveCalib();
-        updateLevelsVisibilityUI();
-        scheduleFit();
-      });
-
       /* game */
       let started = false;
       let locked = false;
@@ -2004,13 +1789,12 @@
       let questionState = {
         kind: "flash",
         correct: 1,
+        base: 1,
+        extraCount: 0,
+        side: "left",
+        blacken: true,
         layoutId: "1a",
-
-        baseCount: 0,
-        addCount: 0,
-        baseLayoutId: "1a",
-        addLayoutId: "1a",
-        align: "right"
+        smallRevealed: false
       };
 
       function resetStreaks(){
@@ -2018,71 +1802,92 @@
         streakBad = 0;
       }
 
-      function pickAlignMostlyRight(){
-        return Math.random() < 0.78 ? "right" : "left";
-      }
-
-      function buildPairState(){
-        const cap = maxForLevel();
-
-        let addCount = 1;
-        if(LEVEL === 6) addCount = 1;
-        else if(LEVEL === 7 || LEVEL === 8) addCount = Math.random() < 0.55 ? 1 : 2;
-        else if(LEVEL === 9){
-          const r = Math.random();
-          addCount = (r < 0.45) ? 1 : (r < 0.82) ? 2 : 3;
-        }
-
-        let baseCount = 2;
-        let tries = 0;
-
-        while(tries < 80){
-          baseCount = randInt(1, 6);
-
-          const okSmaller = addCount < baseCount;
-          const okSum = (baseCount + addCount) <= cap;
-
-          if(okSmaller && okSum) break;
-
-          tries++;
-        }
-
-        if(!(addCount < baseCount) || (baseCount + addCount) > cap){
-          addCount = 1;
-          baseCount = clamp(cap - 1, 2, 6);
-        }
-
-        const baseLayoutId = pickQuestionLayout(LEVEL, baseCount);
-        const addLayoutId = pickAddLayout(LEVEL, addCount);
-
-        return {
-          kind: "pair",
-          correct: baseCount + addCount,
-          baseCount,
-          addCount,
-          baseLayoutId,
-          addLayoutId,
-          align: pickAlignMostlyRight()
-        };
+      function isCountOnLevel(){
+        return LEVEL >= 6;
       }
 
       function buildQuestionState(){
         if(LEVEL <= 5){
           const cap = maxForLevel();
-          const n = pickNumberWeighted(cap);
+          let n = pickNumberWeighted(cap);
+
+          if(LEVEL >= 3){
+            let tries = 0;
+            while(n === 1 && tries < 12){
+              n = pickNumberWeighted(cap);
+              tries++;
+            }
+            if(n === 1) n = 2;
+          }
+
           return {
             kind: "flash",
             correct: n,
+            base: n,
+            extraCount: 0,
+            side: "left",
+            blacken: true,
             layoutId: pickQuestionLayout(LEVEL, n),
-
-            baseCount: 0,
-            addCount: 0,
-            baseLayoutId: "1a",
-            addLayoutId: "1a",
-            align: "right"
+            smallRevealed: false
           };
         }
-        return buildPairState();
+
+        const BIG_SET = ["1a","2a","2b","2c","2d","3a","3b","3c","3d","4a","4b","4c","4d","5a","6a","6b"];
+
+        const LV6_SMALL = ["1a"];
+        const LV6_BIG = BIG_SET.filter(id => layoutValue(id) >= 2 && layoutValue(id) <= 6);
+
+        const LV7_8_SMALL = ["1a","2a","2b","2c","2d"];
+        const LV7_8_BIG = BIG_SET;
+
+        const LV9_SMALL = ["1a","2a","2b","2c","2d","3a","3c"];
+        const LV9_BIG = BIG_SET;
+
+        let smallSet, bigSet;
+
+        if(LEVEL === 6){
+          smallSet = LV6_SMALL;
+          bigSet = LV6_BIG;
+        }else if(LEVEL === 7 || LEVEL === 8){
+          smallSet = LV7_8_SMALL;
+          bigSet = LV7_8_BIG;
+        }else{
+          smallSet = LV9_SMALL;
+          bigSet = LV9_BIG;
+        }
+
+        const smallSide = (Math.random() < 0.78) ? "right" : "left";
+        const delayMs = 560;
+
+        let bigId = "2a";
+        let smallId = "1a";
+        let bigVal = 2;
+        let smallVal = 1;
+
+        for(let t=0; t<140; t++){
+          const sId = pick(smallSet);
+          const bId = pick(bigSet);
+
+          const sVal = layoutValue(sId);
+          const bVal = layoutValue(bId);
+
+          if(bVal <= sVal) continue;
+          if(bVal + sVal > 9) continue;
+
+          bigId = bId; bigVal = bVal;
+          smallId = sId; smallVal = sVal;
+          break;
+        }
+
+        return {
+          kind: "pair",
+          correct: bigVal + smallVal,
+          bigLayoutId: bigId,
+          smallLayoutId: smallId,
+          smallSide,
+          delayMs,
+          smallRevealed: false
+        };
       }
 
       async function handleAutoLevelOnGood(){
@@ -2091,13 +1896,11 @@
 
         if(streakGood >= 5){
           const before = LEVEL;
-          const after = clamp(LEVEL + 1, 1, 9);
+          setLevel(LEVEL + 1);
           resetStreaks();
-
-          if(after !== before){
-            applyLevel(after, { syncAnchor: false });
+          if(LEVEL !== before){
             beep("level");
-            await animateTimeline(before, after);
+            await animateTimeline(before, LEVEL);
           }
           return true;
         }
@@ -2110,29 +1913,21 @@
 
         if(streakBad >= 2){
           const before = LEVEL;
-          const after = clamp(LEVEL - 1, 1, 9);
+          setLevel(LEVEL - 1);
           resetStreaks();
-
-          if(after !== before){
-            applyLevel(after, { syncAnchor: false });
+          if(LEVEL !== before){
             beep("level");
-            await animateTimeline(before, after);
+            await animateTimeline(before, LEVEL);
           }
           return true;
         }
         return false;
       }
 
-      async function revealPairAdd(){
-        const row = $("pairRow");
-        if(!row) return;
-        await wait(260);
-        row.classList.add("showAdd");
-      }
-
       async function flashAndAsk(){
         locked = true;
         previewToken++;
+        pairRevealToken++;
 
         answersEl.classList.add("answersHidden");
         answersEl.innerHTML = "";
@@ -2143,15 +1938,10 @@
         questionState = buildQuestionState();
 
         if(questionState.kind === "pair"){
-          setBoard(boardHtmlForPair(questionState.baseLayoutId, questionState.addLayoutId, questionState.align));
-          await raf();
-          revealPairAdd();
-          await wait(140);
+          setBoard(boardHtmlForPair(questionState.bigLayoutId, questionState.smallLayoutId, questionState.smallSide));
+          schedulePairSmallReveal(questionState.delayMs);
         }else{
           setBoard(boardHtmlForLayout(questionState.layoutId));
-          await wait(flashMs);
-          clearBoard();
-          await wait(260);
         }
 
         renderAnswers(questionState.correct, onPick);
@@ -2160,7 +1950,6 @@
 
         locked = false;
         previewCardsNonBlocking();
-        scheduleFit();
       }
 
       function nextRound(){
@@ -2172,11 +1961,12 @@
 
         locked = true;
         previewToken++;
+        pairRevealToken++;
 
         const all = [...answersEl.querySelectorAll(".ansBtn")];
         all.forEach(b => b.style.pointerEvents = "none");
 
-        if(usesAnswerCards() && LEVEL <= 5){
+        if(usesAnswerCards()){
           btn.classList.add("cardOpen");
           await wait(110);
         }
@@ -2185,21 +1975,21 @@
           beep("ok");
           btn.classList.add("correctHold");
 
-          if(questionState.kind === "flash"){
-            setBoard(boardHtmlForLayout(questionState.layoutId));
+          if(questionState.kind === "pair"){
+            revealPairSmallNow();
             await wait(520);
             dissolveBoard(260);
           }else{
+            setBoard(boardHtmlForLayout(questionState.layoutId));
             await wait(520);
-            dissolveBoard(220);
-            await wait(240);
+            dissolveBoard(260);
           }
 
           const exitOrder = sortedButtonsForExit(all);
           await animateOutButtons(exitOrder, 140);
 
           btn.classList.remove("correctHold");
-          if(usesAnswerCards() && LEVEL <= 5) btn.classList.remove("cardOpen");
+          if(usesAnswerCards()) btn.classList.remove("cardOpen");
 
           answersEl.classList.add("answersHidden");
           all.forEach(b => b.style.pointerEvents = "");
@@ -2212,27 +2002,28 @@
 
         beep("no");
 
+        if(questionState.kind === "pair") revealPairSmallNow();
+
         const notChosen = all.filter(b => b !== btn);
         const chosen = btn;
 
         chosen.classList.add("wrongHold");
         await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-        if(questionState.kind === "flash"){
-          setBoard(boardHtmlForLayout(questionState.layoutId));
+        if(questionState.kind === "pair"){
           await wait(1200);
           dissolveBoard(320);
         }else{
+          setBoard(boardHtmlForLayout(questionState.layoutId));
           await wait(1200);
-          dissolveBoard(260);
-          await wait(280);
+          dissolveBoard(320);
         }
 
         await wait(120);
         await animateOutButtons([chosen], 0);
 
         chosen.classList.remove("wrongHold");
-        if(usesAnswerCards() && LEVEL <= 5) chosen.classList.remove("cardOpen");
+        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
 
         answersEl.classList.add("answersHidden");
         await wait(240);
@@ -2284,22 +2075,29 @@
 
       levelUpBtn.addEventListener("click", async () => {
         beep("tap");
+        if(locked) return;
         const before = LEVEL;
-        const after = clamp(LEVEL + 1, 1, 9);
-        if(after !== before){
-          applyLevel(after, { syncAnchor: false });
-          await animateTimeline(before, after);
+        setLevel(LEVEL + 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
         }
       });
 
       levelDownBtn.addEventListener("click", async () => {
         beep("tap");
+        if(locked) return;
         const before = LEVEL;
-        const after = clamp(LEVEL - 1, 1, 9);
-        if(after !== before){
-          applyLevel(after, { syncAnchor: false });
-          await animateTimeline(before, after);
+        setLevel(LEVEL - 1);
+        if(LEVEL !== before){
+          await animateTimeline(before, LEVEL);
         }
+      });
+
+      toggleLevelsBtn.addEventListener("click", () => {
+        beep("tap");
+        levelsVisible = !levelsVisible;
+        try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
+        updateLevelsVisibilityUI();
       });
 
       /* start */
@@ -2307,7 +2105,7 @@
         if(started) return;
         started = true;
 
-        applyLevel(1, { syncAnchor: true });
+        setLevel(1);
         resetStreaks();
 
         startOverlay.style.display = "none";
@@ -2346,26 +2144,24 @@
         reflowTimer = setTimeout(async () => {
           locked = true;
           previewToken++;
+          pairRevealToken++;
+
           answersEl.classList.add("answersHidden");
           answersEl.innerHTML = "";
           clearBoard();
           await wait(120);
 
-          /* dezelfde vraag opnieuw tekenen */
           if(questionState.kind === "pair"){
-            setBoard(boardHtmlForPair(questionState.baseLayoutId, questionState.addLayoutId, questionState.align));
-            await raf();
-            $("pairRow")?.classList.add("showAdd");
+            setBoard(boardHtmlForPair(questionState.bigLayoutId, questionState.smallLayoutId, questionState.smallSide));
+            if(questionState.smallRevealed) revealPairSmallNow();
+            else schedulePairSmallReveal(questionState.delayMs || 560);
           }else{
             setBoard(boardHtmlForLayout(questionState.layoutId));
-            await wait(140);
-            clearBoard();
           }
 
           renderAnswers(questionState.correct, onPick);
           await wait(WAIT_BEFORE_IN_MS);
           await animateInButtons();
-
           locked = false;
           previewCardsNonBlocking();
 
@@ -2378,16 +2174,14 @@
 
       /* init */
       clearBoard();
-      applyLevel(1, { syncAnchor: true });
+      setLevel(1);
       resetStreaks();
       syncUI();
-      applyQuestionScale();
       initTimelineAuto();
       scheduleFit();
       setAnchorToLevel(LEVEL, { noTransition: true });
       showOnlyStill();
       updateLevelsVisibilityUI();
-      refreshJsonOut();
 
     })();
   </script>
