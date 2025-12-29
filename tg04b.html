@@ -1886,19 +1886,18 @@ chosen.classList.remove("wrongHold");
 if(usesAnswerCards()) chosen.classList.remove("cardOpen");
 answersEl.classList.add("answersHidden");
 
-await wait(240);
-all.forEach(b => b.style.pointerEvents = "");
 await handleAutoLevelOnBad();
 nextRound();
-}
-
+return;
+} // <--- deze ontbreekt nu in jouw code
 
 /* tune ui */
 function syncUI(){
-if(flashMsValue) flashMsValue.textContent = String(flashMs);
-if(flashMsRange && Number(flashMsRange.value) !== flashMs) flashMsRange.value = String(flashMs);
-if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+  if(flashMsValue) flashMsValue.textContent = String(flashMs);
+  if(flashMsRange && Number(flashMsRange.value) !== flashMs) flashMsRange.value = String(flashMs);
+  if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
 }
+
 function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
 function closeTune(){ tunePanel.classList.add("hidden"); }
 
