@@ -9,8 +9,8 @@
     :root{
       --gap: clamp(10px, 2.0vmin, 18px);
 
-      /* Banner weer duidelijk zichtbaar, maar nog steeds compact */
-      --banner-h: clamp(44px, 7.0vmin, 74px);
+      /* Landscape: banner duidelijk groter */
+      --banner-h: clamp(70px, 10vmin, 120px);
 
       /* Landscape: 4 naast elkaar */
       --card-w: clamp(165px, 21vw, 245px);
@@ -18,10 +18,10 @@
       --focus: rgba(255, 255, 255, 0.40);
     }
 
-    /* Portret: banner groter, 2 bij 2 */
+    /* Portret: banner ook groter, knoppen iets lager */
     @media (orientation: portrait){
       :root{
-        --banner-h: clamp(78px, 10.5vmin, 130px);
+        --banner-h: clamp(110px, 13.5vmin, 180px);
         --card-w: clamp(285px, 44vw, 520px);
       }
     }
@@ -29,7 +29,7 @@
     /* Extra lage schermen */
     @media (max-height: 520px){
       :root{
-        --banner-h: clamp(38px, 6.2vmin, 60px);
+        --banner-h: clamp(56px, 8.5vmin, 92px);
         --card-w: clamp(150px, 20vw, 220px);
       }
     }
@@ -70,7 +70,7 @@
       z-index: 1;
     }
 
-    /* Layoutcontainer: banner altijd boven de knoppen */
+    /* Layoutcontainer: banner altijd boven knoppen */
     .shell{
       position: fixed;
       inset: 0;
@@ -85,17 +85,21 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: clamp(12px, 2.2vmin, 18px);
+
+      /* Default: alles samen vertikaal gecentreerd, maar banner blijft boven knoppen */
+      justify-content: center;
+
+      /* Ruimte tussen banner en knoppen */
+      gap: clamp(14px, 2.2vmin, 20px);
     }
 
-    /* Landscape: het geheel vertikaal centreren, maar banner blijft boven de knoppen */
-    @media (orientation: landscape){
-      .shell{ justify-content: center; }
-    }
-
-    /* Portret: boven starten */
+    /* Portret: banner hoger, knoppen lager (meer ruimte ertussen) */
     @media (orientation: portrait){
-      .shell{ justify-content: flex-start; }
+      .shell{
+        justify-content: flex-start;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+        gap: clamp(26px, 3.6vmin, 40px);
+      }
     }
 
     header{
@@ -111,7 +115,7 @@
       height: 100%;
       object-fit: contain;
       display: block;
-      filter: drop-shadow(0 14px 14px rgba(0,0,0,0.16));
+      filter: drop-shadow(0 16px 16px rgba(0,0,0,0.18));
     }
 
     .grid{
@@ -135,7 +139,7 @@
       .grid{
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
-        row-gap: clamp(8px, 1.6vmin, 14px);
+        row-gap: clamp(10px, 2.0vmin, 16px);
         column-gap: var(--gap);
         width: min(1320px, 100%);
         align-content: start;
