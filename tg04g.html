@@ -1,1981 +1,2168 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Slim kijken</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Slim kijken</title>
+<style>
+:root{
+--bg-left:#fdeeea;
+--brand:#e58c74;
+--text:#6f6b68;
+--midLine: rgba(245,180,152,0.85);
+--card-radius:28px;
+--shadow: 0 16px 40px rgba(0,0,0,0.08);
+--pressDown: 2px;
+--wrongFill: rgba(248, 197, 197, 0.85);
+--wrongBorder: rgba(229, 140, 116, 0.45);
+--correctFill: rgba(210, 244, 214, 0.92);
+--correctBorder: rgba(144, 204, 152, 0.70);
+--activeFill: rgba(229, 140, 116, 0.18);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html, body{
+height:100%;
+margin:0;
+padding:0;
+font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+background:#ffffff;
+color: var(--text);
+-webkit-user-select: none;
+user-select: none;
+touch-action: none;
+overflow:hidden;
+}
+body{
+display:grid;
+grid-template-columns: 58fr 42fr;
+grid-template-rows: 1fr;
+height: 100%;
+position: relative;
+overflow:hidden;
+isolation:isolate;
+}
+@media (orientation: portrait){
+body{
+grid-template-columns: 1fr;
+grid-template-rows: 54fr 46fr;
+}
+}
+.left{
+background: var(--bg-left);
+padding: 28px 26px 22px 26px;
+display:flex;
+flex-direction:column;
+gap: 22px;
+position: relative;
+overflow:hidden;
+min-height: 0;
+z-index: 1;
+}
+.scan-surface{
+background:#ffffff;
+position: relative;
+min-height: 0;
+transition: background 140ms ease;
+z-index: 1;
+overflow:hidden;
+}
+@media (orientation: landscape){
+.scan-surface{ border-left: 6px dashed var(--midLine); }
+}
+@media (orientation: portrait){
+.scan-surface{ border-top: 6px dashed var(--midLine); }
+.left{ padding: 22px; gap: 16px; }
+}
+.topbar{
+display:flex;
+align-items:center;
+gap: 18px;
+flex: 0 0 auto;
+position: relative;
+z-index: 2;
+}
+.homeBtn,
+.tuneBtn{
+width:72px;
+height:72px;
+border-radius:18px;
+background: #f8c3b0;
+border: none;
+box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+display:grid;
+place-items:center;
+cursor:pointer;
+padding: 0;
+flex: 0 0 auto;
+font-size: 30px;
+line-height: 1;
+transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+}
+.homeBtn:active,
+.tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+.homeBtn svg{ width: 42px; height: 42px; display:block; }
+.titlePill{
+padding: 18px 44px;
+border-radius: 22px;
+background: var(--brand);
+color: #ffffff;
+font-weight: 800;
+font-size: clamp(22px, 2.1vw, 34px);
+letter-spacing: 0.3px;
+box-shadow: var(--shadow);
+line-height: 1;
+display:flex;
+align-items:center;
+justify-content:center;
+min-height: 64px;
+width: min(660px, 100%);
+text-transform: lowercase;
+}
+.content{
+flex:1 1 auto;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 10px 6px;
+min-height: 0;
+position: relative;
+overflow:hidden;
+}
+.gameCard{
+width: min(980px, 100%);
+height: min(520px, 58vh);
+background: #ffffff;
+border: 6px solid rgba(245,180,152,0.85);
+border-radius: var(--card-radius);
+box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+position:relative;
+overflow: hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 18px;
+transform: translateY(0px);
+}
+@media (orientation: portrait){
+.gameCard{ height: min(420px, 34vh); }
+}
+.flashBoard{
+width: 100%;
+height: 100%;
+border-radius: 26px;
+background:#ffffff;
+border: 2px solid rgba(245,180,152,0.55);
+display:flex;
+align-items:center;
+justify-content:center;
+overflow:hidden;
+position:relative;
+aspect-ratio: 520 / 380;
+}
+@media (orientation: portrait){
+.flashBoard{
+width: min(440px, 92%);
+height: auto;
+transform: none;
+}
+}
+.flashSvg{
+width: 100%;
+height: 100%;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+.flashSvg svg{
+width: 100%;
+height: 100%;
+max-width: 100%;
+max-height: 100%;
+}
+.scanStage{
+position:absolute;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 18px;
+z-index: 10;
+}
+@media (min-aspect-ratio: 4/3){
+.scanStage{ padding: 12px; }
+}
+.answersWrap{
+width: min(560px, 92%);
+max-width: 560px;
+}
+.answers{
+display:grid;
+grid-template-columns: 1fr;
+gap: 14px;
+justify-items:center;
+align-items:center;
+}
+@media (orientation: portrait){
+.answers{
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 12px;
+}
+.answersWrap{ width: min(640px, 92%); }
+}
+.ansBtn{
+appearance:none;
+border:none;
+background:#ffffff;
+border-radius: 22px;
+border: 3px solid rgba(245,180,152,0.85);
+box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+cursor:pointer;
+display:grid;
+place-items:center;
+padding: 10px;
+aspect-ratio: 1 / 1;
+width: 100%;
+transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
+transform: translateZ(0);
+will-change: transform, opacity;
+position: relative;
+overflow: hidden;
+}
+@media (orientation: landscape){
+.answersWrap{ width: min(360px, 92%); }
+.ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+}
+.ansBtn:active{
+transform: translateY(var(--pressDown));
+box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+}
+.ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
+@keyframes pressBounce{
+0%{ transform: translateY(0); }
+42%{ transform: translateY(var(--pressDown)); }
+100%{ transform: translateY(0); }
+}
+.ansBtn.wrongHold{
+background: var(--wrongFill);
+border-color: var(--wrongBorder);
+}
+.ansBtn.correctHold{
+background: var(--correctFill);
+border-color: var(--correctBorder);
+}
+.answersHidden{ opacity:0; pointer-events:none; }
+.startOverlay{
+position:fixed;
+inset:0;
+background: rgba(253,238,234,0.55);
+backdrop-filter: blur(2px);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index: 999;
+padding: 24px;
+}
+.startCard{
+width: min(740px, 92vw);
+background: #ffffff;
+border-radius: 24px;
+box-shadow: var(--shadow);
+padding: 22px 20px;
+text-align:center;
+}
+.startCard h1{
+margin: 0 0 10px 0;
+font-size: 28px;
+color: #4d4a48;
+text-transform: lowercase;
+}
+.startCard p{
+margin: 0 0 14px 0;
+color: rgba(77,74,72,0.82);
+font-size: 18px;
+line-height: 1.35;
+}
+.startBtn{
+appearance:none;
+border:none;
+background: var(--brand);
+color:#fff;
+font-weight: 900;
+padding: 14px 18px;
+border-radius: 18px;
+font-size: 18px;
+cursor:pointer;
+box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+}
+.startBtn:active{ transform: translateY(1px) scale(0.99); }
+.tunePanel{
+position: fixed;
+right: 18px;
+bottom: 18px;
+width: min(640px, calc(100vw - 36px));
+background: rgba(255,255,255,0.62);
+backdrop-filter: blur(10px);
+border-radius: 18px;
+box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+border: 2px solid rgba(245,180,152,0.75);
+padding: 14px 14px 12px 14px;
+z-index: 2200;
+color: #4d4a48;
+}
+.tunePanel.hidden{ display:none; }
+.tuneHeader{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap: 10px;
+margin-bottom: 10px;
+}
+.tuneTitle{
+font-weight: 900;
+font-size: 18px;
+letter-spacing: 0.2px;
+text-transform: lowercase;
+}
+.tuneClose{
+appearance:none;
+border:none;
+background:#f8c3b0;
+border-radius: 12px;
+padding: 10px 12px;
+font-weight: 900;
+cursor:pointer;
+box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+}
+.tuneClose:active{ transform: translateY(1px) scale(0.99); }
+.tuneSection{
+margin-top: 8px;
+padding-top: 10px;
+border-top:2px solid rgba(245,180,152,0.45);
+}
+.tuneRow{
+display:grid;
+grid-template-columns: 170px 1fr 92px;
+gap: 10px;
+align-items:center;
+margin: 10px 0;
+}
+@media (max-width: 520px){
+.tuneRow{ grid-template-columns: 130px 1fr 84px; }
+}
+.tuneLabel{
+font-weight: 800;
+font-size: 13px;
+color: rgba(77,74,72,0.86);
+text-transform: lowercase;
+}
+.tuneValue{
+font-variant-numeric: tabular-nums;
+font-weight: 900;
+font-size: 13px;
+text-align:right;
+color: rgba(77,74,72,0.86);
+}
+.tuneRow input[type="range"]{ width: 100%; }
+.tuneButtons{
+display:flex;
+gap: 10px;
+flex-wrap: wrap;
+margin-top: 10px;
+}
+.tuneBtnSmall{
+appearance:none;
+border:none;
+background: var(--brand);
+color:#fff;
+font-weight: 900;
+padding: 10px 12px;
+border-radius: 14px;
+cursor:pointer;
+box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+font-size: 14px;
+}
+.tuneBtnSmall.secondary{
+background:#f8c3b0;
+color:#4d4a48;
+}
+.tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+.cardWrap{
+width:100%;
+height:100%;
+border-radius:18px;
+overflow:hidden;
+display:grid;
+place-items:center;
+perspective: 900px;
+}
+.cardInner{
+width:100%;
+height:100%;
+position:relative;
+transform-style: preserve-3d;
+-webkit-transform-style: preserve-3d;
+transition: transform 420ms cubic-bezier(.22,.61,.35,1);
+transform: translateZ(0);
+}
+.cardBack,
+.cardFront{
+position:absolute;
+inset:0;
+display:grid;
+place-items:center;
+backface-visibility: hidden;
+-webkit-backface-visibility: hidden;
+border-radius:18px;
+overflow:hidden;
+}
+.cardBack{
+background:#f8c3b0;
+font-size:32px;
+background-image: url("vogeltje_achterkantkaart.png");
+background-size: contain;
+background-position: center;
+background-repeat: no-repeat;
+}
+.cardFront{
+background:#ffffff;
+transform: rotateY(180deg);
+-webkit-transform: rotateY(180deg);
+}
+.ansBtn.cardOpen .cardInner{
+transform: rotateY(180deg);
+-webkit-transform: rotateY(180deg);
+}
+.timelineOverlay{
+position: fixed;
+inset: 0;
+z-index: 2000;
+pointer-events:none;
+user-select:none;
+overflow: visible;
+background: transparent;
+}
+.timelineGroup{
+position:absolute;
+left: 0;
+top: 0;
+transform-origin: 0 0;
+will-change: transform;
+pointer-events:none;
+}
+.progressTimeline{
+position:absolute;
+left: 0;
+top: 0;
+width: 520px;
+height: auto;
+z-index: 20;
+}
+.progressLine{
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+object-fit: fill;
+}
+.progressLine.levelsHidden{
+opacity: 0;
+}
+.progressChickAnchor{
+position:absolute;
+left: 0;
+top: 0;
+transform: translateX(-50%);
+width: 82px;
+height: 82px;
+pointer-events:none;
+transition: left 520ms cubic-bezier(.22,.61,.35,1);
+will-change: left, transform, top;
+}
+.progressChickAnchor.noMove{ transition: none !important; }
+.chickLayer{
+position:absolute;
+left:0;
+top:0;
+width: 100%;
+height: 100%;
+opacity: 0;
+pointer-events:none;
+transform-origin: 50% 100%;
+will-change: transform, opacity;
+display:block;
+object-fit: contain;
+}
+.chickLayer.active{ opacity: 1; }
+.stillLayer{ z-index: 3; }
+.animLayer{ z-index: 2; }
+#animCanvas{ opacity:0; }
+#animCanvas.active{ opacity:1; }
 
-  <style>
-    :root{
-      --bg-left:#fdeeea;
-      --brand:#e58c74;
-      --text:#6f6b68;
+.qWrap{
+width: 100%;
+height: 100%;
+display: grid;
+place-items: center;
+position: relative;
+overflow: hidden;
+padding: clamp(8px, 2.2vw, 20px);
+}
+.layoutImg{
+width: 58%;
+height: 58%;
+max-width: 58%;
+max-height: 58%;
+object-fit: contain;
+display: block;
+margin: auto;
+}
+.ansBtn .layoutImg{
+width: 98%;
+height: 98%;
+max-width: 98%;
+max-height: 98%;
+object-fit: contain;
+}
 
-      --midLine: rgba(245,180,152,0.85);
+.pairWrap{
+width: 100%;
+height: 100%;
+display:flex;
+align-items:center;
+justify-content:center;
+gap: clamp(10px, 2.4vw, 22px);
+}
+.pairWrap.smallRight{ flex-direction: row; }
+.pairWrap.smallLeft{ flex-direction: row-reverse; }
+.pairItem{
+flex: 0 1 46%;
+height: 100%;
+display:grid;
+place-items:center;
+}
+.pairImg{
+width: 100%;
+height: 100%;
+object-fit: contain;
+display:block;
+}
+.pairItem.small{
+opacity: 0;
+transform: translateY(4px) scale(0.96);
+animation: smallAppear 360ms cubic-bezier(.22,.61,.35,1) forwards;
+animation-delay: var(--delay, 420ms);
+}
+@keyframes smallAppear{
+to{ opacity: 1; transform: translateY(0) scale(1); }
+}
 
-      --card-radius:28px;
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+.marboticFace{
+width: 100%;
+height: 100%;
+display:grid;
+place-items:center;
+padding: 16%;
+}
+.marboticImg{
+width: 100%;
+height: 100%;
+object-fit: contain;
+display:block;
+}
 
-      --pressDown: 2px;
+.extraDot{
+position: absolute;
+width: 46px;
+height: 46px;
+border-radius: 50%;
+background: rgba(25,25,25,0.30);
+opacity: 0;
+transform: translate(-50%, -50%) scale(0.65);
+will-change: transform, opacity, background;
+}
+.extraDot.show{
+animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards;
+animation-delay: var(--appearDelay, 260ms);
+}
+.extraDot.blacken{
+animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 520ms ease forwards;
+animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms);
+}
+@keyframes dotAppear{
+0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
+60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+100%{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+}
+@keyframes dotBlacken{
+from{ background: rgba(25,25,25,0.30); }
+to{ background: rgba(25,25,25,0.92); }
+}
 
-      --wrongFill: rgba(248, 197, 197, 0.85);
-      --wrongBorder: rgba(229, 140, 116, 0.45);
-
-      --correctFill: rgba(210, 244, 214, 0.92);
-      --correctBorder: rgba(144, 204, 152, 0.70);
-
-      --activeFill: rgba(229, 140, 116, 0.18);
-    }
-
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-
-    html, body{
-      height:100%;
-      margin:0;
-      padding:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#ffffff;
-      color: var(--text);
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: none;
-      overflow:hidden;
-    }
-
-    body{
-      display:grid;
-      grid-template-columns: 58fr 42fr;
-      grid-template-rows: 1fr; /* FIX, voorkomt witte balk onderin */
-      height: 100%;
-      position: relative;
-      overflow:hidden;
-      isolation:isolate;
-    }
-
-    @media (orientation: portrait){
-      body{
-        grid-template-columns: 1fr;
-        grid-template-rows: 54fr 46fr;
-      }
-    }
-
-    .left{
-      background: var(--bg-left);
-      padding: 28px 26px 22px 26px;
-      display:flex;
-      flex-direction:column;
-      gap: 22px;
-      position: relative;
-      overflow:hidden;
-      min-height: 0;
-      z-index: 1;
-    }
-
-    .scan-surface{
-      background:#ffffff;
-      position: relative;
-      min-height: 0;
-      transition: background 140ms ease;
-      z-index: 1;
-      overflow:hidden;
-    }
-
-    @media (orientation: landscape){
-      .scan-surface{ border-left: 6px dashed var(--midLine); }
-    }
-    @media (orientation: portrait){
-      .scan-surface{ border-top: 6px dashed var(--midLine); }
-      .left{ padding: 22px; gap: 16px; }
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      gap: 18px;
-      flex: 0 0 auto;
-      position: relative;
-      z-index: 2;
-    }
-
-    .homeBtn,
-    .tuneBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-      font-size: 30px;
-      line-height: 1;
-      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
-    }
-    .homeBtn:active,
-    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
-
-    .homeBtn svg{ width: 42px; height: 42px; display:block; }
-
-    .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 64px;
-      width: min(660px, 100%);
-      text-transform: lowercase;
-    }
-
-    .content{
-      flex:1 1 auto;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 10px 6px;
-      min-height: 0;
-      position: relative;
-      overflow:hidden;
-    }
-
-    .gameCard{
-      width: min(980px, 100%);
-      height: min(520px, 58vh);
-      background: #ffffff;
-      border: 6px solid rgba(245,180,152,0.85);
-      border-radius: var(--card-radius);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-      position:relative;
-      overflow: hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      transform: translateY(0px);
-    }
-
-    @media (orientation: portrait){
-      .gameCard{ height: min(420px, 34vh); }
-    }
-
-    .flashBoard{
-      width: 100%;
-      height: 100%;
-      border-radius: 26px;
-      background:#ffffff;
-      border: 2px solid rgba(245,180,152,0.55);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      position:relative;
-      aspect-ratio: 520 / 380;
-    }
-
-    @media (orientation: portrait){
-      .flashBoard{
-        width: min(440px, 92%);
-        height: auto;
-        transform: none;
-      }
-    }
-
-    .flashSvg{
-      width: 100%;
-      height: 100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    .flashSvg svg{
-      width: 100%;
-      height: 100%;
-      max-width: 100%;
-      max-height: 100%;
-    }
-
-    .scanStage{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      z-index: 10;
-    }
-
-    @media (min-aspect-ratio: 4/3){
-      .scanStage{ padding: 12px; }
-    }
-
-    .answersWrap{
-      width: min(560px, 92%);
-      max-width: 560px;
-    }
-
-    .answers{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
-      justify-items:center;
-      align-items:center;
-    }
-
-    @media (orientation: portrait){
-      .answers{
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-      .answersWrap{ width: min(640px, 92%); }
-    }
-
-    .ansBtn{
-      appearance:none;
-      border:none;
-      background:#ffffff;
-      border-radius: 22px;
-      border: 3px solid rgba(245,180,152,0.85);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.10);
-      cursor:pointer;
-
-      display:grid;
-      place-items:center;
-      padding: 10px;
-
-      aspect-ratio: 1 / 1;
-      width: 100%;
-
-      transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
-      transform: translateZ(0);
-      will-change: transform, opacity;
-      position: relative;
-      overflow: hidden;
-    }
-
-    @media (orientation: landscape){
-      .answersWrap{ width: min(360px, 92%); }
-      .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
-    }
-
-    .ansBtn:active{
-      transform: translateY(var(--pressDown));
-      box-shadow: 0 8px 16px rgba(0,0,0,0.10);
-    }
-
-    .ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
-    @keyframes pressBounce{
-      0%{ transform: translateY(0); }
-      42%{ transform: translateY(var(--pressDown)); }
-      100%{ transform: translateY(0); }
-    }
-
-    .ansBtn.wrongHold{
-      background: var(--wrongFill);
-      border-color: var(--wrongBorder);
-    }
-
-    .ansBtn.correctHold{
-      background: var(--correctFill);
-      border-color: var(--correctBorder);
-    }
-
-    .answersHidden{ opacity:0; pointer-events:none; }
-
-    .startOverlay{
-      position:fixed;
-      inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
-    .startCard{
-      width: min(740px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
-    .startCard h1{
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      color: #4d4a48;
-      text-transform: lowercase;
-    }
-    .startCard p{
-      margin: 0 0 14px 0;
-      color: rgba(77,74,72,0.82);
-      font-size: 18px;
-      line-height: 1.35;
-    }
-
-    .startBtn{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 900;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 18px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
-    }
-    .startBtn:active{ transform: translateY(1px) scale(0.99); }
-
-    .tunePanel{
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      width: min(640px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.62);
-      backdrop-filter: blur(10px);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
-      padding: 14px 14px 12px 14px;
-      z-index: 2200;
-      color: #4d4a48;
-    }
-    .tunePanel.hidden{ display:none; }
-    .tuneHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .tuneTitle{
-      font-weight: 900;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      text-transform: lowercase;
-    }
-    .tuneClose{
-      appearance:none;
-      border:none;
-      background:#f8c3b0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 900;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-    }
-    .tuneClose:active{ transform: translateY(1px) scale(0.99); }
-
-    .tuneSection{
-      margin-top: 8px;
-      padding-top: 10px;
-      border-top:2px solid rgba(245,180,152,0.45);
-    }
-
-    .tuneRow{
-      display:grid;
-      grid-template-columns: 170px 1fr 92px;
-      gap: 10px;
-      align-items:center;
-      margin: 10px 0;
-    }
-    @media (max-width: 520px){
-      .tuneRow{ grid-template-columns: 130px 1fr 84px; }
-    }
-
-    .tuneLabel{
-      font-weight: 800;
-      font-size: 13px;
-      color: rgba(77,74,72,0.86);
-      text-transform: lowercase;
-    }
-    .tuneValue{
-      font-variant-numeric: tabular-nums;
-      font-weight: 900;
-      font-size: 13px;
-      text-align:right;
-      color: rgba(77,74,72,0.86);
-    }
-    .tuneRow input[type="range"]{ width: 100%; }
-
-    .tuneButtons{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .tuneBtnSmall{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 900;
-      padding: 10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      font-size: 14px;
-    }
-    .tuneBtnSmall.secondary{
-      background:#f8c3b0;
-      color:#4d4a48;
-    }
-    .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
-
-    .cardWrap{
-      width:100%;
-      height:100%;
-      border-radius:18px;
-      overflow:hidden;
-      display:grid;
-      place-items:center;
-      perspective: 900px;
-    }
-
-    .cardInner{
-      width:100%;
-      height:100%;
-      position:relative;
-      transform-style: preserve-3d;
-      -webkit-transform-style: preserve-3d;
-      transition: transform 420ms cubic-bezier(.22,.61,.35,1);
-      transform: translateZ(0);
-    }
-
-    .cardBack,
-    .cardFront{
-      position:absolute;
-      inset:0;
-      display:grid;
-      place-items:center;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      border-radius:18px;
-      overflow:hidden;
-    }
-
-    .cardBack{
-      background:#f8c3b0;
-      font-size:32px;
-      background-image: url("vogeltje_achterkantkaart.png");
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-
-    .cardFront{
-      background:#ffffff;
-      transform: rotateY(180deg);
-      -webkit-transform: rotateY(180deg);
-    }
-
-    .ansBtn.cardOpen .cardInner{
-      transform: rotateY(180deg);
-      -webkit-transform: rotateY(180deg);
-    }
-
-    /* Timeline overlay */
-    .timelineOverlay{
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      pointer-events:none;
-      user-select:none;
-      overflow: visible;
-      background: transparent;
-    }
-
-    .timelineGroup{
-      position:absolute;
-      left: 0;
-      top: 0;
-      transform-origin: 0 0;
-      will-change: transform;
-      pointer-events:none;
-    }
-
-    .progressTimeline{
-      position:absolute;
-      left: 0;
-      top: 0;
-      width: 520px; /* basis, wordt via transform geschaald */
-      height: auto;
-      z-index: 20;
-    }
-
-    .progressLine{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit: fill;
-    }
-
-    .progressLine.levelsHidden{
-      opacity: 0;
-    }
-
-    .progressChickAnchor{
-      position:absolute;
-      left: 0;
-      top: 0;
-      transform: translateX(-50%);
-      width: 82px;
-      height: 82px;
-      pointer-events:none;
-      transition: left 520ms cubic-bezier(.22,.61,.35,1);
-      will-change: left, transform, top;
-    }
-    .progressChickAnchor.noMove{ transition: none !important; }
-
-    .chickLayer{
-      position:absolute;
-      left:0;
-      top:0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      pointer-events:none;
-      transform-origin: 50% 100%;
-      will-change: transform, opacity;
-      display:block;
-      object-fit: contain;
-    }
-    .chickLayer.active{ opacity: 1; }
-    .stillLayer{ z-index: 3; }
-    .animLayer{ z-index: 2; }
-
-    #animCanvas{ opacity:0; }
-    #animCanvas.active{ opacity:1; }
-  </style>
+/* tandwiel uit beeld */
+.tuneBtn{ display:none; }
+</style>
 </head>
-
 <body>
-  <section class="left" aria-label="Spel">
-    <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
-          <path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
-          <path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-
-      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
-      <div class="titlePill" id="titlePill">slim kijken</div>
-    </div>
-
-    <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Vraagvak">
-        <div class="flashBoard" id="flashBoard">
-          <div class="flashSvg" id="flashSvg"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
-    <div class="scanStage">
-      <div class="answersWrap" id="answersWrap">
-        <div class="answers answersHidden" id="answers"></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
-    <div class="timelineGroup" id="timelineGroup">
-      <div class="progressTimeline" id="timeline">
-        <img class="progressLine" id="levelsImg" src="levels.png" alt="" draggable="false">
-        <div class="progressChickAnchor" id="chickAnchor">
-          <img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
-          <video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
-          <video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
-          <canvas class="chickLayer animLayer" id="animCanvas"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <h1>tik om te starten</h1>
-      <p>Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.</p>
-      <button class="startBtn" id="startBtn" type="button">Start</button>
-    </div>
-  </div>
-
-  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
-    </div>
-
-    <div class="tuneSection">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
-      <div style="font-weight:900; font-size:16px; text-transform: lowercase;">
-        huidig level: <span id="tuneLevelValue">1</span>
-      </div>
-      <div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
-        level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
-      </div>
-
-      <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
-        <button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
-      </div>
-    </div>
-
-    <div class="tuneSection">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">flitstijd</div>
-        <input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
-        <div class="tuneValue" id="flashMsValue">300</div>
-      </div>
-    </div>
-
-    <div class="tuneSection" style="padding-top:12px;">
-      <div class="tuneButtons">
-        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
-        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
-      </div>
-
-      <div class="tuneButtons" style="margin-top:10px;">
-        <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    (() => {
-      "use strict";
-
-      const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-      const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
-      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-      const wait = (ms) => new Promise(r => setTimeout(r, ms));
-      const raf = () => new Promise(r => requestAnimationFrame(() => r()));
-      const $ = (id) => document.getElementById(id);
-
-      const startOverlay = $("startOverlay");
-      const startBtn = $("startBtn");
-
-      const titlePill = $("titlePill");
-      const gameCard = $("gameCard");
-
-      const homeBtn = $("homeBtn");
-      const tuneBtn = $("tuneBtn");
-      const tunePanel = $("tunePanel");
-      const tuneClose = $("tuneClose");
-
-      const flashMsRange = $("flashMsRange");
-      const flashMsValue = $("flashMsValue");
-
-      const tuneLevelValue = $("tuneLevelValue");
-
-      const newRoundBtn = $("newRoundBtn");
-      const testWrongBtn = $("testWrongBtn");
-      const testGoodBtn = $("testGoodBtn");
-
-      const levelUpBtn = $("levelUpBtn");
-      const levelDownBtn = $("levelDownBtn");
-
-      const toggleLevelsBtn = $("toggleLevelsBtn");
-
-      const flashSvg = $("flashSvg");
-      const answersEl = $("answers");
-      const scanArea = $("scanArea");
-
-      const timelineGroup = $("timelineGroup");
-      const timeline = $("timeline");
-      const levelsImg = $("levelsImg");
-      const chickAnchor = $("chickAnchor");
-      const stillImg = $("stillImg");
-      const upVid = $("upVid");
-      const downVid = $("downVid");
-      const animCanvas = $("animCanvas");
-      const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
-
-      const WAIT_BEFORE_IN_MS = 0;
-      const IN_DUR_MS = 800;
-      const OUT_DUR_MS = 750;
-
-      const PREVIEW_GAP_MS = 120;
-
-      let previewMs = 1700;
-      let flashMs = Number(flashMsRange.value);
-
-      let LEVEL = 1;
-
-      let streakGood = 0;
-      let streakBad = 0;
-
-      function isPortrait(){
-        return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
-      }
-
-      function usesAnswerCards(){
-        return LEVEL >= 2;
-      }
-
-      function setLevel(n){
-        LEVEL = clamp(n, 1, 9);
-        titlePill.textContent = `slim kijken, level ${LEVEL}`;
-        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-
-      function maxForLevel(){
-        if(LEVEL === 1) return 4;
-        if(LEVEL === 2) return 4;
-        if(LEVEL === 3) return 4;
-        if(LEVEL === 4) return 6;
-        return 6;
-      }
-
-      function pickNumberWeighted(cap){
-        const w1 = 0.30;
-        const weights = [];
-        for(let i=1;i<=cap;i++){
-          weights.push(i === 1 ? w1 : 1);
-        }
-        const sum = weights.reduce((a,b) => a + b, 0);
-        let r = Math.random() * sum;
-        for(let i=0;i<weights.length;i++){
-          r -= weights[i];
-          if(r <= 0) return i + 1;
-        }
-        return cap;
-      }
-
-      let audioCtx = null;
-      function beep(type){
-        try{
-          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-          const t = audioCtx.currentTime;
-          const o = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          o.type = "sine";
-          if(type === "ok") o.frequency.setValueAtTime(740, t);
-          if(type === "no") o.frequency.setValueAtTime(220, t);
-          if(type === "tap") o.frequency.setValueAtTime(520, t);
-          if(type === "level") o.frequency.setValueAtTime(620, t);
-          g.gain.setValueAtTime(0.0001, t);
-          g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-          o.connect(g); g.connect(audioCtx.destination);
-          o.start(t); o.stop(t + 0.22);
-        }catch(e){}
-      }
-
-      /* dobbelpunten */
-      const P = {
-        tl:[0.25,0.25], tc:[0.50,0.25], tr:[0.75,0.25],
-        ml:[0.25,0.50], mc:[0.50,0.50], mr:[0.75,0.50],
-        bl:[0.25,0.75], bc:[0.50,0.75], br:[0.75,0.75]
-      };
-      const diceFaces = {
-        1: [P.mc],
-        2: [P.tl, P.br],
-        3: [P.tl, P.mc, P.br],
-        4: [P.tl, P.tr, P.bl, P.br],
-        5: [P.tl, P.tr, P.mc, P.bl, P.br],
-        6: [P.tl, P.ml, P.bl, P.tr, P.mr, P.br]
-      };
-
-      function patternDice(n){
-        return [{
-          dots: diceFaces[n],
-          box: {x0:0.12, y0:0.12, x1:0.88, y1:0.88}
-        }];
-      }
-
-      const L = {
-        a:[0.30,0.35], b:[0.50,0.35], c:[0.70,0.35],
-        d:[0.30,0.65], e:[0.50,0.65], f:[0.70,0.65],
-        m:[0.50,0.50],
-        r:[0.86,0.50],
-        l:[0.14,0.50]
-      };
-
-      const V = {
-        l1:[0.38,0.28], l2:[0.38,0.50], l3:[0.38,0.72],
-        r1:[0.62,0.28], r2:[0.62,0.50], r3:[0.62,0.72]
-      };
-
-      const VARS_1TO4 = {
-        1: [
-          [L.m],
-          [L.b],
-          [L.e]
-        ],
-        2: [
-          [L.a, L.c],
-          [L.b, L.e],
-          [L.a, L.f]
-        ],
-        3: [
-          [L.a, L.b, L.c],
-          [L.a, L.m, L.f],
-          [L.a, L.d, L.f]
-        ],
-        4: [
-          [L.a, L.c, L.d, L.f],
-          [L.a, L.b, L.c, L.m],
-          [L.a, L.d, L.f, L.b]
-        ]
-      };
-
-      const VARS_5 = [
-        [L.a, L.b, L.c, L.d, L.e],
-        [L.a, L.c, L.d, L.f, L.m],
-        [L.a, L.c, L.d, L.f, L.b]
-      ];
-      const VARS_6 = [
-        [L.a, L.b, L.c, L.d, L.e, L.f],
-        [V.l1, V.l2, V.l3, V.r1, V.r2, V.r3],
-        [L.a, L.c, L.m, L.d, L.f, L.r]
-      ];
-
-      function allowedVariantCountQuestion(n){
-        if(LEVEL === 1) return 1;
-        if(LEVEL === 2) return 1;
-        if(LEVEL === 3) return (n<=4) ? 3 : 0;
-        if(LEVEL === 4){
-          if(n<=4) return 3;
-          if(n===5) return 2;
-          if(n===6) return 3;
-          return 0;
-        }
-        if(LEVEL === 5){
-          if(n<=4) return 3;
-          if(n===5) return 3;
-          if(n===6) return 3;
-          return 0;
-        }
-        return 1;
-      }
-
-      function pickVariantIndexForQuestion(n){
-        const k = allowedVariantCountQuestion(n);
-        if(k <= 1) return 0;
-        return randInt(0, k - 1);
-      }
-
-      function patternQuestion(n, variantIndex){
-        if(LEVEL === 1) return patternDice(n);
-        if(LEVEL === 2) return patternDice(n);
-
-        if(LEVEL === 3){
-          const arr = VARS_1TO4[n] || [];
-          const dots = arr[clamp(variantIndex, 0, arr.length-1)] || [];
-          return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-        }
-
-        if(LEVEL === 4){
-          if(n<=4){
-            const arr = VARS_1TO4[n] || [];
-            const dots = arr[clamp(variantIndex, 0, 2)] || [];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===5){
-            const dots = VARS_5[clamp(variantIndex, 0, 1)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===6){
-            const dots = VARS_6[clamp(variantIndex, 0, 2)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-        }
-
-        if(LEVEL === 5){
-          if(n<=4){
-            const arr = VARS_1TO4[n] || [];
-            const dots = arr[clamp(variantIndex, 0, 2)] || [];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===5){
-            const dots = VARS_5[clamp(variantIndex, 0, 2)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-          if(n===6){
-            const dots = VARS_6[clamp(variantIndex, 0, 2)];
-            return [{ dots, box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-          }
-        }
-
-        return patternDice(n);
-      }
-
-      function patternAnswer(n){
-        if(n <= 4){
-          return patternDice(n);
-        }
-        if(n === 5){
-          return [{ dots: VARS_5[1], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-        }
-        return [{ dots: VARS_6[0], box:{x0:0.12, y0:0.18, x1:0.88, y1:0.82} }];
-      }
-
-      function svgForDots(dotSets, opts = {}){
-        const { dotRadius = 14, dotColor = "rgba(25,25,25,.92)" } = opts;
-        const w = 520, h = 380;
-
-        const circles = [];
-        dotSets.forEach(set => {
-          const b = set.box;
-          set.dots.forEach(([x,y]) => {
-            const X = (b.x0 + x*(b.x1-b.x0)) * w;
-            const Y = (b.y0 + y*(b.y1-b.y0)) * h;
-            circles.push({X,Y});
-          });
-        });
-
-        const cs = circles.map(c => `
-          <circle cx="${c.X.toFixed(1)}" cy="${c.Y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" />
-        `).join("");
-
-        return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cs}</svg>`;
-      }
-
-      function setBoard(html){ flashSvg.innerHTML = html; }
-      function clearBoard(){ setBoard(svgForDots([], {dotRadius: 1})); }
-
-      function dissolveBoard(ms){
-        flashSvg.style.transition = `opacity ${ms}ms ease`;
-        flashSvg.style.opacity = "0";
-        setTimeout(() => {
-          clearBoard();
-          flashSvg.style.transition = "";
-          flashSvg.style.opacity = "1";
-        }, ms + 40);
-      }
-
-      function buildOptions(correct){
-        const cap = maxForLevel();
-
-        if(LEVEL === 5){
-          const options = new Set([correct]);
-          const candidates = [
-            correct - 1, correct + 1,
-            correct - 2, correct + 2,
-            correct - 3, correct + 3
-          ].map(v => clamp(v, 1, cap));
-
-          for(const c of candidates){
-            options.add(c);
-            if(options.size >= 3) break;
-          }
-
-          while(options.size < 3){
-            options.add(randInt(1, cap));
-          }
-
-          const arr = [...options];
-          for(let i=arr.length-1;i>0;i--){
-            const j = Math.floor(Math.random()*(i+1));
-            [arr[i],arr[j]] = [arr[j],arr[i]];
-          }
-          return arr;
-        }
-
-        const options = new Set([correct]);
-        while(options.size < 3){
-          const delta = pick([ -2, -1, 1, 2 ]);
-          options.add(clamp(correct + delta, 1, cap));
-        }
-
-        const arr = [...options];
-        for(let i=arr.length-1;i>0;i--){
-          const j = Math.floor(Math.random()*(i+1));
-          [arr[i],arr[j]] = [arr[j],arr[i]];
-        }
-        return arr;
-      }
-
-      function hideAnswers(){ answersEl.classList.add("answersHidden"); }
-      function showAnswers(){ answersEl.classList.remove("answersHidden"); }
-
-      function slideVectorForButton(btn){
-        const b = btn.getBoundingClientRect();
-        const a = scanArea.getBoundingClientRect();
-        const extra = 16;
-
-        if(isPortrait()){
-          const seamY = a.top;
-          const dy = -((b.bottom - seamY) + extra);
-          return { x: 0, y: dy };
-        }else{
-          const seamX = a.left;
-          const dx = -((b.right - seamX) + extra);
-          return { x: dx, y: 0 };
-        }
-      }
-
-      function sortedButtonsForExit(btns){
-        const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
-        if(isPortrait()){
-          rects.sort((u,v) => v.r.left - u.r.left);
-        }else{
-          rects.sort((u,v) => v.r.top - u.r.top);
-        }
-        return rects.map(x => x.b);
-      }
-
-      async function animateInButtons(){
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(!btns.length) return;
-
-        hideAnswers();
-        await raf(); await raf();
-
-        btns.forEach(btn => {
-          const v = slideVectorForButton(btn);
-          btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
-          btn.style.opacity = "0";
-        });
-
-        showAnswers();
-        await raf();
-
-        const easing = "cubic-bezier(.22,.61,.35,1)";
-
-        btns.forEach((btn, i) => {
-          btn.animate(
-            [
-              { transform: btn.style.transform, opacity: 0 },
-              { transform: "translate(0px, 0px)", opacity: 1 }
-            ],
-            { duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
-          );
-        });
-
-        await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
-
-        btns.forEach(btn => {
-          btn.style.transform = "translate(0px, 0px)";
-          btn.style.opacity = "1";
-        });
-      }
-
-      async function animateOutButtons(btns, staggerMs){
-        if(!btns.length) return;
-
-        const easing = "cubic-bezier(.22,.61,.35,1)";
-
-        btns.forEach((btn, i) => {
-          const v = slideVectorForButton(btn);
-          btn.animate(
-            [
-              { transform: "translate(0px, 0px)", opacity: 1 },
-              { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
-            ],
-            { duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
-          );
-        });
-
-        await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
-
-        btns.forEach(btn => { btn.style.opacity = "0"; });
-      }
-
-      function renderAnswers(correct, onPick){
-        const arr = buildOptions(correct);
-        answersEl.innerHTML = "";
-
-        arr.forEach(v => {
-          const btn = document.createElement("button");
-          btn.className = "ansBtn";
-          btn.type = "button";
-
-          btn.addEventListener("pointerdown", () => {
-            btn.classList.remove("pressBounce");
-            void btn.offsetWidth;
-            btn.classList.add("pressBounce");
-          }, {passive:true});
-
-          btn.addEventListener("click", () => onPick(btn, v));
-
-          if(usesAnswerCards()){
-            const svg = svgForDots(patternAnswer(v), {dotRadius: 12});
-            btn.innerHTML = `
-              <div class="cardWrap">
-                <div class="cardInner">
-                  <div class="cardBack" aria-hidden="true"></div>
-                  <div class="cardFront">${svg}</div>
-                </div>
-              </div>
-            `;
-          }else{
-            const svg = svgForDots(patternDice(v), {dotRadius: 12});
-            btn.innerHTML = `<div style="width:100%; height:100%; display:grid; place-items:center;">${svg}</div>`;
-          }
-
-          answersEl.appendChild(btn);
-        });
-      }
-
-      let previewToken = 0;
-
-      async function previewCardsNonBlocking(){
-        if(!usesAnswerCards()) return;
-        if(previewMs <= 0) return;
-
-        const myToken = ++previewToken;
-
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(!btns.length) return;
-
-        await wait(PREVIEW_GAP_MS);
-
-        for(let i=0;i<btns.length;i++){
-          if(previewToken !== myToken) return;
-          btns[i].classList.add("cardOpen");
-          await wait(90);
-        }
-
-        if(previewToken !== myToken) return;
-        await wait(previewMs);
-
-        if(previewToken !== myToken) return;
-        btns.forEach(b => b.classList.remove("cardOpen"));
-      }
-
-      /* =========================
-         TIMELINE auto fit
-         ========================= */
-
-      const LV_MIN = 1;
-      const LV_MAX = 9;
-
-      const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
-      let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
-
-      let tlMeta = null;          // { leftFrac, rightFrac, baseFrac }
-      let chickEyeFrac = null;    // fractie 0..1
-      let baselineLocalY = 0;
-
-      function timelineReady(){
-        return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
-      }
-
-      function lum(r,g,b){
-        return 0.2126*r + 0.7152*g + 0.0722*b;
-      }
-
-      function safeDefaultTlMeta(){
-        return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
-      }
-
-      function analyzeLevelsPng(imgEl){
-        try{
-          const w = imgEl.naturalWidth || 0;
-          const h = imgEl.naturalHeight || 0;
-          if(!w || !h) return safeDefaultTlMeta();
-
-          const cv = document.createElement("canvas");
-          cv.width = w;
-          cv.height = h;
-          const ctx = cv.getContext("2d", { willReadFrequently: true });
-          ctx.drawImage(imgEl, 0, 0);
-
-          const img = ctx.getImageData(0, 0, w, h);
-          const d = img.data;
-
-          const yStart = Math.floor(h * 0.55);
-          let bestY = Math.floor(h * 0.85);
-          let bestCount = -1;
-
-          for(let y=yStart; y<h; y++){
-            let c = 0;
-            const row = y * w * 4;
-            for(let x=0; x<w; x++){
-              const i = row + x*4;
-              const a = d[i+3];
-              if(a < 32) continue;
-              const L = lum(d[i], d[i+1], d[i+2]);
-              if(L > 245) continue;
-              c++;
-            }
-            if(c > bestCount){
-              bestCount = c;
-              bestY = y;
-            }
-          }
-
-          const col = new Array(w).fill(0);
-          let maxC = 0;
-
-          const yBot = Math.floor(h * 0.55);
-          for(let x=0; x<w; x++){
-            let c = 0;
-            for(let y=yBot; y<h; y++){
-              const i = (y*w + x) * 4;
-              const a = d[i+3];
-              if(a < 32) continue;
-              const L = lum(d[i], d[i+1], d[i+2]);
-              if(L > 245) continue;
-              c++;
-            }
-            col[x] = c;
-            if(c > maxC) maxC = c;
-          }
-
-          const thresh = maxC * 0.70;
-          const xs = [];
-          for(let x=0; x<w; x++){
-            if(col[x] >= thresh) xs.push(x);
-          }
-
-          let clusters = [];
-          if(xs.length){
-            let s = xs[0], p = xs[0];
-            for(let i=1;i<xs.length;i++){
-              const x = xs[i];
-              if(x === p + 1){ p = x; continue; }
-              clusters.push([s,p]);
-              s = x; p = x;
-            }
-            clusters.push([s,p]);
-          }
-
-          const maxClusterW = w * 0.06;
-          clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
-
-          let leftX = w * 0.06;
-          let rightX = w * 0.94;
-
-          if(clusters.length >= 2){
-            leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
-            rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
-          }else if(xs.length >= 2){
-            leftX = xs[Math.floor(xs.length * 0.02)];
-            rightX = xs[Math.floor(xs.length * 0.98)];
-          }
-
-          leftX = clamp(leftX, w*0.01, w*0.45);
-          rightX = clamp(rightX, w*0.55, w*0.99);
-
-          return {
-            leftFrac: leftX / w,
-            rightFrac: rightX / w,
-            baseFrac: bestY / h
-          };
-        }catch(e){
-          return safeDefaultTlMeta();
-        }
-      }
-
-      function analyzeChickEyes(imgEl){
-        try{
-          const w = imgEl.naturalWidth || 0;
-          const h = imgEl.naturalHeight || 0;
-          if(!w || !h) return 0.42;
-
-          const cv = document.createElement("canvas");
-          cv.width = w;
-          cv.height = h;
-          const ctx = cv.getContext("2d", { willReadFrequently: true });
-          ctx.drawImage(imgEl, 0, 0);
-
-          const img = ctx.getImageData(0, 0, w, h);
-          const d = img.data;
-
-          const ys = [];
-          const yMax = Math.floor(h * 0.60);
-          const x0 = Math.floor(w * 0.25);
-          const x1 = Math.floor(w * 0.75);
-
-          for(let y=0; y<yMax; y++){
-            const row = y * w * 4;
-            for(let x=x0; x<x1; x++){
-              const i = row + x*4;
-              const a = d[i+3];
-              if(a < 32) continue;
-              const L = lum(d[i], d[i+1], d[i+2]);
-              if(L < 55){
-                ys.push(y);
-              }
-            }
-          }
-
-          if(ys.length < 24) return 0.42;
-
-          ys.sort((a,b) => a-b);
-          const med = ys[Math.floor(ys.length/2)];
-          return clamp(med / h, 0.18, 0.62);
-        }catch(e){
-          return 0.42;
-        }
-      }
-
-      function tickTForLevel(level){
-        const lv = clamp(level, LV_MIN, LV_MAX);
-        const denom = Math.max(1, (LV_MAX - LV_MIN));
-        return (lv - LV_MIN) / denom;
-      }
-
-      function currentTickXLocalForLevel(level){
-        if(!tlMeta) return 0;
-        const w = timeline.clientWidth || 0;
-        const xL = tlMeta.leftFrac * w;
-        const xR = tlMeta.rightFrac * w;
-        return xL + tickTForLevel(level) * (xR - xL);
-      }
-
-      function setAnchorToLevel(level, opts = {}){
-        if(!timelineReady()) return;
-        if(!tlMeta) return;
-        if(chickEyeFrac == null) chickEyeFrac = 0.42;
-
-        const xLocal = currentTickXLocalForLevel(level);
-
-        const aH = chickAnchor.clientHeight || 0;
-        const eyeLocalY = chickEyeFrac * aH;
-        const topLocal = baselineLocalY - eyeLocalY;
-
-        if(opts.noTransition){
-          chickAnchor.classList.add("noMove");
-          chickAnchor.style.left = `${xLocal}px`;
-          chickAnchor.style.top = `${topLocal}px`;
-          chickAnchor.offsetHeight;
-          chickAnchor.classList.remove("noMove");
-          return;
-        }
-
-        chickAnchor.style.left = `${xLocal}px`;
-        chickAnchor.style.top = `${topLocal}px`;
-      }
-
-      function updateLevelsVisibilityUI(){
-        toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
-        if(levelsVisible) levelsImg.classList.remove("levelsHidden");
-        else levelsImg.classList.add("levelsHidden");
-      }
-
-      let fitQueued = false;
-      function scheduleFit(){
-        if(fitQueued) return;
-        fitQueued = true;
-        requestAnimationFrame(() => {
-          fitQueued = false;
-          fitTimelineToQuestion();
-        });
-      }
-
-      function fitTimelineToQuestion(){
-        if(!timelineReady()) return;
-        if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
-
-        if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
-        if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
-
-        timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
-
-        const r = gameCard.getBoundingClientRect();
-        const cs = getComputedStyle(gameCard);
-        const bw = parseFloat(cs.borderLeftWidth) || 0;
-
-        const targetLeft = r.left + bw;
-        const targetRight = r.right - bw;
-
-        const targetBaselineY = r.bottom - (bw * 0.5);
-
-        const baseW = 520;
-        timeline.style.width = `${baseW}px`;
-
-        const w = timeline.clientWidth || 1;
-        const h = timeline.clientHeight || 1;
-
-        const xL = tlMeta.leftFrac * w;
-        const xR = tlMeta.rightFrac * w;
-        const yB = tlMeta.baseFrac * h;
-
-        baselineLocalY = yB;
-
-        const denom = Math.max(1, (xR - xL));
-        const s = (targetRight - targetLeft) / denom;
-
-        const tx = targetLeft - s * xL;
-        const ty = targetBaselineY - s * yB;
-
-        timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-        setAnchorToLevel(LEVEL, { noTransition: true });
-      }
-
-      function initTimelineAuto(){
-        if(!timelineReady()) return;
-
-        updateLevelsVisibilityUI();
-
-        const tryInit = () => {
-          if(levelsImg.naturalWidth && levelsImg.naturalHeight){
-            tlMeta = analyzeLevelsPng(levelsImg);
-            if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
-            scheduleFit();
-          }
-        };
-
-        if(levelsImg.complete) tryInit();
-        levelsImg.addEventListener("load", tryInit);
-
-        if(stillImg.complete && stillImg.naturalWidth) tryInit();
-        stillImg.addEventListener("load", tryInit);
-
-        if(typeof ResizeObserver === "function"){
-          const ro = new ResizeObserver(() => scheduleFit());
-          ro.observe(gameCard);
-          ro.observe(document.body);
-        }
-
-        window.addEventListener("resize", scheduleFit);
-        window.addEventListener("orientationchange", scheduleFit);
-      }
-
-      /* =========================
-         Animatie kuiken, zoals je had
-         ========================= */
-
-      const TL_WHITE_THRESH = 255;
-
-      const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
-      const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
-
-      let chickPlaying = false;
-      let chickXAnim = null;
-
-      function cancelChickXAnim(){
-        try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
-        chickXAnim = null;
-      }
-
-      function showOnlyStill(){
-        stillImg.classList.add("active");
-        if(animCanvas) animCanvas.classList.remove("active");
-      }
-      function showCanvas(){
-        if(animCanvas) animCanvas.classList.add("active");
-      }
-
-      function stopVideo(v){
-        try{ v.pause(); }catch(e){}
-      }
-
-      function setCanvasSizeToVideo(videoEl){
-        if(!animCanvas) return false;
-        const w = videoEl.videoWidth || 0;
-        const h = videoEl.videoHeight || 0;
-        if(!w || !h) return false;
-        if(animCanvas.width !== w) animCanvas.width = w;
-        if(animCanvas.height !== h) animCanvas.height = h;
-        return true;
-      }
-
-      function applyChromaKeyWhite(){
-        if(!chickCtx || !animCanvas) return;
-        const t = TL_WHITE_THRESH;
-        const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
-        const d = img.data;
-        for(let i = 0; i < d.length; i += 4){
-          const r = d[i], g = d[i+1], b = d[i+2];
-          if(r >= t && g >= t && b >= t) d[i+3] = 0;
-        }
-        chickCtx.putImageData(img, 0, 0);
-      }
-
-      function drawFrame(videoEl){
-        if(!chickCtx || !animCanvas) return false;
-        if(!setCanvasSizeToVideo(videoEl)) return false;
-        chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
-        chickCtx.drawImage(videoEl, 0, 0);
-        applyChromaKeyWhite();
-        return true;
-      }
-
-      async function ensureReady(videoEl){
-        if(videoEl.readyState >= 2) return true;
-        return await new Promise(resolve => {
-          let done = false;
-          const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
-          const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
-          const cleanup = () => {
-            videoEl.removeEventListener("loadeddata", ok);
-            videoEl.removeEventListener("loadedmetadata", ok);
-            videoEl.removeEventListener("error", bad);
-          };
-          videoEl.addEventListener("loadeddata", ok, { once:true });
-          videoEl.addEventListener("loadedmetadata", ok, { once:true });
-          videoEl.addEventListener("error", bad, { once:true });
-          try{ videoEl.load(); }catch(e){}
-          setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
-        });
-      }
-
-      function segmentTimes(startFrame, endFrame, fps){
-        const f = Math.max(1, Number(fps));
-        const s = Math.max(0, Number(startFrame) / f);
-        const e = Math.max(s + (1 / f), Number(endFrame) / f);
-        return { start: s, end: e, durMs: (e - s) * 1000 };
-      }
-
-      async function seekTo(videoEl, timeSec){
-        return await new Promise(resolve => {
-          let done = false;
-          const finish = (ok) => {
-            if(done) return;
-            done = true;
-            cleanup();
-            resolve(ok);
-          };
-          const onSeeked = () => finish(true);
-          const onErr = () => finish(false);
-          const cleanup = () => {
-            videoEl.removeEventListener("seeked", onSeeked);
-            videoEl.removeEventListener("error", onErr);
-          };
-          videoEl.addEventListener("seeked", onSeeked, { once:true });
-          videoEl.addEventListener("error", onErr, { once:true });
-
-          try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
-          catch(e){ cleanup(); resolve(false); return; }
-
-          setTimeout(() => finish(true), 700);
-        });
-      }
-
-      async function playSegmentOnCanvasNoFlash(videoEl, cfg){
-        if(!animCanvas || !chickCtx) return false;
-
-        cancelChickXAnim();
-
-        const ready = await ensureReady(videoEl);
-        if(!ready) return false;
-
-        const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
-
-        stopVideo(videoEl);
-        await seekTo(videoEl, times.start);
-
-        animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
-
-        let playingOk = true;
-        try{ await videoEl.play(); }catch(e){ playingOk = false; }
-        if(!playingOk) return false;
-
-        const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
-
-        const gotFirstFrame = await new Promise(resolve => {
-          let done = false;
-          const finish = (ok) => { if(done) return; done = true; resolve(ok); };
-          const maxWait = setTimeout(() => finish(false), 900);
-
-          if(useRVFC){
-            videoEl.requestVideoFrameCallback(() => {
-              const ok = drawFrame(videoEl);
-              clearTimeout(maxWait);
-              finish(!!ok);
-            });
-          }else{
-            const onTime = () => {
-              const ok = drawFrame(videoEl);
-              clearTimeout(maxWait);
-              finish(!!ok);
-            };
-            videoEl.addEventListener("timeupdate", onTime, { once:true });
-
-            requestAnimationFrame(() => {
-              if(done) return;
-              const ok = drawFrame(videoEl);
-              clearTimeout(maxWait);
-              finish(!!ok);
-            });
-          }
-        });
-
-        if(!gotFirstFrame){
-          try{ videoEl.pause(); }catch(e){}
-          return false;
-        }
-
-        showCanvas();
-        stillImg.classList.remove("active");
-        await raf();
-
-        chickXAnim = animCanvas.animate(
-          [
-            { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
-            { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
-          ],
-          { duration: times.durMs, easing: "linear", fill: "forwards" }
-        );
-
-        if(useRVFC){
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              videoEl.requestVideoFrameCallback(step);
-            };
-            videoEl.requestVideoFrameCallback(step);
-          });
-        }else{
-          await new Promise(resolve => {
-            const step = () => {
-              drawFrame(videoEl);
-              if(videoEl.currentTime >= times.end || videoEl.ended){
-                resolve(true);
-                return;
-              }
-              requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-          });
-        }
-
-        try{ videoEl.pause(); }catch(e){}
-        cancelChickXAnim();
-        return true;
-      }
-
-      async function animateTimeline(fromLevel, toLevel){
-        if(!timelineReady()) return;
-
-        setAnchorToLevel(fromLevel, { noTransition: true });
-        showOnlyStill();
-
-        const hasMp4 = upVid && downVid && animCanvas && chickCtx;
-        if(!hasMp4){
-          setAnchorToLevel(toLevel, { noTransition: true });
-          return;
-        }
-
-        if(chickPlaying) return;
-        chickPlaying = true;
-
-        stopVideo(upVid);
-        stopVideo(downVid);
-
-        const dir = toLevel > fromLevel ? "up" : "down";
-        const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
-        const vid = dir === "up" ? upVid : downVid;
-
-        await playSegmentOnCanvasNoFlash(vid, cfg);
-
-        setAnchorToLevel(toLevel, { noTransition: true });
-
-        stillImg.classList.add("active");
-        await raf();
-        if(animCanvas) animCanvas.classList.remove("active");
-
-        chickPlaying = false;
-      }
-
-      /* game */
-      let started = false;
-      let locked = false;
-      let correct = 1;
-      let questionVariantIndex = 0;
-
-      function resetStreaks(){
-        streakGood = 0;
-        streakBad = 0;
-      }
-
-      async function handleAutoLevelOnGood(){
-        streakGood += 1;
-        streakBad = 0;
-
-        if(streakGood >= 5){
-          const before = LEVEL;
-          setLevel(LEVEL + 1);
-          resetStreaks();
-          if(LEVEL !== before){
-            beep("level");
-            await animateTimeline(before, LEVEL);
-          }
-          return true;
-        }
-        return false;
-      }
-
-      async function handleAutoLevelOnBad(){
-        streakBad += 1;
-        streakGood = 0;
-
-        if(streakBad >= 2){
-          const before = LEVEL;
-          setLevel(LEVEL - 1);
-          resetStreaks();
-          if(LEVEL !== before){
-            beep("level");
-            await animateTimeline(before, LEVEL);
-          }
-          return true;
-        }
-        return false;
-      }
-
-      async function flashAndAsk(){
-        locked = true;
-        previewToken++;
-
-        answersEl.classList.add("answersHidden");
-        answersEl.innerHTML = "";
-        clearBoard();
-
-        await wait(160);
-
-        questionVariantIndex = pickVariantIndexForQuestion(correct);
-        const qPattern = patternQuestion(correct, questionVariantIndex);
-        setBoard(svgForDots(qPattern, {dotRadius: 16}));
-
-        await wait(flashMs);
-
-        clearBoard();
-        await wait(260);
-
-        renderAnswers(correct, onPick);
-        await wait(WAIT_BEFORE_IN_MS);
-        await animateInButtons();
-
-        locked = false;
-        previewCardsNonBlocking();
-      }
-
-      function nextRound(){
-        const cap = maxForLevel();
-        correct = pickNumberWeighted(cap);
-        flashAndAsk();
-      }
-
-      async function onPick(btn, value){
-        if(!started || locked) return;
-
-        locked = true;
-        previewToken++;
-
-        const all = [...answersEl.querySelectorAll(".ansBtn")];
-        all.forEach(b => b.style.pointerEvents = "none");
-
-        if(usesAnswerCards()){
-          btn.classList.add("cardOpen");
-          await wait(110);
-        }
-
-        if(value === correct){
-          beep("ok");
-          btn.classList.add("correctHold");
-
-          const qPattern = patternQuestion(correct, questionVariantIndex);
-          setBoard(svgForDots(qPattern, {dotRadius: 16}));
-
-          await wait(520);
-          dissolveBoard(260);
-
-          const exitOrder = sortedButtonsForExit(all);
-          await animateOutButtons(exitOrder, 140);
-
-          btn.classList.remove("correctHold");
-          if(usesAnswerCards()) btn.classList.remove("cardOpen");
-
-          answersEl.classList.add("answersHidden");
-          all.forEach(b => b.style.pointerEvents = "");
-          await wait(160);
-
-          await handleAutoLevelOnGood();
-          nextRound();
-          return;
-        }
-
-        beep("no");
-
-        const notChosen = all.filter(b => b !== btn);
-        const chosen = btn;
-
-        chosen.classList.add("wrongHold");
-        await animateOutButtons(sortedButtonsForExit(notChosen), 120);
-
-        const qPattern = patternQuestion(correct, questionVariantIndex);
-        setBoard(svgForDots(qPattern, {dotRadius: 16}));
-
-        await wait(1200);
-        dissolveBoard(320);
-
-        await wait(120);
-        await animateOutButtons([chosen], 0);
-
-        chosen.classList.remove("wrongHold");
-        if(usesAnswerCards()) chosen.classList.remove("cardOpen");
-
-        answersEl.classList.add("answersHidden");
-        await wait(240);
-
-        all.forEach(b => b.style.pointerEvents = "");
-
-        await handleAutoLevelOnBad();
-        nextRound();
-      }
-
-      /* tune ui */
-      function syncUI(){
-        flashMsValue.textContent = String(flashMs);
-        if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-      }
-
-      function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
-      function closeTune(){ tunePanel.classList.add("hidden"); }
-
-      tuneBtn.addEventListener("click", () => {
-        beep("tap");
-        if(tunePanel.classList.contains("hidden")) openTune();
-        else closeTune();
-      });
-      tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
-
-      flashMsRange.addEventListener("input", () => {
-        flashMs = Number(flashMsRange.value);
-        syncUI();
-      });
-
-      newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
-
-      testWrongBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(!started || locked) return;
-        const cap = maxForLevel();
-        const wrong = (correct === cap) ? 1 : correct + 1;
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns[0]) await onPick(btns[0], wrong);
-      });
-
-      testGoodBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(!started || locked) return;
-        const btns = [...answersEl.querySelectorAll(".ansBtn")];
-        if(btns[0]) await onPick(btns[0], correct);
-      });
-
-      levelUpBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(locked) return;
-        const before = LEVEL;
-        setLevel(LEVEL + 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
-        }
-      });
-
-      levelDownBtn.addEventListener("click", async () => {
-        beep("tap");
-        if(locked) return;
-        const before = LEVEL;
-        setLevel(LEVEL - 1);
-        if(LEVEL !== before){
-          await animateTimeline(before, LEVEL);
-        }
-      });
-
-      toggleLevelsBtn.addEventListener("click", () => {
-        beep("tap");
-        levelsVisible = !levelsVisible;
-        try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
-        updateLevelsVisibilityUI();
-      });
-
-      /* start */
-      function startGame(){
-        if(started) return;
-        started = true;
-
-        setLevel(1);
-        resetStreaks();
-
-        startOverlay.style.display = "none";
-        syncUI();
-
-        scheduleFit();
-        setAnchorToLevel(LEVEL, { noTransition: true });
-        showOnlyStill();
-
-        nextRound();
-      }
-
-      startBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        beep("tap");
-        startGame();
-      });
-
-      startOverlay.addEventListener("click", (e) => {
-        if(e.target === startOverlay){
-          beep("tap");
-          startGame();
-        }
-      });
-
-      homeBtn.addEventListener("click", () => {
-        beep("tap");
-        try{ window.location.href = "index.html"; }catch(e){}
-      });
-
-      let reflowTimer = null;
-      function onReflow(){
-        if(!started) return;
-        if(reflowTimer) clearTimeout(reflowTimer);
-        reflowTimer = setTimeout(async () => {
-          locked = true;
-          previewToken++;
-          answersEl.classList.add("answersHidden");
-          answersEl.innerHTML = "";
-          clearBoard();
-          await wait(120);
-          renderAnswers(correct, onPick);
-          await wait(WAIT_BEFORE_IN_MS);
-          await animateInButtons();
-          locked = false;
-          previewCardsNonBlocking();
-
-          scheduleFit();
-          setAnchorToLevel(LEVEL, { noTransition: true });
-        }, 220);
-      }
-      window.addEventListener("resize", onReflow);
-      window.addEventListener("orientationchange", onReflow);
-
-      /* init */
-      clearBoard();
-      setLevel(1);
-      resetStreaks();
-      syncUI();
-      initTimelineAuto();
-      scheduleFit();
-      setAnchorToLevel(LEVEL, { noTransition: true });
-      showOnlyStill();
-      updateLevelsVisibilityUI();
-
-    })();
-  </script>
+<section class="left" aria-label="Spel">
+<div class="topbar">
+<button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
+<svg viewBox="0 0 64 64" aria-hidden="true">
+<path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
+<path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
+<path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</button>
+<button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
+<div class="titlePill" id="titlePill">slim kijken</div>
+</div>
+<div class="content">
+<div class="gameCard" id="gameCard" aria-label="Vraagvak">
+<div class="flashBoard" id="flashBoard">
+<div class="flashSvg" id="flashSvg"></div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
+<div class="scanStage">
+<div class="answersWrap" id="answersWrap">
+<div class="answers answersHidden" id="answers"></div>
+</div>
+</div>
+</section>
+
+<div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
+<div class="timelineGroup" id="timelineGroup">
+<div class="progressTimeline" id="timeline">
+<img class="progressLine" id="levelsImg" src="levels.png" alt="" draggable="false">
+<div class="progressChickAnchor" id="chickAnchor">
+<img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+<video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+<video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+<canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+<div class="startCard">
+<h1>tik om te starten</h1>
+<p>Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.</p>
+<button class="startBtn" id="startBtn" type="button">Start</button>
+</div>
+</div>
+
+<div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+<div class="tuneHeader">
+<div class="tuneTitle">instellingen</div>
+<button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
+</div>
+
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
+<div style="font-weight:900; font-size:16px; text-transform: lowercase;">
+huidig level: <span id="tuneLevelValue">1</span>
+</div>
+<div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
+level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
+</div>
+<div class="tuneButtons" style="margin-top:10px;">
+<button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
+<button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
+</div>
+</div>
+
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
+<div class="tuneRow">
+<div class="tuneLabel">flitstijd</div>
+<input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
+<div class="tuneValue" id="flashMsValue">300</div>
+</div>
+</div>
+
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">kaarten</div>
+<div class="tuneRow">
+<div class="tuneLabel">kaart open tijd</div>
+<input type="range" id="cardMsRange" min="300" max="4000" step="50" value="1700" />
+<div class="tuneValue" id="cardMsValue">1700</div>
+</div>
+</div>
+
+<div class="tuneSection" style="padding-top:12px;">
+<div class="tuneButtons">
+<button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+<button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+<button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
+</div>
+<div class="tuneButtons" style="margin-top:10px;">
+<button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
+</div>
+</div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* FIX: clamp NaN safe, zodat flashMs en card tijden nooit NaN kunnen worden */
+const clamp = (v,a,b) => {
+v = Number(v);
+if(!Number.isFinite(v)) v = a;
+return Math.max(a, Math.min(b, v));
+};
+
+const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const raf = () => new Promise(r => requestAnimationFrame(() => r()));
+const $ = (id) => document.getElementById(id);
+
+const startOverlay = $("startOverlay");
+const startBtn = $("startBtn");
+const titlePill = $("titlePill");
+const gameCard = $("gameCard");
+const homeBtn = $("homeBtn");
+const tuneBtn = $("tuneBtn");
+const tunePanel = $("tunePanel");
+const tuneClose = $("tuneClose");
+const flashMsRange = $("flashMsRange");
+const flashMsValue = $("flashMsValue");
+const cardMsRange = $("cardMsRange");
+const cardMsValue = $("cardMsValue");
+const tuneLevelValue = $("tuneLevelValue");
+const newRoundBtn = $("newRoundBtn");
+const testWrongBtn = $("testWrongBtn");
+const testGoodBtn = $("testGoodBtn");
+const levelUpBtn = $("levelUpBtn");
+const levelDownBtn = $("levelDownBtn");
+const toggleLevelsBtn = $("toggleLevelsBtn");
+
+const flashSvg = $("flashSvg");
+const answersEl = $("answers");
+const scanArea = $("scanArea");
+
+const timelineGroup = $("timelineGroup");
+const timeline = $("timeline");
+const levelsImg = $("levelsImg");
+const chickAnchor = $("chickAnchor");
+const stillImg = $("stillImg");
+const upVid = $("upVid");
+const downVid = $("downVid");
+const animCanvas = $("animCanvas");
+const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
+
+const WAIT_BEFORE_IN_MS = 0;
+const IN_DUR_MS = 800;
+const OUT_DUR_MS = 750;
+const PREVIEW_GAP_MS = 120;
+
+let previewMs = 1700;
+
+let LEVEL = 1;
+let streakGood = 0;
+let streakBad = 0;
+
+/* flitstijd per level */
+const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
+const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 300, 5: 300, 6: 400, 7: 450, 8: 450, 9: 500 };
+
+let flashMsByLevel = (() => {
+try{
+const raw = localStorage.getItem(FLASH_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_FLASH_BY_LEVEL };
+})();
+
+function getFlashMs(level){
+const v = Number(flashMsByLevel[level] ?? DEFAULT_FLASH_BY_LEVEL[level] ?? 300);
+return clamp(v, 100, 2400);
+}
+function saveFlashMs(level, ms){
+flashMsByLevel[level] = clamp(Number(ms) || 300, 100, 2400);
+try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+}
+
+/* kaart open tijd per level */
+const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
+const DEFAULT_CARD_BY_LEVEL = { 2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700 };
+
+let cardMsByLevel = (() => {
+try{
+const raw = localStorage.getItem(CARD_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_CARD_BY_LEVEL };
+})();
+
+function getCardMs(level){
+const v = Number(cardMsByLevel[level] ?? DEFAULT_CARD_BY_LEVEL[level] ?? 1700);
+return clamp(v, 300, 4000);
+}
+function saveCardMs(level, ms){
+cardMsByLevel[level] = clamp(Number(ms) || 1700, 300, 4000);
+try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+}
+
+let flashMs = getFlashMs(LEVEL);
+let cardOpenMs = getCardMs(LEVEL);
+
+/* round timing */
+let roundToken = 0;
+let boardHideTimer = null;
+let autoFlipTimer = null;
+
+function cancelBoardHide(){
+if(boardHideTimer){
+clearTimeout(boardHideTimer);
+boardHideTimer = null;
+}
+}
+function cancelAutoFlip(){
+if(autoFlipTimer){
+clearTimeout(autoFlipTimer);
+autoFlipTimer = null;
+}
+}
+function scheduleBoardHide(ms, token){
+cancelBoardHide();
+boardHideTimer = setTimeout(() => {
+if(token !== roundToken) return;
+dissolveBoard(180);
+}, Math.max(0, Number(ms) || 0));
+}
+
+function isPortrait(){
+return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+}
+
+/* level 2 tot en met 7 draaien om, level 8 en 9 draaien ook om (met marbotic) */
+function usesAnswerCards(){
+return (LEVEL >= 2);
+}
+function timedAutoFlipLevels(){
+return (LEVEL >= 3 && LEVEL <= 7);
+}
+
+function setLevel(n){
+LEVEL = clamp(n, 1, 9);
+titlePill.textContent = `slim kijken, level ${LEVEL}`;
+if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+
+flashMs = getFlashMs(LEVEL);
+if(flashMsRange) flashMsRange.value = String(flashMs);
+if(flashMsValue) flashMsValue.textContent = String(flashMs);
+
+cardOpenMs = getCardMs(LEVEL);
+previewMs = cardOpenMs;
+if(cardMsRange) cardMsRange.value = String(cardOpenMs);
+if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+
+setAnchorToLevel(LEVEL, { noTransition: true });
+}
+
+function maxForLevel(){
+if(LEVEL === 1) return 4;
+if(LEVEL === 2) return 4;
+if(LEVEL === 3) return 4;
+if(LEVEL === 4) return 6;
+if(LEVEL === 5) return 6;
+if(LEVEL === 6) return 7;
+if(LEVEL === 7) return 8;
+if(LEVEL === 8) return 8;
+return 9;
+}
+
+function pickNumberWeighted(cap){
+const w1 = 0.30;
+const weights = [];
+for(let i=1;i<=cap;i++){
+weights.push(i === 1 ? w1 : 1);
+}
+const sum = weights.reduce((a,b) => a + b, 0);
+let r = Math.random() * sum;
+for(let i=0;i<weights.length;i++){
+r -= weights[i];
+if(r <= 0) return i + 1;
+}
+return cap;
+}
+
+let audioCtx = null;
+function beep(type){
+try{
+audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+const t = audioCtx.currentTime;
+const o = audioCtx.createOscillator();
+const g = audioCtx.createGain();
+o.type = "sine";
+if(type === "ok") o.frequency.setValueAtTime(740, t);
+if(type === "no") o.frequency.setValueAtTime(220, t);
+if(type === "tap") o.frequency.setValueAtTime(520, t);
+if(type === "level") o.frequency.setValueAtTime(620, t);
+g.gain.setValueAtTime(0.0001, t);
+g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+o.connect(g); g.connect(audioCtx.destination);
+o.start(t); o.stop(t + 0.22);
+}catch(e){}
+}
+
+/* assets */
+const DICE_DIR = "dobbelstenen";
+const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
+const marboticSrc = (n) => `marbotic${n}.png`;
+
+/* antwoord dice basis */
+const STD_LAYOUT = { 1:"1a", 2:"2a", 3:"3a", 4:"4a", 5:"5a", 6:"6a" };
+function standardLayoutId(n){
+return STD_LAYOUT[n] || `${n}a`;
+}
+
+/* vraag layouts per level (1 tot en met 5) */
+function allowedQuestionLayoutsSingle(level, n){
+if(n === 1) return ["1a"];
+if(level === 1 || level === 2){
+if(n >= 1 && n <= 4) return [standardLayoutId(n)];
+return [];
+}
+if(level === 3){
+const base = {
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"]
+};
+if(n === 1) return ["1a"];
+return base[n] || [];
+}
+if(level === 4){
+const base = {
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"]
+};
+if(n === 1) return ["1a"];
+if(n === 5) return ["5a"];
+if(n === 6) return ["6a"];
+return base[n] || [];
+}
+if(level === 5){
+const base = {
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"],
+5: ["5a","5b","5c"],
+6: ["6a","6b"]
+};
+if(n === 1) return ["1a"];
+return base[n] || [];
+}
+return [standardLayoutId(n)];
+}
+
+function questionAvoidLayoutId(level, n){
+if(level === 3){
+if(n >= 2 && n <= 4) return standardLayoutId(n);
+return null;
+}
+if(level === 4){
+if(n >= 2 && n <= 4) return standardLayoutId(n);
+return null;
+}
+if(level === 5){
+return standardLayoutId(n);
+}
+return null;
+}
+
+function pickQuestionLayoutDistinct(level, n){
+const allowed = allowedQuestionLayoutsSingle(level, n);
+const avoid = questionAvoidLayoutId(level, n);
+if(!avoid) return allowed.length ? pick(allowed) : standardLayoutId(n);
+const filtered = allowed.filter(x => x !== avoid);
+return (filtered.length ? pick(filtered) : pick(allowed));
+}
+
+/* html builders */
+function boardHtmlForLayout(layoutId){
+return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+}
+
+function boardHtmlForPair(bigId, smallId, smallSide, delayMs){
+const cls = (smallSide === "left") ? "pairWrap smallLeft" : "pairWrap smallRight";
+const d = Number(delayMs ?? 420);
+return `
+<div class="qWrap">
+<div class="${cls}">
+<div class="pairItem big"><img class="pairImg" src="${diceSrc(bigId)}" alt="" draggable="false"></div>
+<div class="pairItem small" style="--delay:${d}ms"><img class="pairImg" src="${diceSrc(smallId)}" alt="" draggable="false"></div>
+</div>
+</div>
+</div>
+`;
+}
+
+function setBoard(html){ flashSvg.innerHTML = html; }
+function clearBoard(){ flashSvg.innerHTML = ""; }
+
+function dissolveBoard(ms){
+const has = (flashSvg.innerHTML || "").trim().length > 0;
+if(!has){
+clearBoard();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+return;
+}
+flashSvg.style.transition = `opacity ${ms}ms ease`;
+flashSvg.style.opacity = "0";
+setTimeout(() => {
+clearBoard();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+}, ms + 40);
+}
+
+/* opties */
+function buildOptions(correct){
+const cap = maxForLevel();
+
+if(LEVEL === 5){
+const options = new Set([correct]);
+const candidates = [
+correct - 1, correct + 1,
+correct - 2, correct + 2,
+correct - 3, correct + 3
+].map(v => clamp(v, 1, cap));
+for(const c of candidates){
+options.add(c);
+if(options.size >= 3) break;
+}
+while(options.size < 3){
+options.add(randInt(1, cap));
+}
+const arr = [...options];
+for(let i=arr.length-1;i>0;i--){
+const j = Math.floor(Math.random()*(i+1));
+[arr[i],arr[j]] = [arr[j],arr[i]];
+}
+return arr;
+}
+
+const options = new Set([correct]);
+while(options.size < 3){
+const delta = pick([ -2, -1, 1, 2 ]);
+options.add(clamp(correct + delta, 1, cap));
+}
+const arr = [...options];
+for(let i=arr.length-1;i>0;i--){
+const j = Math.floor(Math.random()*(i+1));
+[arr[i],arr[j]] = [arr[j],arr[i]];
+}
+return arr;
+}
+
+function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+function showAnswers(){ answersEl.classList.remove("answersHidden"); }
+
+function slideVectorForButton(btn){
+const b = btn.getBoundingClientRect();
+const a = scanArea.getBoundingClientRect();
+const extra = 16;
+if(isPortrait()){
+const seamY = a.top;
+const dy = -((b.bottom - seamY) + extra);
+return { x: 0, y: dy };
+}else{
+const seamX = a.left;
+const dx = -((b.right - seamX) + extra);
+return { x: dx, y: 0 };
+}
+}
+
+function sortedButtonsForExit(btns){
+const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
+if(isPortrait()){
+rects.sort((u,v) => v.r.left - u.r.left);
+}else{
+rects.sort((u,v) => v.r.top - u.r.top);
+}
+return rects.map(x => x.b);
+}
+
+async function animateInButtons(){
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(!btns.length) return;
+hideAnswers();
+await raf(); await raf();
+btns.forEach(btn => {
+const v = slideVectorForButton(btn);
+btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
+btn.style.opacity = "0";
+});
+showAnswers();
+await raf();
+const easing = "cubic-bezier(.22,.61,.35,1)";
+btns.forEach((btn, i) => {
+btn.animate(
+[
+{ transform: btn.style.transform, opacity: 0 },
+{ transform: "translate(0px, 0px)", opacity: 1 }
+],
+{ duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
+);
+});
+await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
+btns.forEach(btn => {
+btn.style.transform = "translate(0px, 0px)";
+btn.style.opacity = "1";
+});
+}
+
+async function animateOutButtons(btns, staggerMs){
+if(!btns.length) return;
+const easing = "cubic-bezier(.22,.61,.35,1)";
+btns.forEach((btn, i) => {
+const v = slideVectorForButton(btn);
+btn.animate(
+[
+{ transform: "translate(0px, 0px)", opacity: 1 },
+{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
+],
+{ duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+);
+});
+await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
+btns.forEach(btn => { btn.style.opacity = "0"; });
+}
+
+function renderAnswers(correct, onPick){
+const arr = buildOptions(correct);
+answersEl.innerHTML = "";
+
+arr.forEach(v => {
+const btn = document.createElement("button");
+btn.className = "ansBtn";
+btn.type = "button";
+
+btn.addEventListener("pointerdown", () => {
+btn.classList.remove("pressBounce");
+void btn.offsetWidth;
+btn.classList.add("pressBounce");
+}, {passive:true});
+
+btn.addEventListener("click", () => onPick(btn, v));
+
+/* level 6 tot en met 9, marbotic png in kaart voorkant, kaart draait om */
+if(LEVEL >= 6){
+const face = `<div class="marboticFace"><img class="marboticImg" src="${marboticSrc(v)}" alt="" draggable="false"></div>`;
+btn.innerHTML = `
+<div class="cardWrap">
+<div class="cardInner">
+<div class="cardBack" aria-hidden="true"></div>
+<div class="cardFront">${face}</div>
+</div>
+</div>
+`;
+answersEl.appendChild(btn);
+return;
+}
+
+/* level 1 tot en met 5, dobbelsteen svg als antwoord */
+const layoutId = standardLayoutId(v);
+const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+
+if(usesAnswerCards()){
+btn.innerHTML = `
+<div class="cardWrap">
+<div class="cardInner">
+<div class="cardBack" aria-hidden="true"></div>
+<div class="cardFront">${face}</div>
+</div>
+</div>
+`;
+}else{
+btn.innerHTML = face;
+}
+answersEl.appendChild(btn);
+});
+}
+
+let previewToken = 0;
+async function previewCardsNonBlocking(){
+if(!usesAnswerCards()) return;
+const myToken = ++previewToken;
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(!btns.length) return;
+
+await wait(PREVIEW_GAP_MS);
+if(previewToken !== myToken) return;
+
+/* level 8 en 9, draai om en blijf open */
+if(LEVEL >= 8){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(80);
+}
+return;
+}
+
+/* level 2, draai om en blijf open */
+if(LEVEL === 2){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(90);
+}
+return;
+}
+
+/* FIX: level 3 tot en met 7, open, wacht, dicht, maar NIET wegschuiven en geen nieuwe vraag starten */
+if(timedAutoFlipLevels()){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(90);
+}
+if(previewToken !== myToken) return;
+
+const ms = clamp(Number(cardOpenMs) || 1700, 300, 4000);
+await wait(ms);
+if(previewToken !== myToken) return;
+
+btns.forEach(b => b.classList.remove("cardOpen"));
+return;
+}
+}
+
+/* =========================
+TIMELINE auto fit
+========================= */
+const LV_MIN = 1;
+const LV_MAX = 9;
+const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
+let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "0") === "1";
+let tlMeta = null;
+let chickEyeFrac = null;
+let baselineLocalY = 0;
+
+function timelineReady(){
+return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
+}
+function lum(r,g,b){
+return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+function safeDefaultTlMeta(){
+return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
+}
+function analyzeLevelsPng(imgEl){
+try{
+const w = imgEl.naturalWidth || 0;
+const h = imgEl.naturalHeight || 0;
+if(!w || !h) return safeDefaultTlMeta();
+const cv = document.createElement("canvas");
+cv.width = w;
+cv.height = h;
+const ctx = cv.getContext("2d", { willReadFrequently: true });
+ctx.drawImage(imgEl, 0, 0);
+const img = ctx.getImageData(0, 0, w, h);
+const d = img.data;
+const yStart = Math.floor(h * 0.55);
+let bestY = Math.floor(h * 0.85);
+let bestCount = -1;
+for(let y=yStart; y<h; y++){
+let c = 0;
+const row = y * w * 4;
+for(let x=0; x<w; x++){
+const i = row + x*4;
+const a = d[i+3];
+if(a < 32) continue;
+const L = lum(d[i], d[i+1], d[i+2]);
+if(L > 245) continue;
+c++;
+}
+if(c > bestCount){
+bestCount = c;
+bestY = y;
+}
+}
+const col = new Array(w).fill(0);
+let maxC = 0;
+const yBot = Math.floor(h * 0.55);
+for(let x=0; x<w; x++){
+let c = 0;
+for(let y=yBot; y<h; y++){
+const i = (y*w + x) * 4;
+const a = d[i+3];
+if(a < 32) continue;
+const L = lum(d[i], d[i+1], d[i+2]);
+if(L > 245) continue;
+c++;
+}
+col[x] = c;
+if(c > maxC) maxC = c;
+}
+const thresh = maxC * 0.70;
+const xs = [];
+for(let x=0; x<w; x++){
+if(col[x] >= thresh) xs.push(x);
+}
+let clusters = [];
+if(xs.length){
+let s = xs[0], p = xs[0];
+for(let i=1;i<xs.length;i++){
+const x = xs[i];
+if(x === p + 1){ p = x; continue; }
+clusters.push([s,p]);
+s = x; p = x;
+}
+clusters.push([s,p]);
+}
+const maxClusterW = w * 0.06;
+clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
+let leftX = w * 0.06;
+let rightX = w * 0.94;
+if(clusters.length >= 2){
+leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
+rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
+}else if(xs.length >= 2){
+leftX = xs[Math.floor(xs.length * 0.02)];
+rightX = xs[Math.floor(xs.length * 0.98)];
+}
+leftX = clamp(leftX, w*0.01, w*0.45);
+rightX = clamp(rightX, w*0.55, w*0.99);
+return {
+leftFrac: leftX / w,
+rightFrac: rightX / w,
+baseFrac: bestY / h
+};
+}catch(e){
+return safeDefaultTlMeta();
+}
+}
+function analyzeChickEyes(imgEl){
+try{
+const w = imgEl.naturalWidth || 0;
+const h = imgEl.naturalHeight || 0;
+if(!w || !h) return 0.42;
+const cv = document.createElement("canvas");
+cv.width = w;
+cv.height = h;
+const ctx = cv.getContext("2d", { willReadFrequently: true });
+ctx.drawImage(imgEl, 0, 0);
+const img = ctx.getImageData(0, 0, w, h);
+const d = img.data;
+const ys = [];
+const yMax = Math.floor(h * 0.60);
+const x0 = Math.floor(w * 0.25);
+const x1 = Math.floor(w * 0.75);
+for(let y=0; y<yMax; y++){
+const row = y * w * 4;
+for(let x=x0; x<x1; x++){
+const i = row + x*4;
+const a = d[i+3];
+if(a < 32) continue;
+const L = lum(d[i], d[i+1], d[i+2]);
+if(L < 55){
+ys.push(y);
+}
+}
+}
+if(ys.length < 24) return 0.42;
+ys.sort((a,b) => a-b);
+const med = ys[Math.floor(ys.length/2)];
+return clamp(med / h, 0.18, 0.62);
+}catch(e){
+return 0.42;
+}
+}
+function tickTForLevel(level){
+const lv = clamp(level, LV_MIN, LV_MAX);
+const denom = Math.max(1, (LV_MAX - LV_MIN));
+return (lv - LV_MIN) / denom;
+}
+function currentTickXLocalForLevel(level){
+if(!tlMeta) return 0;
+const w = timeline.clientWidth || 0;
+const xL = tlMeta.leftFrac * w;
+const xR = tlMeta.rightFrac * w;
+return xL + tickTForLevel(level) * (xR - xL);
+}
+function setAnchorToLevel(level, opts = {}){
+if(!timelineReady()) return;
+if(!tlMeta) return;
+if(chickEyeFrac == null) chickEyeFrac = 0.42;
+const xLocal = currentTickXLocalForLevel(level);
+const aH = chickAnchor.clientHeight || 0;
+const eyeLocalY = chickEyeFrac * aH;
+const topLocal = baselineLocalY - eyeLocalY;
+if(opts.noTransition){
+chickAnchor.classList.add("noMove");
+chickAnchor.style.left = `${xLocal}px`;
+chickAnchor.style.top = `${topLocal}px`;
+chickAnchor.offsetHeight;
+chickAnchor.classList.remove("noMove");
+return;
+}
+chickAnchor.style.left = `${xLocal}px`;
+chickAnchor.style.top = `${topLocal}px`;
+}
+function updateLevelsVisibilityUI(){
+toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
+if(levelsVisible) levelsImg.classList.remove("levelsHidden");
+else levelsImg.classList.add("levelsHidden");
+}
+let fitQueued = false;
+function scheduleFit(){
+if(fitQueued) return;
+fitQueued = true;
+requestAnimationFrame(() => {
+fitQueued = false;
+fitTimelineToQuestion();
+});
+}
+function fitTimelineToQuestion(){
+if(!timelineReady()) return;
+if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
+if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
+const r = gameCard.getBoundingClientRect();
+const cs = getComputedStyle(gameCard);
+const bw = parseFloat(cs.borderLeftWidth) || 0;
+const targetLeft = r.left + bw;
+const targetRight = r.right - bw;
+const targetBaselineY = r.bottom - (bw * 0.5);
+const baseW = 520;
+timeline.style.width = `${baseW}px`;
+const w = timeline.clientWidth || 1;
+const h = timeline.clientHeight || 1;
+const xL = tlMeta.leftFrac * w;
+const xR = tlMeta.rightFrac * w;
+const yB = tlMeta.baseFrac * h;
+baselineLocalY = yB;
+const denom = Math.max(1, (xR - xL));
+const s = (targetRight - targetLeft) / denom;
+const tx = targetLeft - s * xL;
+const ty = targetBaselineY - s * yB;
+timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+setAnchorToLevel(LEVEL, { noTransition: true });
+}
+function initTimelineAuto(){
+if(!timelineReady()) return;
+updateLevelsVisibilityUI();
+const tryInit = () => {
+if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+tlMeta = analyzeLevelsPng(levelsImg);
+if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+scheduleFit();
+}
+};
+if(levelsImg.complete) tryInit();
+levelsImg.addEventListener("load", tryInit);
+if(stillImg.complete && stillImg.naturalWidth) tryInit();
+stillImg.addEventListener("load", tryInit);
+if(typeof ResizeObserver === "function"){
+const ro = new ResizeObserver(() => scheduleFit());
+ro.observe(gameCard);
+ro.observe(document.body);
+}
+window.addEventListener("resize", scheduleFit);
+window.addEventListener("orientationchange", scheduleFit);
+}
+
+/* =========================
+Animatie kuiken
+========================= */
+const TL_WHITE_THRESH = 255;
+const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+let chickPlaying = false;
+let chickXAnim = null;
+
+function cancelChickXAnim(){
+try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+chickXAnim = null;
+}
+function showOnlyStill(){
+stillImg.classList.add("active");
+if(animCanvas) animCanvas.classList.remove("active");
+}
+function showCanvas(){
+if(animCanvas) animCanvas.classList.add("active");
+}
+function stopVideo(v){
+try{ v.pause(); }catch(e){}
+}
+function setCanvasSizeToVideo(videoEl){
+if(!animCanvas) return false;
+const w = videoEl.videoWidth || 0;
+const h = videoEl.videoHeight || 0;
+if(!w || !h) return false;
+if(animCanvas.width !== w) animCanvas.width = w;
+if(animCanvas.height !== h) animCanvas.height = h;
+return true;
+}
+function applyChromaKeyWhite(){
+if(!chickCtx || !animCanvas) return;
+const t = TL_WHITE_THRESH;
+const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+const d = img.data;
+for(let i = 0; i < d.length; i += 4){
+const r = d[i], g = d[i+1], b = d[i+2];
+if(r >= t && g >= t && b >= t) d[i+3] = 0;
+}
+chickCtx.putImageData(img, 0, 0);
+}
+function drawFrame(videoEl){
+if(!chickCtx || !animCanvas) return false;
+if(!setCanvasSizeToVideo(videoEl)) return false;
+chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+chickCtx.drawImage(videoEl, 0, 0);
+applyChromaKeyWhite();
+return true;
+}
+async function ensureReady(videoEl){
+if(videoEl.readyState >= 2) return true;
+return await new Promise(resolve => {
+let done = false;
+const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+const cleanup = () => {
+videoEl.removeEventListener("loadeddata", ok);
+videoEl.removeEventListener("loadedmetadata", ok);
+videoEl.removeEventListener("error", bad);
+};
+videoEl.addEventListener("loadeddata", ok, { once:true });
+videoEl.addEventListener("loadedmetadata", ok, { once:true });
+videoEl.addEventListener("error", bad, { once:true });
+try{ videoEl.load(); }catch(e){}
+setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+});
+}
+function segmentTimes(startFrame, endFrame, fps){
+const f = Math.max(1, Number(fps));
+const s = Math.max(0, Number(startFrame) / f);
+const e = Math.max(s + (1 / f), Number(endFrame) / f);
+return { start: s, end: e, durMs: (e - s) * 1000 };
+}
+async function seekTo(videoEl, timeSec){
+return await new Promise(resolve => {
+let done = false;
+const finish = (ok) => {
+if(done) return;
+done = true;
+cleanup();
+resolve(ok);
+};
+const onSeeked = () => finish(true);
+const onErr = () => finish(false);
+const cleanup = () => {
+videoEl.removeEventListener("seeked", onSeeked);
+videoEl.removeEventListener("error", onErr);
+};
+videoEl.addEventListener("seeked", onSeeked, { once:true });
+videoEl.addEventListener("error", onErr, { once:true });
+try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+catch(e){ cleanup(); resolve(false); return; }
+setTimeout(() => finish(true), 700);
+});
+}
+async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+if(!animCanvas || !chickCtx) return false;
+cancelChickXAnim();
+const ready = await ensureReady(videoEl);
+if(!ready) return false;
+const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+stopVideo(videoEl);
+await seekTo(videoEl, times.start);
+animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+let playingOk = true;
+try{ await videoEl.play(); }catch(e){ playingOk = false; }
+if(!playingOk) return false;
+const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+const gotFirstFrame = await new Promise(resolve => {
+let done = false;
+const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+const maxWait = setTimeout(() => finish(false), 900);
+if(useRVFC){
+videoEl.requestVideoFrameCallback(() => {
+const ok = drawFrame(videoEl);
+clearTimeout(maxWait);
+finish(!!ok);
+});
+}else{
+const onTime = () => {
+const ok = drawFrame(videoEl);
+clearTimeout(maxWait);
+finish(!!ok);
+};
+videoEl.addEventListener("timeupdate", onTime, { once:true });
+requestAnimationFrame(() => {
+if(done) return;
+const ok = drawFrame(videoEl);
+clearTimeout(maxWait);
+finish(!!ok);
+});
+}
+});
+if(!gotFirstFrame){
+try{ videoEl.pause(); }catch(e){}
+return false;
+}
+showCanvas();
+stillImg.classList.remove("active");
+await raf();
+chickXAnim = animCanvas.animate(
+[
+{ transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+{ transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+],
+{ duration: times.durMs, easing: "linear", fill: "forwards" }
+);
+if(useRVFC){
+await new Promise(resolve => {
+const step = () => {
+drawFrame(videoEl);
+if(videoEl.currentTime >= times.end || videoEl.ended){
+resolve(true);
+return;
+}
+videoEl.requestVideoFrameCallback(step);
+};
+videoEl.requestVideoFrameCallback(step);
+});
+}else{
+await new Promise(resolve => {
+const step = () => {
+drawFrame(videoEl);
+if(videoEl.currentTime >= times.end || videoEl.ended){
+resolve(true);
+return;
+}
+requestAnimationFrame(step);
+};
+requestAnimationFrame(step);
+});
+}
+try{ videoEl.pause(); }catch(e){}
+cancelChickXAnim();
+return true;
+}
+async function animateTimeline(fromLevel, toLevel){
+if(!timelineReady()) return;
+setAnchorToLevel(fromLevel, { noTransition: true });
+showOnlyStill();
+const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+if(!hasMp4){
+setAnchorToLevel(toLevel, { noTransition: true });
+return;
+}
+if(chickPlaying) return;
+chickPlaying = true;
+stopVideo(upVid);
+stopVideo(downVid);
+const dir = toLevel > fromLevel ? "up" : "down";
+const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+const vid = dir === "up" ? upVid : downVid;
+await playSegmentOnCanvasNoFlash(vid, cfg);
+setAnchorToLevel(toLevel, { noTransition: true });
+stillImg.classList.add("active");
+await raf();
+if(animCanvas) animCanvas.classList.remove("active");
+chickPlaying = false;
+}
+
+/* =========================
+GAME
+========================= */
+let started = false;
+let locked = false;
+
+let questionState = {
+kind: "single",
+correct: 1,
+layoutId: "1a",
+bigAmount: 2,
+smallAmount: 1,
+bigLayoutId: "2a",
+smallLayoutId: "1a",
+smallSide: "right",
+smallDelayMs: 420
+};
+
+function resetStreaks(){
+streakGood = 0;
+streakBad = 0;
+}
+
+/* pair layout keuze sets */
+const PAIR_BIG_BY_AMOUNT = {
+1: ["1a"],
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"],
+5: ["5a"],
+6: ["6a","6b"]
+};
+const PAIR_SMALL_BY_LEVEL = {
+6: { 1:["1a"] },
+7: { 1:["1a"], 2:["2a","2b","2c","2d"] },
+8: { 1:["1a"], 2:["2a","2b","2c","2d"] },
+9: { 1:["1a"], 2:["2a","2b","2c","2d"], 3:["3a","3c"] }
+};
+
+function pickPairLayout(level, amount, role){
+if(role === "small"){
+const map = PAIR_SMALL_BY_LEVEL[level] || PAIR_SMALL_BY_LEVEL[9];
+const arr = (map && map[amount]) ? map[amount] : ["1a"];
+return pick(arr);
+}
+const arr = PAIR_BIG_BY_AMOUNT[amount] || ["1a"];
+return pick(arr);
+}
+
+function setQuestionFromState(){
+if(!questionState) return;
+if(questionState.kind === "pair"){
+setBoard(boardHtmlForPair(
+questionState.bigLayoutId,
+questionState.smallLayoutId,
+questionState.smallSide,
+questionState.smallDelayMs
+));
+return;
+}
+setBoard(boardHtmlForLayout(questionState.layoutId));
+}
+
+function buildQuestionState(){
+if(LEVEL <= 5){
+const cap = maxForLevel();
+const n = pickNumberWeighted(cap);
+const layoutId = pickQuestionLayoutDistinct(LEVEL, n);
+return {
+kind: "single",
+correct: n,
+layoutId
+};
+}
+if(LEVEL === 6){
+const smallAmount = 1;
+const bigAmount = randInt(2, 6);
+const bigLayoutId = pickPairLayout(6, bigAmount, "big");
+const smallLayoutId = "1a";
+const correct = bigAmount + smallAmount;
+const smallSide = (Math.random() < 0.78) ? "right" : "left";
+return {
+kind: "pair",
+correct,
+bigAmount,
+smallAmount,
+bigLayoutId,
+smallLayoutId,
+smallSide,
+smallDelayMs: 420
+};
+}
+if(LEVEL === 7 || LEVEL === 8){
+const cap = 8;
+const smallAmount = (Math.random() < 0.55) ? 1 : 2;
+const bigMax = Math.min(6, cap - smallAmount);
+const bigMin = Math.max(smallAmount + 1, 2);
+const bigAmount = randInt(bigMin, bigMax);
+const bigLayoutId = pickPairLayout(9, bigAmount, "big");
+const smallLayoutId = pickPairLayout(LEVEL, smallAmount, "small");
+const correct = bigAmount + smallAmount;
+const smallSide = (Math.random() < 0.78) ? "right" : "left";
+return {
+kind: "pair",
+correct,
+bigAmount,
+smallAmount,
+bigLayoutId,
+smallLayoutId,
+smallSide,
+smallDelayMs: 420
+};
+}
+{
+const cap = 9;
+const smallAmount = pick([1,2,3]);
+const bigMax = Math.min(6, cap - smallAmount);
+const bigMin = Math.max(smallAmount + 1, 2);
+const bigAmount = randInt(bigMin, bigMax);
+const bigLayoutId = pickPairLayout(9, bigAmount, "big");
+const smallLayoutId = pickPairLayout(9, smallAmount, "small");
+const correct = bigAmount + smallAmount;
+const smallSide = (Math.random() < 0.78) ? "right" : "left";
+return {
+kind: "pair",
+correct,
+bigAmount,
+smallAmount,
+bigLayoutId,
+smallLayoutId,
+smallSide,
+smallDelayMs: 420
+};
+}
+}
+
+async function handleAutoLevelOnGood(){
+streakGood += 1;
+streakBad = 0;
+if(streakGood >= 5){
+const before = LEVEL;
+setLevel(LEVEL + 1);
+resetStreaks();
+if(LEVEL !== before){
+beep("level");
+await animateTimeline(before, LEVEL);
+}
+return true;
+}
+return false;
+}
+async function handleAutoLevelOnBad(){
+streakBad += 1;
+streakGood = 0;
+if(streakBad >= 2){
+const before = LEVEL;
+setLevel(LEVEL - 1);
+resetStreaks();
+if(LEVEL !== before){
+beep("level");
+await animateTimeline(before, LEVEL);
+}
+return true;
+}
+return false;
+}
+
+/* ronde */
+async function flashAndAsk(){
+locked = true;
+previewToken++;
+roundToken++;
+const myRound = roundToken;
+cancelBoardHide();
+cancelAutoFlip();
+
+answersEl.classList.add("answersHidden");
+answersEl.innerHTML = "";
+clearBoard();
+await wait(160);
+
+questionState = buildQuestionState();
+setQuestionFromState();
+
+await wait(80);
+
+/* level 1: antwoorden mogen direct, vraag verdwijnt na flitstijd */
+if(LEVEL === 1){
+renderAnswers(questionState.correct, onPick);
+await wait(WAIT_BEFORE_IN_MS);
+await animateInButtons();
+locked = false;
+previewCardsNonBlocking();
+scheduleBoardHide(flashMs, myRound);
+return;
+}
+
+/* level 2 en hoger: eerst flits, weg, dan antwoorden */
+await wait(flashMs);
+if(myRound !== roundToken) return;
+dissolveBoard(180);
+await wait(240);
+if(myRound !== roundToken) return;
+
+renderAnswers(questionState.correct, onPick);
+await wait(WAIT_BEFORE_IN_MS);
+await animateInButtons();
+
+locked = false;
+previewCardsNonBlocking();
+}
+
+function nextRound(){
+flashAndAsk();
+}
+
+async function onPick(btn, value){
+if(!started || locked) return;
+locked = true;
+previewToken++;
+cancelBoardHide();
+cancelAutoFlip();
+
+const all = [...answersEl.querySelectorAll(".ansBtn")];
+all.forEach(b => b.style.pointerEvents = "none");
+
+/* kaarten, open gekozen kaart altijd */
+if(usesAnswerCards()){
+btn.classList.add("cardOpen");
+await wait(LEVEL === 2 ? 110 : 40);
+}
+
+if(value === questionState.correct){
+beep("ok");
+btn.classList.add("correctHold");
+
+await wait(520);
+dissolveBoard(260);
+
+const exitOrder = sortedButtonsForExit(all);
+await animateOutButtons(exitOrder, 140);
+
+btn.classList.remove("correctHold");
+if(usesAnswerCards()) btn.classList.remove("cardOpen");
+answersEl.classList.add("answersHidden");
+all.forEach(b => b.style.pointerEvents = "");
+
+await wait(160);
+await handleAutoLevelOnGood();
+nextRound();
+return;
+}
+
+/* fout */
+beep("no");
+
+/* voorbeeld weer tonen en zichtbaar houden tot na het feedback moment */
+setQuestionFromState();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+
+const notChosen = all.filter(b => b !== btn);
+const chosen = btn;
+
+chosen.classList.add("wrongHold");
+await animateOutButtons(sortedButtonsForExit(notChosen), 120);
+
+await wait(900);
+
+/* eerst vraag weg, daarna kaart omkeren, daarna wegschuiven */
+dissolveBoard(220);
+await wait(260);
+
+if(usesAnswerCards()){
+chosen.classList.remove("cardOpen");
+await wait(220);
+}
+
+await animateOutButtons([chosen], 0);
+
+chosen.classList.remove("wrongHold");
+answersEl.classList.add("answersHidden");
+
+await wait(240);
+all.forEach(b => b.style.pointerEvents = "");
+await handleAutoLevelOnBad();
+nextRound();
+}
+
+/* tune ui */
+function syncUI(){
+if(flashMsValue) flashMsValue.textContent = String(flashMs);
+if(flashMsRange && Number(flashMsRange.value) !== flashMs) flashMsRange.value = String(flashMs);
+
+if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+if(cardMsRange && Number(cardMsRange.value) !== cardOpenMs) cardMsRange.value = String(cardOpenMs);
+
+if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+}
+function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
+function closeTune(){ tunePanel.classList.add("hidden"); }
+
+/* instellingen openen via lang indrukken op titel */
+let titleHoldTimer = null;
+let titleHoldFired = false;
+const TITLE_HOLD_MS = 1200;
+
+function clearTitleHold(){
+if(titleHoldTimer){
+clearTimeout(titleHoldTimer);
+titleHoldTimer = null;
+}
+}
+
+titlePill.addEventListener("pointerdown", () => {
+titleHoldFired = false;
+clearTitleHold();
+titleHoldTimer = setTimeout(() => {
+titleHoldFired = true;
+beep("tap");
+openTune();
+}, TITLE_HOLD_MS);
+}, { passive:true });
+
+titlePill.addEventListener("pointerup", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("pointercancel", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("pointerleave", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("click", (e) => { if(titleHoldFired) { e.preventDefault(); e.stopPropagation(); } });
+
+tuneBtn.addEventListener("click", () => {
+beep("tap");
+if(tunePanel.classList.contains("hidden")) openTune();
+else closeTune();
+});
+tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+
+flashMsRange.addEventListener("input", () => {
+flashMs = Number(flashMsRange.value);
+saveFlashMs(LEVEL, flashMs);
+syncUI();
+});
+
+cardMsRange.addEventListener("input", () => {
+cardOpenMs = Number(cardMsRange.value);
+previewMs = cardOpenMs;
+saveCardMs(LEVEL, cardOpenMs);
+syncUI();
+});
+
+newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
+testWrongBtn.addEventListener("click", async () => {
+beep("tap");
+if(!started || locked) return;
+const cap = maxForLevel();
+const wrong = (questionState.correct === cap) ? 1 : questionState.correct + 1;
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(btns[0]) await onPick(btns[0], wrong);
+});
+testGoodBtn.addEventListener("click", async () => {
+beep("tap");
+if(!started || locked) return;
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(btns[0]) await onPick(btns[0], questionState.correct);
+});
+levelUpBtn.addEventListener("click", async () => {
+beep("tap");
+if(locked) return;
+const before = LEVEL;
+setLevel(LEVEL + 1);
+syncUI();
+if(LEVEL !== before){
+await animateTimeline(before, LEVEL);
+}
+});
+levelDownBtn.addEventListener("click", async () => {
+beep("tap");
+if(locked) return;
+const before = LEVEL;
+setLevel(LEVEL - 1);
+syncUI();
+if(LEVEL !== before){
+await animateTimeline(before, LEVEL);
+}
+});
+toggleLevelsBtn.addEventListener("click", () => {
+beep("tap");
+levelsVisible = !levelsVisible;
+try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
+updateLevelsVisibilityUI();
+});
+
+/* start */
+function startGame(){
+if(started) return;
+started = true;
+setLevel(1);
+resetStreaks();
+startOverlay.style.display = "none";
+syncUI();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+showOnlyStill();
+nextRound();
+}
+startBtn.addEventListener("click", (e) => {
+e.preventDefault();
+e.stopPropagation();
+beep("tap");
+startGame();
+});
+startOverlay.addEventListener("click", (e) => {
+if(e.target === startOverlay){
+beep("tap");
+startGame();
+}
+});
+homeBtn.addEventListener("click", () => {
+beep("tap");
+try{ window.location.href = "index.html"; }catch(e){}
+});
+
+/* reflow */
+let reflowTimer = null;
+function onReflow(){
+if(!started) return;
+if(reflowTimer) clearTimeout(reflowTimer);
+reflowTimer = setTimeout(async () => {
+locked = true;
+previewToken++;
+roundToken++;
+const myRound = roundToken;
+cancelBoardHide();
+cancelAutoFlip();
+
+answersEl.classList.add("answersHidden");
+answersEl.innerHTML = "";
+
+clearBoard();
+await wait(80);
+setQuestionFromState();
+
+await wait(80);
+renderAnswers(questionState.correct, onPick);
+await wait(WAIT_BEFORE_IN_MS);
+await animateInButtons();
+locked = false;
+
+previewCardsNonBlocking();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+
+/* na reflow liever geen blijvende vraag in beeld */
+if(LEVEL === 1){
+scheduleBoardHide(flashMs, myRound);
+}else{
+setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
+}
+
+}, 220);
+}
+window.addEventListener("resize", onReflow);
+window.addEventListener("orientationchange", onReflow);
+
+/* init */
+clearBoard();
+setLevel(1);
+resetStreaks();
+syncUI();
+initTimelineAuto();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+showOnlyStill();
+updateLevelsVisibilityUI();
+
+})();
+</script>
 </body>
 </html>
