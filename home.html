@@ -3,32 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Rekenreis, index</title>
+  <title>Rekenreis</title>
 
   <style>
     :root{
-      --gap: clamp(12px, 2.4vmin, 22px);
+      --gap: clamp(10px, 2.0vmin, 18px);
 
-      /* Knoppen iets kleiner zodat landscape altijd past */
-      --card-w: clamp(260px, 34vw, 460px);
-
-      /* Banner iets compacter */
-      --banner-h: clamp(64px, 10vmin, 110px);
+      /* Default is landscape */
+      --banner-h: clamp(46px, 7.2vmin, 80px);
+      --card-w: clamp(165px, 21vw, 245px);
 
       --focus: rgba(255, 255, 255, 0.40);
     }
 
+    /* Portret, groter en 2 bij 2 */
     @media (orientation: portrait){
       :root{
-        --card-w: clamp(280px, 44vw, 520px);
         --banner-h: clamp(76px, 12.5vmin, 140px);
+        --card-w: clamp(285px, 44vw, 520px);
       }
     }
 
+    /* Extra lage schermen, nog compacter */
     @media (max-height: 520px){
       :root{
-        --card-w: clamp(220px, 30vw, 380px);
-        --banner-h: clamp(54px, 8.5vmin, 90px);
+        --banner-h: clamp(40px, 6.6vmin, 70px);
+        --card-w: clamp(150px, 20vw, 220px);
       }
     }
 
@@ -72,7 +72,7 @@
     /* Banner Rekenreis bovenaan */
     header{
       position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      top: calc(env(safe-area-inset-top, 0px) + 6px);
       left: 50%;
       transform: translateX(-50%);
       width: min(980px, calc(100vw - (var(--gap) * 2)));
@@ -87,22 +87,7 @@
       height: 100%;
       object-fit: contain;
       display: block;
-      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.20));
-    }
-
-    /* Optioneel klein label "Index" onder de banner */
-    .subtitle{
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 2px);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 3;
-      pointer-events: none;
-
-      font-weight: 900;
-      font-size: clamp(22px, 3.4vmin, 34px);
-      text-shadow: 0 6px 16px rgba(0,0,0,0.22);
-      opacity: 0.92;
+      filter: drop-shadow(0 16px 16px rgba(0,0,0,0.18));
     }
 
     main{
@@ -111,7 +96,7 @@
       z-index: 2;
 
       padding:
-        calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 44px)
+        calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 14px)
         calc(env(safe-area-inset-right, 0px) + var(--gap))
         calc(env(safe-area-inset-bottom, 0px) + var(--gap))
         calc(env(safe-area-inset-left, 0px) + var(--gap));
@@ -120,18 +105,44 @@
       place-items: center;
     }
 
+    /* In portret wil je bovenste knoppen iets lager */
+    @media (orientation: portrait){
+      main{
+        padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 34px);
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+      }
+    }
+
     .grid{
-      width: min(1320px, 100%);
+      width: min(1500px, 100%);
       height: 100%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
       gap: var(--gap);
       align-items: center;
       justify-items: center;
     }
 
-    /* De knop is nu puur de afbeelding, zonder extra transparante kaders */
+    /* Landscape: 4 knoppen naast elkaar in één rij */
+    @media (orientation: landscape){
+      .grid{
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: 1fr;
+      }
+      main{
+        padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 10px);
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+      }
+    }
+
+    /* Portret: 2 bij 2 */
+    @media (orientation: portrait){
+      .grid{
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+    }
+
+    /* Knop is puur de afbeelding */
     .card{
       width: var(--card-w);
       max-width: 100%;
@@ -152,7 +163,6 @@
       object-fit: contain;
       display: block;
 
-      /* Duidelijk knopgevoel via schaduw op de echte vorm */
       filter: drop-shadow(0 22px 26px rgba(0,0,0,0.22));
       transform: translateZ(0);
       transition: transform 140ms ease, filter 140ms ease;
@@ -263,7 +273,6 @@
   <header aria-hidden="true">
     <img class="banner" src="rekenreis.png" alt="" />
   </header>
-  <div class="subtitle" aria-hidden="true">Index</div>
 
   <main>
     <section class="grid" aria-label="Kies een spel">
@@ -330,8 +339,8 @@
       floatLayer.appendChild(el);
       setTimeout(() => el.remove(), (dur * 1000) + 200);
     }
-    for (let i = 0; i < 12; i++) spawnFloat();
-    setInterval(spawnFloat, 900);
+    for (let i = 0; i < 10; i++) spawnFloat();
+    setInterval(spawnFloat, 980);
 
     /* Klikglitters */
     function sparkleAt(x, y){
@@ -388,7 +397,7 @@
         o2.frequency.setValueAtTime(1320, now);
 
         g.gain.setValueAtTime(0.0001, now);
-        g.gain.exponentialRampToValueAtTime(0.13, now + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
 
         o1.connect(g);
