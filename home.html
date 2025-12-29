@@ -10,7 +10,10 @@
       --gap: clamp(10px, 2.0vmin, 18px);
 
       /* Default is landscape */
-      --banner-h: clamp(46px, 7.2vmin, 80px);
+      /* Banner: half zo groot */
+      --banner-h: clamp(23px, 3.6vmin, 40px);
+
+      /* Landscape, 4 naast elkaar */
       --card-w: clamp(165px, 21vw, 245px);
 
       --focus: rgba(255, 255, 255, 0.40);
@@ -19,7 +22,8 @@
     /* Portret, groter en 2 bij 2 */
     @media (orientation: portrait){
       :root{
-        --banner-h: clamp(76px, 12.5vmin, 140px);
+        /* Banner: half zo groot */
+        --banner-h: clamp(38px, 6.2vmin, 70px);
         --card-w: clamp(285px, 44vw, 520px);
       }
     }
@@ -27,7 +31,7 @@
     /* Extra lage schermen, nog compacter */
     @media (max-height: 520px){
       :root{
-        --banner-h: clamp(40px, 6.6vmin, 70px);
+        --banner-h: clamp(20px, 3.2vmin, 34px);
         --card-w: clamp(150px, 20vw, 220px);
       }
     }
@@ -87,7 +91,7 @@
       height: 100%;
       object-fit: contain;
       display: block;
-      filter: drop-shadow(0 16px 16px rgba(0,0,0,0.18));
+      filter: drop-shadow(0 14px 14px rgba(0,0,0,0.16));
     }
 
     main{
@@ -105,16 +109,15 @@
       place-items: center;
     }
 
-    /* In portret wil je bovenste knoppen iets lager */
+    /* In portret wil je bovenste knoppen circa 1 cm lager */
     @media (orientation: portrait){
       main{
-        padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 34px);
+        padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 72px);
         padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
       }
     }
 
     .grid{
-      width: min(1500px, 100%);
       height: 100%;
       display: grid;
       gap: var(--gap);
@@ -122,11 +125,14 @@
       justify-items: center;
     }
 
-    /* Landscape: 4 knoppen naast elkaar in één rij */
+    /* Landscape: 4 knoppen naast elkaar, maar compact gecentreerd (desktop niet uit elkaar) */
     @media (orientation: landscape){
       .grid{
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(4, var(--card-w));
         grid-template-rows: 1fr;
+        justify-content: center;
+        width: fit-content;
+        max-width: 100%;
       }
       main{
         padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 10px);
@@ -137,6 +143,7 @@
     /* Portret: 2 bij 2 */
     @media (orientation: portrait){
       .grid{
+        width: min(1320px, 100%);
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
       }
