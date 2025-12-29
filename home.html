@@ -9,29 +9,27 @@
     :root{
       --gap: clamp(10px, 2.0vmin, 18px);
 
-      /* Default is landscape */
-      /* Banner: half zo groot */
-      --banner-h: clamp(23px, 3.6vmin, 40px);
+      /* Banner duidelijk kleiner */
+      --banner-h: clamp(18px, 4.0vmin, 34px);
 
-      /* Landscape, 4 naast elkaar */
+      /* Landscape: 4 naast elkaar */
       --card-w: clamp(165px, 21vw, 245px);
 
       --focus: rgba(255, 255, 255, 0.40);
     }
 
-    /* Portret, groter en 2 bij 2 */
+    /* Portret: banner ook kleiner, 2 bij 2 */
     @media (orientation: portrait){
       :root{
-        /* Banner: half zo groot */
-        --banner-h: clamp(38px, 6.2vmin, 70px);
+        --banner-h: clamp(30px, 5.2vmin, 60px);
         --card-w: clamp(285px, 44vw, 520px);
       }
     }
 
-    /* Extra lage schermen, nog compacter */
+    /* Extra lage schermen */
     @media (max-height: 520px){
       :root{
-        --banner-h: clamp(20px, 3.2vmin, 34px);
+        --banner-h: clamp(16px, 3.2vmin, 28px);
         --card-w: clamp(150px, 20vw, 220px);
       }
     }
@@ -47,7 +45,6 @@
       color: #fff;
     }
 
-    /* Achtergrond laag, met zachte parallax */
     .bg{
       position: fixed;
       inset: 0;
@@ -73,18 +70,43 @@
       z-index: 1;
     }
 
-    /* Banner Rekenreis bovenaan */
-    header{
+    /* Container zodat we landscape echt vertikaal kunnen centreren */
+    .shell{
       position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 6px);
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(980px, calc(100vw - (var(--gap) * 2)));
+      inset: 0;
+      z-index: 2;
+
+      padding:
+        calc(env(safe-area-inset-top, 0px) + 8px)
+        calc(env(safe-area-inset-right, 0px) + var(--gap))
+        calc(env(safe-area-inset-bottom, 0px) + 10px)
+        calc(env(safe-area-inset-left, 0px) + var(--gap));
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      /* Landscape: banner + knoppen vertikaal gecentreerd */
+      justify-content: center;
+      gap: clamp(10px, 1.8vmin, 16px);
+    }
+
+    /* Portret: boven start, knoppen dichter op elkaar */
+    @media (orientation: portrait){
+      .shell{
+        justify-content: flex-start;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+        gap: 12px;
+      }
+    }
+
+    header{
+      width: min(980px, 100%);
       height: var(--banner-h);
       display: grid;
       place-items: center;
-      z-index: 3;
       pointer-events: none;
+      flex: 0 0 auto;
     }
     .banner{
       width: 100%;
@@ -94,62 +116,34 @@
       filter: drop-shadow(0 14px 14px rgba(0,0,0,0.16));
     }
 
-    main{
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-
-      padding:
-        calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 14px)
-        calc(env(safe-area-inset-right, 0px) + var(--gap))
-        calc(env(safe-area-inset-bottom, 0px) + var(--gap))
-        calc(env(safe-area-inset-left, 0px) + var(--gap));
-
-      display: grid;
-      place-items: center;
-    }
-
-    /* In portret wil je bovenste knoppen circa 1 cm lager */
-    @media (orientation: portrait){
-      main{
-        padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 72px);
-        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
-      }
-    }
-
     .grid{
-      height: 100%;
       display: grid;
       gap: var(--gap);
-      align-items: center;
       justify-items: center;
+      align-items: center;
     }
 
-    /* Landscape: 4 knoppen naast elkaar, maar compact gecentreerd (desktop niet uit elkaar) */
     @media (orientation: landscape){
       .grid{
         grid-template-columns: repeat(4, var(--card-w));
-        grid-template-rows: 1fr;
+        grid-template-rows: auto;
         justify-content: center;
         width: fit-content;
         max-width: 100%;
       }
-      main{
-        padding-top: calc(env(safe-area-inset-top, 0px) + var(--banner-h) + 10px);
-        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-      }
     }
 
-    /* Portret: 2 bij 2 */
     @media (orientation: portrait){
       .grid{
-        width: min(1320px, 100%);
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
+        grid-template-rows: auto auto;
+        row-gap: clamp(8px, 1.6vmin, 14px);
+        column-gap: var(--gap);
+        width: min(1320px, 100%);
+        align-content: start;
       }
     }
 
-    /* Knop is puur de afbeelding */
     .card{
       width: var(--card-w);
       max-width: 100%;
@@ -194,7 +188,6 @@
       border-radius: 26px;
     }
 
-    /* Zwevende glinsters */
     .float-layer{
       position: fixed;
       inset: 0;
@@ -219,7 +212,6 @@
       100% { transform: translate3d(calc(var(--x) + var(--dx)), -60px, 0) scale(calc(var(--s) * 1.2)); opacity: 0.0; }
     }
 
-    /* Tikglitters */
     .fx-layer{
       position: fixed;
       inset: 0;
@@ -277,11 +269,11 @@
   <div class="bg" id="bg" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
 
-  <header aria-hidden="true">
-    <img class="banner" src="rekenreis.png" alt="" />
-  </header>
+  <div class="shell">
+    <header aria-hidden="true">
+      <img class="banner" src="rekenreis.png" alt="" />
+    </header>
 
-  <main>
     <section class="grid" aria-label="Kies een spel">
       <a class="card" href="tg07.html" aria-label="Tovergetallen">
         <img src="tovergetallen.png" alt="Tovergetallen" />
@@ -299,7 +291,7 @@
         <img src="slim%20tellen.png" alt="Slim tellen" />
       </a>
     </section>
-  </main>
+  </div>
 
   <div class="float-layer" id="float" aria-hidden="true"></div>
   <div class="fx-layer" id="fx" aria-hidden="true"></div>
@@ -309,7 +301,6 @@
     const floatLayer = document.getElementById("float");
     const fx = document.getElementById("fx");
 
-    /* Subtiele parallax, alleen met muis */
     let px = 0, py = 0;
     window.addEventListener("pointermove", (e) => {
       if (e.pointerType !== "mouse") return;
@@ -328,7 +319,6 @@
     }
     animateBg();
 
-    /* Zwevende glinsters */
     function spawnFloat(){
       if (!floatLayer) return;
       const el = document.createElement("div");
@@ -349,7 +339,6 @@
     for (let i = 0; i < 10; i++) spawnFloat();
     setInterval(spawnFloat, 980);
 
-    /* Klikglitters */
     function sparkleAt(x, y){
       if (!fx) return;
 
@@ -382,7 +371,6 @@
       }
     }
 
-    /* Zacht chime geluidje, zonder bestanden */
     let audioReady = false;
     let ctx;
     function chime(){
@@ -418,7 +406,6 @@
       }catch(err){}
     }
 
-    /* Interactie op knoppen, glitter, dan door */
     document.querySelectorAll(".card").forEach((a) => {
       a.addEventListener("pointerenter", (e) => {
         if (e.pointerType !== "mouse") return;
@@ -436,7 +423,6 @@
       });
     });
 
-    /* Tikglitters overal, kleine dosis */
     let lastFx = 0;
     window.addEventListener("pointerdown", (e) => {
       const now = Date.now();
