@@ -11,30 +11,38 @@
 
       /* Desktop en algemene landscape */
       --banner-h: clamp(70px, 10vmin, 120px);
-
-      /* Landscape: 4 naast elkaar */
       --card-w: clamp(165px, 21vw, 245px);
 
+      --after-banner: clamp(14px, 2.2vmin, 20px);
       --focus: rgba(255, 255, 255, 0.40);
 
-      /* ruimte tussen banner en knoppen */
-      --after-banner: clamp(14px, 2.2vmin, 20px);
+      /* Banner afstand vanaf boven */
+      --banner-top: calc(env(safe-area-inset-top, 0px) + 10px);
     }
 
-    /* iPad landscape, banner groter dan op desktop nodig is */
+    /* iPad landscape: banner groter */
     @media (orientation: landscape) and (pointer: coarse) and (max-width: 1100px){
       :root{
-        --banner-h: clamp(92px, 12.5vmin, 150px);
-        --after-banner: clamp(16px, 2.6vmin, 26px);
+        --banner-h: clamp(110px, 14.0vmin, 170px);
+        --after-banner: clamp(12px, 2.0vmin, 18px);
       }
     }
 
-    /* Portret: banner groter, knoppen lager */
+    /* Desktop landscape: knoppen iets groter, banner iets lager */
+    @media (orientation: landscape) and (pointer: fine) and (min-width: 1101px){
+      :root{
+        --card-w: clamp(190px, 16vw, 300px);
+        --banner-top: calc(env(safe-area-inset-top, 0px) + 26px);
+      }
+    }
+
+    /* Portret: is klaar en goed, hier alleen zodat het exact blijft */
     @media (orientation: portrait){
       :root{
         --banner-h: clamp(132px, 15.5vmin, 210px);
         --card-w: clamp(285px, 44vw, 520px);
         --after-banner: clamp(34px, 4.6vmin, 56px);
+        --banner-top: calc(env(safe-area-inset-top, 0px) + 10px);
       }
     }
 
@@ -82,14 +90,14 @@
       z-index: 1;
     }
 
-    /* Layoutcontainer, banner altijd boven knoppen, niet vertikaal gecentreerd */
+    /* Shell altijd bovenaan, banner boven knoppen */
     .shell{
       position: fixed;
       inset: 0;
       z-index: 2;
 
       padding:
-        calc(env(safe-area-inset-top, 0px) + 10px)
+        var(--banner-top)
         calc(env(safe-area-inset-right, 0px) + var(--gap))
         calc(env(safe-area-inset-bottom, 0px) + 12px)
         calc(env(safe-area-inset-left, 0px) + var(--gap));
@@ -117,6 +125,25 @@
       filter: drop-shadow(0 16px 16px rgba(0,0,0,0.18));
     }
 
+    /* Content neemt de rest van de hoogte in */
+    .content{
+      width: 100%;
+      flex: 1 1 auto;
+      display: grid;
+      place-items: center;
+      min-height: 0;
+    }
+
+    /* Landscape: knoppen vertikaal uitgelijnd, dus netjes gecentreerd in de overgebleven hoogte */
+    @media (orientation: landscape){
+      .content{ place-items: center; }
+    }
+
+    /* Portret: content start hoger, maar knoppen staan lager door je bestaande afstanden */
+    @media (orientation: portrait){
+      .content{ place-items: start center; }
+    }
+
     .grid{
       display: grid;
       gap: var(--gap);
@@ -142,9 +169,6 @@
         column-gap: var(--gap);
         width: min(1320px, 100%);
         align-content: start;
-      }
-      /* knoppen lager in het scherm */
-      .grid{
         margin-top: clamp(18px, 3.8vmin, 44px);
       }
     }
@@ -279,23 +303,25 @@
       <img class="banner" src="rekenreis.png" alt="" />
     </header>
 
-    <section class="grid" aria-label="Kies een spel">
-      <a class="card" href="tg07.html" aria-label="Tovergetallen">
-        <img src="tovergetallen.png" alt="Tovergetallen" />
-      </a>
+    <div class="content">
+      <section class="grid" aria-label="Kies een spel">
+        <a class="card" href="tg07.html" aria-label="Tovergetallen">
+          <img src="tovergetallen.png" alt="Tovergetallen" />
+        </a>
 
-      <a class="card" href="tg8.html" aria-label="Bellenblazen">
-        <img src="bellenblazen.png" alt="Bellenblazen" />
-      </a>
+        <a class="card" href="tg8.html" aria-label="Bellenblazen">
+          <img src="bellenblazen.png" alt="Bellenblazen" />
+        </a>
 
-      <a class="card" href="tg05.html" aria-label="Cijferreeksen">
-        <img src="cijferreeksen.png" alt="Cijferreeksen" />
-      </a>
+        <a class="card" href="tg05.html" aria-label="Cijferreeksen">
+          <img src="cijferreeksen.png" alt="Cijferreeksen" />
+        </a>
 
-      <a class="card" href="tg04.html" aria-label="Slim tellen">
-        <img src="slim%20tellen.png" alt="Slim tellen" />
-      </a>
-    </section>
+        <a class="card" href="tg04.html" aria-label="Slim tellen">
+          <img src="slim%20tellen.png" alt="Slim tellen" />
+        </a>
+      </section>
+    </div>
   </div>
 
   <div class="float-layer" id="float" aria-hidden="true"></div>
