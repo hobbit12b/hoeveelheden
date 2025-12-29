@@ -7,6 +7,7 @@
 
   <style>
     :root{
+      --banner-scale: 1;
       --gap: clamp(10px, 2.0vmin, 18px);
 
       /* Desktop en algemene landscape */
@@ -25,6 +26,8 @@
       :root{
         --banner-h: clamp(110px, 14.0vmin, 170px);
         --after-banner: clamp(12px, 2.0vmin, 18px);
+        --banner-scale: 1.4;
+
       }
     }
 
@@ -32,7 +35,9 @@
     @media (orientation: landscape) and (pointer: fine) and (min-width: 1101px){
       :root{
         --card-w: clamp(190px, 16vw, 300px);
-        --banner-top: calc(env(safe-area-inset-top, 0px) + 26px);
+        --banner-scale: 0.85;
+        --banner-top: calc(env(safe-area-inset-top, 0px) + 38px);
+
       }
     }
 
@@ -123,7 +128,9 @@
       object-fit: contain;
       display: block;
       filter: drop-shadow(0 16px 16px rgba(0,0,0,0.18));
-    }
+          transform: scale(var(--banner-scale));
+      transform-origin: top center;
+}
 
     /* Content neemt de rest van de hoogte in */
     .content{
