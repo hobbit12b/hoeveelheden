@@ -9,20 +9,32 @@
     :root{
       --gap: clamp(10px, 2.0vmin, 18px);
 
-      /* Landscape: banner duidelijk groter */
+      /* Desktop en algemene landscape */
       --banner-h: clamp(70px, 10vmin, 120px);
 
       /* Landscape: 4 naast elkaar */
       --card-w: clamp(165px, 21vw, 245px);
 
       --focus: rgba(255, 255, 255, 0.40);
+
+      /* ruimte tussen banner en knoppen */
+      --after-banner: clamp(14px, 2.2vmin, 20px);
     }
 
-    /* Portret: banner ook groter, knoppen iets lager */
+    /* iPad landscape, banner groter dan op desktop nodig is */
+    @media (orientation: landscape) and (pointer: coarse) and (max-width: 1100px){
+      :root{
+        --banner-h: clamp(92px, 12.5vmin, 150px);
+        --after-banner: clamp(16px, 2.6vmin, 26px);
+      }
+    }
+
+    /* Portret: banner groter, knoppen lager */
     @media (orientation: portrait){
       :root{
-        --banner-h: clamp(110px, 13.5vmin, 180px);
+        --banner-h: clamp(132px, 15.5vmin, 210px);
         --card-w: clamp(285px, 44vw, 520px);
+        --after-banner: clamp(34px, 4.6vmin, 56px);
       }
     }
 
@@ -70,7 +82,7 @@
       z-index: 1;
     }
 
-    /* Layoutcontainer: banner altijd boven knoppen */
+    /* Layoutcontainer, banner altijd boven knoppen, niet vertikaal gecentreerd */
     .shell{
       position: fixed;
       inset: 0;
@@ -85,21 +97,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-
-      /* Default: alles samen vertikaal gecentreerd, maar banner blijft boven knoppen */
-      justify-content: center;
-
-      /* Ruimte tussen banner en knoppen */
-      gap: clamp(14px, 2.2vmin, 20px);
-    }
-
-    /* Portret: banner hoger, knoppen lager (meer ruimte ertussen) */
-    @media (orientation: portrait){
-      .shell{
-        justify-content: flex-start;
-        padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-        gap: clamp(26px, 3.6vmin, 40px);
-      }
+      justify-content: flex-start;
+      gap: var(--after-banner);
     }
 
     header{
@@ -143,6 +142,10 @@
         column-gap: var(--gap);
         width: min(1320px, 100%);
         align-content: start;
+      }
+      /* knoppen lager in het scherm */
+      .grid{
+        margin-top: clamp(18px, 3.8vmin, 44px);
       }
     }
 
