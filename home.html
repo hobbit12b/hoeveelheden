@@ -9,8 +9,8 @@
     :root{
       --gap: clamp(10px, 2.0vmin, 18px);
 
-      /* Banner duidelijk kleiner */
-      --banner-h: clamp(18px, 4.0vmin, 34px);
+      /* Banner weer duidelijk zichtbaar, maar nog steeds compact */
+      --banner-h: clamp(44px, 7.0vmin, 74px);
 
       /* Landscape: 4 naast elkaar */
       --card-w: clamp(165px, 21vw, 245px);
@@ -18,10 +18,10 @@
       --focus: rgba(255, 255, 255, 0.40);
     }
 
-    /* Portret: banner ook kleiner, 2 bij 2 */
+    /* Portret: banner groter, 2 bij 2 */
     @media (orientation: portrait){
       :root{
-        --banner-h: clamp(30px, 5.2vmin, 60px);
+        --banner-h: clamp(78px, 10.5vmin, 130px);
         --card-w: clamp(285px, 44vw, 520px);
       }
     }
@@ -29,7 +29,7 @@
     /* Extra lage schermen */
     @media (max-height: 520px){
       :root{
-        --banner-h: clamp(16px, 3.2vmin, 28px);
+        --banner-h: clamp(38px, 6.2vmin, 60px);
         --card-w: clamp(150px, 20vw, 220px);
       }
     }
@@ -70,34 +70,32 @@
       z-index: 1;
     }
 
-    /* Container zodat we landscape echt vertikaal kunnen centreren */
+    /* Layoutcontainer: banner altijd boven de knoppen */
     .shell{
       position: fixed;
       inset: 0;
       z-index: 2;
 
       padding:
-        calc(env(safe-area-inset-top, 0px) + 8px)
+        calc(env(safe-area-inset-top, 0px) + 10px)
         calc(env(safe-area-inset-right, 0px) + var(--gap))
-        calc(env(safe-area-inset-bottom, 0px) + 10px)
+        calc(env(safe-area-inset-bottom, 0px) + 12px)
         calc(env(safe-area-inset-left, 0px) + var(--gap));
 
       display: flex;
       flex-direction: column;
       align-items: center;
-
-      /* Landscape: banner + knoppen vertikaal gecentreerd */
-      justify-content: center;
-      gap: clamp(10px, 1.8vmin, 16px);
+      gap: clamp(12px, 2.2vmin, 18px);
     }
 
-    /* Portret: boven start, knoppen dichter op elkaar */
+    /* Landscape: het geheel vertikaal centreren, maar banner blijft boven de knoppen */
+    @media (orientation: landscape){
+      .shell{ justify-content: center; }
+    }
+
+    /* Portret: boven starten */
     @media (orientation: portrait){
-      .shell{
-        justify-content: flex-start;
-        padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
-        gap: 12px;
-      }
+      .shell{ justify-content: flex-start; }
     }
 
     header{
