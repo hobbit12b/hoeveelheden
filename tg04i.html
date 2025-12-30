@@ -1,2184 +1,2746 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Slim kijken</title>
-  <style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Slim kijken</title>
+<style>
 :root{
-      --bg-left:#fdeeea;
-      --brand:#e58c74;
-      --text:#6f6b68;
-      --midLine: rgba(245,180,152,0.85);
-      --card-radius:28px;
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
-      --pressDown: 2px;
-      --panel-bg:#ffffff;
-    }
-    html, body { height: 100%; margin: 0; }
-    body{
-      background: var(--bg-left);
-      color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      overflow:hidden;
-    }
+--bg-left:#fdeeea;
+--brand:#e58c74;
+--text:#6f6b68;
+--midLine: rgba(245,180,152,0.85);
+--card-radius:28px;
+--shadow: 0 16px 40px rgba(0,0,0,0.08);
+--pressDown: 2px;
+--wrongFill: rgba(248, 197, 197, 0.85);
+--wrongBorder: rgba(229, 140, 116, 0.45);
+--correctFill: rgba(210, 244, 214, 0.92);
+--correctBorder: rgba(144, 204, 152, 0.70);
+--activeFill: rgba(229, 140, 116, 0.18);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html, body{
+height:100%;
+margin:0;
+padding:0;
+font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+background:#ffffff;
+color: var(--text);
+-webkit-user-select: none;
+user-select: none;
+touch-action: none;
+overflow:hidden;
+}
+body{
+display:grid;
+grid-template-columns: 58fr 42fr;
+grid-template-rows: 1fr;
+height: 100%;
+position: relative;
+overflow:hidden;
+isolation:isolate;
+}
+@media (orientation: portrait){
+body{
+grid-template-columns: 1fr;
+grid-template-rows: 54fr 46fr;
+}
+}
+.left{
+background: var(--bg-left);
+padding: 28px 26px 22px 26px;
+display:flex;
+flex-direction:column;
+gap: 22px;
+position: relative;
+overflow:hidden;
+min-height: 0;
+z-index: 1;
+}
+.scan-surface{
+background:#ffffff;
+position: relative;
+min-height: 0;
+transition: background 140ms ease;
+z-index: 1;
+overflow:hidden;
+}
+@media (orientation: landscape){
+.scan-surface{ border-left: 6px dashed var(--midLine); }
+}
+@media (orientation: portrait){
+.scan-surface{ border-top: 6px dashed var(--midLine); }
+.left{ padding: 22px; gap: 16px; }
+}
+.topbar{
+display:flex;
+align-items:center;
+gap: 18px;
+flex: 0 0 auto;
+position: relative;
+z-index: 2;
+}
+.homeBtn,
+.tuneBtn{
+width:72px;
+height:72px;
+border-radius:18px;
+background: #f8c3b0;
+border: none;
+box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+display:grid;
+place-items:center;
+cursor:pointer;
+padding: 0;
+flex: 0 0 auto;
+font-size: 30px;
+line-height: 1;
+transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+}
+.homeBtn:active,
+.tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+.homeBtn svg{ width: 42px; height: 42px; display:block; }
+.titlePill{
+padding: 18px 44px;
+border-radius: 22px;
+background: var(--brand);
+color: #ffffff;
+font-weight: 800;
+font-size: clamp(22px, 2.1vw, 34px);
+letter-spacing: 0.3px;
+box-shadow: var(--shadow);
+line-height: 1;
+display:flex;
+align-items:center;
+justify-content:center;
+min-height: 64px;
+width: min(660px, 100%);
+text-transform: lowercase;
+}
+.content{
+flex:1 1 auto;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 10px 6px;
+min-height: 0;
+position: relative;
+overflow:hidden;
+}
+.gameCard{
+width: min(980px, 100%);
+height: min(520px, 58vh);
+background: #ffffff;
+border: 6px solid rgba(245,180,152,0.85);
+border-radius: var(--card-radius);
+box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+position:relative;
+overflow: hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 18px;
+transform: translateY(0px);
+}
+@media (orientation: portrait){
+.gameCard{ height: min(420px, 34vh); }
+}
+.flashBoard{
+width: 100%;
+height: 100%;
+border-radius: 26px;
+background:#ffffff;
+border: 2px solid rgba(245,180,152,0.55);
+display:flex;
+align-items:center;
+justify-content:center;
+overflow:hidden;
+position:relative;
+aspect-ratio: 520 / 380;
+}
+@media (orientation: portrait){
+.flashBoard{
+width: min(440px, 92%);
+height: auto;
+transform: none;
+}
+}
+.flashSvg{
+width: 100%;
+height: 100%;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+.flashSvg svg{
+width: 100%;
+height: 100%;
+max-width: 100%;
+max-height: 100%;
+}
+.scanStage{
+position:absolute;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 18px;
+z-index: 10;
+}
+@media (min-aspect-ratio: 4/3){
+.scanStage{ padding: 12px; }
+}
+.answersWrap{
+width: min(560px, 92%);
+max-width: 560px;
+}
+.answers{
+display:grid;
+grid-template-columns: 1fr;
+gap: 14px;
+justify-items:center;
+align-items:center;
+}
+@media (orientation: portrait){
+.answers{
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 12px;
+}
+.answersWrap{ width: min(640px, 92%); }
+}
+.ansBtn{
+appearance:none;
+border:none;
+background:#ffffff;
+border-radius: 22px;
+border: 3px solid rgba(245,180,152,0.85);
+box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+cursor:pointer;
+display:grid;
+place-items:center;
+padding: 10px;
+aspect-ratio: 1 / 1;
+width: 100%;
+transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), background 220ms cubic-bezier(.22,.61,.35,1), border-color 220ms cubic-bezier(.22,.61,.35,1);
+transform: translateZ(0);
+will-change: transform, opacity;
+position: relative;
+overflow: hidden;
+}
+@media (orientation: landscape){
+.answersWrap{ width: min(360px, 92%); }
+.ansBtn{ width: clamp(86px, 10.5vw, 120px); }
+}
+.ansBtn:active{
+transform: translateY(var(--pressDown));
+box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+}
+.ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
+@keyframes pressBounce{
+0%{ transform: translateY(0); }
+42%{ transform: translateY(var(--pressDown)); }
+100%{ transform: translateY(0); }
+}
+.ansBtn.wrongHold{
+background: var(--wrongFill);
+border-color: var(--wrongBorder);
+}
+.ansBtn.correctHold{
+background: var(--correctFill);
+border-color: var(--correctBorder);
+}
+.answersHidden{ opacity:0; pointer-events:none; }
+.startOverlay{
+position:fixed;
+inset:0;
+background: rgba(253,238,234,0.55);
+backdrop-filter: blur(2px);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index: 999;
+padding: 24px;
+}
+.startCard{
+width: min(740px, 92vw);
+background: #ffffff;
+border-radius: 24px;
+box-shadow: var(--shadow);
+padding: 22px 20px;
+text-align:center;
+}
+.startCard h1{
+margin: 0 0 10px 0;
+font-size: 28px;
+color: #4d4a48;
+text-transform: lowercase;
+}
+.startCard p{
+margin: 0 0 14px 0;
+color: rgba(77,74,72,0.82);
+font-size: 18px;
+line-height: 1.35;
+}
+.startBtn{
+appearance:none;
+border:none;
+background: var(--brand);
+color:#fff;
+font-weight: 900;
+padding: 14px 18px;
+border-radius: 18px;
+font-size: 18px;
+cursor:pointer;
+box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+}
+.startBtn:active{ transform: translateY(1px) scale(0.99); }
+.tunePanel{
+position: fixed;
+right: 18px;
+bottom: 18px;
+width: min(640px, calc(100vw - 36px));
+background: rgba(255,255,255,0.62);
+backdrop-filter: blur(10px);
+border-radius: 18px;
+box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+border: 2px solid rgba(245,180,152,0.75);
+padding: 14px 14px 12px 14px;
+z-index: 2200;
+color: #4d4a48;
+}
+.tunePanel.hidden{ display:none; }
+.tuneHeader{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap: 10px;
+margin-bottom: 10px;
+}
+.tuneTitle{
+font-weight: 900;
+font-size: 18px;
+letter-spacing: 0.2px;
+text-transform: lowercase;
+}
+.tuneClose{
+appearance:none;
+border:none;
+background:#f8c3b0;
+border-radius: 12px;
+padding: 10px 12px;
+font-weight: 900;
+cursor:pointer;
+box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+}
+.tuneClose:active{ transform: translateY(1px) scale(0.99); }
+.tuneSection{
+margin-top: 8px;
+padding-top: 10px;
+border-top:2px solid rgba(245,180,152,0.45);
+}
+.tuneRow{
+display:grid;
+grid-template-columns: 170px 1fr 92px;
+gap: 10px;
+align-items:center;
+margin: 10px 0;
+}
+@media (max-width: 520px){
+.tuneRow{ grid-template-columns: 130px 1fr 84px; }
+}
+.tuneLabel{
+font-weight: 800;
+font-size: 13px;
+color: rgba(77,74,72,0.86);
+text-transform: lowercase;
+}
+.tuneValue{
+font-variant-numeric: tabular-nums;
+font-weight: 900;
+font-size: 13px;
+text-align:right;
+color: rgba(77,74,72,0.86);
+}
+.tuneRow input[type="range"]{ width: 100%; }
+.tuneButtons{
+display:flex;
+gap: 10px;
+flex-wrap: wrap;
+margin-top: 10px;
+}
+.tuneBtnSmall{
+appearance:none;
+border:none;
+background: var(--brand);
+color:#fff;
+font-weight: 900;
+padding: 10px 12px;
+border-radius: 14px;
+cursor:pointer;
+box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+font-size: 14px;
+}
+.tuneBtnSmall.secondary{
+background:#f8c3b0;
+color:#4d4a48;
+}
+.tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
+.cardWrap{
+width:100%;
+height:100%;
+border-radius:18px;
+overflow:hidden;
+display:grid;
+place-items:center;
+perspective: 900px;
+}
+.cardInner{
+width:100%;
+height:100%;
+position:relative;
+transform-style: preserve-3d;
+-webkit-transform-style: preserve-3d;
+transition: transform 420ms cubic-bezier(.22,.61,.35,1);
+transform: translateZ(0);
+}
+.cardBack,
+.cardFront{
+position:absolute;
+inset:0;
+display:grid;
+place-items:center;
+backface-visibility: hidden;
+-webkit-backface-visibility: hidden;
+border-radius:18px;
+overflow:hidden;
+}
+.cardBack{
+background:#f8c3b0;
+font-size:32px;
+background-image: url("vogeltje_achterkantkaart.png");
+background-size: contain;
+background-position: center;
+background-repeat: no-repeat;
+}
+.cardFront{
+background:#ffffff;
+transform: rotateY(180deg);
+-webkit-transform: rotateY(180deg);
+}
+.ansBtn.cardOpen .cardInner{
+transform: rotateY(180deg);
+-webkit-transform: rotateY(180deg);
+}
+.timelineOverlay{
+position: fixed;
+inset: 0;
+z-index: 2000;
+pointer-events:none;
+user-select:none;
+overflow: visible;
+background: transparent;
+}
+.timelineGroup{
+position:absolute;
+left: 0;
+top: 0;
+transform-origin: 0 0;
+will-change: transform;
+pointer-events:none;
+}
+.progressTimeline{
+position:absolute;
+left: 0;
+top: 0;
+width: 520px;
+height: auto;
+z-index: 20;
+}
+.progressLine{
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+object-fit: fill;
+}
+.progressLine.levelsHidden{
+opacity: 0;
+}
+.progressChickAnchor{
+position:absolute;
+left: 0;
+top: 0;
+transform: translateX(-50%);
+width: 82px;
+height: 82px;
+pointer-events:none;
+transition: left 520ms cubic-bezier(.22,.61,.35,1);
+will-change: left, transform, top;
+}
+.progressChickAnchor.noMove{ transition: none !important; }
+.chickLayer{
+position:absolute;
+left:0;
+top:0;
+width: 100%;
+height: 100%;
+opacity: 0;
+pointer-events:none;
+transform-origin: 50% 100%;
+will-change: transform, opacity;
+display:block;
+object-fit: contain;
+}
+.chickLayer.active{ opacity: 1; }
+.stillLayer{ z-index: 3; }
+.animLayer{ z-index: 2; }
+#animCanvas{ opacity:0; }
+#animCanvas.active{ opacity:1; }
 
-    /* Layout */
-    .app{
-      position: relative;
-      height: 100%;
-      padding: 14px;
-      box-sizing: border-box;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: var(--gap);
-    }
+.qWrap{
+width: 100%;
+height: 100%;
+display: grid;
+place-items: center;
+position: relative;
+overflow: hidden;
+padding: clamp(8px, 2.2vw, 20px);
+}
+.layoutImg{
+width: 58%;
+height: 58%;
+max-width: 58%;
+max-height: 58%;
+object-fit: contain;
+display: block;
+margin: auto;
+}
+.ansBtn .layoutImg{
+width: 98%;
+height: 98%;
+max-width: 98%;
+max-height: 98%;
+object-fit: contain;
+}
 
-    .topbar{
-      padding: 18px 14px 10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position: relative;
-      z-index: 10;
-    }
-    .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 64px;
-      width: min(660px, 100%);
-      text-transform: lowercase;
-      user-select:none;
-      -webkit-user-select:none;
-      touch-action: manipulation;
-    }
+.pairWrap{
+width: 100%;
+height: 100%;
+display:flex;
+align-items:center;
+justify-content:center;
+gap: clamp(10px, 2.4vw, 22px);
+}
+.pairWrap.smallRight{ flex-direction: row; }
+.pairWrap.smallLeft{ flex-direction: row-reverse; }
+.pairItem{
+flex: 0 1 46%;
+height: 100%;
+display:grid;
+place-items:center;
+}
+.pairImg{
+width: 100%;
+height: 100%;
+object-fit: contain;
+display:block;
+}
+.pairItem.small{
+opacity: 0;
+transform: translateY(4px) scale(0.96);
+animation: smallAppear 360ms cubic-bezier(.22,.61,.35,1) forwards;
+animation-delay: var(--delay, 420ms);
+}
+@keyframes smallAppear{
+to{ opacity: 1; transform: translateY(0) scale(1); }
+}
 
-    .grid{
-      flex: 1 1 auto;
-      min-height: 0;
-      display:flex;
-      gap: 0;
-      padding: 10px 14px 18px;
-      align-items: stretch;
-    }
-    @media (orientation: portrait){
-      .grid{flex-direction: column;}
-    }
+.marboticFace{
+width: 100%;
+height: 100%;
+display:grid;
+place-items:center;
+padding: 16%;
+}
+.marboticImg{
+width: 100%;
+height: 100%;
+object-fit: contain;
+display:block;
+}
 
-    /* Default: portrait like */
-    .grid{
-      grid-template-rows: 1.1fr 0.9fr;
-      grid-template-columns: 1fr;
-    }
+.extraDot{
+position: absolute;
+width: 46px;
+height: 46px;
+border-radius: 50%;
+background: rgba(25,25,25,0.30);
+opacity: 0;
+transform: translate(-50%, -50%) scale(0.65);
+will-change: transform, opacity, background;
+}
+.extraDot.show{
+animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards;
+animation-delay: var(--appearDelay, 260ms);
+}
+.extraDot.blacken{
+animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 520ms ease forwards;
+animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms);
+}
+@keyframes dotAppear{
+0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
+60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+100%{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+}
+@keyframes dotBlacken{
+from{ background: rgba(25,25,25,0.30); }
+to{ background: rgba(25,25,25,0.92); }
+}
 
-    @media (min-aspect-ratio: 4/3){
-      .grid{
-        grid-template-columns: 1.1fr 0.9fr;
-        grid-template-rows: 1fr;
-      }
-    }
+/* tandwiel uit beeld */
+.tuneBtn{ display:none; }
 
-    .panel{
-      min-height: 0;
-      display:flex;
-      flex-direction: column;
-      border-radius: var(--card-radius);
-      overflow:hidden;
-    }
+/* =========================
+LEVEL 8 + 9: scan UI (zelfde scan manier als Tellen en scannen)
+========================= */
+.scanOverlaySK{
+position:absolute;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 28px;
+pointer-events:none;
+z-index: 6;
+opacity: 0;
+transition: opacity 160ms ease;
+}
+.scanOverlaySK.show{ opacity: 1; }
 
-    .panelHeader{
-      padding: 12px 14px;
-      font-weight: 800;
-      font-size: 14px;
-      color: var(--muted);
-      letter-spacing: 0.3px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-    }
+.scanUISK{
+width: min(520px, 92%);
+display:flex;
+flex-direction:column;
+align-items:center;
+gap: 14px;
+text-align:center;
+transform: translateY(-8px);
+}
+.miniTileSK{
+width: 66px;
+height: 66px;
+border-radius: 10px;
+background: rgba(229, 140, 116, 0.55);
+box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+display:grid;
+grid-template-columns: 1fr 1fr;
+grid-template-rows: 1fr 1fr;
+color:#fff;
+font-weight: 900;
+font-size: 20px;
+line-height: 1;
+place-items:center;
+}
+.scanTitleSK{
+font-size: clamp(22px, 2vw, 34px);
+font-weight: 800;
+color: #7b7876;
+margin-top: 6px;
+}
+.scanSubSK{
+font-size: clamp(16px, 1.3vw, 20px);
+color: rgba(123,120,118,0.75);
+margin-top: -4px;
+}
+.scanHintSK{
+font-size: 13px;
+color: rgba(0,0,0,0.55);
+margin-top: 10px;
+}
 
-    .playArea{
-      display: grid;
-      grid-template-rows: auto 1fr;
-      min-height: 0;
-    }
+.scanDigitWrapSK{
+position:absolute;
+inset:0;
+display:grid;
+place-items:center;
+pointer-events:none;
+opacity: 0;
+transition: opacity 140ms ease;
+z-index: 7;
+}
+.scanDigitWrapSK.show{ opacity: 1; }
 
-    .stage{
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
+/* nieuwe feedback randen */
+.scanDigitWrapSK::before{
+content:"";
+position:absolute;
+inset: clamp(14px, 3.2vw, 22px);
+border-radius: 18px;
+border: 6px solid transparent;
+box-shadow: 0 14px 28px rgba(0,0,0,0.10);
+opacity: 0;
+transition: opacity 120ms ease, border-color 120ms ease;
+}
+.scanDigitWrapSK.correctSK::before{
+opacity: 1;
+border-color: rgba(144, 204, 152, 0.95);
+}
+.scanDigitWrapSK.wrongSK::before{
+opacity: 1;
+border-color: rgba(229, 88, 88, 0.92);
+}
 
-    .card{
-      width: min(520px, 92%);
-      max-width: 560px;
-      aspect-ratio: 4 / 3;
-      background: #ffffff;
-      border-radius: var(--card-radius);
-      box-shadow: var(--shadow);
-      display: grid;
-      place-items: center;
-      position: relative;
-      overflow: hidden;
-    }
+.scanDigitWrapSK img{
+width: min(62%, 360px);
+height: auto;
+filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
+will-change: transform, opacity;
+}
 
-    .questionWrap{
-      display: grid;
-      gap: 18px;
-      place-items: center;
-      padding: 18px;
-      width: 100%;
-      height: 100%;
-      box-sizing: border-box;
-    }
+/* slide richting naar de middellijn, landscape naar links, portrait naar boven */
+@media (orientation: landscape){
+.scanDigitWrapSK.slideOut img{
+animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes scanSlideOutLeft{
+0%{ transform: translateX(0) scale(1); opacity: 1; }
+70%{ transform: translateX(-80%) scale(0.98); opacity: 0.70; }
+100%{ transform: translateX(-130%) scale(0.96); opacity: 0; }
+}
+}
+@media (orientation: portrait){
+.scanDigitWrapSK.slideOut img{
+animation: scanSlideOutUp 520ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes scanSlideOutUp{
+0%{ transform: translateY(0) scale(1); opacity: 1; }
+70%{ transform: translateY(-80%) scale(0.98); opacity: 0.70; }
+100%{ transform: translateY(-130%) scale(0.96); opacity: 0; }
+}
+}
 
-    .groupRow{
-      display: grid;
-      grid-auto-flow: column;
-      gap: 18px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .group{
-      width: min(210px, 34vw);
-      height: min(160px, 26vw);
-      max-width: 210px;
-      max-height: 160px;
-      background: rgba(255,255,255,0.72);
-      border-radius: 18px;
-      border: 1px solid rgba(0,0,0,0.06);
-      display: grid;
-      place-items: center;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    .group img, .group svg{
-      width: 92%;
-      height: 92%;
-      object-fit: contain;
-    }
-
-    .hintLine{
-      position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 14px;
-      color: var(--muted);
-      background: rgba(255,255,255,0.85);
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.06);
-      white-space: nowrap;
-      opacity: 0;
-      transition: opacity 180ms ease;
-    }
-    .hintLine.show{ opacity: 1; }
-
-    /* Answer area */
-    .answerArea{
-      display: grid;
-      grid-template-rows: auto 1fr;
-      min-height: 0;
-    }
-
-    .options{
-      flex: 1 1 auto;
-      min-height: 0;
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      align-content: center;
-    }
-
-    @media (max-aspect-ratio: 4/3){
-      .options{
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    .optBtn{
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.95);
-      border: 2px solid rgba(0,0,0,0.06);
-      box-shadow: 0 14px 28px rgba(0,0,0,0.08);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      transform: translateY(0);
-      transition: transform 120ms ease, box-shadow 160ms ease, background 140ms ease;
-      z-index: 1;
-      overflow:hidden;
-    }
-    .optBtn:active{ transform: translateY(var(--pressDown)); }
-    .optBtn:active{ transform: scale(0.99); }
-
-    .optBtn .mini{
-      width: 92%;
-      height: 92%;
-      display: grid;
-      place-items: center;
-      background: rgba(255,255,255,0.70);
-      border-radius: 14px;
-      border: 1px solid rgba(0,0,0,0.06);
-    }
-
-    .optBtn img, .optBtn svg{
-      width: 90%;
-      height: 90%;
-      object-fit: contain;
-    }
-
-    /* Timeline overlay, tg04g look */
-    .timelineOverlay{
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      pointer-events:none;
-      user-select:none;
-      background: transparent;
-    }
-    .timelineGroup{
-      position:absolute;
-      left: 50%;
-      top: 8px;
-      width: 800px;
-      height: 150px;
-      transform-origin: 0 0;
-      transform: translateX(-50%) scale(0.40);
-      will-change: transform;
-    }
-    .timelineBg{
-      position:absolute;
-      inset: 0;
-      width:100%;
-      height:100%;
-      object-fit: fill;
-      opacity: 0.18;
-    }
-    .timelineBg.levelsHidden{ opacity: 0; }
-    .chickAnchor{
-      position:absolute;
-      left: 0;
-      top: 54%;
-      transform: translate(-50%, -58%);
-      width: 70px;
-      height: 70px;
-      display: grid;
-      place-items: center;
-    }
-    .chickAnchor img, .chickAnchor video{
-      width: 70px;
-      height: 70px;
-      object-fit: contain;
-      border-radius: 16px;
-      background: transparent;
-    }
-/* Teacher mode */
-    .teacherOverlay{
-      position: fixed;
-      inset: 0;
-      z-index: 400;
-      background: rgba(0,0,0,0.38);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-    .teacherPanel{
-      width: min(560px, 100%);
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.30);
-      padding: 16px;
-      touch-action: auto;
-    }
-    .teacherTitle{
-      font-weight: 900;
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-    .teacherRow{
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .tbtn{
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 14px;
-      background: var(--btn);
-      color: var(--btnInk);
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .tbtn.soft{
-      background: rgba(17,24,39,0.10);
-      color: var(--ink);
-    }
-    .statusBox{
-      margin-top: 10px;
-      background: rgba(17,24,39,0.06);
-      border-radius: 14px;
-      padding: 12px;
-      font-size: 13px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
-
-    /* Marbotic scan */
-    .scanSurface{
-      width: min(520px, 92%);
-      max-width: 520px;
-      height: min(340px, 48vh);
-      border-radius: 26px;
-      border: 1px dashed rgba(0,0,0,0.20);
-      background: rgba(255,255,255,0.70);
-      display: grid;
-      place-items: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .scanHint{
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.88);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 999px;
-      padding: 8px 10px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-    .dotsCanvas{
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
-    /* Subtle transitions */
-    .fadeIn{ animation: fadeIn 180ms ease-out both; }
-    @keyframes fadeIn{ from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-    .flip{
-      transform-style: preserve-3d;
-      transition: transform 220ms ease;
-    }
-    .flip.isFlipped{ transform: rotateY(180deg); }
-    .face{
-      position: absolute;
-      inset: 0;
-      backface-visibility: hidden;
-      display: grid;
-      place-items: center;
-    }
-    .back{ transform: rotateY(180deg); }
-  
-    /* Coaching and start overlay */
-    .panel.isWaiting{
-      outline: 2px solid rgba(17,24,39,0.10);
-    }
-    .panel.isInteractive{
-      outline: 2px solid rgba(17,24,39,0.12);
-      box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 6px rgba(17,24,39,0.06);
-      animation: pulseRing 1400ms ease-in-out infinite;
-    }
-    @keyframes pulseRing{
-      0%{ box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 4px rgba(17,24,39,0.05); }
-      55%{ box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 10px rgba(17,24,39,0.08); }
-      100%{ box-shadow: 0 14px 40px rgba(0,0,0,0.12), 0 0 0 4px rgba(17,24,39,0.05); }
-    }
-
-    .startOverlay{
-      position:fixed;
-      inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
-    .startCard{
-      width: min(740px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
-    .startTitle{
-      font-weight: 900;
-      font-size: 22px;
-      letter-spacing: 0.2px;
-    }
-    .startText{
-      font-size: 16px;
-      color: rgba(27,27,31,0.78);
-      line-height: 1.35;
-      display: grid;
-      gap: 6px;
-    }
-    .startBtn{
-      justify-self: center;
-      border: 0;
-      border-radius: 16px;
-      padding: 12px 18px;
-      background: var(--btn);
-      color: var(--btnInk);
-      font-weight: 900;
-      font-size: 16px;
-      cursor: pointer;
-      box-shadow: 0 14px 34px rgba(0,0,0,0.18);
-      transition: transform 140ms ease;
-    }
-    .startBtn:active{ transform: translateY(1px) scale(0.99); }
-    .panelHeader{display:none;}
-    #microStatus{display:none;}
-    .playArea{
-      flex: 1 1 62%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background: transparent;
-      padding: 10px;
-    }
-    .answerArea{
-      flex: 0 0 38%;
-      background: var(--panel-bg);
-      box-shadow: var(--shadow);
-      padding: 12px;
-    }
-    @media (orientation: portrait){
-      .playArea{flex: 1 1 55%;}
-      .answerArea{flex: 0 0 45%;}
-    }
-    @media (orientation: landscape){
-      .answerArea{border-left: 6px solid var(--midLine);}
-    }
-    @media (orientation: portrait){
-      .answerArea{border-top: 6px solid var(--midLine);}
-    }
-
-  </style>
+.scan-surface.wrongSK{ animation: wiggleSK 220ms ease; }
+@keyframes wiggleSK{
+0%{ transform: translateX(0); }
+28%{ transform: translateX(-6px); }
+58%{ transform: translateX(5px); }
+100%{ transform: translateX(0); }
+}
+</style>
 </head>
-
 <body>
-  <div class="app" id="appRoot">
-    <div class="topbar">
-      <div class="titlePill" id="titlePill">Slim kijken</div>
-    </div>
-
-    <div class="timelineOverlay" aria-hidden="true">
-      <div class="timelineGroup" id="timelineGroup">
-        <img class="timelineBg levelsHidden" id="timelineBg" src="assets/levels.png" alt="" />
-        <div class="chickAnchor" id="chickAnchor" style="left: 0%;">
-          <img id="chickStill" src="assets/ballerina_still.png" alt="" />
-          <video id="chickVidUp" src="assets/ballerina_springt.mp4" playsinline muted preload="auto" style="display:none"></video>
-          <video id="chickVidDown" src="assets/ballerina_terug.mp4" playsinline muted preload="auto" style="display:none"></video>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="panel playArea">
-        <div class="panelHeader">
-          <span id="playHeader">Kijken</span>
-          <span id="microStatus"></span>
-        </div>
-        <div class="stage" id="stage">
-          <div class="card" id="card">
-            <div class="questionWrap" id="questionWrap"></div>
-            <div class="hintLine" id="hintLine"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel answerArea" id="answerPanel">
-        <div class="panelHeader">
-          <span>Antwoorden</span>
-          <span id="answerHeader"></span>
-        </div>
-        <div class="options" id="options"></div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Start overlay -->
-  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <div class="startTitle">Slim kijken</div>
-      <div class="startText">
-        <div>Kijk naar de stippen.</div>
-        <div>Als er plaatjes staan, tik het plaatje met evenveel.</div>
-        <div>Soms kijk je even alleen, dan gaat het vanzelf verder.</div>
-        <div>Bij cijfers leg je een cijfer op het vak.</div>
-      </div>
-      <button class="startBtn" id="startBtn" type="button">Start</button>
-    </div>
-  </div>
-
-  <!-- Teacher mode -->
-  <div class="teacherOverlay" id="teacherOverlay" aria-hidden="true">
-    <div class="teacherPanel" role="dialog" aria-modal="true">
-      <div class="teacherTitle">Leerkrachtmodus</div>
-      <div class="teacherRow">
-        <button class="tbtn" id="btnExport">Exporteer sessie JSON</button>
-        <button class="tbtn soft" id="btnReset">Reset sessie</button>
-        <button class="tbtn soft" id="btnToPos9">Naar POS 9</button>
-        <button class="tbtn soft" id="btnCloseTeacher">Sluit</button>
-      </div>
-      <div class="teacherRow" id="scanSimRow" style="display:none"></div>
-      <div class="statusBox" id="teacherStatus"></div>
-    </div>
-  </div>
-
-  <script>
-  (function(){
-    "use strict";
-
-    /* =========================
-       V5 constants and state
-    ========================== */
-    const RT_FAST = 1200;
-    const RT_MID  = 2000;
-
-    const STAB_UP_THRESHOLD = 100;
-    const HELP_BACK_THRESHOLD = 3;
-
-    const HOLD_MS = 900;
-    const MAX_MOVE_PX = 12;
-
-    const ASSETS = {
-      diceBase: "assets/dice/",
-      levels: "assets/levels.png",
-      ballerinaStill: "assets/ballerina_still.png",
-      ballerinaUp: "assets/ballerina_springt.mp4",
-      ballerinaDown: "assets/ballerina_terug.mp4",
-      calibration: "assets/calibration.json"
-    };
-
-    const DICE = {
-      1: { canonical: ["1a.svg"], variants: [] },
-      2: { canonical: ["2a.svg"], variants: ["2b.svg","2c.svg","2d.svg"] },
-      3: { canonical: ["3a.svg"], variants: ["3b.svg","3c.svg","3d.svg"] },
-      4: { canonical: ["4a.svg"], variants: ["4b.svg","4c.svg"] },
-      5: { canonical: ["5a.svg"], variants: ["5b.svg","5c.svg"] }, // 5 has no canonical flash, only end image
-      6: { canonical: ["6a.svg"], variants: ["6b.svg"] },
-    };
-
-    const state = {
-      sessionId: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2),
-      startedAt: new Date().toISOString(),
-      endedAt: null,
-
-      pos: 1,
-      stability: 0,
-      helpDebt: 0,
-      forcedHelpRounds: 0,
-      startLookRoundsRemaining: 2,
-
-      lastRoundType: null,
-      lastRoundWasWrong: false,
-      lastRTms: null,
-
-      numStability: Array.from({length: 10}, () => 0), // 0..9
-      rounds: [],
-      observations: []
-    };
-
-    let lockInput = true;
-    let gameStarted = false;
-    let coachRoundsLeft = 10;
-    let activeRound = null;
-    let rtStart = null;
-
-    /* =========================
-       DOM refs
-    ========================== */
-    const elTitle = document.getElementById("titlePill");
-    const elTeacherOverlay = document.getElementById("teacherOverlay");
-    const elTeacherStatus = document.getElementById("teacherStatus");
-    const elScanSimRow = document.getElementById("scanSimRow");
-
-    const btnExport = document.getElementById("btnExport");
-    const btnReset = document.getElementById("btnReset");
-    const btnToPos9 = document.getElementById("btnToPos9");
-    const btnCloseTeacher = document.getElementById("btnCloseTeacher");
-
-    const elChickAnchor = document.getElementById("chickAnchor");
-    const elChickStill = document.getElementById("chickStill");
-    const elChickUp = document.getElementById("chickVidUp");
-    const elChickDown = document.getElementById("chickVidDown");
-
-    const elTimelineGroup = document.getElementById("timelineGroup");
-    const elTimelineBg = document.getElementById("timelineBg");
-
-    function setTimelineScale(){
-      if(!elTimelineGroup) return;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      // levels.png is 800x150, keep it subtle like tg04g
-      const maxScale = 0.45;
-      const scaleW = (vw * 0.90) / 800;
-      const scaleH = (vh * 0.16) / 150;
-      const scale = Math.min(maxScale, scaleW, scaleH);
-      elTimelineGroup.style.transform = "translateX(-50%) scale(" + scale.toFixed(3) + ")";
-    }
-
-
-    const elPlayHeader = document.getElementById("playHeader");
-    const elMicroStatus = document.getElementById("microStatus");
-    const elAnswerHeader = document.getElementById("answerHeader");
-
-    const elStage = document.getElementById("stage");
-    const elCard = document.getElementById("card");
-    const elQuestionWrap = document.getElementById("questionWrap");
-    const elHintLine = document.getElementById("hintLine");
-    const elStartOverlay = document.getElementById("startOverlay");
-    const btnStart = document.getElementById("startBtn");
-
-    const elOptions = document.getElementById("options");
-
-    /* =========================
-       Utility
-    ========================== */
-    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
-    function nowMs(){ return performance && performance.now ? performance.now() : Date.now(); }
-
-    function shuffle(arr){
-      for(let i = arr.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
-    function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
-
-    function setHint(text, show){
-      elHintLine.textContent = text || "";
-      if(show) elHintLine.classList.add("show");
-      else elHintLine.classList.remove("show");
-    }
-
-    function setHeadersForRound(type){
-      elPlayHeader.textContent = "Kijken";
-      if(type === "look"){
-        elAnswerHeader.textContent = "Even wachten";
-      }else if(type === "marbotic"){
-        elAnswerHeader.textContent = "Leg het cijfer";
-      }else{
-        elAnswerHeader.textContent = "Tik het plaatje";
-      }
-    }
-
-    function updateMicroStatus(){
-      // student view has no debug status
-      if(elMicroStatus) elMicroStatus.textContent = "";
-    }
-
-    function applyStudentCoach(round){
-      const answerPanel = document.getElementById("answerPanel");
-      if(answerPanel){
-        answerPanel.classList.toggle("isInteractive", round.type === "think" || round.type === "choose" || round.type === "marbotic");
-        answerPanel.classList.toggle("isWaiting", round.type === "look");
-      }
-
-      if(coachRoundsLeft <= 0) return;
-
-      if(round.type === "look"){
-        setHint("Kijk goed, nog niet tikken.", true);
-      }else if(round.type === "marbotic"){
-        setHint("Leg een cijfer op het vak.", true);
-      }else{
-        setHint("Tik het plaatje met evenveel.", true);
-      }
-      coachRoundsLeft -= 1;
-
-      setTimeout(() => {
-        if(coachRoundsLeft <= 0) setHint("", false);
-      }, 1400);
-    }
-
-    function moveChickToPos(pos){
-      const pct = (pos <= 1) ? 0 : (pos >= 9) ? 100 : ((pos - 1) / 8) * 100;
-      elChickAnchor.style.left = pct + "%";
-    }
-
-    function chickShowStill(){
-      elChickStill.style.display = "";
-      elChickUp.style.display = "none";
-      elChickDown.style.display = "none";
-    }
-
-    async function playChickVideo(which){
-      // which: "up" | "down"
-      lockInput = true;
-      elChickStill.style.display = "none";
-      const vid = which === "up" ? elChickUp : elChickDown;
-      const other = which === "up" ? elChickDown : elChickUp;
-      other.pause();
-      other.currentTime = 0;
-      other.style.display = "none";
-      vid.style.display = "";
-      vid.currentTime = 0;
-
-      try{
-        await vid.play();
-      }catch(e){
-        // If autoplay blocked, just fall back to still
-        vid.pause();
-        vid.style.display = "none";
-        chickShowStill();
-        lockInput = false;
-        return;
-      }
-
-      await new Promise(resolve => {
-        const onEnd = () => {
-          vid.removeEventListener("ended", onEnd);
-          resolve();
-        };
-        vid.addEventListener("ended", onEnd);
-        // safety timeout
-        setTimeout(resolve, 1400);
-      });
-
-      vid.pause();
-      vid.style.display = "none";
-      chickShowStill();
-      lockInput = false;
-    }
-
-    function shouldChickStandStillForRound(round){
-      if(!round) return true;
-      if(round.type === "look") return true;
-      if(round.neededHelp) return true;
-      if(state.helpDebt > 0) return true;
-      return false;
-    }
-
-    /* =========================
-       Teacher mode
-    ========================== */
-    let teacherIdleTimer = null;
-
-    function resetTeacherIdle(){
-      if(teacherIdleTimer) clearTimeout(teacherIdleTimer);
-      teacherIdleTimer = setTimeout(closeTeacherMode, 25000);
-    }
-
-    function openTeacherMode(){
-      elTeacherOverlay.style.display = "flex";
-      elTeacherOverlay.setAttribute("aria-hidden","false");
-      refreshTeacherStatus();
-      resetTeacherIdle();
-    }
-    function closeTeacherMode(){
-      elTeacherOverlay.style.display = "none";
-      elTeacherOverlay.setAttribute("aria-hidden","true");
-      if(teacherIdleTimer) clearTimeout(teacherIdleTimer);
-      teacherIdleTimer = null;
-    }
-
-    btnCloseTeacher.addEventListener("click", closeTeacherMode);
-
-    elTeacherOverlay.addEventListener("pointerdown", resetTeacherIdle, {passive:true});
-    elTeacherOverlay.addEventListener("pointermove", resetTeacherIdle, {passive:true});
-    elTeacherOverlay.addEventListener("pointerup", resetTeacherIdle, {passive:true});
-
-    btnReset.addEventListener("click", () => {
-      Object.assign(state, {
-        sessionId: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2),
-        startedAt: new Date().toISOString(),
-        endedAt: null,
-        pos: 1,
-        stability: 0,
-        helpDebt: 0,
-        forcedHelpRounds: 0,
-        startLookRoundsRemaining: 2,
-        lastRoundType: null,
-        lastRoundWasWrong: false,
-        lastRTms: null,
-        numStability: Array.from({length: 10}, () => 0),
-        rounds: [],
-        observations: []
-      });
-      moveChickToPos(state.pos);
-      closeTeacherMode();
-      if(gameStarted){ startNextRound(); }
-      else { showStartOverlay(); }
-    });
-
-    btnToPos9.addEventListener("click", async () => {
-      state.pos = 9;
-      state.stability = 60;
-      state.helpDebt = 0;
-      state.forcedHelpRounds = 0;
-      state.startLookRoundsRemaining = 0;
-      moveChickToPos(state.pos);
-      closeTeacherMode();
-      if(gameStarted){ startNextRound(); }
-      else { showStartOverlay(); }
-    });
-
-    btnExport.addEventListener("click", () => {
-      state.endedAt = new Date().toISOString();
-      state.observations = buildObservations();
-
-      const payload = {
-        sessionId: state.sessionId,
-        startedAt: state.startedAt,
-        endedAt: state.endedAt,
-        start: { pos: 1 },
-        end: { pos: state.pos },
-        rounds: state.rounds,
-        observations: state.observations
-      };
-
-      const text = JSON.stringify(payload, null, 2);
-      const blob = new Blob([text], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-
-      const stamp = new Date();
-      const y = stamp.getFullYear();
-      const m = String(stamp.getMonth() + 1).padStart(2, "0");
-      const d = String(stamp.getDate()).padStart(2, "0");
-      const hh = String(stamp.getHours()).padStart(2, "0");
-      const mm = String(stamp.getMinutes()).padStart(2, "0");
-      const ss = String(stamp.getSeconds()).padStart(2, "0");
-      const filename = `slimkijken_session_${y}${m}${d}_${hh}${mm}${ss}.json`;
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      URL.revokeObjectURL(url);
-      resetTeacherIdle();
-    });
-
-    function refreshTeacherStatus(){
-      const unlocked = [];
-      for(let n=1; n<=6; n++){
-        if(isVariantUnlocked(n)) unlocked.push(String(n));
-      }
-      const txt =
-`pos: ${state.pos}
-stability: ${state.stability}
-helpDebt: ${state.helpDebt}
-forcedHelpRounds: ${state.forcedHelpRounds}
-startLookRoundsRemaining: ${state.startLookRoundsRemaining}
-lastRound: ${state.lastRoundType || "-"}
-lastRTms: ${state.lastRTms == null ? "-" : Math.round(state.lastRTms)}
-unlocked variants: ${unlocked.length ? unlocked.join(", ") : "(nog niet)"}`;
-      elTeacherStatus.textContent = txt;
-    }
-
-    function buildObservations(){
-      const rounds = state.rounds.filter(r => r.type !== "look");
-      const rts = rounds.filter(r => typeof r.rtMs === "number").map(r => r.rtMs);
-      const avg = rts.length ? Math.round(rts.reduce((a,b)=>a+b,0)/rts.length) : null;
-
-      const helped = state.rounds.filter(r => r.neededHelp).length;
-      const wrongs = state.rounds.filter(r => r.type !== "look" && r.correct === false).length;
-
-      const lines = [];
-      if(avg != null){
-        if(avg < 1200) lines.push("Reageert vaak vlot, keuzes komen meestal snel.");
-        else if(avg < 2000) lines.push("Neemt even de tijd om te kijken, maar kiest meestal zelfstandig.");
-        else lines.push("Kijkt lang en zorgvuldig, extra rust helpt.");
-      }else{
-        lines.push("Speelde vooral kijkrondes, rustig kennismaken met patronen.");
-      }
-
-      if(helped === 0) lines.push("Had weinig extra hulp nodig in deze sessie.");
-      else lines.push("Had af en toe extra hulp nodig, het spel schakelde naar rustiger rondes.");
-
-      if(wrongs === 0 && rounds.length > 3) lines.push("Koppelt hoeveelheden meestal direct aan het juiste antwoord.");
-      else if(wrongs > 0) lines.push("Bij twijfel helpt het om eerst het grootste groepje te benoemen.");
-
-      if(state.pos >= 9) lines.push("Bereikte de Marbotic fase en oefende met symbool en hoeveelheid.");
-      else lines.push("Werkte aan direct zien en handig samenstellen tot en met 9.");
-
-      return lines.slice(0, 5);
-    }
-
-    /* Long press on title */
-    (function installLongPress(){
-      let timer = null;
-      let startX = 0;
-      let startY = 0;
-      let activeId = null;
-
-      function clear(){
-        if(timer) clearTimeout(timer);
-        timer = null;
-        activeId = null;
-      }
-
-      elTitle.addEventListener("pointerdown", (e) => {
-        if(elTeacherOverlay.style.display === "flex") return;
-        activeId = e.pointerId;
-        startX = e.clientX;
-        startY = e.clientY;
-        timer = setTimeout(() => openTeacherMode(), HOLD_MS);
-      });
-
-      elTitle.addEventListener("pointermove", (e) => {
-        if(activeId !== e.pointerId || !timer) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        if(Math.hypot(dx, dy) > MAX_MOVE_PX) clear();
-      });
-
-      elTitle.addEventListener("pointerup", clear);
-      elTitle.addEventListener("pointercancel", clear);
-    })();
-
-    /* =========================
-       Asset helpers
-    ========================== */
-    function diceSrc(filename){
-      return ASSETS.diceBase + filename;
-    }
-
-    function isVariantUnlocked(n){
-      if(n < 2 || n > 6) return false;
-      return state.numStability[n] >= 60;
-    }
-
-    function chooseAssetForNumber(n, role, allowVariant){
-      // role: "question" | "correct" | "distractor" | "buildEnd"
-      // Hard rules:
-      // - correct answer always canonical
-      // - max one variant per answer set (enforced outside)
-      // - 5 never as flash question
-      // - 7..9 never as single dice
-      const pack = DICE[n];
-      if(!pack) return null;
-
-      if(role === "correct"){
-        return pick(pack.canonical);
-      }
-
-      if(role === "buildEnd"){
-        // For 5 end image, use 5a by default
-        return pack.canonical[0] || pack.variants[0] || null;
-      }
-
-      if(allowVariant && role === "distractor" && pack.variants.length && isVariantUnlocked(n)){
-        return pick(pack.variants);
-      }
-
-      // default canonical
-      return pick(pack.canonical) || (pack.variants.length ? pack.variants[0] : null);
-    }
-
-    /* =========================
-       Round generation
-    ========================== */
-    function marboticEligible(){
-      return state.pos === 9 && state.stability >= 60 && state.helpDebt === 0;
-    }
-
-    function startPhaseLookRequired(){
-      return state.startLookRoundsRemaining > 0;
-    }
-
-    function forcedLookAfterWrongChoose(){
-      return state.lastRoundType === "choose" && state.lastRoundWasWrong === true;
-    }
-
-    function forcedHelpRoundRequired(){
-      return state.forcedHelpRounds > 0;
-    }
-
-    function roundTypeByStability(){
-      // Stability bands
-      const s = state.stability;
-
-      function weightedPick(list){
-        // list: [{t:"look", w:60}, ...]
-        const total = list.reduce((a,b)=>a+b.w,0);
-        let r = Math.random() * total;
-        for(const it of list){
-          r -= it.w;
-          if(r <= 0) return it.t;
-        }
-        return list[list.length - 1].t;
-      }
-
-      if(s <= 35){
-        return weightedPick([{t:"look", w:60},{t:"think", w:40}]);
-      }
-      if(s <= 70){
-        return weightedPick([{t:"look", w:25},{t:"think", w:45},{t:"choose", w:30}]);
-      }
-      return weightedPick([{t:"look", w:15},{t:"think", w:30},{t:"choose", w:55}]);
-    }
-
-    function generateRound(){
-      // Priority 1: Marbotic
-      if(marboticEligible()){
-        return makeMarboticRound(false);
-      }
-
-      // Priority 2: start phase
-      if(startPhaseLookRequired()){
-        state.startLookRoundsRemaining -= 1;
-        return makeLookRound({maxTotal: 4, canonicalOnly: true});
-      }
-
-      // Priority 3: recovery after wrong choose
-      if(forcedLookAfterWrongChoose()){
-        return makeLookRound({maxTotal: clamp(state.pos + 2, 4, 6), canonicalOnly: true});
-      }
-
-      // Priority 4: forced help after moving back
-      if(forcedHelpRoundRequired()){
-        state.forcedHelpRounds -= 1;
-        // pos 1-2: prefer look to keep it calm
-        if(state.pos <= 2) return makeLookRound({maxTotal: 4, canonicalOnly: true, neededHelp: true});
-        return makeThinkRound({neededHelp: true});
-      }
-
-      // Normal selection
-      const t = roundTypeByStability();
-      if(t === "look") return makeLookRound({maxTotal: maxTotalForPos(state.pos), canonicalOnly: state.pos <= 2});
-      if(t === "think") return makeThinkRound({neededHelp: false});
-      return makeChooseRound({neededHelp: false});
-    }
-
-    function maxTotalForPos(pos){
-      if(pos <= 1) return 3;
-      if(pos <= 2) return 4;
-      if(pos <= 3) return 4;
-      if(pos <= 4) return 5;
-      if(pos <= 5) return 6;
-      if(pos <= 6) return 7;
-      return 9;
-    }
-
-    function allowedTotalsForPos(pos){
-      const m = maxTotalForPos(pos);
-      const list = [];
-      for(let n=1; n<=m; n++) list.push(n);
-      return list;
-    }
-
-    function makeQuestionSpecForPos(pos, opts){
-      // Returns {kind:"single"|"sum", groups:[a] or [a,b], total, buildUp?:{flashGroup, flashMs, endMs}}
-      // opts: {maxTotal, canonicalOnly, mustBuildTo5}
-      const maxTotal = opts.maxTotal ?? maxTotalForPos(pos);
-
-      // POS 4 and sometimes: build to 5 (4 -> 5)
-      const shouldBuildTo5 = (pos === 4 && Math.random() < 0.55) || opts.mustBuildTo5 === true;
-
-      if(shouldBuildTo5 && maxTotal >= 5){
-        // Build: flash 4, end 5
-        return {
-          kind: "single",
-          groups: [5],
-          total: 5,
-          buildUp: { flashGroup: 4, flashMs: 650, endMs: 900 }
-        };
-      }
-
-      // POS 5 and later: compositions
-      const allowSums = pos >= 5 && maxTotal >= 6;
-
-      if(allowSums && Math.random() < 0.65){
-        // choose a target total in range 6..maxTotal
-        const tMin = Math.min(6, maxTotal);
-        const total = randInt(tMin, maxTotal);
-
-        const pairs = sumPairsForPos(pos, total);
-        const pair = pick(pairs);
-
-        // POS 8: biggest first
-        let a = pair[0], b = pair[1];
-        if(pos >= 8){
-          if(b > a) [a,b] = [b,a];
-        }else{
-          // often biggest first from POS 7, mild push
-          if(pos >= 7 && Math.random() < 0.7 && b > a) [a,b] = [b,a];
-        }
-
-        return {
-          kind: "sum",
-          groups: [a,b],
-          total
-        };
-      }
-
-      // Single totals 1..maxTotal but never flash 5, handled above
-      let total = randInt(1, maxTotal);
-      if(total === 5 && pos <= 4){
-        total = 4; // keep early phase steady
-      }
-      return {
-        kind: "single",
-        groups: [total],
-        total
-      };
-    }
-
-    function sumPairsForPos(pos, total){
-      // ensure groups are within 1..6, no 7..9 single dice
-      const pairs = [];
-      for(let a=1; a<=6; a++){
-        for(let b=1; b<=6; b++){
-          if(a + b === total){
-            // POS 5 guide: 3+3,4+2 frequently
-            pairs.push([a,b]);
-          }
-        }
-      }
-      // filter based on anchor guidance
-      if(pos === 5){
-        const preferred = pairs.filter(p => (p[0]===3 && p[1]===3) || (p[0]===4 && p[1]===2) || (p[0]===2 && p[1]===4));
-        if(preferred.length) return preferred;
-      }
-      if(pos === 6){
-        const anchored = pairs.filter(p => p[0]===4 || p[1]===4);
-        if(anchored.length) return anchored;
-      }
-      if(pos === 7){
-        const anchored = pairs.filter(p => p[0]===5 || p[1]===5 || p[0]===6 || p[1]===6);
-        if(anchored.length) return anchored;
-      }
-      // else
-      return pairs.length ? pairs : [[Math.min(6,total-1), Math.max(1,total - Math.min(6,total-1))]];
-    }
-
-    function randInt(a,b){
-      return Math.floor(Math.random() * (b - a + 1)) + a;
-    }
-
-    function makeLookRound(opts){
-      const maxTotal = opts.maxTotal ?? maxTotalForPos(state.pos);
-      const canonicalOnly = !!opts.canonicalOnly;
-      const neededHelp = !!opts.neededHelp;
-
-      const q = makeQuestionSpecForPos(state.pos, {maxTotal});
-      // hard rule: 5 never as flash, only build
-      if(q.kind === "single" && q.total === 5 && !q.buildUp){
-        // convert to build up
-        q.buildUp = {flashGroup: 4, flashMs: 650, endMs: 900};
-      }
-
-      return {
-        type: "look",
-        neededHelp,
-        question: q,
-        canonicalOnly,
-        showMs: 900
-      };
-    }
-
-    function makeThinkRound(opts){
-      const neededHelp = !!opts.neededHelp;
-      const maxTotal = maxTotalForPos(state.pos);
-      const q = makeQuestionSpecForPos(state.pos, {maxTotal});
-
-      const correct = q.total;
-      const distractor = chooseNearbyNumber(correct, maxTotal);
-
-      const options = buildAnswerOptions([correct, distractor], {correct, canonicalOnly: false});
-      return {
-        type: "think",
-        neededHelp,
-        question: q,
-        options,
-        correct
-      };
-    }
-
-    function chooseNearbyNumber(correct, maxTotal){
-      const candidates = [];
-      for(let n=1; n<=maxTotal; n++){
-        if(n !== correct) candidates.push(n);
-      }
-      // prefer close distractor
-      candidates.sort((a,b)=> (Math.abs(a-correct) - Math.abs(b-correct)));
-      const top = candidates.slice(0, Math.min(4, candidates.length));
-      return pick(top);
-    }
-
-    function makeChooseRound(opts){
-      const neededHelp = !!opts.neededHelp;
-      const maxTotal = maxTotalForPos(state.pos);
-      const q = makeQuestionSpecForPos(state.pos, {maxTotal});
-
-      const correct = q.total;
-      const pool = [];
-      for(let n=1; n<=maxTotal; n++) if(n !== correct) pool.push(n);
-
-      const numOptions = (state.pos <= 2) ? 2 : 3;
-      shuffle(pool);
-      const distractors = pool.slice(0, numOptions - 1);
-
-      const options = buildAnswerOptions([correct, ...distractors], {correct, canonicalOnly: false});
-      return {
-        type: "choose",
-        neededHelp,
-        question: q,
-        options,
-        correct
-      };
-    }
-
-    function buildAnswerOptions(numbers, {correct, canonicalOnly}){
-      // correct always canonical
-      // max one variant asset per set, only on a distractor, only if unlocked
-      const allowVariant = !canonicalOnly;
-      let variantUsed = false;
-
-      const opts = numbers.map(n => {
-        let role = (n === correct) ? "correct" : "distractor";
-        let allow = false;
-
-        if(role === "distractor" && allowVariant && !variantUsed){
-          // only one distractor can be variant
-          allow = true;
-        }
-
-        const filename = chooseAssetForNumber(n, role, allow);
-        if(role === "distractor" && allow && filename && DICE[n] && DICE[n].variants.includes(filename)){
-          variantUsed = true;
-        }
-
-        return { n, filename };
-      });
-
-      // if a distractor got a variant, ensure no other distractor uses variant
-      // handled by variantUsed flag
-
-      return shuffle(opts);
-    }
-
-    function makeMarboticRound(isHelpRepeat){
-      const target = randInt(1, 9);
-      // Never show single dice for 7..9, use sum visuals as quantity prompt for flash and confirm
-      // For prompt, we show quantity as groups
-      let qSpec = null;
-      if(target <= 6){
-        qSpec = { kind: "single", groups: [target], total: target };
-      }else{
-        // choose a pair
-        const pairs = sumPairsForPos(8, target);
-        const pair = pick(pairs);
-        let a = pair[0], b = pair[1];
-        if(b > a) [a,b] = [b,a];
-        qSpec = { kind: "sum", groups: [a,b], total: target };
-      }
-
-      return {
-        type: "marbotic",
-        neededHelp: !!isHelpRepeat,
-        question: qSpec,
-        attempts: 0,
-        maxAttempts: 3,
-        promptMs: isHelpRepeat ? 1400 : 700,
-        targetDigit: target,
-        recognizedDigit: null
-      };
-    }
-
-    /* =========================
-       Rendering
-    ========================== */
-    function clearOptions(){
-      elOptions.innerHTML = "";
-    }
-
-    function setOptionsDisabled(disabled){
-      [...elOptions.querySelectorAll("button")].forEach(b => b.disabled = disabled);
-    }
-
-    function renderDiceInto(container, n, role, allowVariant){
-      const filename = chooseAssetForNumber(n, role, allowVariant);
-      if(!filename){
-        container.textContent = "";
-        return;
-      }
-      const img = document.createElement("img");
-      img.alt = "";
-      img.src = diceSrc(filename);
-      container.appendChild(img);
-    }
-
-    function renderQuestion(spec, opts){
-      elQuestionWrap.innerHTML = "";
-      setHint("", false);
-
-      const isMarboticScan = opts && opts.scanSurface;
-
-      if(isMarboticScan){
-        // Build scan surface
-        const surface = document.createElement("div");
-        surface.className = "scanSurface fadeIn";
-        surface.id = "scanSurface";
-
-        const canvas = document.createElement("canvas");
-        canvas.className = "dotsCanvas";
-        canvas.id = "dotsCanvas";
-        surface.appendChild(canvas);
-
-        const hint = document.createElement("div");
-        hint.className = "scanHint";
-        hint.id = "scanHint";
-        hint.textContent = "Leg een cijfer op het vlak.";
-        surface.appendChild(hint);
-
-        elQuestionWrap.appendChild(surface);
-        return;
-      }
-
-      const row = document.createElement("div");
-      row.className = "groupRow fadeIn";
-
-      if(spec.kind === "single"){
-        const g = document.createElement("div");
-        g.className = "group";
-        const role = (opts && opts.role) ? opts.role : "question";
-        const allowVariant = (opts && opts.allowVariant) ? true : false;
-        renderDiceInto(g, spec.groups[0], role, allowVariant);
-        row.appendChild(g);
-      }else{
-        const [a,b] = spec.groups;
-        const g1 = document.createElement("div");
-        const g2 = document.createElement("div");
-        g1.className = "group";
-        g2.className = "group";
-        // in sums, question groups are always canonical to reduce confusion
-        renderDiceInto(g1, a, "question", false);
-        renderDiceInto(g2, b, "question", false);
-        row.appendChild(g1);
-        row.appendChild(g2);
-      }
-
-      elQuestionWrap.appendChild(row);
-    }
-
-    function renderOptions(optionList, correct){
-      clearOptions();
-
-      const cols = optionList.length === 2 ? 2 : 3;
-      elOptions.style.gridTemplateColumns = "repeat(" + cols + ", 1fr)";
-
-      optionList.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.className = "optBtn fadeIn";
-        btn.type = "button";
-
-        const inner = document.createElement("div");
-        inner.className = "mini";
-        btn.appendChild(inner);
-
-        const img = document.createElement("img");
-        img.alt = "";
-        img.src = diceSrc(opt.filename);
-        inner.appendChild(img);
-
-        btn.addEventListener("click", () => {
-          if(lockInput) return;
-          handleAnswer(opt.n);
-        });
-
-        elOptions.appendChild(btn);
-      });
-
-      // RT starts when options are ready
-      rtStart = nowMs();
-    }
-
-    async function renderLookRound(round){
-      setHeadersForRound("look");
-      clearOptions();
-      setOptionsDisabled(true);
-
-      // ballerina still in look rounds
-      chickShowStill();
-
-      // Build up rule for 5: flash then end
-      if(round.question.buildUp){
-        const flashN = round.question.buildUp.flashGroup;
-        const endN = round.question.total;
-
-        // flash
-        renderQuestion({kind:"single", groups:[flashN], total:flashN}, {role:"question", allowVariant:false});
-        await sleep(round.question.buildUp.flashMs);
-
-        // end
-        renderQuestion({kind:"single", groups:[endN], total:endN}, {role:"question", allowVariant:false});
-        await sleep(round.question.buildUp.endMs);
-      }else{
-        renderQuestion(round.question, {role:"question", allowVariant:false});
-        await sleep(round.showMs);
-      }
-
-      // Auto advance, no RT
-      finishRound({correct: true, rtMs: null, selected: null});
-    }
-
-    async function renderThinkOrChoose(round){
-      setHeadersForRound(round.type);
-      applyStudentCoach(round);
-      renderQuestion(round.question, {role:"question", allowVariant:false});
-      renderOptions(round.options, round.correct);
-
-      // ballerina stand still if neededHelp or helpDebt > 0
-      if(shouldChickStandStillForRound(round)) chickShowStill();
-    }
-
-    async function renderMarbotic(round){
-      setHeadersForRound("marbotic");
-      clearOptions();
-
-      // Step 1: show quantity prompt for promptMs
-      renderQuestion(round.question, {role:"question", allowVariant:false});
-      setHint("", false);
-      chickShowStill();
-
-      await sleep(round.promptMs);
-
-      // Step 2: show scan surface
-      renderQuestion(round.question, {scanSurface:true});
-      setHint("", false);
-
-      const surface = document.getElementById("scanSurface");
-      const hint = document.getElementById("scanHint");
-      const canvas = document.getElementById("dotsCanvas");
-      const ctx = canvas.getContext("2d");
-
-      function resizeCanvas(){
-        const rect = surface.getBoundingClientRect();
-        canvas.width = Math.round(rect.width * devicePixelRatio);
-        canvas.height = Math.round(rect.height * devicePixelRatio);
-        canvas.style.width = rect.width + "px";
-        canvas.style.height = rect.height + "px";
-      }
-      resizeCanvas();
-      window.addEventListener("resize", resizeCanvas);
-
-      // RT starts when scan becomes active
-      rtStart = nowMs();
-
-      const scanSession = createScanSession({surface, hint, canvas, ctx});
-      scanSession.onDigit = async (digit) => {
-        if(lockInput) return;
-        if(activeRound !== round) return;
-
-        if(digit == null) return; // unknown, ignore
-        round.recognizedDigit = digit;
-
-        if(digit === round.targetDigit){
-          // confirmation: show quantity again briefly
-          setHint("", false);
-          scanSession.disable();
-          await showConfirmQuantity(round.question);
-          finishRound({correct: true, rtMs: computeRT(), selected: digit});
-        }else{
-          // neutral retry
-          round.attempts += 1;
-          scanSession.resetLatch();
-
-          if(round.attempts >= round.maxAttempts){
-            // help repeat
-            scanSession.disable();
-            window.removeEventListener("resize", resizeCanvas);
-            activeRound = null;
-
-            // log this as wrong outcome for current round
-            finishRound({correct: false, rtMs: computeRT(), selected: digit, preventNextStart:true});
-
-            // start the same marbotic round in help mode
-            setTimeout(() => {
-              startSpecificRound(makeMarboticRound(true));
-            }, 260);
-          }else{
-            hint.textContent = "Even opnieuw, rustig kijken.";
-          }
-        }
-      };
-
-      scanSession.enable();
-
-      // store cleanup on round end
-      round._cleanup = () => {
-        scanSession.disable();
-        window.removeEventListener("resize", resizeCanvas);
-      };
-    }
-
-    async function showConfirmQuantity(qSpec){
-      // brief confirmation, 700 ms
-      renderQuestion(qSpec, {role:"question", allowVariant:false});
-      await sleep(700);
-    }
-
-    function computeRT(){
-      if(rtStart == null) return null;
-      const v = nowMs() - rtStart;
-      state.lastRTms = v;
-      return v;
-    }
-
-    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
-
-    /* =========================
-       Scan recognition (Marbotic)
-       Based on doc approach: 3 points, feature vector, nearest neighbor, thresholds
-    ========================== */
-    let calibration = {
-      expectedTouchPoints: 3,
-      samplesByDigit: {} // digit -> [{points:[{x,y}...], features:[...]}]
-    };
-    let thresholds = { base: 0.20, unknown: 0.28 }; // will be recomputed if calibration has data
-
-    async function loadCalibration(){
-      try{
-        const res = await fetch(ASSETS.calibration, { cache: "no-store" });
-        if(!res.ok) throw new Error("calibration fetch failed");
-        const data = await res.json();
-        if(data && typeof data.expectedTouchPoints === "number"){
-          calibration.expectedTouchPoints = data.expectedTouchPoints;
-        }
-        if(data && data.samplesByDigit){
-          calibration.samplesByDigit = data.samplesByDigit;
-        }
-      }catch(e){
-        // keep defaults
-      }
-      preprocessCalibration();
-      buildScanSimButtonsIfNeeded();
-    }
-
-    function preprocessCalibration(){
-      // ensure features exist
-      for(const k of Object.keys(calibration.samplesByDigit || {})){
-        const arr = calibration.samplesByDigit[k] || [];
-        for(const s of arr){
-          if(!s.points || !Array.isArray(s.points) || s.points.length < 3) continue;
-          if(!s.features) s.features = buildFeatureVector(s.points);
-        }
-      }
-      recomputeThresholds();
-    }
-
-    function distance(a, b){
-      let sum = 0;
-      const n = Math.min(a.length, b.length);
-      for(let i=0; i<n; i++){
-        const d = a[i] - b[i];
-        sum += d * d;
-      }
-      return Math.sqrt(sum);
-    }
-
-    function recomputeThresholds(){
-      // Compute average intra digit distances to set base threshold
-      const all = [];
-      const allSamples = [];
-      for(const digit of Object.keys(calibration.samplesByDigit || {})){
-        const arr = calibration.samplesByDigit[digit] || [];
-        for(const s of arr){
-          if(s.features) allSamples.push({digit: Number(digit), features: s.features});
-        }
-      }
-      if(allSamples.length < 6){
-        thresholds.base = 0.22;
-        thresholds.unknown = 0.30;
-        return;
-      }
-
-      const dists = [];
-      for(let i=0; i<allSamples.length; i++){
-        for(let j=i+1; j<allSamples.length; j++){
-          const di = allSamples[i].digit, dj = allSamples[j].digit;
-          const dist = distance(allSamples[i].features, allSamples[j].features);
-          if(di === dj) dists.push(dist);
-        }
-      }
-      if(dists.length < 4){
-        thresholds.base = 0.22;
-        thresholds.unknown = 0.30;
-        return;
-      }
-      dists.sort((a,b)=>a-b);
-      const median = dists[Math.floor(dists.length * 0.5)];
-      thresholds.base = clamp(median * 1.85, 0.14, 0.36);
-      thresholds.unknown = clamp(thresholds.base * 1.22, 0.18, 0.46);
-    }
-
-    function normalizePoints(points){
-      // points: [{x,y}...] in surface normalized 0..1
-      // sort points by x then y
-      const pts = points.slice().sort((p,q) => (p.x - q.x) || (p.y - q.y));
-      return pts;
-    }
-
-    function triangleSide(a,b){
-      const dx = a.x - b.x;
-      const dy = a.y - b.y;
-      return Math.hypot(dx, dy);
-    }
-
-    function buildFeatureVector(points){
-      // Expect 3 points
-      const pts = normalizePoints(points);
-      if(pts.length < 3) return [1,1,1, 0,0, 0,0,0, 1];
-
-      const p0 = pts[0], p1 = pts[1], p2 = pts[2];
-
-      // Sides
-      const s01 = triangleSide(p0,p1);
-      const s12 = triangleSide(p1,p2);
-      const s02 = triangleSide(p0,p2);
-
-      const sides = [s01, s12, s02].sort((a,b)=>a-b);
-      const maxSide = Math.max(sides[2], 1e-6);
-      const minSide = Math.max(sides[0], 1e-6);
-
-      const ratio1 = sides[0]/maxSide;
-      const ratio2 = sides[1]/maxSide;
-      const ratio3 = sides[2]/maxSide; // always 1
-
-      // orientation: signed area
-      const area2 = (p1.x-p0.x)*(p2.y-p0.y) - (p1.y-p0.y)*(p2.x-p0.x);
-      const orientation = Math.tanh(area2 * 4.5); // keep bounded
-
-      // angle cos at middle point p1
-      const v1x = p0.x - p1.x, v1y = p0.y - p1.y;
-      const v2x = p2.x - p1.x, v2y = p2.y - p1.y;
-      const dot = v1x*v2x + v1y*v2y;
-      const mag = Math.max(1e-6, Math.hypot(v1x,v1y) * Math.hypot(v2x,v2y));
-      const cosAngle = clamp(dot / mag, -1, 1);
-
-      // yNorm and xPattern
-      const ys = [p0.y, p1.y, p2.y].slice().sort((a,b)=>a-b);
-      const xs = [p0.x, p1.x, p2.x].slice().sort((a,b)=>a-b);
-      const ySpread = ys[2] - ys[0];
-      const xSpread = xs[2] - xs[0];
-
-      const yNorm = ySpread; // already 0..1-ish
-      const xPattern = (xs[1] - xs[0]) / Math.max(1e-6, xSpread);
-
-      // aspect
-      const aspect = xSpread / Math.max(1e-6, ySpread);
-
-      // weights are implicit by feature selection and later threshold
-      return [
-        ratio1, ratio2, ratio3,
-        orientation, cosAngle,
-        yNorm, xPattern, xSpread, ySpread,
-        aspect
-      ];
-    }
-
-    function recognizeDigit(points){
-      // points: normalized {x,y} length expectedTouchPoints
-      if(points.length !== calibration.expectedTouchPoints) return null;
-
-      const features = buildFeatureVector(points);
-
-      let best = {digit: null, dist: Infinity};
-      for(const k of Object.keys(calibration.samplesByDigit || {})){
-        const digit = Number(k);
-        const arr = calibration.samplesByDigit[k] || [];
-        for(const s of arr){
-          if(!s.features) continue;
-          const dist = distance(features, s.features);
-          if(dist < best.dist){
-            best = {digit, dist};
-          }
-        }
-      }
-
-      if(best.digit == null) return null;
-      if(best.dist > thresholds.base) return null;
-      return best.digit;
-    }
-
-    function createScanSession({surface, hint, canvas, ctx}){
-      let enabled = false;
-      let hasResultForCurrentTouches = false;
-
-      function surfaceRect(){
-        return surface.getBoundingClientRect();
-      }
-
-      function clearCanvas(){
-        ctx.setTransform(1,0,0,1,0,0);
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-      }
-
-      function drawPoints(normPts){
-        clearCanvas();
-        const rect = surfaceRect();
-        ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-        const w = rect.width, h = rect.height;
-
-        for(const p of normPts){
-          const x = p.x * w;
-          const y = p.y * h;
-          ctx.beginPath();
-          ctx.arc(x, y, 10, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(17,24,39,0.12)";
-          ctx.fill();
-          ctx.strokeStyle = "rgba(17,24,39,0.20)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-      }
-
-      function pointsFromTouches(e){
-        const rect = surfaceRect();
-        const touches = (e.touches && e.touches.length) ? Array.from(e.touches) : [];
-        const pts = [];
-        for(const t of touches){
-          const x = t.clientX, y = t.clientY;
-          if(x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) continue;
-          pts.push({ x: (x - rect.left) / rect.width, y: (y - rect.top) / rect.height });
-        }
-        return pts;
-      }
-
-      function onTouchStart(e){
-        if(!enabled) return;
-        if(lockInput) return;
-        hasResultForCurrentTouches = false;
-        const pts = pointsFromTouches(e);
-        if(pts.length === 0){
-          hint.textContent = "Leg een cijfer op het vlak.";
-          clearCanvas();
-          return;
-        }
-        drawPoints(pts);
-        if(pts.length !== calibration.expectedTouchPoints){
-          hint.textContent = "Even stil houden.";
-          return;
-        }
-        hint.textContent = "We lezen de puntjes.";
-      }
-
-      function onTouchMove(e){
-        if(!enabled) return;
-        if(lockInput) return;
-        const pts = pointsFromTouches(e);
-        if(pts.length === 0){
-          clearCanvas();
-          hint.textContent = "Leg een cijfer op het vlak.";
-          hasResultForCurrentTouches = false;
-          return;
-        }
-        drawPoints(pts);
-        if(pts.length !== calibration.expectedTouchPoints){
-          hint.textContent = "Even stil houden.";
-          hasResultForCurrentTouches = false;
-          return;
-        }
-        hint.textContent = "We lezen de puntjes.";
-      }
-
-      function onTouchEnd(e){
-        if(!enabled) return;
-        if(lockInput) return;
-        if(hasResultForCurrentTouches) return;
-
-        const pts = pointsFromTouches(e);
-        // touchend has fewer touches, use changedTouches fallback
-        let usePts = pts;
-        if(usePts.length !== calibration.expectedTouchPoints && e.changedTouches && e.changedTouches.length){
-          // attempt: combine remaining touches plus changed ones if inside
-          const rect = surfaceRect();
-          const all = [];
-          const addTouch = (t) => {
-            const x=t.clientX, y=t.clientY;
-            if(x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
-            all.push({ x: (x - rect.left)/rect.width, y: (y - rect.top)/rect.height });
-          };
-          Array.from(e.touches || []).forEach(addTouch);
-          Array.from(e.changedTouches || []).forEach(addTouch);
-          usePts = all;
-        }
-
-        if(usePts.length !== calibration.expectedTouchPoints){
-          hint.textContent = "Even stil houden.";
-          hasResultForCurrentTouches = false;
-          return;
-        }
-
-        const digit = recognizeDigit(usePts);
-        hasResultForCurrentTouches = true;
-
-        if(digit == null){
-          hint.textContent = "Nog even proberen.";
-          api.onDigit(null);
-        }else{
-          hint.textContent = "Ik zie een " + digit + ".";
-          api.onDigit(digit);
-        }
-      }
-
-      function onTouchCancel(){
-        if(!enabled) return;
-        hasResultForCurrentTouches = false;
-        hint.textContent = "Leg een cijfer op het vlak.";
-        clearCanvas();
-      }
-
-      const api = {
-        onDigit: (digit) => {},
-        enable: () => {
-          if(enabled) return;
-          enabled = true;
-          hasResultForCurrentTouches = false;
-          surface.addEventListener("touchstart", onTouchStart, {passive:true});
-          surface.addEventListener("touchmove", onTouchMove, {passive:true});
-          surface.addEventListener("touchend", onTouchEnd, {passive:true});
-          surface.addEventListener("touchcancel", onTouchCancel, {passive:true});
-        },
-        disable: () => {
-          if(!enabled) return;
-          enabled = false;
-          surface.removeEventListener("touchstart", onTouchStart);
-          surface.removeEventListener("touchmove", onTouchMove);
-          surface.removeEventListener("touchend", onTouchEnd);
-          surface.removeEventListener("touchcancel", onTouchCancel);
-        },
-        resetLatch: () => { hasResultForCurrentTouches = false; },
-        clear: () => { clearCanvas(); }
-      };
-      return api;
-    }
-
-    function buildScanSimButtonsIfNeeded(){
-      // If no calibration data, show sim buttons in teacher mode
-      let sampleCount = 0;
-      for(const k of Object.keys(calibration.samplesByDigit || {})){
-        sampleCount += (calibration.samplesByDigit[k] || []).length;
-      }
-      if(sampleCount >= 6){
-        elScanSimRow.style.display = "none";
-        elScanSimRow.innerHTML = "";
-        return;
-      }
-
-      elScanSimRow.style.display = "flex";
-      elScanSimRow.style.gap = "8px";
-      elScanSimRow.style.flexWrap = "wrap";
-      elScanSimRow.innerHTML = "";
-
-      const label = document.createElement("div");
-      label.style.fontSize = "13px";
-      label.style.opacity = "0.75";
-      label.style.marginTop = "6px";
-      label.textContent = "Simuleer scan:";
-      elScanSimRow.appendChild(label);
-
-      for(let n=1; n<=9; n++){
-        const b = document.createElement("button");
-        b.className = "tbtn soft";
-        b.textContent = String(n);
-        b.addEventListener("click", () => {
-          // Only affects active marbotic round
-          if(activeRound && activeRound.type === "marbotic"){
-            activeRound.recognizedDigit = n;
-            // simulate callback by calling handler directly
-            if(n === activeRound.targetDigit){
-              finishRound({correct:true, rtMs: computeRT(), selected:n});
-            }else{
-              activeRound.attempts += 1;
-              if(activeRound.attempts >= activeRound.maxAttempts){
-                finishRound({correct:false, rtMs: computeRT(), selected:n, preventNextStart:true});
-                setTimeout(() => startSpecificRound(makeMarboticRound(true)), 260);
-              }else{
-                setHint("Even opnieuw, rustig kijken.", true);
-              }
-            }
-          }
-          refreshTeacherStatus();
-          resetTeacherIdle();
-        });
-        elScanSimRow.appendChild(b);
-      }
-    }
-
-    /* =========================
-       Core game flow
-    ========================== */
-    function computeNeededHelpForRound(round){
-      // Hard definition:
-      // neededHelp true iff:
-      // - forcedHelpRounds was active (already set in round)
-      // - marbotic help repeat round
-      // - optional calm repeat in think after two slow, not implemented as separate repeat, so only these
-      return !!round.neededHelp;
-    }
-
-    function updateNumStabilityFromRound(round, result){
-      // Only when quantity involved and correct and neededHelp false
-      if(!result || result.correct !== true) return;
-      if(round.neededHelp) return;
-
-      const rt = result.rtMs;
-      let delta = 12;
-      if(rt != null){
-        if(rt < RT_FAST) delta = 20;
-        else if(rt < RT_MID) delta = 12;
-        else delta = 6;
-      }
-
-      // quantities involved
-      const q = round.question;
-      const groups = (q && q.groups) ? q.groups : [];
-      const uniq = Array.from(new Set(groups.map(Number)));
-      for(const n of uniq){
-        if(n < 1 || n > 9) continue;
-        state.numStability[n] = clamp(state.numStability[n] + delta, 0, 100);
-      }
-    }
-
-    async function applyOutcomeAndMaybeMove(round, result){
-      // Update order:
-      // 1 RT already captured
-      // 2 neededHelp update
-      const neededHelp = computeNeededHelpForRound(round);
-
-      if(neededHelp){
-        state.helpDebt += 1;
-        state.stability -= 15;
-      }
-
-      // 3 correctness update
-      if(result.correct === false){
-        state.helpDebt += 1;
-        state.stability -= 10;
-      }else{
-        const rt = result.rtMs;
-        if(rt == null){
-          // look rounds do not move stability
-        }else if(rt < RT_FAST){
-          state.stability += 20;
-        }else if(rt < RT_MID){
-          state.stability += 12;
-        }else{
-          state.stability += 6;
-        }
-      }
-
-      // 4 clamp stability
-      state.stability = clamp(state.stability, 0, 120);
-
-      // Update per quantity stability for variants
-      updateNumStabilityFromRound(round, result);
-
-      // 5 POS transition checks
-      if(state.stability >= STAB_UP_THRESHOLD && state.helpDebt === 0){
-        if(state.pos < 9){
-          state.pos += 1;
-          moveChickToPos(state.pos);
-          await playChickVideo("up");
-          state.stability = 0;
-        }else{
-          state.stability = 0;
-        }
-      }else if(state.helpDebt >= HELP_BACK_THRESHOLD){
-        if(state.pos > 1){
-          state.pos -= 1;
-          moveChickToPos(state.pos);
-          await playChickVideo("down");
-        }
-        state.helpDebt = 0;
-        state.forcedHelpRounds = 2;
-      }
-
-      // 6 last flags
-      state.lastRoundType = round.type;
-      state.lastRoundWasWrong = (round.type !== "look" && result.correct === false);
-
-      updateMicroStatus();
-      refreshTeacherStatus();
-    }
-
-    function logRound(round, result){
-      const q = round.question || {};
-      const entry = {
-        type: round.type,
-        pos: state.pos,
-        neededHelp: !!round.neededHelp,
-        correct: result.correct,
-        rtMs: result.rtMs == null ? null : Math.round(result.rtMs),
-        quantities: Array.isArray(q.groups) ? q.groups.slice() : [],
-        total: q.total ?? null,
-        selected: result.selected ?? null
-      };
-      state.rounds.push(entry);
-      // keep log bounded for performance
-      if(state.rounds.length > 220) state.rounds.shift();
-    }
-
-    async function finishRound(result){
-      // When preventNextStart is true, we only apply updates and do not start next round automatically
-      const round = activeRound;
-      if(!round) return;
-      lockInput = true;
-
-      // cleanup if needed
-      if(round._cleanup){
-        try{ round._cleanup(); }catch(e){}
-        round._cleanup = null;
-      }
-
-      const rtMs = (result.rtMs === undefined) ? computeRT() : result.rtMs;
-      const finalResult = Object.assign({}, result, { rtMs });
-
-      logRound(round, finalResult);
-      await applyOutcomeAndMaybeMove(round, finalResult);
-
-      activeRound = null;
-      rtStart = null;
-      lockInput = false;
-
-      if(finalResult.preventNextStart) return;
-
-      // After wrong choose, next will be forced look by generator
-      startNextRound();
-    }
-
-    function handleAnswer(n){
-      if(!activeRound) return;
-      if(activeRound.type !== "think" && activeRound.type !== "choose") return;
-
-      const rt = computeRT();
-      const correct = (n === activeRound.correct);
-
-      // No explicit wrong feedback, but we can show a gentle neutral hint very briefly
-      if(correct){
-        setHint("", false);
-      }else{
-        setHint("Kijk nog eens.", true);
-        setTimeout(() => setHint("", false), 650);
-      }
-
-      // disable buttons right away
-      setOptionsDisabled(true);
-
-      finishRound({correct, rtMs: rt, selected: n});
-    }
-
-    function startSpecificRound(round){
-      if(lockInput) return;
-      activeRound = round;
-      updateMicroStatus();
-      setHeadersForRound(round.type);
-
-      // ballerina still in look and in help or helpDebt > 0
-      if(shouldChickStandStillForRound(round)) chickShowStill();
-
-      // Render based on round type
-      if(round.type === "look"){
-        renderLookRound(round);
-      }else if(round.type === "think" || round.type === "choose"){
-        renderThinkOrChoose(round);
-      }else{
-        renderMarbotic(round);
-      }
-
-      refreshTeacherStatus();
-    }
-
-    function startNextRound(){
-      if(lockInput) return;
-      if(!gameStarted) return;
-
-      // Hard rule: direct Marbotic when eligible, no extra phase
-      const round = generateRound();
-      startSpecificRound(round);
-    }
-
-    /* =========================
-       Startup
-    ========================== */
-    function unlockMedia(){
-      // Videos are muted and playsinline, still iOS can be picky, we attempt to play/pause quickly on user gesture
-      try{
-        elChickUp.muted = true;
-        elChickDown.muted = true;
-        // attempt play pause
-        elChickUp.play().then(()=>{ elChickUp.pause(); elChickUp.currentTime = 0; }).catch(()=>{});
-        elChickDown.play().then(()=>{ elChickDown.pause(); elChickDown.currentTime = 0; }).catch(()=>{});
-      }catch(e){}
-      window.removeEventListener("pointerdown", unlockMedia);
-    }
-    window.addEventListener("pointerdown", unlockMedia, {once:true});
-
-    moveChickToPos(state.pos);
-    setTimelineScale();
-    window.addEventListener("resize", setTimelineScale);
-    updateMicroStatus();
-
-    function showStartOverlay(){
-      elStartOverlay.style.display = "flex";
-    }
-    function hideStartOverlay(){
-      elStartOverlay.style.display = "none";
-    }
-
-    btnStart.addEventListener("click", () => {
-      if(gameStarted) return;
-      gameStarted = true;
-      lockInput = false;
-      hideStartOverlay();
-      startNextRound();
-    });
-
-    elStartOverlay.addEventListener("click", (e) => {
-      if(e.target === elStartOverlay) btnStart.click();
-    });
-
-    loadCalibration().finally(() => {
-      showStartOverlay();
-      updateMicroStatus();
-      moveChickToPos(state.pos);
-      setTimelineScale();
-      chickShowStill();
-    });
-
-  })();
-  </script>
+<section class="left" aria-label="Spel">
+<div class="topbar">
+<button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
+<svg viewBox="0 0 64 64" aria-hidden="true">
+<path d="M10 28L32 10l22 18v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V28z" fill="rgba(255,255,255,.55)"/>
+<path d="M16 26.5L32 13.7l16 12.8v27.2H16V26.5z" fill="rgba(0,0,0,.10)"/>
+<path d="M26 54V38h12v16" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</button>
+<button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
+<div class="titlePill" id="titlePill">slim kijken</div>
+</div>
+<div class="content">
+<div class="gameCard" id="gameCard" aria-label="Vraagvak">
+<div class="flashBoard" id="flashBoard">
+<div class="flashSvg" id="flashSvg"></div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
+<div class="scanStage">
+<div class="answersWrap" id="answersWrap">
+<div class="answers answersHidden" id="answers"></div>
+</div>
+</div>
+
+<!-- level 8 en 9: scan overlay en gescand cijfer feedback -->
+<div class="scanDigitWrapSK" id="scanDigitWrapSK" aria-hidden="true">
+<img id="scanDigitImgSK" alt="" />
+</div>
+<div class="scanOverlaySK" id="scanOverlaySK" aria-hidden="true">
+<div class="scanUISK">
+<div class="miniTileSK" aria-hidden="true">
+<div>1</div><div>2</div><div>3</div><div>4</div>
+</div>
+<div class="scanTitleSK" id="scanTitleSK">Scan het juiste cijfer.</div>
+<div class="scanSubSK" id="scanSubSK">Leg het marbotic cijfer stil in het scanvak.</div>
+<div class="scanHintSK" id="scanHintSK">📱 Blokje stil laten liggen</div>
+</div>
+</div>
+</section>
+
+<div class="timelineOverlay" id="timelineOverlay" aria-hidden="true">
+<div class="timelineGroup" id="timelineGroup">
+<div class="progressTimeline" id="timeline">
+<img class="progressLine" id="levelsImg" src="levels.png" alt="" draggable="false">
+<div class="progressChickAnchor" id="chickAnchor">
+<img class="chickLayer stillLayer active" id="stillImg" src="ballerina_still.png" alt="" draggable="false">
+<video id="upVid" src="ballerina_springt.mp4" muted playsinline preload="auto" style="display:none"></video>
+<video id="downVid" src="ballerina_terug.mp4" muted playsinline preload="auto" style="display:none"></video>
+<canvas class="chickLayer animLayer" id="animCanvas"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+<div class="startCard">
+<h1>tik om te starten</h1>
+<p>Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.</p>
+<button class="startBtn" id="startBtn" type="button">Start</button>
+</div>
+</div>
+
+<div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+<div class="tuneHeader">
+<div class="tuneTitle">instellingen</div>
+<button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
+</div>
+
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">level</div>
+<div style="font-weight:900; font-size:16px; text-transform: lowercase;">
+huidig level: <span id="tuneLevelValue">1</span>
+</div>
+<div style="margin-top:8px; font-weight:800; font-size:13px; color: rgba(77,74,72,0.78); text-transform: lowercase;">
+level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is omlaag
+</div>
+<div class="tuneButtons" style="margin-top:10px;">
+<button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
+<button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
+</div>
+</div>
+
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">flits</div>
+<div class="tuneRow">
+<div class="tuneLabel">flitstijd</div>
+<input type="range" id="flashMsRange" min="100" max="2400" step="50" value="300" />
+<div class="tuneValue" id="flashMsValue">300</div>
+</div>
+</div>
+
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">kaarten</div>
+<div class="tuneRow">
+<div class="tuneLabel">kaart open tijd</div>
+<input type="range" id="cardMsRange" min="300" max="4000" step="50" value="1700" />
+<div class="tuneValue" id="cardMsValue">1700</div>
+</div>
+</div>
+
+<div class="tuneSection" style="padding-top:12px;">
+<div class="tuneButtons">
+<button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+<button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+<button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
+</div>
+<div class="tuneButtons" style="margin-top:10px;">
+<button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
+</div>
+</div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* FIX: clamp NaN safe, zodat flashMs en card tijden nooit NaN kunnen worden */
+const clamp = (v,a,b) => {
+v = Number(v);
+if(!Number.isFinite(v)) v = a;
+return Math.max(a, Math.min(b, v));
+};
+
+const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const raf = () => new Promise(r => requestAnimationFrame(() => r()));
+const $ = (id) => document.getElementById(id);
+
+const startOverlay = $("startOverlay");
+const startBtn = $("startBtn");
+const titlePill = $("titlePill");
+const gameCard = $("gameCard");
+const homeBtn = $("homeBtn");
+const tuneBtn = $("tuneBtn");
+const tunePanel = $("tunePanel");
+const tuneClose = $("tuneClose");
+const flashMsRange = $("flashMsRange");
+const flashMsValue = $("flashMsValue");
+const cardMsRange = $("cardMsRange");
+const cardMsValue = $("cardMsValue");
+const tuneLevelValue = $("tuneLevelValue");
+const newRoundBtn = $("newRoundBtn");
+const testWrongBtn = $("testWrongBtn");
+const testGoodBtn = $("testGoodBtn");
+const levelUpBtn = $("levelUpBtn");
+const levelDownBtn = $("levelDownBtn");
+const toggleLevelsBtn = $("toggleLevelsBtn");
+
+const flashSvg = $("flashSvg");
+const answersEl = $("answers");
+const scanArea = $("scanArea");
+
+/* level 8 en 9 scan ui */
+const scanDigitWrapSK = $("scanDigitWrapSK");
+const scanDigitImgSK = $("scanDigitImgSK");
+const scanOverlaySK = $("scanOverlaySK");
+const scanTitleSK = $("scanTitleSK");
+const scanSubSK = $("scanSubSK");
+const scanHintSK = $("scanHintSK");
+
+const timelineGroup = $("timelineGroup");
+const timeline = $("timeline");
+const levelsImg = $("levelsImg");
+const chickAnchor = $("chickAnchor");
+const stillImg = $("stillImg");
+const upVid = $("upVid");
+const downVid = $("downVid");
+const animCanvas = $("animCanvas");
+const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
+
+const WAIT_BEFORE_IN_MS = 0;
+const IN_DUR_MS = 800;
+const OUT_DUR_MS = 750;
+const PREVIEW_GAP_MS = 120;
+
+let previewMs = 1700;
+
+let LEVEL = 1;
+let streakGood = 0;
+let streakBad = 0;
+
+/* flitstijd per level */
+const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
+const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 300, 5: 300, 6: 400, 7: 450, 8: 450, 9: 500 };
+
+let flashMsByLevel = (() => {
+try{
+const raw = localStorage.getItem(FLASH_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_FLASH_BY_LEVEL };
+})();
+
+function getFlashMs(level){
+const v = Number(flashMsByLevel[level] ?? DEFAULT_FLASH_BY_LEVEL[level] ?? 300);
+return clamp(v, 100, 2400);
+}
+function saveFlashMs(level, ms){
+flashMsByLevel[level] = clamp(Number(ms) || 300, 100, 2400);
+try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+}
+
+/* kaart open tijd per level */
+const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
+const DEFAULT_CARD_BY_LEVEL = { 2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700 };
+
+let cardMsByLevel = (() => {
+try{
+const raw = localStorage.getItem(CARD_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_CARD_BY_LEVEL };
+})();
+
+function getCardMs(level){
+const v = Number(cardMsByLevel[level] ?? DEFAULT_CARD_BY_LEVEL[level] ?? 1700);
+return clamp(v, 300, 4000);
+}
+function saveCardMs(level, ms){
+cardMsByLevel[level] = clamp(Number(ms) || 1700, 300, 4000);
+try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+}
+
+let flashMs = getFlashMs(LEVEL);
+let cardOpenMs = getCardMs(LEVEL);
+
+/* round timing */
+let roundToken = 0;
+let boardHideTimer = null;
+let autoFlipTimer = null;
+
+function cancelBoardHide(){
+if(boardHideTimer){
+clearTimeout(boardHideTimer);
+boardHideTimer = null;
+}
+}
+function cancelAutoFlip(){
+if(autoFlipTimer){
+clearTimeout(autoFlipTimer);
+autoFlipTimer = null;
+}
+}
+function scheduleBoardHide(ms, token){
+cancelBoardHide();
+boardHideTimer = setTimeout(() => {
+if(token !== roundToken) return;
+dissolveBoard(180);
+}, Math.max(0, Number(ms) || 0));
+}
+
+function isPortrait(){
+return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
+}
+
+/* level 2 tot en met 7 draaien om, level 8 en 9 draaien ook om (met marbotic) */
+function usesAnswerCards(){
+return (LEVEL >= 2);
+}
+function timedAutoFlipLevels(){
+return (LEVEL >= 3 && LEVEL <= 7);
+}
+
+/* level 8 en 9: geen knoppen, scanvak actief */
+function usesMarboticScan(){
+return (LEVEL >= 8);
+}
+
+function setLevel(n){
+LEVEL = clamp(n, 1, 9);
+titlePill.textContent = `slim kijken, level ${LEVEL}`;
+if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+
+flashMs = getFlashMs(LEVEL);
+if(flashMsRange) flashMsRange.value = String(flashMs);
+if(flashMsValue) flashMsValue.textContent = String(flashMs);
+
+cardOpenMs = getCardMs(LEVEL);
+previewMs = cardOpenMs;
+if(cardMsRange) cardMsRange.value = String(cardOpenMs);
+if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+
+setAnchorToLevel(LEVEL, { noTransition: true });
+
+/* scan ui toggles */
+if(usesMarboticScan()){
+enableScanUI();
+}else{
+disableScanUI();
+}
+}
+
+function maxForLevel(){
+if(LEVEL === 1) return 4;
+if(LEVEL === 2) return 4;
+if(LEVEL === 3) return 4;
+if(LEVEL === 4) return 6;
+if(LEVEL === 5) return 6;
+if(LEVEL === 6) return 7;
+if(LEVEL === 7) return 8;
+if(LEVEL === 8) return 8;
+return 9;
+}
+
+function pickNumberWeighted(cap){
+const w1 = 0.30;
+const weights = [];
+for(let i=1;i<=cap;i++){
+weights.push(i === 1 ? w1 : 1);
+}
+const sum = weights.reduce((a,b) => a + b, 0);
+let r = Math.random() * sum;
+for(let i=0;i<weights.length;i++){
+r -= weights[i];
+if(r <= 0) return i + 1;
+}
+return cap;
+}
+
+let audioCtx = null;
+function beep(type){
+try{
+audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+const t = audioCtx.currentTime;
+const o = audioCtx.createOscillator();
+const g = audioCtx.createGain();
+o.type = "sine";
+if(type === "ok") o.frequency.setValueAtTime(740, t);
+if(type === "no") o.frequency.setValueAtTime(220, t);
+if(type === "tap") o.frequency.setValueAtTime(520, t);
+if(type === "level") o.frequency.setValueAtTime(620, t);
+g.gain.setValueAtTime(0.0001, t);
+g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+o.connect(g); g.connect(audioCtx.destination);
+o.start(t); o.stop(t + 0.22);
+}catch(e){}
+}
+
+/* assets */
+const DICE_DIR = "dobbelstenen";
+const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
+const marboticSrc = (n) => `marbotic${n}.png`;
+
+/* antwoord dice basis */
+const STD_LAYOUT = { 1:"1a", 2:"2a", 3:"3a", 4:"4a", 5:"5a", 6:"6a" };
+function standardLayoutId(n){
+return STD_LAYOUT[n] || `${n}a`;
+}
+
+/* vraag layouts per level (1 tot en met 5) */
+function allowedQuestionLayoutsSingle(level, n){
+if(n === 1) return ["1a"];
+if(level === 1 || level === 2){
+if(n >= 1 && n <= 4) return [standardLayoutId(n)];
+return [];
+}
+if(level === 3){
+const base = {
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"]
+};
+if(n === 1) return ["1a"];
+return base[n] || [];
+}
+if(level === 4){
+const base = {
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"]
+};
+if(n === 1) return ["1a"];
+if(n === 5) return ["5a"];
+if(n === 6) return ["6a"];
+return base[n] || [];
+}
+if(level === 5){
+const base = {
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"],
+5: ["5a","5b","5c"],
+6: ["6a","6b"]
+};
+if(n === 1) return ["1a"];
+return base[n] || [];
+}
+return [standardLayoutId(n)];
+}
+
+function questionAvoidLayoutId(level, n){
+if(level === 3){
+if(n >= 2 && n <= 4) return standardLayoutId(n);
+return null;
+}
+if(level === 4){
+if(n >= 2 && n <= 4) return standardLayoutId(n);
+return null;
+}
+if(level === 5){
+return standardLayoutId(n);
+}
+return null;
+}
+
+function pickQuestionLayoutDistinct(level, n){
+const allowed = allowedQuestionLayoutsSingle(level, n);
+const avoid = questionAvoidLayoutId(level, n);
+if(!avoid) return allowed.length ? pick(allowed) : standardLayoutId(n);
+const filtered = allowed.filter(x => x !== avoid);
+return (filtered.length ? pick(filtered) : pick(allowed));
+}
+
+/* html builders */
+function boardHtmlForLayout(layoutId){
+return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+}
+
+function boardHtmlForPair(bigId, smallId, smallSide, delayMs){
+const cls = (smallSide === "left") ? "pairWrap smallLeft" : "pairWrap smallRight";
+const d = Number(delayMs ?? 420);
+return `
+<div class="qWrap">
+<div class="${cls}">
+<div class="pairItem big"><img class="pairImg" src="${diceSrc(bigId)}" alt="" draggable="false"></div>
+<div class="pairItem small" style="--delay:${d}ms"><img class="pairImg" src="${diceSrc(smallId)}" alt="" draggable="false"></div>
+</div>
+</div>
+</div>
+`;
+}
+
+function setBoard(html){ flashSvg.innerHTML = html; }
+function clearBoard(){ flashSvg.innerHTML = ""; }
+
+function dissolveBoard(ms){
+const has = (flashSvg.innerHTML || "").trim().length > 0;
+if(!has){
+clearBoard();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+return;
+}
+flashSvg.style.transition = `opacity ${ms}ms ease`;
+flashSvg.style.opacity = "0";
+setTimeout(() => {
+clearBoard();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+}, ms + 40);
+}
+
+/* opties */
+function buildOptions(correct){
+const cap = maxForLevel();
+
+if(LEVEL === 5){
+const options = new Set([correct]);
+const candidates = [
+correct - 1, correct + 1,
+correct - 2, correct + 2,
+correct - 3, correct + 3
+].map(v => clamp(v, 1, cap));
+for(const c of candidates){
+options.add(c);
+if(options.size >= 3) break;
+}
+while(options.size < 3){
+options.add(randInt(1, cap));
+}
+const arr = [...options];
+for(let i=arr.length-1;i>0;i--){
+const j = Math.floor(Math.random()*(i+1));
+[arr[i],arr[j]] = [arr[j],arr[i]];
+}
+return arr;
+}
+
+const options = new Set([correct]);
+while(options.size < 3){
+const delta = pick([ -2, -1, 1, 2 ]);
+options.add(clamp(correct + delta, 1, cap));
+}
+const arr = [...options];
+for(let i=arr.length-1;i>0;i--){
+const j = Math.floor(Math.random()*(i+1));
+[arr[i],arr[j]] = [arr[j],arr[i]];
+}
+return arr;
+}
+
+function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+function showAnswers(){ answersEl.classList.remove("answersHidden"); }
+
+function slideVectorForButton(btn){
+const b = btn.getBoundingClientRect();
+const a = scanArea.getBoundingClientRect();
+const extra = 16;
+if(isPortrait()){
+const seamY = a.top;
+const dy = -((b.bottom - seamY) + extra);
+return { x: 0, y: dy };
+}else{
+const seamX = a.left;
+const dx = -((b.right - seamX) + extra);
+return { x: dx, y: 0 };
+}
+}
+
+function sortedButtonsForExit(btns){
+const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
+if(isPortrait()){
+rects.sort((u,v) => v.r.left - u.r.left);
+}else{
+rects.sort((u,v) => v.r.top - u.r.top);
+}
+return rects.map(x => x.b);
+}
+
+async function animateInButtons(){
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(!btns.length) return;
+hideAnswers();
+await raf(); await raf();
+btns.forEach(btn => {
+const v = slideVectorForButton(btn);
+btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
+btn.style.opacity = "0";
+});
+showAnswers();
+await raf();
+const easing = "cubic-bezier(.22,.61,.35,1)";
+btns.forEach((btn, i) => {
+btn.animate(
+[
+{ transform: btn.style.transform, opacity: 0 },
+{ transform: "translate(0px, 0px)", opacity: 1 }
+],
+{ duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
+);
+});
+await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
+btns.forEach(btn => {
+btn.style.transform = "translate(0px, 0px)";
+btn.style.opacity = "1";
+});
+}
+
+async function animateOutButtons(btns, staggerMs){
+if(!btns.length) return;
+const easing = "cubic-bezier(.22,.61,.35,1)";
+btns.forEach((btn, i) => {
+const v = slideVectorForButton(btn);
+btn.animate(
+[
+{ transform: "translate(0px, 0px)", opacity: 1 },
+{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
+],
+{ duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+);
+});
+await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
+btns.forEach(btn => { btn.style.opacity = "0"; });
+}
+
+function renderAnswers(correct, onPick){
+const arr = buildOptions(correct);
+answersEl.innerHTML = "";
+
+arr.forEach(v => {
+const btn = document.createElement("button");
+btn.className = "ansBtn";
+btn.type = "button";
+
+btn.addEventListener("pointerdown", () => {
+btn.classList.remove("pressBounce");
+void btn.offsetWidth;
+btn.classList.add("pressBounce");
+}, {passive:true});
+
+btn.addEventListener("click", () => onPick(btn, v));
+
+/* level 6 tot en met 9, marbotic png in kaart voorkant, kaart draait om */
+if(LEVEL >= 6){
+const face = `<div class="marboticFace"><img class="marboticImg" src="${marboticSrc(v)}" alt="" draggable="false"></div>`;
+btn.innerHTML = `
+<div class="cardWrap">
+<div class="cardInner">
+<div class="cardBack" aria-hidden="true"></div>
+<div class="cardFront">${face}</div>
+</div>
+</div>
+`;
+answersEl.appendChild(btn);
+return;
+}
+
+/* level 1 tot en met 5, dobbelsteen svg als antwoord */
+const layoutId = standardLayoutId(v);
+const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+
+if(usesAnswerCards()){
+btn.innerHTML = `
+<div class="cardWrap">
+<div class="cardInner">
+<div class="cardBack" aria-hidden="true"></div>
+<div class="cardFront">${face}</div>
+</div>
+</div>
+`;
+}else{
+btn.innerHTML = face;
+}
+answersEl.appendChild(btn);
+});
+}
+
+let previewToken = 0;
+async function previewCardsNonBlocking(){
+if(!usesAnswerCards()) return;
+const myToken = ++previewToken;
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(!btns.length) return;
+
+await wait(PREVIEW_GAP_MS);
+if(previewToken !== myToken) return;
+
+/* level 8 en 9, draai om en blijf open */
+if(LEVEL >= 8){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(80);
+}
+return;
+}
+
+/* level 2, draai om en blijf open */
+if(LEVEL === 2){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(90);
+}
+return;
+}
+
+/* FIX: level 3 tot en met 7, open, wacht, dicht, maar NIET wegschuiven en geen nieuwe vraag starten */
+if(timedAutoFlipLevels()){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(90);
+}
+if(previewToken !== myToken) return;
+
+const ms = clamp(Number(cardOpenMs) || 1700, 300, 4000);
+await wait(ms);
+if(previewToken !== myToken) return;
+
+btns.forEach(b => b.classList.remove("cardOpen"));
+return;
+}
+}
+
+/* =========================
+LEVEL 8 + 9: scan UI helpers
+========================= */
+function enableScanUI(){
+if(scanOverlaySK) scanOverlaySK.classList.add("show");
+}
+function disableScanUI(){
+if(scanOverlaySK) scanOverlaySK.classList.remove("show");
+hideScannedDigitSK(true);
+}
+let scanDigitTimerSK = null;
+function hideScannedDigitSK(hard){
+if(scanDigitTimerSK){ clearTimeout(scanDigitTimerSK); scanDigitTimerSK = null; }
+if(scanDigitWrapSK){
+scanDigitWrapSK.classList.remove("show");
+scanDigitWrapSK.classList.remove("slideOut");
+scanDigitWrapSK.classList.remove("correctSK");
+scanDigitWrapSK.classList.remove("wrongSK");
+}
+if(scanDigitImgSK){
+if(hard) scanDigitImgSK.removeAttribute("src");
+scanDigitImgSK.alt = "";
+}
+}
+
+async function showScannedDigitThenExitSK(digit, state){
+if(!scanDigitWrapSK || !scanDigitImgSK) return;
+hideScannedDigitSK(true);
+
+scanDigitImgSK.src = `marbotic${digit}.png`;
+scanDigitImgSK.alt = String(digit);
+
+scanDigitWrapSK.classList.add("show");
+if(state === "correct") scanDigitWrapSK.classList.add("correctSK");
+if(state === "wrong") scanDigitWrapSK.classList.add("wrongSK");
+
+await wait(80);
+
+scanDigitWrapSK.classList.remove("slideOut");
+void scanDigitWrapSK.offsetHeight;
+scanDigitWrapSK.classList.add("slideOut");
+
+await wait(560);
+hideScannedDigitSK(true);
+}
+
+function wrongWiggleScanAreaSK(){
+scanArea.classList.remove("wrongSK");
+void scanArea.offsetHeight;
+scanArea.classList.add("wrongSK");
+setTimeout(() => scanArea.classList.remove("wrongSK"), 240);
+}
+
+/* =========================
+TIMELINE auto fit
+========================= */
+const LV_MIN = 1;
+const LV_MAX = 9;
+const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
+let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "0") === "1";
+let tlMeta = null;
+let chickEyeFrac = null;
+let baselineLocalY = 0;
+
+function timelineReady(){
+return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard;
+}
+function lum(r,g,b){
+return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+function safeDefaultTlMeta(){
+return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 };
+}
+function analyzeLevelsPng(imgEl){
+try{
+const w = imgEl.naturalWidth || 0;
+const h = imgEl.naturalHeight || 0;
+if(!w || !h) return safeDefaultTlMeta();
+const cv = document.createElement("canvas");
+cv.width = w;
+cv.height = h;
+const ctx = cv.getContext("2d", { willReadFrequently: true });
+ctx.drawImage(imgEl, 0, 0);
+const img = ctx.getImageData(0, 0, w, h);
+const d = img.data;
+const yStart = Math.floor(h * 0.55);
+let bestY = Math.floor(h * 0.85);
+let bestCount = -1;
+for(let y=yStart; y<h; y++){
+let c = 0;
+const row = y * w * 4;
+for(let x=0; x<w; x++){
+const i = row + x*4;
+const a = d[i+3];
+if(a < 32) continue;
+const L = lum(d[i], d[i+1], d[i+2]);
+if(L > 245) continue;
+c++;
+}
+if(c > bestCount){
+bestCount = c;
+bestY = y;
+}
+}
+const col = new Array(w).fill(0);
+let maxC = 0;
+const yBot = Math.floor(h * 0.55);
+for(let x=0; x<w; x++){
+let c = 0;
+for(let y=yBot; y<h; y++){
+const i = (y*w + x) * 4;
+const a = d[i+3];
+if(a < 32) continue;
+const L = lum(d[i], d[i+1], d[i+2]);
+if(L > 245) continue;
+c++;
+}
+col[x] = c;
+if(c > maxC) maxC = c;
+}
+const thresh = maxC * 0.70;
+const xs = [];
+for(let x=0; x<w; x++){
+if(col[x] >= thresh) xs.push(x);
+}
+let clusters = [];
+if(xs.length){
+let s = xs[0], p = xs[0];
+for(let i=1;i<xs.length;i++){
+const x = xs[i];
+if(x === p + 1){ p = x; continue; }
+clusters.push([s,p]);
+s = x; p = x;
+}
+clusters.push([s,p]);
+}
+const maxClusterW = w * 0.06;
+clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
+let leftX = w * 0.06;
+let rightX = w * 0.94;
+if(clusters.length >= 2){
+leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
+rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
+}else if(xs.length >= 2){
+leftX = xs[Math.floor(xs.length * 0.02)];
+rightX = xs[Math.floor(xs.length * 0.98)];
+}
+leftX = clamp(leftX, w*0.01, w*0.45);
+rightX = clamp(rightX, w*0.55, w*0.99);
+return {
+leftFrac: leftX / w,
+rightFrac: rightX / w,
+baseFrac: bestY / h
+};
+}catch(e){
+return safeDefaultTlMeta();
+}
+}
+function analyzeChickEyes(imgEl){
+try{
+const w = imgEl.naturalWidth || 0;
+const h = imgEl.naturalHeight || 0;
+if(!w || !h) return 0.42;
+const cv = document.createElement("canvas");
+cv.width = w;
+cv.height = h;
+const ctx = cv.getContext("2d", { willReadFrequently: true });
+ctx.drawImage(imgEl, 0, 0);
+const img = ctx.getImageData(0, 0, w, h);
+const d = img.data;
+const ys = [];
+const yMax = Math.floor(h * 0.60);
+const x0 = Math.floor(w * 0.25);
+const x1 = Math.floor(w * 0.75);
+for(let y=0; y<yMax; y++){
+const row = y * w * 4;
+for(let x=x0; x<x1; x++){
+const i = row + x*4;
+const a = d[i+3];
+if(a < 32) continue;
+const L = lum(d[i], d[i+1], d[i+2]);
+if(L < 55){
+ys.push(y);
+}
+}
+}
+if(ys.length < 24) return 0.42;
+ys.sort((a,b) => a-b);
+const med = ys[Math.floor(ys.length/2)];
+return clamp(med / h, 0.18, 0.62);
+}catch(e){
+return 0.42;
+}
+}
+function tickTForLevel(level){
+const lv = clamp(level, LV_MIN, LV_MAX);
+const denom = Math.max(1, (LV_MAX - LV_MIN));
+return (lv - LV_MIN) / denom;
+}
+function currentTickXLocalForLevel(level){
+if(!tlMeta) return 0;
+const w = timeline.clientWidth || 0;
+const xL = tlMeta.leftFrac * w;
+const xR = tlMeta.rightFrac * w;
+return xL + tickTForLevel(level) * (xR - xL);
+}
+function setAnchorToLevel(level, opts = {}){
+if(!timelineReady()) return;
+if(!tlMeta) return;
+if(chickEyeFrac == null) chickEyeFrac = 0.42;
+const xLocal = currentTickXLocalForLevel(level);
+const aH = chickAnchor.clientHeight || 0;
+const eyeLocalY = chickEyeFrac * aH;
+const topLocal = baselineLocalY - eyeLocalY;
+if(opts.noTransition){
+chickAnchor.classList.add("noMove");
+chickAnchor.style.left = `${xLocal}px`;
+chickAnchor.style.top = `${topLocal}px`;
+chickAnchor.offsetHeight;
+chickAnchor.classList.remove("noMove");
+return;
+}
+chickAnchor.style.left = `${xLocal}px`;
+chickAnchor.style.top = `${topLocal}px`;
+}
+function updateLevelsVisibilityUI(){
+toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
+if(levelsVisible) levelsImg.classList.remove("levelsHidden");
+else levelsImg.classList.add("levelsHidden");
+}
+let fitQueued = false;
+function scheduleFit(){
+if(fitQueued) return;
+fitQueued = true;
+requestAnimationFrame(() => {
+fitQueued = false;
+fitTimelineToQuestion();
+});
+}
+function fitTimelineToQuestion(){
+if(!timelineReady()) return;
+if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
+if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
+const r = gameCard.getBoundingClientRect();
+const cs = getComputedStyle(gameCard);
+const bw = parseFloat(cs.borderLeftWidth) || 0;
+const targetLeft = r.left + bw;
+const targetRight = r.right - bw;
+const targetBaselineY = r.bottom - (bw * 0.5);
+const baseW = 520;
+timeline.style.width = `${baseW}px`;
+const w = timeline.clientWidth || 1;
+const h = timeline.clientHeight || 1;
+const xL = tlMeta.leftFrac * w;
+const xR = tlMeta.rightFrac * w;
+const yB = tlMeta.baseFrac * h;
+baselineLocalY = yB;
+const denom = Math.max(1, (xR - xL));
+const s = (targetRight - targetLeft) / denom;
+const tx = targetLeft - s * xL;
+const ty = targetBaselineY - s * yB;
+timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+setAnchorToLevel(LEVEL, { noTransition: true });
+}
+function initTimelineAuto(){
+if(!timelineReady()) return;
+updateLevelsVisibilityUI();
+const tryInit = () => {
+if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+tlMeta = analyzeLevelsPng(levelsImg);
+if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+scheduleFit();
+}
+};
+if(levelsImg.complete) tryInit();
+levelsImg.addEventListener("load", tryInit);
+if(stillImg.complete && stillImg.naturalWidth) tryInit();
+stillImg.addEventListener("load", tryInit);
+if(typeof ResizeObserver === "function"){
+const ro = new ResizeObserver(() => scheduleFit());
+ro.observe(gameCard);
+ro.observe(document.body);
+}
+window.addEventListener("resize", scheduleFit);
+window.addEventListener("orientationchange", scheduleFit);
+}
+
+/* =========================
+Animatie kuiken
+========================= */
+const TL_WHITE_THRESH = 255;
+const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+let chickPlaying = false;
+let chickXAnim = null;
+
+function cancelChickXAnim(){
+try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){}
+chickXAnim = null;
+}
+function showOnlyStill(){
+stillImg.classList.add("active");
+if(animCanvas) animCanvas.classList.remove("active");
+}
+function showCanvas(){
+if(animCanvas) animCanvas.classList.add("active");
+}
+function stopVideo(v){
+try{ v.pause(); }catch(e){}
+}
+function setCanvasSizeToVideo(videoEl){
+if(!animCanvas) return false;
+const w = videoEl.videoWidth || 0;
+const h = videoEl.videoHeight || 0;
+if(!w || !h) return false;
+if(animCanvas.width !== w) animCanvas.width = w;
+if(animCanvas.height !== h) animCanvas.height = h;
+return true;
+}
+function applyChromaKeyWhite(){
+if(!chickCtx || !animCanvas) return;
+const t = TL_WHITE_THRESH;
+const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+const d = img.data;
+for(let i = 0; i < d.length; i += 4){
+const r = d[i], g = d[i+1], b = d[i+2];
+if(r >= t && g >= t && b >= t) d[i+3] = 0;
+}
+chickCtx.putImageData(img, 0, 0);
+}
+function drawFrame(videoEl){
+if(!chickCtx || !animCanvas) return false;
+if(!setCanvasSizeToVideo(videoEl)) return false;
+chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+chickCtx.drawImage(videoEl, 0, 0);
+applyChromaKeyWhite();
+return true;
+}
+async function ensureReady(videoEl){
+if(videoEl.readyState >= 2) return true;
+return await new Promise(resolve => {
+let done = false;
+const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+const cleanup = () => {
+videoEl.removeEventListener("loadeddata", ok);
+videoEl.removeEventListener("loadedmetadata", ok);
+videoEl.removeEventListener("error", bad);
+};
+videoEl.addEventListener("loadeddata", ok, { once:true });
+videoEl.addEventListener("loadedmetadata", ok, { once:true });
+videoEl.addEventListener("error", bad, { once:true });
+try{ videoEl.load(); }catch(e){}
+setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+});
+}
+function segmentTimes(startFrame, endFrame, fps){
+const f = Math.max(1, Number(fps));
+const s = Math.max(0, Number(startFrame) / f);
+const e = Math.max(s + (1 / f), Number(endFrame) / f);
+return { start: s, end: e, durMs: (e - s) * 1000 };
+}
+async function seekTo(videoEl, timeSec){
+return await new Promise(resolve => {
+let done = false;
+const finish = (ok) => {
+if(done) return;
+done = true;
+cleanup();
+resolve(ok);
+};
+const onSeeked = () => finish(true);
+const onErr = () => finish(false);
+const cleanup = () => {
+videoEl.removeEventListener("seeked", onSeeked);
+videoEl.removeEventListener("error", onErr);
+};
+videoEl.addEventListener("seeked", onSeeked, { once:true });
+videoEl.addEventListener("error", onErr, { once:true });
+try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+catch(e){ cleanup(); resolve(false); return; }
+setTimeout(() => finish(true), 700);
+});
+}
+async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+if(!animCanvas || !chickCtx) return false;
+cancelChickXAnim();
+const ready = await ensureReady(videoEl);
+if(!ready) return false;
+const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+stopVideo(videoEl);
+await seekTo(videoEl, times.start);
+animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+let playingOk = true;
+try{ await videoEl.play(); }catch(e){ playingOk = false; }
+if(!playingOk) return false;
+const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+const gotFirstFrame = await new Promise(resolve => {
+let done = false;
+const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+const maxWait = setTimeout(() => finish(false), 900);
+if(useRVFC){
+videoEl.requestVideoFrameCallback(() => {
+const ok = drawFrame(videoEl);
+clearTimeout(maxWait);
+finish(!!ok);
+});
+}else{
+const onTime = () => {
+const ok = drawFrame(videoEl);
+clearTimeout(maxWait);
+finish(!!ok);
+};
+videoEl.addEventListener("timeupdate", onTime, { once:true });
+requestAnimationFrame(() => {
+if(done) return;
+const ok = drawFrame(videoEl);
+clearTimeout(maxWait);
+finish(!!ok);
+});
+}
+});
+if(!gotFirstFrame){
+try{ videoEl.pause(); }catch(e){}
+return false;
+}
+showCanvas();
+stillImg.classList.remove("active");
+await raf();
+chickXAnim = animCanvas.animate(
+[
+{ transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` },
+{ transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` }
+],
+{ duration: times.durMs, easing: "linear", fill: "forwards" }
+);
+if(useRVFC){
+await new Promise(resolve => {
+const step = () => {
+drawFrame(videoEl);
+if(videoEl.currentTime >= times.end || videoEl.ended){
+resolve(true);
+return;
+}
+videoEl.requestVideoFrameCallback(step);
+};
+videoEl.requestVideoFrameCallback(step);
+});
+}else{
+await new Promise(resolve => {
+const step = () => {
+drawFrame(videoEl);
+if(videoEl.currentTime >= times.end || videoEl.ended){
+resolve(true);
+return;
+}
+requestAnimationFrame(step);
+};
+requestAnimationFrame(step);
+});
+}
+try{ videoEl.pause(); }catch(e){}
+cancelChickXAnim();
+return true;
+}
+async function animateTimeline(fromLevel, toLevel){
+if(!timelineReady()) return;
+setAnchorToLevel(fromLevel, { noTransition: true });
+showOnlyStill();
+const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+if(!hasMp4){
+setAnchorToLevel(toLevel, { noTransition: true });
+return;
+}
+if(chickPlaying) return;
+chickPlaying = true;
+stopVideo(upVid);
+stopVideo(downVid);
+const dir = toLevel > fromLevel ? "up" : "down";
+const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+const vid = dir === "up" ? upVid : downVid;
+await playSegmentOnCanvasNoFlash(vid, cfg);
+setAnchorToLevel(toLevel, { noTransition: true });
+stillImg.classList.add("active");
+await raf();
+if(animCanvas) animCanvas.classList.remove("active");
+chickPlaying = false;
+}
+
+/* =========================
+GAME
+========================= */
+let started = false;
+let locked = false;
+
+let questionState = {
+kind: "single",
+correct: 1,
+layoutId: "1a",
+bigAmount: 2,
+smallAmount: 1,
+bigLayoutId: "2a",
+smallLayoutId: "1a",
+smallSide: "right",
+smallDelayMs: 420
+};
+
+function resetStreaks(){
+streakGood = 0;
+streakBad = 0;
+}
+
+/* pair layout keuze sets */
+const PAIR_BIG_BY_AMOUNT = {
+1: ["1a"],
+2: ["2a","2b","2c","2d"],
+3: ["3a","3b","3c","3d"],
+4: ["4a","4d"],
+5: ["5a"],
+6: ["6a","6b"]
+};
+const PAIR_SMALL_BY_LEVEL = {
+6: { 1:["1a"] },
+7: { 1:["1a"], 2:["2a","2b","2c","2d"] },
+8: { 1:["1a"], 2:["2a","2b","2c","2d"] },
+9: { 1:["1a"], 2:["2a","2b","2c","2d"], 3:["3a","3c"] }
+};
+
+function pickPairLayout(level, amount, role){
+if(role === "small"){
+const map = PAIR_SMALL_BY_LEVEL[level] || PAIR_SMALL_BY_LEVEL[9];
+const arr = (map && map[amount]) ? map[amount] : ["1a"];
+return pick(arr);
+}
+const arr = PAIR_BIG_BY_AMOUNT[amount] || ["1a"];
+return pick(arr);
+}
+
+function setQuestionFromState(){
+if(!questionState) return;
+if(questionState.kind === "pair"){
+setBoard(boardHtmlForPair(
+questionState.bigLayoutId,
+questionState.smallLayoutId,
+questionState.smallSide,
+questionState.smallDelayMs
+));
+return;
+}
+setBoard(boardHtmlForLayout(questionState.layoutId));
+}
+
+function buildQuestionState(){
+if(LEVEL <= 5){
+const cap = maxForLevel();
+const n = pickNumberWeighted(cap);
+const layoutId = pickQuestionLayoutDistinct(LEVEL, n);
+return {
+kind: "single",
+correct: n,
+layoutId
+};
+}
+if(LEVEL === 6){
+const smallAmount = 1;
+const bigAmount = randInt(2, 6);
+const bigLayoutId = pickPairLayout(6, bigAmount, "big");
+const smallLayoutId = "1a";
+const correct = bigAmount + smallAmount;
+const smallSide = (Math.random() < 0.78) ? "right" : "left";
+return {
+kind: "pair",
+correct,
+bigAmount,
+smallAmount,
+bigLayoutId,
+smallLayoutId,
+smallSide,
+smallDelayMs: 420
+};
+}
+if(LEVEL === 7 || LEVEL === 8){
+const cap = 8;
+const smallAmount = (Math.random() < 0.55) ? 1 : 2;
+const bigMax = Math.min(6, cap - smallAmount);
+const bigMin = Math.max(smallAmount + 1, 2);
+const bigAmount = randInt(bigMin, bigMax);
+const bigLayoutId = pickPairLayout(9, bigAmount, "big");
+const smallLayoutId = pickPairLayout(LEVEL, smallAmount, "small");
+const correct = bigAmount + smallAmount;
+const smallSide = (Math.random() < 0.78) ? "right" : "left";
+return {
+kind: "pair",
+correct,
+bigAmount,
+smallAmount,
+bigLayoutId,
+smallLayoutId,
+smallSide,
+smallDelayMs: 420
+};
+}
+{
+const cap = 9;
+const smallAmount = pick([1,2,3]);
+const bigMax = Math.min(6, cap - smallAmount);
+const bigMin = Math.max(smallAmount + 1, 2);
+const bigAmount = randInt(bigMin, bigMax);
+const bigLayoutId = pickPairLayout(9, bigAmount, "big");
+const smallLayoutId = pickPairLayout(9, smallAmount, "small");
+const correct = bigAmount + smallAmount;
+const smallSide = (Math.random() < 0.78) ? "right" : "left";
+return {
+kind: "pair",
+correct,
+bigAmount,
+smallAmount,
+bigLayoutId,
+smallLayoutId,
+smallSide,
+smallDelayMs: 420
+};
+}
+}
+
+async function handleAutoLevelOnGood(){
+streakGood += 1;
+streakBad = 0;
+if(streakGood >= 5){
+const before = LEVEL;
+setLevel(LEVEL + 1);
+resetStreaks();
+if(LEVEL !== before){
+beep("level");
+await animateTimeline(before, LEVEL);
+}
+return true;
+}
+return false;
+}
+async function handleAutoLevelOnBad(){
+streakBad += 1;
+streakGood = 0;
+if(streakBad >= 2){
+const before = LEVEL;
+setLevel(LEVEL - 1);
+resetStreaks();
+if(LEVEL !== before){
+beep("level");
+await animateTimeline(before, LEVEL);
+}
+return true;
+}
+return false;
+}
+
+/* ronde */
+async function flashAndAsk(){
+locked = true;
+previewToken++;
+roundToken++;
+const myRound = roundToken;
+cancelBoardHide();
+cancelAutoFlip();
+
+answersEl.classList.add("answersHidden");
+answersEl.innerHTML = "";
+clearBoard();
+hideScannedDigitSK(true);
+await wait(160);
+
+questionState = buildQuestionState();
+setQuestionFromState();
+
+await wait(80);
+
+/* level 1: antwoorden mogen direct, vraag verdwijnt na flitstijd */
+if(LEVEL === 1){
+renderAnswers(questionState.correct, onPick);
+await wait(WAIT_BEFORE_IN_MS);
+await animateInButtons();
+locked = false;
+previewCardsNonBlocking();
+scheduleBoardHide(flashMs, myRound);
+return;
+}
+
+/* level 2 en hoger: eerst flits, weg, dan antwoorden */
+await wait(flashMs);
+if(myRound !== roundToken) return;
+dissolveBoard(180);
+await wait(240);
+if(myRound !== roundToken) return;
+
+/* level 8 en 9: scan in plaats van knoppen */
+if(usesMarboticScan()){
+answersEl.innerHTML = "";
+answersEl.classList.add("answersHidden");
+locked = false;
+return;
+}
+
+renderAnswers(questionState.correct, onPick);
+await wait(WAIT_BEFORE_IN_MS);
+await animateInButtons();
+
+locked = false;
+previewCardsNonBlocking();
+}
+
+function nextRound(){
+flashAndAsk();
+}
+
+async function onPick(btn, value){
+if(!started || locked) return;
+locked = true;
+previewToken++;
+cancelBoardHide();
+cancelAutoFlip();
+
+const all = [...answersEl.querySelectorAll(".ansBtn")];
+all.forEach(b => b.style.pointerEvents = "none");
+
+/* kaarten, open gekozen kaart altijd */
+if(usesAnswerCards()){
+btn.classList.add("cardOpen");
+await wait(LEVEL === 2 ? 110 : 40);
+}
+
+if(value === questionState.correct){
+beep("ok");
+btn.classList.add("correctHold");
+
+await wait(520);
+dissolveBoard(260);
+
+const exitOrder = sortedButtonsForExit(all);
+await animateOutButtons(exitOrder, 140);
+
+btn.classList.remove("correctHold");
+if(usesAnswerCards()) btn.classList.remove("cardOpen");
+answersEl.classList.add("answersHidden");
+all.forEach(b => b.style.pointerEvents = "");
+
+await wait(160);
+await handleAutoLevelOnGood();
+nextRound();
+return;
+}
+
+/* fout */
+beep("no");
+
+/* voorbeeld weer tonen en zichtbaar houden tot na het feedback moment */
+setQuestionFromState();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+
+const notChosen = all.filter(b => b !== btn);
+const chosen = btn;
+
+chosen.classList.add("wrongHold");
+await animateOutButtons(sortedButtonsForExit(notChosen), 120);
+
+await wait(900);
+
+/* eerst vraag weg, daarna kaart omkeren, daarna wegschuiven */
+dissolveBoard(220);
+await wait(260);
+
+if(usesAnswerCards()){
+chosen.classList.remove("cardOpen");
+await wait(220);
+}
+
+await animateOutButtons([chosen], 0);
+
+chosen.classList.remove("wrongHold");
+answersEl.classList.add("answersHidden");
+
+await wait(240);
+all.forEach(b => b.style.pointerEvents = "");
+await handleAutoLevelOnBad();
+nextRound();
+}
+
+/* =========================
+LEVEL 8 + 9: scan afhandeling
+========================= */
+async function onScanValue(value){
+if(!started || locked) return;
+if(!usesMarboticScan()) return;
+
+locked = true;
+previewToken++;
+cancelBoardHide();
+cancelAutoFlip();
+
+const isCorrect = (value === questionState.correct);
+
+if(isCorrect){
+beep("ok");
+
+/* na loslaten: toon cijfer in scanvak, groen, schuif weg achter middellijn */
+await showScannedDigitThenExitSK(value, "correct");
+
+await wait(120);
+dissolveBoard(260);
+
+await wait(160);
+await handleAutoLevelOnGood();
+nextRound();
+return;
+}
+
+/* fout */
+beep("no");
+wrongWiggleScanAreaSK();
+
+/* in vraagvenster nogmaals de vraag die verkeerd was */
+setQuestionFromState();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+
+/* na loslaten: toon cijfer langer, rood, dan weg achter middellijn */
+if(scanDigitWrapSK && scanDigitImgSK){
+hideScannedDigitSK(true);
+scanDigitImgSK.src = `marbotic${value}.png`;
+scanDigitImgSK.alt = String(value);
+scanDigitWrapSK.classList.add("show");
+scanDigitWrapSK.classList.add("wrongSK");
+}
+
+/* langer in beeld */
+await wait(900);
+
+/* dan wegschuiven */
+if(scanDigitWrapSK){
+scanDigitWrapSK.classList.remove("slideOut");
+void scanDigitWrapSK.offsetHeight;
+scanDigitWrapSK.classList.add("slideOut");
+}
+await wait(560);
+hideScannedDigitSK(true);
+
+await wait(140);
+
+/* vraag weg en door */
+dissolveBoard(220);
+await wait(260);
+
+await handleAutoLevelOnBad();
+nextRound();
+}
+
+/* tune ui */
+function syncUI(){
+if(flashMsValue) flashMsValue.textContent = String(flashMs);
+if(flashMsRange && Number(flashMsRange.value) !== flashMs) flashMsRange.value = String(flashMs);
+
+if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+if(cardMsRange && Number(cardMsRange.value) !== cardOpenMs) cardMsRange.value = String(cardOpenMs);
+
+if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+}
+function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
+function closeTune(){ tunePanel.classList.add("hidden"); }
+
+/* instellingen openen via lang indrukken op titel */
+let titleHoldTimer = null;
+let titleHoldFired = false;
+const TITLE_HOLD_MS = 1200;
+
+function clearTitleHold(){
+if(titleHoldTimer){
+clearTimeout(titleHoldTimer);
+titleHoldTimer = null;
+}
+}
+
+titlePill.addEventListener("pointerdown", () => {
+titleHoldFired = false;
+clearTitleHold();
+titleHoldTimer = setTimeout(() => {
+titleHoldFired = true;
+beep("tap");
+openTune();
+}, TITLE_HOLD_MS);
+}, { passive:true });
+
+titlePill.addEventListener("pointerup", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("pointercancel", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("pointerleave", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("click", (e) => { if(titleHoldFired) { e.preventDefault(); e.stopPropagation(); } });
+
+tuneBtn.addEventListener("click", () => {
+beep("tap");
+if(tunePanel.classList.contains("hidden")) openTune();
+else closeTune();
+});
+tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+
+flashMsRange.addEventListener("input", () => {
+flashMs = Number(flashMsRange.value);
+saveFlashMs(LEVEL, flashMs);
+syncUI();
+});
+
+cardMsRange.addEventListener("input", () => {
+cardOpenMs = Number(cardMsRange.value);
+previewMs = cardOpenMs;
+saveCardMs(LEVEL, cardOpenMs);
+syncUI();
+});
+
+newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
+testWrongBtn.addEventListener("click", async () => {
+beep("tap");
+if(!started || locked) return;
+const cap = maxForLevel();
+const wrong = (questionState.correct === cap) ? 1 : questionState.correct + 1;
+
+/* level 8 en 9: test via scan flow */
+if(usesMarboticScan()){
+await onScanValue(wrong);
+return;
+}
+
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(btns[0]) await onPick(btns[0], wrong);
+});
+testGoodBtn.addEventListener("click", async () => {
+beep("tap");
+if(!started || locked) return;
+
+/* level 8 en 9: test via scan flow */
+if(usesMarboticScan()){
+await onScanValue(questionState.correct);
+return;
+}
+
+const btns = [...answersEl.querySelectorAll(".ansBtn")];
+if(btns[0]) await onPick(btns[0], questionState.correct);
+});
+levelUpBtn.addEventListener("click", async () => {
+beep("tap");
+if(locked) return;
+const before = LEVEL;
+setLevel(LEVEL + 1);
+syncUI();
+if(LEVEL !== before){
+await animateTimeline(before, LEVEL);
+}
+});
+levelDownBtn.addEventListener("click", async () => {
+beep("tap");
+if(locked) return;
+const before = LEVEL;
+setLevel(LEVEL - 1);
+syncUI();
+if(LEVEL !== before){
+await animateTimeline(before, LEVEL);
+}
+});
+toggleLevelsBtn.addEventListener("click", () => {
+beep("tap");
+levelsVisible = !levelsVisible;
+try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
+updateLevelsVisibilityUI();
+});
+
+/* start */
+function startGame(){
+if(started) return;
+started = true;
+setLevel(1);
+resetStreaks();
+startOverlay.style.display = "none";
+syncUI();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+showOnlyStill();
+nextRound();
+}
+startBtn.addEventListener("click", (e) => {
+e.preventDefault();
+e.stopPropagation();
+beep("tap");
+startGame();
+});
+startOverlay.addEventListener("click", (e) => {
+if(e.target === startOverlay){
+beep("tap");
+startGame();
+}
+});
+homeBtn.addEventListener("click", () => {
+beep("tap");
+try{ window.location.href = "index.html"; }catch(e){}
+});
+
+/* reflow */
+let reflowTimer = null;
+function onReflow(){
+if(!started) return;
+if(reflowTimer) clearTimeout(reflowTimer);
+reflowTimer = setTimeout(async () => {
+locked = true;
+previewToken++;
+roundToken++;
+const myRound = roundToken;
+cancelBoardHide();
+cancelAutoFlip();
+
+answersEl.classList.add("answersHidden");
+answersEl.innerHTML = "";
+hideScannedDigitSK(true);
+
+clearBoard();
+await wait(80);
+setQuestionFromState();
+
+await wait(80);
+
+/* level 8 en 9: geen antwoorden renderen, scan blijft actief */
+if(usesMarboticScan()){
+locked = false;
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+/* na reflow liever geen blijvende vraag in beeld */
+setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
+return;
+}
+
+renderAnswers(questionState.correct, onPick);
+await wait(WAIT_BEFORE_IN_MS);
+await animateInButtons();
+locked = false;
+
+previewCardsNonBlocking();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+
+/* na reflow liever geen blijvende vraag in beeld */
+if(LEVEL === 1){
+scheduleBoardHide(flashMs, myRound);
+}else{
+setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
+}
+
+}, 220);
+}
+window.addEventListener("resize", onReflow);
+window.addEventListener("orientationchange", onReflow);
+
+/* =========================
+LEVEL 8 + 9: Marbotic herkenning
+Exact dezelfde scan manier als Tellen en scannen
+========================= */
+const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+let calibration = null;
+let classificationStats = null;
+let expectedTouchPoints = 3;
+let hasResultForCurrentTouches = false;
+
+/* nieuw: pas verwerken na loslaten */
+let pendingDigitSK = null;
+
+function initCalibration(calibrationData) {
+if (!calibrationData || typeof calibrationData !== "object") {
+calibration = null;
+classificationStats = null;
+expectedTouchPoints = 3;
+return;
+}
+
+expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
+? calibrationData.expectedTouchPoints
+: 3;
+
+calibration = buildCalibrationFromData(calibrationData);
+recomputeClassificationStats();
+}
+
+function buildCalibrationFromData(data) {
+const obj = {};
+DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+
+DIGIT_ORDER.forEach(function (d) {
+const entry = data[String(d)];
+if (!entry || !Array.isArray(entry.samples)) return;
+
+entry.samples.forEach(function (s) {
+if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+const features = computeFeatures(pts);
+obj[String(d)].samples.push({ points: pts, features });
+});
+});
+
+return obj;
+}
+
+function computeFeatures(points) {
+if (!points || points.length !== 3) return { vector: [0,0,0] };
+
+const p0 = points[0], p1 = points[1], p2 = points[2];
+const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+
+const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+let maxDist = 0;
+for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+if (maxDist < 1e-6) maxDist = 1;
+
+for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+const L01 = dist(isoPoints[0], isoPoints[1]);
+const L12 = dist(isoPoints[1], isoPoints[2]);
+const L20 = dist(isoPoints[2], isoPoints[0]);
+
+const sides = [
+{ len: L01, i: 0, j: 1 },
+{ len: L12, i: 1, j: 2 },
+{ len: L20, i: 2, j: 0 }
+];
+const maxSideLen = Math.max(L01, L12, L20) || 1;
+const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+const A = isoPoints[largest.i];
+const B = isoPoints[largest.j];
+const CIndex = 3 - largest.i - largest.j;
+const C = isoPoints[CIndex];
+
+const orientationVal = (a,b,c) => {
+const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+return v > 0 ? 1 : v < 0 ? -1 : 0;
+};
+const orientation = orientationVal(A,B,C);
+
+const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+const denom = 2 * AC * BC;
+let cosAngle = 0;
+if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+let width = maxX-minX, height = maxY-minY;
+if (width < 1e-6) width = 1;
+if (height < 1e-6) height = 1;
+
+const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+const aspect = height / (width + height);
+
+const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+return { vector };
+}
+
+function buildFeatureVector(f) {
+const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+return [
+f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
+f.cosAngle*wCos, f.orientation*wOrient,
+f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
+f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
+f.aspect*wAspect
+];
+}
+
+function vectorDistance(a, b) {
+if (!a || !b || a.length !== b.length) return Infinity;
+let sum = 0;
+for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+return Math.sqrt(sum);
+}
+
+function recomputeClassificationStats() {
+if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+const allSamples = [];
+DIGIT_ORDER.forEach(d => {
+const entry = calibration[String(d)];
+if (!entry) return;
+(entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+});
+
+if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+const sameMin = [];
+const betweenMin = [];
+
+for (let i = 0; i < allSamples.length; i++) {
+const a = allSamples[i];
+let minSame = Infinity, minOther = Infinity;
+for (let j = 0; j < allSamples.length; j++) {
+if (i === j) continue;
+const b = allSamples[j];
+const dist = vectorDistance(a.vector, b.vector);
+if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+else minOther = Math.min(minOther, dist);
+}
+if (minSame < Infinity) sameMin.push(minSame);
+if (minOther < Infinity) betweenMin.push(minOther);
+}
+
+const maxSame = Math.max.apply(null, sameMin);
+const minBetween = Math.min.apply(null, betweenMin);
+
+let thresholdBase;
+if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+else thresholdBase = maxSame * 1.3;
+
+classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+}
+
+function recognizeDigit(points) {
+if (!calibration || !classificationStats) return null;
+if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+const vec = computeFeatures(points).vector;
+if (!vec) return null;
+
+let bestDigit = null;
+let bestDist = Infinity;
+
+DIGIT_ORDER.forEach(function (d) {
+const entry = calibration[String(d)];
+if (!entry) return;
+const samples = entry.samples || [];
+for (let i = 0; i < samples.length; i++) {
+const dist = vectorDistance(vec, samples[i].features.vector);
+if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+}
+});
+
+if (bestDigit === null) return null;
+if (bestDist > classificationStats.thresholdUnknown) return null;
+if (bestDist > classificationStats.thresholdBase) return null;
+return bestDigit;
+}
+
+function getPointsFromTouches(touchList) {
+const rect = scanArea.getBoundingClientRect();
+const points = [];
+for (let i = 0; i < touchList.length; i++) {
+const t = touchList[i];
+const x = t.clientX;
+const y = t.clientY;
+if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+points.push({ x, y });
+}
+}
+return points;
+}
+
+function handleTouchEventSK(e){
+if(!usesMarboticScan()) return;
+if(!calibration || !classificationStats) return;
+if(!started) return;
+
+const touches = e.touches || [];
+const pts = getPointsFromTouches(touches);
+
+/* loslaten: pas dan verwerken */
+if (pts.length === 0){
+hasResultForCurrentTouches = false;
+if(pendingDigitSK !== null && !locked){
+const v = pendingDigitSK;
+pendingDigitSK = null;
+onScanValue(v);
+}
+return;
+}
+
+if (pts.length !== expectedTouchPoints){
+hasResultForCurrentTouches = false;
+pendingDigitSK = null;
+if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
+if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
+if(scanHintSK) scanHintSK.textContent = "";
+return;
+}
+
+if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
+if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
+if(scanHintSK) scanHintSK.textContent = "";
+
+if (!hasResultForCurrentTouches && !locked){
+const digit = recognizeDigit(pts);
+if (digit !== null && typeof digit === "number"){
+hasResultForCurrentTouches = true;
+pendingDigitSK = digit;
+if(scanTitleSK) scanTitleSK.textContent = "Goed zo.";
+if(scanSubSK) scanSubSK.textContent = "Laat los om te checken.";
+if(scanHintSK) scanHintSK.textContent = "";
+}
+}
+}
+
+["touchstart","touchmove","touchend","touchcancel"].forEach(type => {
+scanArea.addEventListener(type, handleTouchEventSK, { passive: true });
+});
+
+/* init */
+clearBoard();
+setLevel(1);
+resetStreaks();
+syncUI();
+initTimelineAuto();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+showOnlyStill();
+updateLevelsVisibilityUI();
+
+/* calibration laden */
+fetch("calibration.json", { cache: "no-store" })
+.then(r => r.json())
+.then(data => initCalibration(data))
+.catch(() => { });
+
+})();
+</script>
 </body>
 </html>
