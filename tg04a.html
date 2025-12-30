@@ -600,6 +600,157 @@ animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms);
 from{ background: rgba(25,25,25,0.30); }
 to{ background: rgba(25,25,25,0.92); }
 }
+
+/* tandwiel uit beeld */
+.tuneBtn{ display:none; }
+
+/* =========================
+LEVEL 8 + 9: scan UI (zelfde scan manier als Tellen en scannen)
+========================= */
+.scanOverlaySK{
+position:absolute;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+padding: 28px;
+pointer-events:none;
+z-index: 6;
+opacity: 0;
+transition: opacity 160ms ease;
+}
+.scanOverlaySK.show{ opacity: 1; }
+
+.scanUISK{
+width: min(520px, 92%);
+display:flex;
+flex-direction:column;
+align-items:center;
+gap: 14px;
+text-align:center;
+transform: translateY(-8px);
+}
+
+/* nieuw: scanplek afbeelding */
+.scanPlaceWrapSK{
+width: min(520px, 92%);
+max-width: 520px;
+display:grid;
+place-items:center;
+opacity: 1;
+transform: scale(1);
+transition: opacity 140ms ease, transform 140ms ease;
+will-change: transform, opacity;
+}
+.scanPlaceWrapSK.hidden{
+opacity: 0;
+transform: scale(0.94);
+}
+.scanPlaceWrapSK.pop{
+animation: scanPopSK 320ms cubic-bezier(.22,.61,.35,1) 1;
+}
+@keyframes scanPopSK{
+0%{ transform: scale(0.75); opacity: 0; }
+60%{ transform: scale(1.06); opacity: 1; }
+100%{ transform: scale(1); opacity: 1; }
+}
+.scanPlaceImgSK{
+width: 100%;
+height: auto;
+max-height: 46vh;
+object-fit: contain;
+display:block;
+filter: drop-shadow(0 14px 26px rgba(0,0,0,0.10));
+}
+
+/* bestaande styles blijven staan (worden niet meer gebruikt) */
+.miniTileSK{
+width: 66px;
+height: 66px;
+border-radius: 10px;
+background: rgba(229, 140, 116, 0.55);
+box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+display:grid;
+grid-template-columns: 1fr 1fr;
+grid-template-rows: 1fr 1fr;
+color:#fff;
+font-weight: 900;
+font-size: 20px;
+line-height: 1;
+place-items:center;
+}
+.scanTitleSK{
+font-size: clamp(22px, 2vw, 34px);
+font-weight: 800;
+color: #7b7876;
+margin-top: 6px;
+}
+.scanSubSK{
+font-size: clamp(16px, 1.3vw, 20px);
+color: rgba(123,120,118,0.75);
+margin-top: -4px;
+}
+.scanHintSK{
+font-size: 13px;
+color: rgba(0,0,0,0.55);
+margin-top: 10px;
+}
+
+/* ====== AANGEPAST: gescand cijfer links, verticaal midden in het paneel ====== */
+.scanDigitWrapSK{
+position:absolute;
+left: 14px;
+top: 50%;
+width: 86px;
+height: 86px;
+border-radius: 16px;
+background: rgba(255,255,255,0.95);
+box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+display:grid;
+place-items:center;
+pointer-events:none;
+opacity: 0;
+transform: translateY(-50%) translateX(0) scale(0.98);
+transition: opacity 140ms ease;
+z-index: 25;
+border: 6px solid rgba(245,180,152,0.20);
+}
+.scanDigitWrapSK.show{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+
+.scanDigitWrapSK.goodBorder{
+border-color: rgba(144, 204, 152, 0.92);
+}
+.scanDigitWrapSK.badBorder{
+border-color: rgba(229, 140, 116, 0.70);
+}
+
+.scanDigitWrapSK img{
+display:block;
+width: 78%;
+height: auto;
+max-height: 78%;
+object-fit: contain;
+filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+will-change: transform, opacity;
+}
+
+/* schuif links, voorbij de stippellijn middellijn, verdwijnt */
+.scanDigitWrapSK.slideOutLeft{
+animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes scanSlideOutLeft{
+0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
+70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.75; }
+100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
+}
+
+.scan-surface.wrongSK{ animation: wiggleSK 220ms ease; }
+@keyframes wiggleSK{
+0%{ transform: translateX(0); }
+28%{ transform: translateX(-6px); }
+58%{ transform: translateX(5px); }
+100%{ transform: translateX(0); }
+}
 </style>
 </head>
 <body>
@@ -629,6 +780,18 @@ to{ background: rgba(25,25,25,0.92); }
 <div class="scanStage">
 <div class="answersWrap" id="answersWrap">
 <div class="answers answersHidden" id="answers"></div>
+</div>
+</div>
+
+<!-- level 8 en 9: scan overlay en gescand cijfer feedback -->
+<div class="scanDigitWrapSK" id="scanDigitWrapSK" aria-hidden="true">
+<img id="scanDigitImgSK" alt="" />
+</div>
+<div class="scanOverlaySK" id="scanOverlaySK" aria-hidden="true">
+<div class="scanUISK">
+<div class="scanPlaceWrapSK hidden" id="scanPlaceWrapSK" aria-hidden="true">
+<img class="scanPlaceImgSK" id="scanPlaceImgSK" src="marbotic_scanplek.png" alt="" draggable="false" />
+</div>
 </div>
 </div>
 </section>
@@ -684,6 +847,35 @@ level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is 
 </div>
 </div>
 
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">kaarten</div>
+<div class="tuneRow">
+<div class="tuneLabel">kaart open tijd</div>
+<input type="range" id="cardMsRange" min="300" max="4000" step="50" value="1700" />
+<div class="tuneValue" id="cardMsValue">1700</div>
+</div>
+</div>
+
+<!-- AANGEPAST: scan timing instellingen -->
+<div class="tuneSection">
+<div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">scan, level 8 en 9</div>
+<div class="tuneRow">
+<div class="tuneLabel">check na</div>
+<input type="range" id="scanCheckSecRange" min="0.1" max="2" step="0.1" value="0.3" />
+<div class="tuneValue" id="scanCheckSecValue">0,3</div>
+</div>
+<div class="tuneRow">
+<div class="tuneLabel">goed duur</div>
+<input type="range" id="scanGoodSecRange" min="0.1" max="4" step="0.1" value="1.0" />
+<div class="tuneValue" id="scanGoodSecValue">1,0</div>
+</div>
+<div class="tuneRow">
+<div class="tuneLabel">fout duur</div>
+<input type="range" id="scanWrongSecRange" min="0.1" max="4" step="0.1" value="2.0" />
+<div class="tuneValue" id="scanWrongSecValue">2,0</div>
+</div>
+</div>
+
 <div class="tuneSection" style="padding-top:12px;">
 <div class="tuneButtons">
 <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
@@ -700,7 +892,13 @@ level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is 
 (() => {
 "use strict";
 
-const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+/* FIX: clamp NaN safe, zodat flashMs en card tijden nooit NaN kunnen worden */
+const clamp = (v,a,b) => {
+v = Number(v);
+if(!Number.isFinite(v)) v = a;
+return Math.max(a, Math.min(b, v));
+};
+
 const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -717,6 +915,8 @@ const tunePanel = $("tunePanel");
 const tuneClose = $("tuneClose");
 const flashMsRange = $("flashMsRange");
 const flashMsValue = $("flashMsValue");
+const cardMsRange = $("cardMsRange");
+const cardMsValue = $("cardMsValue");
 const tuneLevelValue = $("tuneLevelValue");
 const newRoundBtn = $("newRoundBtn");
 const testWrongBtn = $("testWrongBtn");
@@ -725,9 +925,29 @@ const levelUpBtn = $("levelUpBtn");
 const levelDownBtn = $("levelDownBtn");
 const toggleLevelsBtn = $("toggleLevelsBtn");
 
+/* AANGEPAST: scan timing sliders */
+const scanCheckSecRange = $("scanCheckSecRange");
+const scanCheckSecValue = $("scanCheckSecValue");
+const scanGoodSecRange = $("scanGoodSecRange");
+const scanGoodSecValue = $("scanGoodSecValue");
+const scanWrongSecRange = $("scanWrongSecRange");
+const scanWrongSecValue = $("scanWrongSecValue");
+
 const flashSvg = $("flashSvg");
 const answersEl = $("answers");
 const scanArea = $("scanArea");
+
+/* level 8 en 9 scan ui */
+const scanDigitWrapSK = $("scanDigitWrapSK");
+const scanDigitImgSK = $("scanDigitImgSK");
+const scanOverlaySK = $("scanOverlaySK");
+const scanTitleSK = $("scanTitleSK");
+const scanSubSK = $("scanSubSK");
+const scanHintSK = $("scanHintSK");
+
+/* nieuw: scanplek png */
+const scanPlaceWrapSK = $("scanPlaceWrapSK");
+const scanPlaceImgSK = $("scanPlaceImgSK");
 
 const timelineGroup = $("timelineGroup");
 const timeline = $("timeline");
@@ -774,16 +994,99 @@ flashMsByLevel[level] = clamp(Number(ms) || 300, 100, 2400);
 try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
 }
 
+/* kaart open tijd per level */
+const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
+const DEFAULT_CARD_BY_LEVEL = { 2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700 };
+
+let cardMsByLevel = (() => {
+try{
+const raw = localStorage.getItem(CARD_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_CARD_BY_LEVEL };
+})();
+
+function getCardMs(level){
+const v = Number(cardMsByLevel[level] ?? DEFAULT_CARD_BY_LEVEL[level] ?? 1700);
+return clamp(v, 300, 4000);
+}
+function saveCardMs(level, ms){
+cardMsByLevel[level] = clamp(Number(ms) || 1700, 300, 4000);
+try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+}
+
 let flashMs = getFlashMs(LEVEL);
+let cardOpenMs = getCardMs(LEVEL);
+
+/* AANGEPAST: scan delay instellingen (per level 8 en 9) */
+const SCAN_KEY = "slim_kijken_scan_timing_by_level_v1";
+const DEFAULT_SCAN_BY_LEVEL = {
+8: { checkMs: 300, goodMs: 1000, wrongMs: 2000 },
+9: { checkMs: 300, goodMs: 1000, wrongMs: 2000 }
+};
+
+let scanTimingByLevel = (() => {
+try{
+const raw = localStorage.getItem(SCAN_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_SCAN_BY_LEVEL };
+})();
+
+function stepRound(v, step){
+const n = Number(v);
+if(!Number.isFinite(n)) return 0;
+const s = Number(step) || 0.1;
+return Math.round(n / s) * s;
+}
+function getScanTiming(level){
+const base = scanTimingByLevel[level] || DEFAULT_SCAN_BY_LEVEL[level] || { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
+const checkMs = clamp(Number(base.checkMs ?? 300), 100, 2000);
+const goodMs = clamp(Number(base.goodMs ?? 1000), 100, 5000);
+const wrongMs = clamp(Number(base.wrongMs ?? 2000), 100, 5000);
+return { checkMs, goodMs, wrongMs };
+}
+function saveScanTiming(level, partial){
+const current = getScanTiming(level);
+const merged = {
+checkMs: ("checkMs" in partial) ? clamp(Number(partial.checkMs), 100, 2000) : current.checkMs,
+goodMs: ("goodMs" in partial) ? clamp(Number(partial.goodMs), 100, 5000) : current.goodMs,
+wrongMs: ("wrongMs" in partial) ? clamp(Number(partial.wrongMs), 100, 5000) : current.wrongMs
+};
+scanTimingByLevel[level] = merged;
+try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
+return merged;
+}
+function formatSecComma(ms){
+const s = stepRound((Number(ms) || 0) / 1000, 0.1).toFixed(1);
+return s.replace(".", ",");
+}
+
+let scanCheckDelayMs = getScanTiming(LEVEL).checkMs;
+let scanGoodHoldMs = getScanTiming(LEVEL).goodMs;
+let scanWrongHoldMs = getScanTiming(LEVEL).wrongMs;
 
 /* round timing */
 let roundToken = 0;
 let boardHideTimer = null;
+let autoFlipTimer = null;
 
 function cancelBoardHide(){
 if(boardHideTimer){
 clearTimeout(boardHideTimer);
 boardHideTimer = null;
+}
+}
+function cancelAutoFlip(){
+if(autoFlipTimer){
+clearTimeout(autoFlipTimer);
+autoFlipTimer = null;
 }
 }
 function scheduleBoardHide(ms, token){
@@ -798,9 +1101,17 @@ function isPortrait(){
 return window.matchMedia && window.matchMedia("(orientation: portrait)").matches;
 }
 
-/* level 2 draait om, level 6 tot en met 9 draaien ook om (met marbotic) */
+/* level 2 tot en met 7 draaien om, level 8 en 9 draaien ook om (met marbotic) */
 function usesAnswerCards(){
-return (LEVEL === 2) || (LEVEL >= 6);
+return (LEVEL >= 2);
+}
+function timedAutoFlipLevels(){
+return (LEVEL >= 3 && LEVEL <= 7);
+}
+
+/* level 8 en 9: geen knoppen, scanvak actief */
+function usesMarboticScan(){
+return (LEVEL >= 8);
 }
 
 function setLevel(n){
@@ -812,7 +1123,36 @@ flashMs = getFlashMs(LEVEL);
 if(flashMsRange) flashMsRange.value = String(flashMs);
 if(flashMsValue) flashMsValue.textContent = String(flashMs);
 
+cardOpenMs = getCardMs(LEVEL);
+previewMs = cardOpenMs;
+if(cardMsRange) cardMsRange.value = String(cardOpenMs);
+if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+
+/* AANGEPAST: scan timing updaten bij level 8 en 9 */
+{
+const st = getScanTiming(LEVEL);
+scanCheckDelayMs = st.checkMs;
+scanGoodHoldMs = st.goodMs;
+scanWrongHoldMs = st.wrongMs;
+
+if(scanCheckSecRange) scanCheckSecRange.value = String(stepRound(scanCheckDelayMs / 1000, 0.1));
+if(scanCheckSecValue) scanCheckSecValue.textContent = formatSecComma(scanCheckDelayMs);
+
+if(scanGoodSecRange) scanGoodSecRange.value = String(stepRound(scanGoodHoldMs / 1000, 0.1));
+if(scanGoodSecValue) scanGoodSecValue.textContent = formatSecComma(scanGoodHoldMs);
+
+if(scanWrongSecRange) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs / 1000, 0.1));
+if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
+}
+
 setAnchorToLevel(LEVEL, { noTransition: true });
+
+/* scan ui toggles */
+if(usesMarboticScan()){
+enableScanUI();
+}else{
+disableScanUI();
+}
 }
 
 function maxForLevel(){
@@ -884,7 +1224,7 @@ if(level === 3){
 const base = {
 2: ["2a","2b","2c","2d"],
 3: ["3a","3b","3c","3d"],
-4: ["4a","4b","4c","4d"]
+4: ["4a","4d"]
 };
 if(n === 1) return ["1a"];
 return base[n] || [];
@@ -893,7 +1233,7 @@ if(level === 4){
 const base = {
 2: ["2a","2b","2c","2d"],
 3: ["3a","3b","3c","3d"],
-4: ["4a","4b","4c","4d"]
+4: ["4a","4d"]
 };
 if(n === 1) return ["1a"];
 if(n === 5) return ["5a"];
@@ -904,7 +1244,7 @@ if(level === 5){
 const base = {
 2: ["2a","2b","2c","2d"],
 3: ["3a","3b","3c","3d"],
-4: ["4a","4b","4c","4d"],
+4: ["4a","4d"],
 5: ["5a","5b","5c"],
 6: ["6a","6b"]
 };
@@ -952,7 +1292,22 @@ return `
 <div class="pairItem small" style="--delay:${d}ms"><img class="pairImg" src="${diceSrc(smallId)}" alt="" draggable="false"></div>
 </div>
 </div>
+</div>
 `;
+}
+
+/* AANGEPAST: timer gif voor level 8 en 9, in vraagvenster */
+const TIMER_GIF_SRC = "timer.gif";
+const TIMER_GIF_ONCE_MS = 1100;
+function boardHtmlForTimer(){
+return `<div class="qWrap"><img class="layoutImg" src="${TIMER_GIF_SRC}?t=${Date.now()}" alt="" draggable="false"></div>`;
+}
+async function playTimerOnceBeforeQuestion(myRound){
+setBoard(boardHtmlForTimer());
+await wait(TIMER_GIF_ONCE_MS);
+if(myRound !== roundToken) return false;
+clearBoard();
+return true;
 }
 
 function setBoard(html){ flashSvg.innerHTML = html; }
@@ -1150,8 +1505,8 @@ if(!btns.length) return;
 await wait(PREVIEW_GAP_MS);
 if(previewToken !== myToken) return;
 
-/* level 6 tot en met 9, draai om en blijf open */
-if(LEVEL >= 6){
+/* level 8 en 9, draai om en blijf open */
+if(LEVEL >= 8){
 for(let i=0;i<btns.length;i++){
 if(previewToken !== myToken) return;
 btns[i].classList.add("cardOpen");
@@ -1160,17 +1515,107 @@ await wait(80);
 return;
 }
 
-/* level 2, kort open en weer dicht (anti tel) */
-if(previewMs <= 0) return;
+/* level 2, draai om en blijf open */
+if(LEVEL === 2){
+for(let i=0;i<btns.length;i++){
+if(previewToken !== myToken) return;
+btns[i].classList.add("cardOpen");
+await wait(90);
+}
+return;
+}
+
+/* FIX: level 3 tot en met 7, open, wacht, dicht, maar NIET wegschuiven en geen nieuwe vraag starten */
+if(timedAutoFlipLevels()){
 for(let i=0;i<btns.length;i++){
 if(previewToken !== myToken) return;
 btns[i].classList.add("cardOpen");
 await wait(90);
 }
 if(previewToken !== myToken) return;
-await wait(previewMs);
+
+const ms = clamp(Number(cardOpenMs) || 1700, 300, 4000);
+await wait(ms);
 if(previewToken !== myToken) return;
+
 btns.forEach(b => b.classList.remove("cardOpen"));
+return;
+}
+}
+
+/* =========================
+LEVEL 8 + 9: scan UI helpers
+========================= */
+function showScanPlaceSK(pop){
+if(!scanPlaceWrapSK) return;
+scanPlaceWrapSK.classList.remove("hidden");
+if(pop){
+scanPlaceWrapSK.classList.remove("pop");
+void scanPlaceWrapSK.offsetWidth;
+scanPlaceWrapSK.classList.add("pop");
+}
+}
+function hideScanPlaceSK(){
+if(!scanPlaceWrapSK) return;
+scanPlaceWrapSK.classList.add("hidden");
+scanPlaceWrapSK.classList.remove("pop");
+}
+
+function enableScanUI(){
+if(scanOverlaySK) scanOverlaySK.classList.add("show");
+hideScanPlaceSK();
+}
+function disableScanUI(){
+if(scanOverlaySK) scanOverlaySK.classList.remove("show");
+hideScanPlaceSK();
+hideScannedDigitSK(true);
+}
+
+let scanDigitTimerSK = null;
+function hideScannedDigitSK(hard){
+if(scanDigitTimerSK){ clearTimeout(scanDigitTimerSK); scanDigitTimerSK = null; }
+if(scanDigitWrapSK){
+scanDigitWrapSK.classList.remove("show");
+scanDigitWrapSK.classList.remove("slideOutLeft");
+scanDigitWrapSK.classList.remove("goodBorder");
+scanDigitWrapSK.classList.remove("badBorder");
+}
+if(scanDigitImgSK){
+if(hard) scanDigitImgSK.removeAttribute("src");
+scanDigitImgSK.alt = "";
+}
+}
+
+async function showScannedDigitFeedbackAndExitSK(digit, isCorrect){
+if(!scanDigitWrapSK || !scanDigitImgSK) return;
+
+hideScannedDigitSK(true);
+
+scanDigitImgSK.src = `marbotic${digit}.png`;
+scanDigitImgSK.alt = String(digit);
+
+scanDigitWrapSK.classList.add(isCorrect ? "goodBorder" : "badBorder");
+scanDigitWrapSK.classList.add("show");
+
+await wait(80);
+
+/* AANGEPAST: goed en fout duur instelbaar */
+const holdMs = isCorrect ? scanGoodHoldMs : scanWrongHoldMs;
+await wait(holdMs);
+
+scanDigitWrapSK.classList.remove("slideOutLeft");
+void scanDigitWrapSK.offsetHeight;
+scanDigitWrapSK.classList.add("slideOutLeft");
+
+await wait(560);
+hideScannedDigitSK(true);
+}
+
+function wrongWiggleScanAreaSK(){
+scanArea.classList.remove("wrongSK");
+void scanArea.offsetHeight;
+scanArea.classList.add("wrongSK");
+setTimeout(() => scanArea.classList.remove("wrongSK"), 240);
 }
 
 /* =========================
@@ -1179,7 +1624,7 @@ TIMELINE auto fit
 const LV_MIN = 1;
 const LV_MAX = 9;
 const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
-let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "1") === "1";
+let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "0") === "1";
 let tlMeta = null;
 let chickEyeFrac = null;
 let baselineLocalY = 0;
@@ -1639,7 +2084,7 @@ const PAIR_BIG_BY_AMOUNT = {
 1: ["1a"],
 2: ["2a","2b","2c","2d"],
 3: ["3a","3b","3c","3d"],
-4: ["4a","4b","4c","4d"],
+4: ["4a","4d"],
 5: ["5a"],
 6: ["6a","6b"]
 };
@@ -1785,11 +2230,20 @@ previewToken++;
 roundToken++;
 const myRound = roundToken;
 cancelBoardHide();
+cancelAutoFlip();
 
 answersEl.classList.add("answersHidden");
 answersEl.innerHTML = "";
 clearBoard();
+hideScannedDigitSK(true);
+if(usesMarboticScan()) hideScanPlaceSK();
 await wait(160);
+
+/* AANGEPAST: level 8 en 9, eerst timer.gif 1x in vraagvak */
+if(usesMarboticScan()){
+const ok = await playTimerOnceBeforeQuestion(myRound);
+if(!ok) return;
+}
 
 questionState = buildQuestionState();
 setQuestionFromState();
@@ -1814,6 +2268,15 @@ dissolveBoard(180);
 await wait(240);
 if(myRound !== roundToken) return;
 
+/* level 8 en 9: scan in plaats van knoppen */
+if(usesMarboticScan()){
+answersEl.innerHTML = "";
+answersEl.classList.add("answersHidden");
+showScanPlaceSK(true);
+locked = false;
+return;
+}
+
 renderAnswers(questionState.correct, onPick);
 await wait(WAIT_BEFORE_IN_MS);
 await animateInButtons();
@@ -1831,6 +2294,7 @@ if(!started || locked) return;
 locked = true;
 previewToken++;
 cancelBoardHide();
+cancelAutoFlip();
 
 const all = [...answersEl.querySelectorAll(".ansBtn")];
 all.forEach(b => b.style.pointerEvents = "none");
@@ -1864,20 +2328,32 @@ return;
 
 /* fout */
 beep("no");
+
+/* voorbeeld weer tonen en zichtbaar houden tot na het feedback moment */
+setQuestionFromState();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+
 const notChosen = all.filter(b => b !== btn);
 const chosen = btn;
 
 chosen.classList.add("wrongHold");
 await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-await wait(1200);
-dissolveBoard(320);
+await wait(900);
 
-await wait(120);
+/* eerst vraag weg, daarna kaart omkeren, daarna wegschuiven */
+dissolveBoard(220);
+await wait(260);
+
+if(usesAnswerCards()){
+chosen.classList.remove("cardOpen");
+await wait(220);
+}
+
 await animateOutButtons([chosen], 0);
 
 chosen.classList.remove("wrongHold");
-if(usesAnswerCards()) chosen.classList.remove("cardOpen");
 answersEl.classList.add("answersHidden");
 
 await wait(240);
@@ -1886,14 +2362,108 @@ await handleAutoLevelOnBad();
 nextRound();
 }
 
+/* =========================
+LEVEL 8 + 9: scan afhandeling
+========================= */
+async function onScanValue(value){
+if(!started || locked) return;
+if(!usesMarboticScan()) return;
+
+locked = true;
+previewToken++;
+cancelBoardHide();
+cancelAutoFlip();
+
+/* zodra er gescand is, scanplek png uit */
+hideScanPlaceSK();
+
+/* goed */
+if(value === questionState.correct){
+beep("ok");
+
+/* toon klein links, groene rand, 1s (instelbaar), schuif weg */
+await showScannedDigitFeedbackAndExitSK(value, true);
+
+await wait(120);
+dissolveBoard(260);
+
+await wait(160);
+await handleAutoLevelOnGood();
+nextRound();
+return;
+}
+
+/* fout */
+beep("no");
+wrongWiggleScanAreaSK();
+
+/* vraag opnieuw tonen in vraagvenster */
+setQuestionFromState();
+flashSvg.style.transition = "";
+flashSvg.style.opacity = "1";
+
+/* toon klein links, rode rand, 2s (instelbaar), daarna weg */
+await showScannedDigitFeedbackAndExitSK(value, false);
+
+await wait(240);
+
+/* vraag weg en door */
+dissolveBoard(220);
+await wait(260);
+
+await handleAutoLevelOnBad();
+nextRound();
+}
+
 /* tune ui */
 function syncUI(){
 if(flashMsValue) flashMsValue.textContent = String(flashMs);
 if(flashMsRange && Number(flashMsRange.value) !== flashMs) flashMsRange.value = String(flashMs);
+
+if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+if(cardMsRange && Number(cardMsRange.value) !== cardOpenMs) cardMsRange.value = String(cardOpenMs);
+
 if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+
+/* AANGEPAST: scan values sync */
+if(scanCheckSecValue) scanCheckSecValue.textContent = formatSecComma(scanCheckDelayMs);
+if(scanCheckSecRange && Number(scanCheckSecRange.value) !== stepRound(scanCheckDelayMs/1000, 0.1)) scanCheckSecRange.value = String(stepRound(scanCheckDelayMs/1000, 0.1));
+
+if(scanGoodSecValue) scanGoodSecValue.textContent = formatSecComma(scanGoodHoldMs);
+if(scanGoodSecRange && Number(scanGoodSecRange.value) !== stepRound(scanGoodHoldMs/1000, 0.1)) scanGoodSecRange.value = String(stepRound(scanGoodHoldMs/1000, 0.1));
+
+if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
+if(scanWrongSecRange && Number(scanWrongSecRange.value) !== stepRound(scanWrongHoldMs/1000, 0.1)) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs/1000, 0.1));
 }
 function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
 function closeTune(){ tunePanel.classList.add("hidden"); }
+
+/* instellingen openen via lang indrukken op titel */
+let titleHoldTimer = null;
+let titleHoldFired = false;
+const TITLE_HOLD_MS = 1200;
+
+function clearTitleHold(){
+if(titleHoldTimer){
+clearTimeout(titleHoldTimer);
+titleHoldTimer = null;
+}
+}
+
+titlePill.addEventListener("pointerdown", () => {
+titleHoldFired = false;
+clearTitleHold();
+titleHoldTimer = setTimeout(() => {
+titleHoldFired = true;
+beep("tap");
+openTune();
+}, TITLE_HOLD_MS);
+}, { passive:true });
+
+titlePill.addEventListener("pointerup", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("pointercancel", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("pointerleave", () => { clearTitleHold(); }, { passive:true });
+titlePill.addEventListener("click", (e) => { if(titleHoldFired) { e.preventDefault(); e.stopPropagation(); } });
 
 tuneBtn.addEventListener("click", () => {
 beep("tap");
@@ -1908,6 +2478,48 @@ saveFlashMs(LEVEL, flashMs);
 syncUI();
 });
 
+cardMsRange.addEventListener("input", () => {
+cardOpenMs = Number(cardMsRange.value);
+previewMs = cardOpenMs;
+saveCardMs(LEVEL, cardOpenMs);
+syncUI();
+});
+
+/* AANGEPAST: scan timing sliders gedrag */
+if(scanCheckSecRange){
+scanCheckSecRange.addEventListener("input", () => {
+const sec = clamp(Number(scanCheckSecRange.value), 0.1, 2.0);
+const ms = clamp(Math.round(sec * 1000), 100, 2000);
+scanCheckDelayMs = ms;
+if(LEVEL >= 8){
+saveScanTiming(LEVEL, { checkMs: scanCheckDelayMs });
+}
+syncUI();
+});
+}
+if(scanGoodSecRange){
+scanGoodSecRange.addEventListener("input", () => {
+const sec = clamp(Number(scanGoodSecRange.value), 0.1, 5.0);
+const ms = clamp(Math.round(sec * 1000), 100, 5000);
+scanGoodHoldMs = ms;
+if(LEVEL >= 8){
+saveScanTiming(LEVEL, { goodMs: scanGoodHoldMs });
+}
+syncUI();
+});
+}
+if(scanWrongSecRange){
+scanWrongSecRange.addEventListener("input", () => {
+const sec = clamp(Number(scanWrongSecRange.value), 0.1, 5.0);
+const ms = clamp(Math.round(sec * 1000), 100, 5000);
+scanWrongHoldMs = ms;
+if(LEVEL >= 8){
+saveScanTiming(LEVEL, { wrongMs: scanWrongHoldMs });
+}
+syncUI();
+});
+}
+
 newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
 
 testWrongBtn.addEventListener("click", async () => {
@@ -1915,12 +2527,26 @@ beep("tap");
 if(!started || locked) return;
 const cap = maxForLevel();
 const wrong = (questionState.correct === cap) ? 1 : questionState.correct + 1;
+
+/* level 8 en 9: test via scan flow */
+if(usesMarboticScan()){
+await onScanValue(wrong);
+return;
+}
+
 const btns = [...answersEl.querySelectorAll(".ansBtn")];
 if(btns[0]) await onPick(btns[0], wrong);
 });
 testGoodBtn.addEventListener("click", async () => {
 beep("tap");
 if(!started || locked) return;
+
+/* level 8 en 9: test via scan flow */
+if(usesMarboticScan()){
+await onScanValue(questionState.correct);
+return;
+}
+
 const btns = [...answersEl.querySelectorAll(".ansBtn")];
 if(btns[0]) await onPick(btns[0], questionState.correct);
 });
@@ -1992,15 +2618,30 @@ previewToken++;
 roundToken++;
 const myRound = roundToken;
 cancelBoardHide();
+cancelAutoFlip();
 
 answersEl.classList.add("answersHidden");
 answersEl.innerHTML = "";
+hideScannedDigitSK(true);
+if(usesMarboticScan()) hideScanPlaceSK();
 
 clearBoard();
 await wait(80);
 setQuestionFromState();
 
 await wait(80);
+
+/* level 8 en 9: geen antwoorden renderen, scan blijft actief */
+if(usesMarboticScan()){
+locked = false;
+showScanPlaceSK(false);
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+/* na reflow liever geen blijvende vraag in beeld */
+setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
+return;
+}
+
 renderAnswers(questionState.correct, onPick);
 await wait(WAIT_BEFORE_IN_MS);
 await animateInButtons();
@@ -2022,6 +2663,271 @@ setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
 window.addEventListener("resize", onReflow);
 window.addEventListener("orientationchange", onReflow);
 
+/* =========================
+LEVEL 8 + 9: Marbotic herkenning
+Exact dezelfde scan manier als Tellen en scannen
+========================= */
+const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+let calibration = null;
+let classificationStats = null;
+let expectedTouchPoints = 3;
+let hasResultForCurrentTouches = false;
+
+/* AANGEPAST: delayed check timer */
+let scanCheckTimerSK = null;
+
+function initCalibration(calibrationData) {
+if (!calibrationData || typeof calibrationData !== "object") {
+calibration = null;
+classificationStats = null;
+expectedTouchPoints = 3;
+return;
+}
+
+expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
+? calibrationData.expectedTouchPoints
+: 3;
+
+calibration = buildCalibrationFromData(calibrationData);
+recomputeClassificationStats();
+}
+
+function buildCalibrationFromData(data) {
+const obj = {};
+DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+
+DIGIT_ORDER.forEach(function (d) {
+const entry = data[String(d)];
+if (!entry || !Array.isArray(entry.samples)) return;
+
+entry.samples.forEach(function (s) {
+if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+const features = computeFeatures(pts);
+obj[String(d)].samples.push({ points: pts, features });
+});
+});
+
+return obj;
+}
+
+function computeFeatures(points) {
+if (!points || points.length !== 3) return { vector: [0,0,0] };
+
+const p0 = points[0], p1 = points[1], p2 = points[2];
+const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+
+const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+let maxDist = 0;
+for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+if (maxDist < 1e-6) maxDist = 1;
+
+for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+const L01 = dist(isoPoints[0], isoPoints[1]);
+const L12 = dist(isoPoints[1], isoPoints[2]);
+const L20 = dist(isoPoints[2], isoPoints[0]);
+
+const sides = [
+{ len: L01, i: 0, j: 1 },
+{ len: L12, i: 1, j: 2 },
+{ len: L20, i: 2, j: 0 }
+];
+const maxSideLen = Math.max(L01, L12, L20) || 1;
+const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+const A = isoPoints[largest.i];
+const B = isoPoints[largest.j];
+const CIndex = 3 - largest.i - largest.j;
+const C = isoPoints[CIndex];
+
+const orientationVal = (a,b,c) => {
+const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+return v > 0 ? 1 : v < 0 ? -1 : 0;
+};
+const orientation = orientationVal(A,B,C);
+
+const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+const denom = 2 * AC * BC;
+let cosAngle = 0;
+if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+let width = maxX-minX, height = maxY-minY;
+if (width < 1e-6) width = 1;
+if (height < 1e-6) height = 1;
+
+const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+const aspect = height / (width + height);
+
+const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+return { vector };
+}
+
+function buildFeatureVector(f) {
+const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+return [
+f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
+f.cosAngle*wCos, f.orientation*wOrient,
+f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
+f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
+f.aspect*wAspect
+];
+}
+
+function vectorDistance(a, b) {
+if (!a || !b || a.length !== b.length) return Infinity;
+let sum = 0;
+for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+return Math.sqrt(sum);
+}
+
+function recomputeClassificationStats() {
+if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+const allSamples = [];
+DIGIT_ORDER.forEach(d => {
+const entry = calibration[String(d)];
+if (!entry) return;
+(entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+});
+
+if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+const sameMin = [];
+const betweenMin = [];
+
+for (let i = 0; i < allSamples.length; i++) {
+const a = allSamples[i];
+let minSame = Infinity, minOther = Infinity;
+for (let j = 0; j < allSamples.length; j++) {
+if (i === j) continue;
+const b = allSamples[j];
+const dist = vectorDistance(a.vector, b.vector);
+if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+else minOther = Math.min(minOther, dist);
+}
+if (minSame < Infinity) sameMin.push(minSame);
+if (minOther < Infinity) betweenMin.push(minOther);
+}
+
+const maxSame = Math.max.apply(null, sameMin);
+const minBetween = Math.min.apply(null, betweenMin);
+
+let thresholdBase;
+if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+else thresholdBase = maxSame * 1.3;
+
+classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+}
+
+function recognizeDigit(points) {
+if (!calibration || !classificationStats) return null;
+if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+const vec = computeFeatures(points).vector;
+if (!vec) return null;
+
+let bestDigit = null;
+let bestDist = Infinity;
+
+DIGIT_ORDER.forEach(function (d) {
+const entry = calibration[String(d)];
+if (!entry) return;
+const samples = entry.samples || [];
+for (let i = 0; i < samples.length; i++) {
+const dist = vectorDistance(vec, samples[i].features.vector);
+if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+}
+});
+
+if (bestDigit === null) return null;
+if (bestDist > classificationStats.thresholdUnknown) return null;
+if (bestDist > classificationStats.thresholdBase) return null;
+return bestDigit;
+}
+
+function getPointsFromTouches(touchList) {
+const rect = scanArea.getBoundingClientRect();
+const points = [];
+for (let i = 0; i < touchList.length; i++) {
+const t = touchList[i];
+const x = t.clientX;
+const y = t.clientY;
+if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+points.push({ x, y });
+}
+}
+return points;
+}
+
+/* AANGEPAST: scan check plannen na instelbare delay */
+function clearScanCheckTimer(){
+if(scanCheckTimerSK){
+clearTimeout(scanCheckTimerSK);
+scanCheckTimerSK = null;
+}
+}
+function scheduleScanCheck(pts){
+clearScanCheckTimer();
+const delay = clamp(Number(scanCheckDelayMs) || 300, 100, 2000);
+scanCheckTimerSK = setTimeout(() => {
+if(locked) return;
+if(!usesMarboticScan()) return;
+if(!started) return;
+if(hasResultForCurrentTouches) return;
+const digit = recognizeDigit(pts);
+if (digit !== null && typeof digit === "number"){
+hasResultForCurrentTouches = true;
+onScanValue(digit);
+}
+}, delay);
+}
+
+function handleTouchEventSK(e){
+if(!usesMarboticScan()) return;
+if(!calibration || !classificationStats) return;
+if(!started) return;
+
+const touches = e.touches || [];
+const pts = getPointsFromTouches(touches);
+
+if (pts.length === 0){
+hasResultForCurrentTouches = false;
+clearScanCheckTimer();
+return;
+}
+
+if (pts.length !== expectedTouchPoints){
+hasResultForCurrentTouches = false;
+clearScanCheckTimer();
+if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
+if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
+if(scanHintSK) scanHintSK.textContent = "";
+return;
+}
+
+if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
+if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
+if(scanHintSK) scanHintSK.textContent = "";
+
+/* AANGEPAST: nu niet direct beoordelen, maar na x ms */
+if(!hasResultForCurrentTouches && !locked){
+scheduleScanCheck(pts);
+}
+}
+
+["touchstart","touchmove","touchend","touchcancel"].forEach(type => {
+scanArea.addEventListener(type, handleTouchEventSK, { passive: true });
+});
+
 /* init */
 clearBoard();
 setLevel(1);
@@ -2032,6 +2938,12 @@ scheduleFit();
 setAnchorToLevel(LEVEL, { noTransition: true });
 showOnlyStill();
 updateLevelsVisibilityUI();
+
+/* calibration laden */
+fetch("calibration.json", { cache: "no-store" })
+.then(r => r.json())
+.then(data => initCalibration(data))
+.catch(() => { });
 
 })();
 </script>
