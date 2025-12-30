@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="nl">
 <head>
 <meta charset="utf-8" />
@@ -258,6 +259,7 @@ position:fixed;
 inset:0;
 background: rgba(253,238,234,0.55);
 backdrop-filter: blur(2px);
+filler;
 display:flex;
 align-items:center;
 justify-content:center;
@@ -500,7 +502,6 @@ object-fit: contain;
 .animLayer{ z-index: 2; }
 #animCanvas{ opacity:0; }
 #animCanvas.active{ opacity:1; }
-
 .qWrap{
 width: 100%;
 height: 100%;
@@ -662,67 +663,49 @@ color: rgba(0,0,0,0.55);
 margin-top: 10px;
 }
 
+/* AANGEPAST: gescand cijfer klein linksboven, met rand en wegschuiven achter middellijn */
 .scanDigitWrapSK{
 position:absolute;
-inset:0;
-display:grid;
-place-items:center;
+left: 14px;
+top: 14px;
+display:block;
 pointer-events:none;
 opacity: 0;
 transition: opacity 140ms ease;
 z-index: 7;
 }
-.scanDigitWrapSK.show{ opacity: 1; }
-
-/* nieuwe feedback randen */
-.scanDigitWrapSK::before{
-content:"";
-position:absolute;
-inset: clamp(14px, 3.2vw, 22px);
-border-radius: 18px;
-border: 6px solid transparent;
-box-shadow: 0 14px 28px rgba(0,0,0,0.10);
-opacity: 0;
-transition: opacity 120ms ease, border-color 120ms ease;
-}
-.scanDigitWrapSK.correctSK::before{
-opacity: 1;
-border-color: rgba(144, 204, 152, 0.95);
-}
-.scanDigitWrapSK.wrongSK::before{
-opacity: 1;
-border-color: rgba(229, 88, 88, 0.92);
-}
-
-.scanDigitWrapSK img{
-width: min(62%, 360px);
-height: auto;
-filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
-will-change: transform, opacity;
-}
-
-/* slide richting naar de middellijn, landscape naar links, portrait naar boven */
-@media (orientation: landscape){
-.scanDigitWrapSK.slideOut img{
-animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
-}
-@keyframes scanSlideOutLeft{
-0%{ transform: translateX(0) scale(1); opacity: 1; }
-70%{ transform: translateX(-80%) scale(0.98); opacity: 0.70; }
-100%{ transform: translateX(-130%) scale(0.96); opacity: 0; }
-}
-}
 @media (orientation: portrait){
-.scanDigitWrapSK.slideOut img{
-animation: scanSlideOutUp 520ms cubic-bezier(.22,.61,.35,1) forwards;
-}
-@keyframes scanSlideOutUp{
-0%{ transform: translateY(0) scale(1); opacity: 1; }
-70%{ transform: translateY(-80%) scale(0.98); opacity: 0.70; }
-100%{ transform: translateY(-130%) scale(0.96); opacity: 0; }
+.scanDigitWrapSK{
+left: 14px;
+top: 14px;
 }
 }
-
+.scanDigitWrapSK.show{ opacity: 1; }
+.scanDigitBadgeSK{
+width: 64px;
+height: 64px;
+border-radius: 14px;
+background: rgba(255,255,255,0.95);
+box-shadow: 0 14px 26px rgba(0,0,0,0.14);
+border: 4px solid rgba(245,180,152,0.65);
+display:grid;
+place-items:center;
+overflow:hidden;
+will-change: transform, opacity;
+transform: translateZ(0);
+}
+.scanDigitBadgeSK img{
+width: 84%;
+height: 84%;
+object-fit: contain;
+display:block;
+}
+.scanDigitBadgeSK.correct{
+border-color: rgba(144, 204, 152, 0.92);
+}
+.scanDigitBadgeSK.wrong{
+border-color: rgba(229, 140, 116, 0.92);
+}
 .scan-surface.wrongSK{ animation: wiggleSK 220ms ease; }
 @keyframes wiggleSK{
 0%{ transform: translateX(0); }
@@ -731,6 +714,7 @@ animation: scanSlideOutUp 520ms cubic-bezier(.22,.61,.35,1) forwards;
 100%{ transform: translateX(0); }
 }
 </style>
+
 </head>
 <body>
 <section class="left" aria-label="Spel">
@@ -754,7 +738,6 @@ animation: scanSlideOutUp 520ms cubic-bezier(.22,.61,.35,1) forwards;
 </div>
 </div>
 </section>
-
 <section class="scan-surface" id="scanArea" aria-label="Antwoordvak">
 <div class="scanStage">
 <div class="answersWrap" id="answersWrap">
@@ -764,8 +747,11 @@ animation: scanSlideOutUp 520ms cubic-bezier(.22,.61,.35,1) forwards;
 
 <!-- level 8 en 9: scan overlay en gescand cijfer feedback -->
 <div class="scanDigitWrapSK" id="scanDigitWrapSK" aria-hidden="true">
-<img id="scanDigitImgSK" alt="" />
+  <div class="scanDigitBadgeSK" id="scanDigitBadgeSK">
+    <img id="scanDigitImgSK" alt="" />
+  </div>
 </div>
+
 <div class="scanOverlaySK" id="scanOverlaySK" aria-hidden="true">
 <div class="scanUISK">
 <div class="miniTileSK" aria-hidden="true">
@@ -893,6 +879,7 @@ const scanArea = $("scanArea");
 
 /* level 8 en 9 scan ui */
 const scanDigitWrapSK = $("scanDigitWrapSK");
+const scanDigitBadgeSK = $("scanDigitBadgeSK");
 const scanDigitImgSK = $("scanDigitImgSK");
 const scanOverlaySK = $("scanOverlaySK");
 const scanTitleSK = $("scanTitleSK");
@@ -1421,14 +1408,23 @@ function disableScanUI(){
 if(scanOverlaySK) scanOverlaySK.classList.remove("show");
 hideScannedDigitSK(true);
 }
+
 let scanDigitTimerSK = null;
+let scanDigitAnimSK = null;
+
 function hideScannedDigitSK(hard){
 if(scanDigitTimerSK){ clearTimeout(scanDigitTimerSK); scanDigitTimerSK = null; }
+try{ if(scanDigitAnimSK) scanDigitAnimSK.cancel(); }catch(e){}
+scanDigitAnimSK = null;
+
 if(scanDigitWrapSK){
 scanDigitWrapSK.classList.remove("show");
-scanDigitWrapSK.classList.remove("slideOut");
-scanDigitWrapSK.classList.remove("correctSK");
-scanDigitWrapSK.classList.remove("wrongSK");
+}
+if(scanDigitBadgeSK){
+scanDigitBadgeSK.classList.remove("correct");
+scanDigitBadgeSK.classList.remove("wrong");
+scanDigitBadgeSK.style.transform = "translate(0px, 0px)";
+scanDigitBadgeSK.style.opacity = "1";
 }
 if(scanDigitImgSK){
 if(hard) scanDigitImgSK.removeAttribute("src");
@@ -1436,24 +1432,56 @@ scanDigitImgSK.alt = "";
 }
 }
 
-async function showScannedDigitThenExitSK(digit, state){
-if(!scanDigitWrapSK || !scanDigitImgSK) return;
+function slideVectorForScanBadge(el){
+const b = el.getBoundingClientRect();
+const a = scanArea.getBoundingClientRect();
+const extra = 20;
+if(isPortrait()){
+const seamY = a.top;
+const dy = -((b.bottom - seamY) + extra);
+return { x: 0, y: dy };
+}else{
+const seamX = a.left;
+const dx = -((b.right - seamX) + extra);
+return { x: dx, y: 0 };
+}
+}
+
+async function showScannedDigitSK(digit, state){
+if(!scanDigitWrapSK || !scanDigitImgSK || !scanDigitBadgeSK) return;
+
 hideScannedDigitSK(true);
 
 scanDigitImgSK.src = `marbotic${digit}.png`;
 scanDigitImgSK.alt = String(digit);
 
+scanDigitBadgeSK.classList.remove("correct");
+scanDigitBadgeSK.classList.remove("wrong");
+if(state === "correct") scanDigitBadgeSK.classList.add("correct");
+if(state === "wrong") scanDigitBadgeSK.classList.add("wrong");
+
 scanDigitWrapSK.classList.add("show");
-if(state === "correct") scanDigitWrapSK.classList.add("correctSK");
-if(state === "wrong") scanDigitWrapSK.classList.add("wrongSK");
+await wait(40);
+}
 
-await wait(80);
+async function slideOutScannedDigitSK(){
+if(!scanDigitBadgeSK) return;
 
-scanDigitWrapSK.classList.remove("slideOut");
-void scanDigitWrapSK.offsetHeight;
-scanDigitWrapSK.classList.add("slideOut");
+try{ if(scanDigitAnimSK) scanDigitAnimSK.cancel(); }catch(e){}
+scanDigitAnimSK = null;
 
-await wait(560);
+const v = slideVectorForScanBadge(scanDigitBadgeSK);
+const easing = "cubic-bezier(.22,.61,.35,1)";
+
+scanDigitAnimSK = scanDigitBadgeSK.animate(
+[
+{ transform: "translate(0px, 0px)", opacity: 1 },
+{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 }
+],
+{ duration: 560, easing, fill: "forwards" }
+);
+
+await wait(580);
 hideScannedDigitSK(true);
 }
 
@@ -2212,15 +2240,16 @@ previewToken++;
 cancelBoardHide();
 cancelAutoFlip();
 
-const isCorrect = (value === questionState.correct);
-
-if(isCorrect){
+if(value === questionState.correct){
 beep("ok");
 
-/* na loslaten: toon cijfer in scanvak, groen, schuif weg achter middellijn */
-await showScannedDigitThenExitSK(value, "correct");
+/* toon gescand cijfer linksboven, groene rand, schuif weg achter middellijn */
+await showScannedDigitSK(value, "correct");
+await wait(220);
+await slideOutScannedDigitSK();
 
-await wait(120);
+/* rest ongewijzigd */
+await wait(260);
 dissolveBoard(260);
 
 await wait(160);
@@ -2233,33 +2262,17 @@ return;
 beep("no");
 wrongWiggleScanAreaSK();
 
-/* in vraagvenster nogmaals de vraag die verkeerd was */
+/* vraag opnieuw tonen in vraagvenster */
 setQuestionFromState();
 flashSvg.style.transition = "";
 flashSvg.style.opacity = "1";
 
-/* na loslaten: toon cijfer langer, rood, dan weg achter middellijn */
-if(scanDigitWrapSK && scanDigitImgSK){
-hideScannedDigitSK(true);
-scanDigitImgSK.src = `marbotic${value}.png`;
-scanDigitImgSK.alt = String(value);
-scanDigitWrapSK.classList.add("show");
-scanDigitWrapSK.classList.add("wrongSK");
-}
+/* toon gescand cijfer linksboven, rode rand, langer in beeld, daarna weg achter stippellijn */
+await showScannedDigitSK(value, "wrong");
+await wait(980);
+await slideOutScannedDigitSK();
 
-/* langer in beeld */
-await wait(900);
-
-/* dan wegschuiven */
-if(scanDigitWrapSK){
-scanDigitWrapSK.classList.remove("slideOut");
-void scanDigitWrapSK.offsetHeight;
-scanDigitWrapSK.classList.add("slideOut");
-}
-await wait(560);
-hideScannedDigitSK(true);
-
-await wait(140);
+await wait(420);
 
 /* vraag weg en door */
 dissolveBoard(220);
@@ -2480,9 +2493,6 @@ let classificationStats = null;
 let expectedTouchPoints = 3;
 let hasResultForCurrentTouches = false;
 
-/* nieuw: pas verwerken na loslaten */
-let pendingDigitSK = null;
-
 function initCalibration(calibrationData) {
 if (!calibrationData || typeof calibrationData !== "object") {
 calibration = null;
@@ -2683,20 +2693,13 @@ if(!started) return;
 const touches = e.touches || [];
 const pts = getPointsFromTouches(touches);
 
-/* loslaten: pas dan verwerken */
 if (pts.length === 0){
 hasResultForCurrentTouches = false;
-if(pendingDigitSK !== null && !locked){
-const v = pendingDigitSK;
-pendingDigitSK = null;
-onScanValue(v);
-}
 return;
 }
 
 if (pts.length !== expectedTouchPoints){
 hasResultForCurrentTouches = false;
-pendingDigitSK = null;
 if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
 if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
 if(scanHintSK) scanHintSK.textContent = "";
@@ -2711,10 +2714,7 @@ if (!hasResultForCurrentTouches && !locked){
 const digit = recognizeDigit(pts);
 if (digit !== null && typeof digit === "number"){
 hasResultForCurrentTouches = true;
-pendingDigitSK = digit;
-if(scanTitleSK) scanTitleSK.textContent = "Goed zo.";
-if(scanSubSK) scanSubSK.textContent = "Laat los om te checken.";
-if(scanHintSK) scanHintSK.textContent = "";
+onScanValue(digit);
 }
 }
 }
