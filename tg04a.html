@@ -888,6 +888,18 @@ level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is 
 <input type="range" id="scanWrongSecRange" min="0.1" max="4" step="0.1" value="2.0" />
 <div class="tuneValue" id="scanWrongSecValue">2,0</div>
 </div>
+
+<!-- NIEUW: timer.mp4 timing instellingen (alleen level 8 en 9) -->
+<div class="tuneRow">
+<div class="tuneLabel">timer duur</div>
+<input type="range" id="timerPlaySecRange" min="0.1" max="3" step="0.1" value="0.6" />
+<div class="tuneValue" id="timerPlaySecValue">0,6</div>
+</div>
+<div class="tuneRow">
+<div class="tuneLabel">pauze na timer</div>
+<input type="range" id="timerGapSecRange" min="0" max="2" step="0.1" value="0.1" />
+<div class="tuneValue" id="timerGapSecValue">0,1</div>
+</div>
 </div>
 
 <div class="tuneSection" style="padding-top:12px;">
@@ -946,6 +958,12 @@ const scanGoodSecRange = $("scanGoodSecRange");
 const scanGoodSecValue = $("scanGoodSecValue");
 const scanWrongSecRange = $("scanWrongSecRange");
 const scanWrongSecValue = $("scanWrongSecValue");
+
+/* NIEUW: timer.mp4 sliders */
+const timerPlaySecRange = $("timerPlaySecRange");
+const timerPlaySecValue = $("timerPlaySecValue");
+const timerGapSecRange = $("timerGapSecRange");
+const timerGapSecValue = $("timerGapSecValue");
 
 const flashSvg = $("flashSvg");
 const answersEl = $("answers");
@@ -1085,9 +1103,47 @@ const s = stepRound((Number(ms) || 0) / 1000, 0.1).toFixed(1);
 return s.replace(".", ",");
 }
 
+/* NIEUW: timer.mp4 play en gap instellingen (per level 8 en 9) */
+const TIMER_SEQ_KEY = "slim_kijken_timer_seq_by_level_v1";
+const DEFAULT_TIMER_SEQ_BY_LEVEL = {
+8: { playMs: 600, gapMs: 100 },
+9: { playMs: 600, gapMs: 100 }
+};
+
+let timerSeqByLevel = (() => {
+try{
+const raw = localStorage.getItem(TIMER_SEQ_KEY);
+if(raw){
+const obj = JSON.parse(raw);
+if(obj && typeof obj === "object") return obj;
+}
+}catch(e){}
+return { ...DEFAULT_TIMER_SEQ_BY_LEVEL };
+})();
+
+function getTimerSeq(level){
+const base = timerSeqByLevel[level] || DEFAULT_TIMER_SEQ_BY_LEVEL[level] || { playMs: 600, gapMs: 100 };
+const playMs = clamp(Number(base.playMs ?? 600), 100, 5000);
+const gapMs = clamp(Number(base.gapMs ?? 100), 0, 5000);
+return { playMs, gapMs };
+}
+function saveTimerSeq(level, partial){
+const current = getTimerSeq(level);
+const merged = {
+playMs: ("playMs" in partial) ? clamp(Number(partial.playMs), 100, 5000) : current.playMs,
+gapMs: ("gapMs" in partial) ? clamp(Number(partial.gapMs), 0, 5000) : current.gapMs
+};
+timerSeqByLevel[level] = merged;
+try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
+return merged;
+}
+
 let scanCheckDelayMs = getScanTiming(LEVEL).checkMs;
 let scanGoodHoldMs = getScanTiming(LEVEL).goodMs;
 let scanWrongHoldMs = getScanTiming(LEVEL).wrongMs;
+
+let timerPlayMs = getTimerSeq(LEVEL).playMs;
+let timerGapMs = getTimerSeq(LEVEL).gapMs;
 
 /* round timing */
 let roundToken = 0;
@@ -1160,6 +1216,19 @@ if(scanGoodSecValue) scanGoodSecValue.textContent = formatSecComma(scanGoodHoldM
 
 if(scanWrongSecRange) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs / 1000, 0.1));
 if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
+}
+
+/* NIEUW: timer seq updaten bij level 8 en 9 */
+{
+const ts = getTimerSeq(LEVEL);
+timerPlayMs = ts.playMs;
+timerGapMs = ts.gapMs;
+
+if(timerPlaySecRange) timerPlaySecRange.value = String(stepRound(timerPlayMs / 1000, 0.1));
+if(timerPlaySecValue) timerPlaySecValue.textContent = formatSecComma(timerPlayMs);
+
+if(timerGapSecRange) timerGapSecRange.value = String(stepRound(timerGapMs / 1000, 0.1));
+if(timerGapSecValue) timerGapSecValue.textContent = formatSecComma(timerGapMs);
 }
 
 setAnchorToLevel(LEVEL, { noTransition: true });
@@ -1333,39 +1402,27 @@ flashSvg.style.opacity = "1";
 }, ms + 40);
 }
 
-/* nieuw: timer afspelen in vraagvenster, 1x, daarna weg */
-async function playTimerOnceInQuestion(){
+/* AANGEPAST: timer afspelen in vraagvenster, duur instelbaar, daarna weg, korte pauze, dan pas vraag */
+async function playTimerSequenceInQuestion(){
 if(!timerVid) return;
+const playMs = clamp(Number(timerPlayMs) || 600, 100, 5000);
+const gapMs = clamp(Number(timerGapMs) || 0, 0, 5000);
+
 try{
 timerVid.pause();
 timerVid.currentTime = 0;
 timerVid.style.display = "block";
 
-const endedPromise = new Promise(resolve => {
-let done = false;
-const finish = () => {
-if(done) return;
-done = true;
-cleanup();
-resolve();
-};
-const cleanup = () => {
-timerVid.removeEventListener("ended", finish);
-timerVid.removeEventListener("error", finish);
-};
-timerVid.addEventListener("ended", finish, { once:true });
-timerVid.addEventListener("error", finish, { once:true });
-setTimeout(finish, 8000);
-});
-
 try{ await timerVid.play(); }catch(e){}
 
-await endedPromise;
+await wait(playMs);
 }finally{
 try{ timerVid.pause(); }catch(e){}
 timerVid.style.display = "none";
 try{ timerVid.currentTime = 0; }catch(e){}
 }
+
+if(gapMs > 0) await wait(gapMs);
 }
 
 /* opties */
@@ -2277,9 +2334,9 @@ hideScannedDigitSK(true);
 if(usesMarboticScan()) hideScanPlaceSK();
 await wait(160);
 
-/* LEVEL 8 en 9: eerst timer.mp4 1x afspelen, daarna pas de vraag tonen */
+/* LEVEL 8 en 9: eerst timer.mp4 tonen voor ingestelde duur, dan weg, korte pauze, daarna pas de vraag tonen */
 if(usesMarboticScan()){
-await playTimerOnceInQuestion();
+await playTimerSequenceInQuestion();
 if(myRound !== roundToken) return;
 }
 
@@ -2472,6 +2529,13 @@ if(scanGoodSecRange && Number(scanGoodSecRange.value) !== stepRound(scanGoodHold
 
 if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
 if(scanWrongSecRange && Number(scanWrongSecRange.value) !== stepRound(scanWrongHoldMs/1000, 0.1)) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs/1000, 0.1));
+
+/* NIEUW: timer values sync */
+if(timerPlaySecValue) timerPlaySecValue.textContent = formatSecComma(timerPlayMs);
+if(timerPlaySecRange && Number(timerPlaySecRange.value) !== stepRound(timerPlayMs/1000, 0.1)) timerPlaySecRange.value = String(stepRound(timerPlayMs/1000, 0.1));
+
+if(timerGapSecValue) timerGapSecValue.textContent = formatSecComma(timerGapMs);
+if(timerGapSecRange && Number(timerGapSecRange.value) !== stepRound(timerGapMs/1000, 0.1)) timerGapSecRange.value = String(stepRound(timerGapMs/1000, 0.1));
 }
 function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
 function closeTune(){ tunePanel.classList.add("hidden"); }
@@ -2553,6 +2617,30 @@ const ms = clamp(Math.round(sec * 1000), 100, 5000);
 scanWrongHoldMs = ms;
 if(LEVEL >= 8){
 saveScanTiming(LEVEL, { wrongMs: scanWrongHoldMs });
+}
+syncUI();
+});
+}
+
+/* NIEUW: timer sliders gedrag */
+if(timerPlaySecRange){
+timerPlaySecRange.addEventListener("input", () => {
+const sec = clamp(Number(timerPlaySecRange.value), 0.1, 5.0);
+const ms = clamp(Math.round(sec * 1000), 100, 5000);
+timerPlayMs = ms;
+if(LEVEL >= 8){
+saveTimerSeq(LEVEL, { playMs: timerPlayMs });
+}
+syncUI();
+});
+}
+if(timerGapSecRange){
+timerGapSecRange.addEventListener("input", () => {
+const sec = clamp(Number(timerGapSecRange.value), 0.0, 5.0);
+const ms = clamp(Math.round(sec * 1000), 0, 5000);
+timerGapMs = ms;
+if(LEVEL >= 8){
+saveTimerSeq(LEVEL, { gapMs: timerGapMs });
 }
 syncUI();
 });
