@@ -1050,4 +1050,2409 @@ function getFlashMs(level){
   return clamp(v, 100, 2400);
 }
 function saveFlashMs(level, ms){
-  flashMsByLevel[level] = clamp(Number
+  flashMsByLevel[level] = clamp(Number(ms) || 300, 100, 2400);
+  try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+}
+
+/* kaart open tijd per level */
+const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
+const DEFAULT_CARD_BY_LEVEL = { 2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700 };
+let cardMsByLevel = (() => {
+  try{
+    const raw = localStorage.getItem(CARD_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object") return obj;
+    }
+  }catch(e){}
+  return { ...DEFAULT_CARD_BY_LEVEL };
+})();
+function getCardMs(level){
+  const v = Number(cardMsByLevel[level] ?? DEFAULT_CARD_BY_LEVEL[level] ?? 1700);
+  return clamp(v, 300, 4000);
+}
+function saveCardMs(level, ms){
+  cardMsByLevel[level] = clamp(Number(ms) || 1700, 300, 4000);
+  try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+}
+
+let flashMs = getFlashMs(LEVEL);
+let cardOpenMs = getCardMs(LEVEL);
+
+/* scan delay instellingen (per level 8 en 9) */
+const SCAN_KEY = "slim_kijken_scan_timing_by_level_v1";
+const DEFAULT_SCAN_BY_LEVEL = { 8: { checkMs: 300, goodMs: 1000, wrongMs: 2000 }, 9: { checkMs: 300, goodMs: 1000, wrongMs: 2000 } };
+let scanTimingByLevel = (() => {
+  try{
+    const raw = localStorage.getItem(SCAN_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object") return obj;
+    }
+  }catch(e){}
+  return { ...DEFAULT_SCAN_BY_LEVEL };
+})();
+function stepRound(v, step){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return 0;
+  const s = Number(step) || 0.1;
+  return Math.round(n / s) * s;
+}
+function getScanTiming(level){
+  const base = scanTimingByLevel[level] || DEFAULT_SCAN_BY_LEVEL[level] || { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
+  const checkMs = clamp(Number(base.checkMs ?? 300), 100, 2000);
+  const goodMs = clamp(Number(base.goodMs ?? 1000), 100, 5000);
+  const wrongMs = clamp(Number(base.wrongMs ?? 2000), 100, 5000);
+  return { checkMs, goodMs, wrongMs };
+}
+function saveScanTiming(level, partial){
+  const current = getScanTiming(level);
+  const merged = {
+    checkMs: ("checkMs" in partial) ? clamp(Number(partial.checkMs), 100, 2000) : current.checkMs,
+    goodMs: ("goodMs" in partial) ? clamp(Number(partial.goodMs), 100, 5000) : current.goodMs,
+    wrongMs: ("wrongMs" in partial) ? clamp(Number(partial.wrongMs), 100, 5000) : current.wrongMs
+  };
+  scanTimingByLevel[level] = merged;
+  try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
+  return merged;
+}
+function formatSecComma(ms){
+  const s = stepRound((Number(ms) || 0) / 1000, 0.1).toFixed(1);
+  return s.replace(".", ",");
+}
+
+/* timer.mp4 play en gap instellingen (per level 8 en 9) */
+const TIMER_SEQ_KEY = "slim_kijken_timer_seq_by_level_v1";
+const DEFAULT_TIMER_SEQ_BY_LEVEL = { 8: { playMs: 2000, gapMs: 700 }, 9: { playMs: 2000, gapMs: 700 } };
+let timerSeqByLevel = (() => {
+  try{
+    const raw = localStorage.getItem(TIMER_SEQ_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object") return obj;
+    }
+  }catch(e){}
+  return { ...DEFAULT_TIMER_SEQ_BY_LEVEL };
+})();
+function getTimerSeq(level){
+  const base = timerSeqByLevel[level] || DEFAULT_TIMER_SEQ_BY_LEVEL[level] || { playMs: 2000, gapMs: 700 };
+  const playMs = clamp(Number(base.playMs ?? 2000), 100, 5000);
+  const gapMs = clamp(Number(base.gapMs ?? 700), 0, 5000);
+  return { playMs, gapMs };
+}
+function saveTimerSeq(level, partial){
+  const current = getTimerSeq(level);
+  const merged = {
+    playMs: ("playMs" in partial) ? clamp(Number(partial.playMs), 100, 5000) : current.playMs,
+    gapMs: ("gapMs" in partial) ? clamp(Number(partial.gapMs), 0, 5000) : current.gapMs
+  };
+  timerSeqByLevel[level] = merged;
+  try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
+  return merged;
+}
+
+/* ========================= AANGEPAST: help sequence timing (per level 8 en 9) ========================= */
+const HELP_SEQ_KEY = "slim_kijken_help_seq_by_level_v1";
+const DEFAULT_HELP_SEQ_BY_LEVEL = {
+  8: { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 16, countStepMs: 320, beforeStrikeMs: 500, strikeMs: 650, fadeMs: 320, afterFadeMs: 400 },
+  9: { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 16, countStepMs: 320, beforeStrikeMs: 500, strikeMs: 650, fadeMs: 320, afterFadeMs: 400 }
+};
+let helpSeqByLevel = (() => {
+  try{
+    const raw = localStorage.getItem(HELP_SEQ_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object") return obj;
+    }
+  }catch(e){}
+  return { ...DEFAULT_HELP_SEQ_BY_LEVEL };
+})();
+function getHelpSeq(level){
+  const base = helpSeqByLevel[level] || DEFAULT_HELP_SEQ_BY_LEVEL[level] || DEFAULT_HELP_SEQ_BY_LEVEL[8];
+  return {
+    circleWaitMs: clamp(Number(base.circleWaitMs ?? 220), 0, 2000),
+    amountWaitMs: clamp(Number(base.amountWaitMs ?? 320), 0, 3000),
+    amountSizePct: clamp(Number(base.amountSizePct ?? 16), 10, 30),
+    countStepMs: clamp(Number(base.countStepMs ?? 320), 80, 2000),
+    beforeStrikeMs: clamp(Number(base.beforeStrikeMs ?? 500), 0, 3000),
+    strikeMs: clamp(Number(base.strikeMs ?? 650), 200, 3000),
+    fadeMs: clamp(Number(base.fadeMs ?? 320), 80, 2000),
+    afterFadeMs: clamp(Number(base.afterFadeMs ?? 400), 0, 3000)
+  };
+}
+function saveHelpSeq(level, partial){
+  const cur = getHelpSeq(level);
+  const merged = {
+    circleWaitMs: ("circleWaitMs" in partial) ? clamp(Number(partial.circleWaitMs), 0, 2000) : cur.circleWaitMs,
+    amountWaitMs: ("amountWaitMs" in partial) ? clamp(Number(partial.amountWaitMs), 0, 3000) : cur.amountWaitMs,
+    amountSizePct: ("amountSizePct" in partial) ? clamp(Number(partial.amountSizePct), 10, 30) : cur.amountSizePct,
+    countStepMs: ("countStepMs" in partial) ? clamp(Number(partial.countStepMs), 80, 2000) : cur.countStepMs,
+    beforeStrikeMs: ("beforeStrikeMs" in partial) ? clamp(Number(partial.beforeStrikeMs), 0, 3000) : cur.beforeStrikeMs,
+    strikeMs: ("strikeMs" in partial) ? clamp(Number(partial.strikeMs), 200, 3000) : cur.strikeMs,
+    fadeMs: ("fadeMs" in partial) ? clamp(Number(partial.fadeMs), 80, 2000) : cur.fadeMs,
+    afterFadeMs: ("afterFadeMs" in partial) ? clamp(Number(partial.afterFadeMs), 0, 3000) : cur.afterFadeMs
+  };
+  helpSeqByLevel[level] = merged;
+  try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(helpSeqByLevel)); }catch(e){}
+  return merged;
+}
+
+let scanCheckDelayMs = getScanTiming(LEVEL).checkMs;
+let scanGoodHoldMs = getScanTiming(LEVEL).goodMs;
+let scanWrongHoldMs = getScanTiming(LEVEL).wrongMs;
+
+let timerPlayMs = getTimerSeq(LEVEL).playMs;
+let timerGapMs = getTimerSeq(LEVEL).gapMs;
+
+/* help vars */
+let helpCircleWaitMs = getHelpSeq(LEVEL).circleWaitMs;
+let helpAmountWaitMs = getHelpSeq(LEVEL).amountWaitMs;
+let helpAmountSizePct = getHelpSeq(LEVEL).amountSizePct;
+let helpCountStepMs = getHelpSeq(LEVEL).countStepMs;
+let helpBeforeStrikeMs = getHelpSeq(LEVEL).beforeStrikeMs;
+let helpStrikeMs = getHelpSeq(LEVEL).strikeMs;
+let helpFadeMs = getHelpSeq(LEVEL).fadeMs;
+let helpAfterFadeMs = getHelpSeq(LEVEL).afterFadeMs;
+
+/* round timing */
+let roundToken = 0;
+let boardHideTimer = null;
+let autoFlipTimer = null;
+
+function cancelBoardHide(){ if(boardHideTimer){ clearTimeout(boardHideTimer); boardHideTimer = null; } }
+function cancelAutoFlip(){ if(autoFlipTimer){ clearTimeout(autoFlipTimer); autoFlipTimer = null; } }
+function scheduleBoardHide(ms, token){
+  cancelBoardHide();
+  boardHideTimer = setTimeout(() => {
+    if(token !== roundToken) return;
+    dissolveBoard(180);
+  }, Math.max(0, Number(ms) || 0));
+}
+
+function isPortrait(){ return window.matchMedia && window.matchMedia("(orientation: portrait)").matches; }
+
+/* level 2 tot en met 7 draaien om, level 8 en 9 draaien ook om (met marbotic) */
+function usesAnswerCards(){ return (LEVEL >= 2); }
+function timedAutoFlipLevels(){ return (LEVEL >= 3 && LEVEL <= 7); }
+function usesMarboticScan(){ return (LEVEL >= 8); }
+
+function setLevel(n){
+  LEVEL = clamp(n, 1, 9);
+  titlePill.textContent = `slim kijken, level ${LEVEL}`;
+  if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+
+  flashMs = getFlashMs(LEVEL);
+  if(flashMsRange) flashMsRange.value = String(flashMs);
+  if(flashMsValue) flashMsValue.textContent = String(flashMs);
+
+  cardOpenMs = getCardMs(LEVEL);
+  previewMs = cardOpenMs;
+  if(cardMsRange) cardMsRange.value = String(cardOpenMs);
+  if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+
+  /* scan timing */
+  {
+    const st = getScanTiming(LEVEL);
+    scanCheckDelayMs = st.checkMs;
+    scanGoodHoldMs = st.goodMs;
+    scanWrongHoldMs = st.wrongMs;
+
+    if(scanCheckSecRange) scanCheckSecRange.value = String(stepRound(scanCheckDelayMs / 1000, 0.1));
+    if(scanCheckSecValue) scanCheckSecValue.textContent = formatSecComma(scanCheckDelayMs);
+
+    if(scanGoodSecRange) scanGoodSecRange.value = String(stepRound(scanGoodHoldMs / 1000, 0.1));
+    if(scanGoodSecValue) scanGoodSecValue.textContent = formatSecComma(scanGoodHoldMs);
+
+    if(scanWrongSecRange) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs / 1000, 0.1));
+    if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
+  }
+
+  /* timer seq */
+  {
+    const ts = getTimerSeq(LEVEL);
+    timerPlayMs = ts.playMs;
+    timerGapMs = ts.gapMs;
+
+    if(timerPlaySecRange) timerPlaySecRange.value = String(stepRound(timerPlayMs / 1000, 0.1));
+    if(timerPlaySecValue) timerPlaySecValue.textContent = formatSecComma(timerPlayMs);
+
+    if(timerGapSecRange) timerGapSecRange.value = String(stepRound(timerGapMs / 1000, 0.1));
+    if(timerGapSecValue) timerGapSecValue.textContent = formatSecComma(timerGapMs);
+  }
+
+  /* help seq */
+  {
+    const hs = getHelpSeq(LEVEL);
+    helpCircleWaitMs = hs.circleWaitMs;
+    helpAmountWaitMs = hs.amountWaitMs;
+    helpAmountSizePct = hs.amountSizePct;
+    helpCountStepMs = hs.countStepMs;
+    helpBeforeStrikeMs = hs.beforeStrikeMs;
+    helpStrikeMs = hs.strikeMs;
+    helpFadeMs = hs.fadeMs;
+    helpAfterFadeMs = hs.afterFadeMs;
+
+    if(helpCountStartMsRange) helpCountStartMsRange.value = String(helpCircleWaitMs);
+    if(helpCountStartMsValue) helpCountStartMsValue.textContent = String(helpCircleWaitMs);
+
+    if(helpAmountWaitMsRange) helpAmountWaitMsRange.value = String(helpAmountWaitMs);
+    if(helpAmountWaitMsValue) helpAmountWaitMsValue.textContent = String(helpAmountWaitMs);
+
+    if(helpAmountSizePctRange) helpAmountSizePctRange.value = String(helpAmountSizePct);
+    if(helpAmountSizePctValue) helpAmountSizePctValue.textContent = String(helpAmountSizePct);
+
+    if(helpCountStepMsRange) helpCountStepMsRange.value = String(helpCountStepMs);
+    if(helpCountStepMsValue) helpCountStepMsValue.textContent = String(helpCountStepMs);
+
+    if(helpAfterCountMsRange) helpAfterCountMsRange.value = String(helpBeforeStrikeMs);
+    if(helpAfterCountMsValue) helpAfterCountMsValue.textContent = String(helpBeforeStrikeMs);
+
+    if(helpStrikeMsRange) helpStrikeMsRange.value = String(helpStrikeMs);
+    if(helpStrikeMsValue) helpStrikeMsValue.textContent = String(helpStrikeMs);
+
+    if(helpFadeMsRange) helpFadeMsRange.value = String(helpFadeMs);
+    if(helpFadeMsValue) helpFadeMsValue.textContent = String(helpFadeMs);
+
+    if(helpAfterFadeMsRange) helpAfterFadeMsRange.value = String(helpAfterFadeMs);
+    if(helpAfterFadeMsValue) helpAfterFadeMsValue.textContent = String(helpAfterFadeMs);
+  }
+
+  setAnchorToLevel(LEVEL, { noTransition: true });
+
+  if(usesMarboticScan()){ enableScanUI(); }
+  else{ disableScanUI(); }
+}
+
+function maxForLevel(){
+  if(LEVEL === 1) return 4;
+  if(LEVEL === 2) return 4;
+  if(LEVEL === 3) return 4;
+  if(LEVEL === 4) return 6;
+  if(LEVEL === 5) return 6;
+  if(LEVEL === 6) return 7;
+  if(LEVEL === 7) return 8;
+  if(LEVEL === 8) return 8;
+  return 9;
+}
+
+function pickNumberWeighted(cap){
+  const w1 = 0.30;
+  const weights = [];
+  for(let i=1;i<=cap;i++){ weights.push(i === 1 ? w1 : 1); }
+  const sum = weights.reduce((a,b) => a + b, 0);
+  let r = Math.random() * sum;
+  for(let i=0;i<weights.length;i++){
+    r -= weights[i];
+    if(r <= 0) return i + 1;
+  }
+  return cap;
+}
+
+let audioCtx = null;
+function beep(type){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "sine";
+    if(type === "ok") o.frequency.setValueAtTime(740, t);
+    if(type === "no") o.frequency.setValueAtTime(220, t);
+    if(type === "tap") o.frequency.setValueAtTime(520, t);
+    if(type === "level") o.frequency.setValueAtTime(620, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + 0.22);
+  }catch(e){}
+}
+
+/* nieuw: subtiele tik bij hartje of kruis */
+function softBeep(type){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "sine";
+    if(type === "ok") o.frequency.setValueAtTime(980, t);
+    if(type === "no") o.frequency.setValueAtTime(160, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + 0.13);
+  }catch(e){}
+}
+
+/* assets */
+const DICE_DIR = "dobbelstenen";
+const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
+const marboticSrc = (n) => `marbotic${n}.png`;
+
+/* antwoord dice basis */
+const STD_LAYOUT = { 1:"1a", 2:"2a", 3:"3a", 4:"4a", 5:"5a", 6:"6a" };
+function standardLayoutId(n){ return STD_LAYOUT[n] || `${n}a`; }
+
+/* vraag layouts per level (1 tot en met 5) */
+function allowedQuestionLayoutsSingle(level, n){
+  if(n === 1) return ["1a"];
+  if(level === 1 || level === 2){
+    if(n >= 1 && n <= 4) return [standardLayoutId(n)];
+    return [];
+  }
+  if(level === 3){
+    const base = { 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"] };
+    if(n === 1) return ["1a"];
+    return base[n] || [];
+  }
+  if(level === 4){
+    const base = { 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"] };
+    if(n === 1) return ["1a"];
+    if(n === 5) return ["5a"];
+    if(n === 6) return ["6a"];
+    return base[n] || [];
+  }
+  if(level === 5){
+    const base = { 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"], 5: ["5a","5b","5c"], 6: ["6a","6b"] };
+    if(n === 1) return ["1a"];
+    return base[n] || [];
+  }
+  return [standardLayoutId(n)];
+}
+function questionAvoidLayoutId(level, n){
+  if(level === 3){
+    if(n >= 2 && n <= 4) return standardLayoutId(n);
+    return null;
+  }
+  if(level === 4){
+    if(n >= 2 && n <= 4) return standardLayoutId(n);
+    return null;
+  }
+  if(level === 5){ return standardLayoutId(n); }
+  return null;
+}
+function pickQuestionLayoutDistinct(level, n){
+  const allowed = allowedQuestionLayoutsSingle(level, n);
+  const avoid = questionAvoidLayoutId(level, n);
+  if(!avoid) return allowed.length ? pick(allowed) : standardLayoutId(n);
+  const filtered = allowed.filter(x => x !== avoid);
+  return (filtered.length ? pick(filtered) : pick(allowed));
+}
+
+/* html builders */
+function boardHtmlForLayout(layoutId){
+  return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+}
+function boardHtmlForPair(bigId, smallId, smallSide, delayMs){
+  const cls = (smallSide === "left") ? "pairWrap smallLeft" : "pairWrap smallRight";
+  const d = Number(delayMs ?? 420);
+  return `<div class="qWrap">
+    <div class="${cls}">
+      <div class="pairItem big"><img class="pairImg" src="${diceSrc(bigId)}" alt="" draggable="false"></div>
+      <div class="pairItem small" style="--delay:${d}ms"><img class="pairImg" src="${diceSrc(smallId)}" alt="" draggable="false"></div>
+    </div>
+  </div>`;
+}
+
+/* ========================= uitleg overlay helpers (level 8 en 9 bij fout) ========================= */
+let countHelpTokenSK = 0;
+let countHelpTimersSK = [];
+function clearCountHelpOverlaySK(){
+  countHelpTokenSK++;
+  countHelpTimersSK.forEach(t => { try{ clearTimeout(t); }catch(e){} });
+  countHelpTimersSK = [];
+  if(countHelpOverlay) countHelpOverlay.innerHTML = "";
+}
+function scheduleCountHelpTimerSK(fn, ms){
+  const t = setTimeout(fn, ms);
+  countHelpTimersSK.push(t);
+  return t;
+}
+function waitForImgLoad(imgEl){
+  if(!imgEl) return Promise.resolve(false);
+  if(imgEl.complete && imgEl.naturalWidth) return Promise.resolve(true);
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (ok) => { if(done) return; done = true; cleanup(); resolve(ok); };
+    const cleanup = () => {
+      imgEl.removeEventListener("load", onLoad);
+      imgEl.removeEventListener("error", onErr);
+    };
+    const onLoad = () => finish(true);
+    const onErr = () => finish(false);
+    imgEl.addEventListener("load", onLoad, { once:true });
+    imgEl.addEventListener("error", onErr, { once:true });
+    setTimeout(() => finish(!!imgEl.naturalWidth), 900);
+  });
+}
+
+const pipSvgCacheSK = new Map();
+function parseSvgPipsSK(svgText){
+  try{
+    const dp = new DOMParser();
+    const doc = dp.parseFromString(svgText, "image/svg+xml");
+    const svg = doc.querySelector("svg");
+    if(!svg) return null;
+
+    let vb = svg.getAttribute("viewBox") || "";
+    let vbX = 0, vbY = 0, vbW = 0, vbH = 0;
+    if(vb && vb.trim()){
+      const parts = vb.trim().split(/[\s,]+/).map(Number);
+      if(parts.length >= 4){
+        vbX = Number(parts[0]) || 0;
+        vbY = Number(parts[1]) || 0;
+        vbW = Number(parts[2]) || 0;
+        vbH = Number(parts[3]) || 0;
+      }
+    }
+    if(!vbW || !vbH){
+      const wAttr = svg.getAttribute("width");
+      const hAttr = svg.getAttribute("height");
+      vbW = parseFloat(wAttr) || 100;
+      vbH = parseFloat(hAttr) || 100;
+      vbX = 0; vbY = 0;
+    }
+
+    const circles = [...svg.querySelectorAll("circle")];
+    const pips = circles.map(c => {
+      const cx = Number(c.getAttribute("cx"));
+      const cy = Number(c.getAttribute("cy"));
+      const r = Number(c.getAttribute("r"));
+      const fill = (c.getAttribute("fill") || "").trim().toLowerCase();
+      const op = Number(c.getAttribute("opacity") ?? "1");
+      if(!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(r)) return null;
+      if(r <= 0) return null;
+      if(fill === "none") return null;
+      if(op <= 0.01) return null;
+      return { cx, cy, r };
+    }).filter(Boolean);
+
+    if(!pips.length) return null;
+    return { vbX, vbY, vbW, vbH, pips };
+  }catch(e){
+    return null;
+  }
+}
+async function getPipDataForLayoutSK(layoutId){
+  const key = String(layoutId || "");
+  if(!key) return null;
+  if(pipSvgCacheSK.has(key)) return pipSvgCacheSK.get(key);
+  try{
+    const res = await fetch(diceSrc(key), { cache: "force-cache" });
+    const txt = await res.text();
+    const data = parseSvgPipsSK(txt);
+    pipSvgCacheSK.set(key, data);
+    return data;
+  }catch(e){
+    pipSvgCacheSK.set(key, null);
+    return null;
+  }
+}
+function fallbackSmallPipsSK(amount){
+  const a = Number(amount) || 1;
+  if(a === 1) return [{ x:0.50, y:0.50 }];
+  if(a === 2) return [{ x:0.30, y:0.30 }, { x:0.70, y:0.70 }];
+  return [{ x:0.30, y:0.30 }, { x:0.50, y:0.50 }, { x:0.70, y:0.70 }];
+}
+function clampToRectSK(x, y, rect, pad){
+  const p = Math.max(0, Number(pad) || 0);
+  const xx = clamp(x, rect.left + p, rect.right - p);
+  const yy = clamp(y, rect.top + p, rect.bottom - p);
+  return { x: xx, y: yy };
+}
+
+/* ========================= AANGEPAST: volgorde en plaatsing volgens beschrijving =========================
+   1) vraag opnieuw in beeld gebeurt in onScanValue
+   2) na wachttijd cirkel: cirkel om grootste groep
+   3) na wachttijd hoeveelheid: hoeveelheid groter en dikker (grootte slider)
+   4) daarna cijfers naast stippen, afstand en plaatsing op basis van foto (rechts en iets omhoog)
+*/
+async function showWrongCountHelpSK(){
+  if(!countHelpOverlay) return { lastLabelAtMs: 0, labelsCount: 0 };
+  if(!usesMarboticScan()) return { lastLabelAtMs: 0, labelsCount: 0 };
+  if(LEVEL < 8) return { lastLabelAtMs: 0, labelsCount: 0 };
+  if(!questionState || questionState.kind !== "pair") return { lastLabelAtMs: 0, labelsCount: 0 };
+
+  const localToken = ++countHelpTokenSK;
+  countHelpOverlay.innerHTML = "";
+  await raf(); await raf();
+  if(localToken !== countHelpTokenSK) return { lastLabelAtMs: 0, labelsCount: 0 };
+
+  const bigImg = flashSvg ? flashSvg.querySelector(".pairItem.big img") : null;
+  const smallImg = flashSvg ? flashSvg.querySelector(".pairItem.small img") : null;
+  if(!bigImg || !smallImg) return { lastLabelAtMs: 0, labelsCount: 0 };
+
+  await Promise.all([waitForImgLoad(bigImg), waitForImgLoad(smallImg)]);
+  if(localToken !== countHelpTokenSK) return { lastLabelAtMs: 0, labelsCount: 0 };
+
+  const overlayRect = countHelpOverlay.getBoundingClientRect();
+  const bigRect = bigImg.getBoundingClientRect();
+  const smallRect = smallImg.getBoundingClientRect();
+
+  const bigAmount = Number(questionState.bigAmount) || 0;
+  const smallAmount = Number(questionState.smallAmount) || 0;
+
+  let dotDiaPx = Math.min(bigRect.width, bigRect.height) * 0.13;
+
+  /* pip data big: voor ellips om de stippen */
+  const bigLayoutId = String(questionState.bigLayoutId || "");
+  const bigPipData = await getPipDataForLayoutSK(bigLayoutId);
+
+  let bigPips = [];
+  let bigDotRadiusPx = dotDiaPx * 0.5;
+  if(bigPipData && bigPipData.pips && bigPipData.pips.length){
+    const scale = Math.min(bigRect.width / Math.max(1, bigPipData.vbW), bigRect.height / Math.max(1, bigPipData.vbH));
+    const rAvg = bigPipData.pips.reduce((a,p) => a + (Number(p.r) || 0), 0) / Math.max(1, bigPipData.pips.length);
+    bigDotRadiusPx = clamp(rAvg * scale, 6, 38);
+    bigPips = bigPipData.pips.map(p => ({
+      x: (p.cx - bigPipData.vbX) / Math.max(1e-6, bigPipData.vbW),
+      y: (p.cy - bigPipData.vbY) / Math.max(1e-6, bigPipData.vbH),
+      r: (Number(p.r) || 0)
+    }));
+  }
+
+  /* pip data small: voor doortellen */
+  const smallLayoutId = String(questionState.smallLayoutId || "");
+  const smallPipData = await getPipDataForLayoutSK(smallLayoutId);
+
+  let smallPips = [];
+  if(smallPipData && smallPipData.pips && smallPipData.pips.length){
+    const scale = Math.min(smallRect.width / Math.max(1, smallPipData.vbW), smallRect.height / Math.max(1, smallPipData.vbH));
+    const rAvg = smallPipData.pips.reduce((a,p) => a + (Number(p.r) || 0), 0) / Math.max(1, smallPipData.pips.length);
+    dotDiaPx = clamp(2 * rAvg * scale, 10, 64);
+
+    smallPips = smallPipData.pips.map(p => ({
+      x: (p.cx - smallPipData.vbX) / Math.max(1e-6, smallPipData.vbW),
+      y: (p.cy - smallPipData.vbY) / Math.max(1e-6, smallPipData.vbH)
+    }));
+
+    /* sorteer: meest links boven eerst */
+    smallPips.sort((a,b) => (a.y - b.y) || (a.x - b.x));
+  }else{
+    smallPips = fallbackSmallPipsSK(smallAmount);
+  }
+
+  /* timing uit sliders */
+  const tCircle = clamp(Number(helpCircleWaitMs) || 220, 0, 2000);
+  const tAmount = clamp(Number(helpAmountWaitMs) || 320, 0, 3000);
+  const tStep = clamp(Number(helpCountStepMs) || 320, 80, 2000);
+
+  const tBigNumber = tCircle + tAmount;
+  const tFirstSmall = tBigNumber + tStep;
+
+  function addEllipseAroundBig(){
+    if(localToken !== countHelpTokenSK) return;
+
+    let minX = 0.18, minY = 0.18, maxX = 0.82, maxY = 0.82;
+    if(bigPips.length){
+      minX = Math.min(...bigPips.map(p => p.x));
+      minY = Math.min(...bigPips.map(p => p.y));
+      maxX = Math.max(...bigPips.map(p => p.x));
+      maxY = Math.max(...bigPips.map(p => p.y));
+    }
+
+    const pxMinX = bigRect.left + minX * bigRect.width - bigDotRadiusPx;
+    const pxMaxX = bigRect.left + maxX * bigRect.width + bigDotRadiusPx;
+    const pxMinY = bigRect.top + minY * bigRect.height - bigDotRadiusPx;
+    const pxMaxY = bigRect.top + maxY * bigRect.height + bigDotRadiusPx;
+
+    const pad = clamp(Math.max(10, bigDotRadiusPx * 1.15), 10, 44);
+
+    const left = (pxMinX - overlayRect.left) - pad;
+    const right = (pxMaxX - overlayRect.left) + pad;
+    const top = (pxMinY - overlayRect.top) - pad;
+    const bottom = (pxMaxY - overlayRect.top) + pad;
+
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+    const rx = Math.max(16, (right - left) / 2);
+    const ry = Math.max(16, (bottom - top) / 2);
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "countEllipseSvgSK");
+    svg.setAttribute("viewBox", `0 0 ${overlayRect.width} ${overlayRect.height}`);
+    svg.setAttribute("preserveAspectRatio", "none");
+
+    const ell = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+    ell.setAttribute("class", "countEllipseSK");
+    ell.setAttribute("cx", String(cx));
+    ell.setAttribute("cy", String(cy));
+    ell.setAttribute("rx", String(rx));
+    ell.setAttribute("ry", String(ry));
+
+    const approxLen = 2 * Math.PI * Math.sqrt((rx*rx + ry*ry) / 2);
+    ell.style.setProperty("--dash", String(Math.max(40, Math.floor(approxLen))));
+
+    svg.appendChild(ell);
+    countHelpOverlay.appendChild(svg);
+  }
+
+  function addBigNumber(){
+    if(localToken !== countHelpTokenSK) return;
+
+    const label = document.createElement("div");
+    label.className = "countBigLabelSK";
+    label.textContent = String(bigAmount);
+
+    const pct = clamp(Number(helpAmountSizePct) || 16, 10, 30) / 100;
+    const base = Math.min(bigRect.width, bigRect.height);
+    const dia = clamp(Math.round(base * pct), 26, 140);
+
+    const borderW = clamp(Math.round(dia * 0.06), 3, 8);
+
+    label.style.width = `${dia}px`;
+    label.style.height = `${dia}px`;
+    label.style.fontSize = `${Math.round(Math.min(dia * 0.78, dia - 10))}px`;
+    label.style.borderWidth = `${borderW}px`;
+    label.style.fontWeight = "950";
+
+    const lx = (bigRect.left + bigRect.width * 0.72) - overlayRect.left;
+    const ly = (bigRect.top + bigRect.height * 0.22) - overlayRect.top;
+
+    const clamped = clampToRectSK(lx, ly, { left:0, top:0, right: overlayRect.width, bottom: overlayRect.height }, dia * 0.60);
+    label.style.left = `${clamped.x}px`;
+    label.style.top = `${clamped.y}px`;
+
+    countHelpOverlay.appendChild(label);
+  }
+
+  scheduleCountHelpTimerSK(addEllipseAroundBig, tCircle);
+  scheduleCountHelpTimerSK(addBigNumber, tBigNumber);
+
+  /* doortellen labels naast stippen van kleine groep, plaatsing op basis foto: rechts en iets omhoog */
+  const fontPx = clamp(Math.floor(dotDiaPx * 0.74), 12, Math.floor(dotDiaPx * 0.92));
+  const offsetX = clamp(dotDiaPx * 1.05, 12, 86);
+  const offsetY = clamp(-dotDiaPx * 0.58, -86, -12);
+  const padLabel = Math.max(6, dotDiaPx * 0.45);
+
+  const startNum = bigAmount + 1;
+  for(let i=0;i<smallPips.length;i++){
+    const n = startNum + i;
+    const pip = smallPips[i];
+
+    scheduleCountHelpTimerSK(() => {
+      if(localToken !== countHelpTokenSK) return;
+
+      const label = document.createElement("div");
+      label.className = "pipLabelSK";
+      label.textContent = String(n);
+      label.style.fontSize = `${fontPx}px`;
+
+      const px = smallRect.left + pip.x * smallRect.width;
+      const py = smallRect.top + pip.y * smallRect.height;
+
+      let lx = (px - overlayRect.left) + offsetX;
+      let ly = (py - overlayRect.top) + offsetY;
+
+      const clamped = clampToRectSK(
+        lx, ly,
+        { left: 0, top: 0, right: overlayRect.width, bottom: overlayRect.height },
+        padLabel
+      );
+      label.style.left = `${clamped.x}px`;
+      label.style.top = `${clamped.y}px`;
+
+      countHelpOverlay.appendChild(label);
+    }, tFirstSmall + i * tStep);
+  }
+
+  const lastLabelAtMs = smallPips.length ? (tFirstSmall + (smallPips.length - 1) * tStep) : tBigNumber;
+  return { lastLabelAtMs, labelsCount: smallPips.length };
+}
+
+/* html helpers */
+function setBoard(html){ flashSvg.innerHTML = html; }
+function clearBoard(){ flashSvg.innerHTML = ""; clearCountHelpOverlaySK(); }
+function dissolveBoard(ms){
+  const has = (flashSvg.innerHTML || "").trim().length > 0;
+  if(!has){
+    clearBoard();
+    flashSvg.style.transition = "";
+    flashSvg.style.opacity = "1";
+    return;
+  }
+  flashSvg.style.transition = `opacity ${ms}ms ease`;
+  flashSvg.style.opacity = "0";
+  setTimeout(() => {
+    clearBoard();
+    flashSvg.style.transition = "";
+    flashSvg.style.opacity = "1";
+  }, ms + 40);
+}
+
+/* timer afspelen in vraagvenster */
+async function playTimerSequenceInQuestion(){
+  if(!timerVid) return;
+  const playMs = clamp(Number(timerPlayMs) || 2000, 100, 5000);
+  const gapMs = clamp(Number(timerGapMs) || 0, 0, 5000);
+  const fadeStartMs = clamp(1700, 0, playMs);
+  const fadeDurMs = Math.max(0, playMs - fadeStartMs);
+
+  try{
+    timerVid.pause();
+    timerVid.currentTime = 0;
+    timerVid.style.display = "block";
+    timerVid.style.opacity = "1";
+    timerVid.style.transition = "";
+
+    try{ await timerVid.play(); }catch(e){}
+
+    await wait(fadeStartMs);
+
+    if(fadeDurMs > 0){
+      timerVid.style.transition = `opacity ${fadeDurMs}ms ease`;
+      timerVid.style.opacity = "0";
+      await wait(fadeDurMs);
+    }
+  }finally{
+    try{ timerVid.pause(); }catch(e){}
+    timerVid.style.display = "none";
+    timerVid.style.transition = "";
+    timerVid.style.opacity = "1";
+    try{ timerVid.currentTime = 0; }catch(e){}
+  }
+
+  if(gapMs > 0) await wait(gapMs);
+}
+
+/* opties */
+function buildOptions(correct){
+  const cap = maxForLevel();
+  if(LEVEL === 5){
+    const options = new Set([correct]);
+    const candidates = [ correct - 1, correct + 1, correct - 2, correct + 2, correct - 3, correct + 3 ].map(v => clamp(v, 1, cap));
+    for(const c of candidates){ options.add(c); if(options.size >= 3) break; }
+    while(options.size < 3){ options.add(randInt(1, cap)); }
+    const arr = [...options];
+    for(let i=arr.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i],arr[j]] = [arr[j],arr[i]]; }
+    return arr;
+  }
+  const options = new Set([correct]);
+  while(options.size < 3){
+    const delta = pick([ -2, -1, 1, 2 ]);
+    options.add(clamp(correct + delta, 1, cap));
+  }
+  const arr = [...options];
+  for(let i=arr.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i],arr[j]] = [arr[j],arr[i]]; }
+  return arr;
+}
+
+function hideAnswers(){ answersEl.classList.add("answersHidden"); }
+function showAnswers(){ answersEl.classList.remove("answersHidden"); }
+
+function slideVectorForButton(btn){
+  const b = btn.getBoundingClientRect();
+  const a = scanArea.getBoundingClientRect();
+  const extra = 16;
+  if(isPortrait()){
+    const seamY = a.top;
+    const dy = -((b.bottom - seamY) + extra);
+    return { x: 0, y: dy };
+  }else{
+    const seamX = a.left;
+    const dx = -((b.right - seamX) + extra);
+    return { x: dx, y: 0 };
+  }
+}
+function sortedButtonsForExit(btns){
+  const rects = btns.map(b => ({ b, r: b.getBoundingClientRect() }));
+  if(isPortrait()) rects.sort((u,v) => v.r.left - u.r.left);
+  else rects.sort((u,v) => v.r.top - u.r.top);
+  return rects.map(x => x.b);
+}
+async function animateInButtons(){
+  const btns = [...answersEl.querySelectorAll(".ansBtn")];
+  if(!btns.length) return;
+  hideAnswers();
+  await raf(); await raf();
+  btns.forEach(btn => {
+    const v = slideVectorForButton(btn);
+    btn.style.transform = `translate(${v.x}px, ${v.y}px)`;
+    btn.style.opacity = "0";
+  });
+  showAnswers();
+  await raf();
+  const easing = "cubic-bezier(.22,.61,.35,1)";
+  btns.forEach((btn, i) => {
+    btn.animate(
+      [ { transform: btn.style.transform, opacity: 0 }, { transform: "translate(0px, 0px)", opacity: 1 } ],
+      { duration: IN_DUR_MS, easing, fill: "forwards", delay: i * 95 }
+    );
+  });
+  await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
+  btns.forEach(btn => { btn.style.transform = "translate(0px, 0px)"; btn.style.opacity = "1"; });
+}
+async function animateOutButtons(btns, staggerMs){
+  if(!btns.length) return;
+  const easing = "cubic-bezier(.22,.61,.35,1)";
+  btns.forEach((btn, i) => {
+    const v = slideVectorForButton(btn);
+    btn.animate(
+      [ { transform: "translate(0px, 0px)", opacity: 1 }, { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 } ],
+      { duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+    );
+  });
+  await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
+  btns.forEach(btn => { btn.style.opacity = "0"; });
+}
+
+function renderAnswers(correct, onPick){
+  const arr = buildOptions(correct);
+  answersEl.innerHTML = "";
+  arr.forEach(v => {
+    const btn = document.createElement("button");
+    btn.className = "ansBtn";
+    btn.type = "button";
+    btn.addEventListener("pointerdown", () => {
+      btn.classList.remove("pressBounce");
+      void btn.offsetWidth;
+      btn.classList.add("pressBounce");
+    }, {passive:true});
+    btn.addEventListener("click", () => onPick(btn, v));
+
+    /* level 6 tot en met 9, marbotic png in kaart voorkant, kaart draait om */
+    if(LEVEL >= 6){
+      const face = `<div class="marboticFace"><img class="marboticImg" src="${marboticSrc(v)}" alt="" draggable="false"></div>`;
+      btn.innerHTML = `<div class="cardWrap">
+        <div class="cardInner">
+          <div class="cardBack" aria-hidden="true"></div>
+          <div class="cardFront">${face}</div>
+        </div>
+      </div>`;
+      answersEl.appendChild(btn);
+      return;
+    }
+
+    /* level 1 tot en met 5, dobbelsteen svg als antwoord */
+    const layoutId = standardLayoutId(v);
+    const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
+    if(usesAnswerCards()){
+      btn.innerHTML = `<div class="cardWrap">
+        <div class="cardInner">
+          <div class="cardBack" aria-hidden="true"></div>
+          <div class="cardFront">${face}</div>
+        </div>
+      </div>`;
+    }else{
+      btn.innerHTML = face;
+    }
+    answersEl.appendChild(btn);
+  });
+}
+
+let previewToken = 0;
+async function previewCardsNonBlocking(){
+  if(!usesAnswerCards()) return;
+  const myToken = ++previewToken;
+  const btns = [...answersEl.querySelectorAll(".ansBtn")];
+  if(!btns.length) return;
+  await wait(PREVIEW_GAP_MS);
+  if(previewToken !== myToken) return;
+
+  if(LEVEL >= 8){
+    for(let i=0;i<btns.length;i++){
+      if(previewToken !== myToken) return;
+      btns[i].classList.add("cardOpen");
+      await wait(80);
+    }
+    return;
+  }
+
+  if(LEVEL === 2){
+    for(let i=0;i<btns.length;i++){
+      if(previewToken !== myToken) return;
+      btns[i].classList.add("cardOpen");
+      await wait(90);
+    }
+    return;
+  }
+
+  if(timedAutoFlipLevels()){
+    for(let i=0;i<btns.length;i++){
+      if(previewToken !== myToken) return;
+      btns[i].classList.add("cardOpen");
+      await wait(90);
+    }
+    if(previewToken !== myToken) return;
+    const ms = clamp(Number(cardOpenMs) || 1700, 300, 4000);
+    await wait(ms);
+    if(previewToken !== myToken) return;
+    btns.forEach(b => b.classList.remove("cardOpen"));
+    return;
+  }
+}
+
+/* ========================= LEVEL 8 + 9: scan UI helpers ========================= */
+function showScanPlaceSK(pop){
+  if(!scanPlaceWrapSK) return;
+  scanPlaceWrapSK.classList.remove("hidden");
+  if(pop){
+    scanPlaceWrapSK.classList.remove("pop");
+    void scanPlaceWrapSK.offsetWidth;
+    scanPlaceWrapSK.classList.add("pop");
+  }
+}
+function hideScanPlaceSK(){
+  if(!scanPlaceWrapSK) return;
+  scanPlaceWrapSK.classList.add("hidden");
+  scanPlaceWrapSK.classList.remove("pop");
+}
+
+const HEART_SVG_SK = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path fill="currentColor" d="M12 21s-7.3-4.4-9.7-8.5C.6 9.4 2.1 6.2 5.5 5.5c2-.4 3.7.6 4.6 1.9.9-1.3 2.6-2.3 4.6-1.9 3.4.7 4.9 3.9 3.2 7C19.3 16.6 12 21 12 21z"/>
+</svg>`;
+const CROSS_SVG_SK = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path fill="currentColor" d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 0 0-1.4 1.4l4.9 4.9-4.9 4.9a1 1 0 0 0 1.4 1.4l4.9-4.9 4.9 4.9a1 1 0 0 0 1.4-1.4l-4.9-4.9 4.9-4.9a1 1 0 0 0 0-1.4z"/>
+</svg>`;
+
+let scanMarkTimerSK = null;
+function hideScanMarkSK(hard){
+  if(scanMarkTimerSK){ clearTimeout(scanMarkTimerSK); scanMarkTimerSK = null; }
+  if(scanMarkWrapSK){ scanMarkWrapSK.classList.remove("show","good","bad"); }
+  if(scanMarkSK && hard){ scanMarkSK.innerHTML = ""; }
+}
+function showScanMarkSK(isCorrect){
+  if(!scanMarkWrapSK || !scanMarkSK) return;
+  hideScanMarkSK(true);
+  scanMarkWrapSK.classList.add(isCorrect ? "good" : "bad");
+  scanMarkSK.innerHTML = isCorrect ? HEART_SVG_SK : CROSS_SVG_SK;
+  scanMarkWrapSK.classList.add("show");
+  softBeep(isCorrect ? "ok" : "no");
+  scanMarkTimerSK = setTimeout(() => {
+    if(scanMarkWrapSK) scanMarkWrapSK.classList.remove("show","good","bad");
+  }, isCorrect ? 520 : 620);
+}
+
+function enableScanUI(){
+  if(scanOverlaySK) scanOverlaySK.classList.add("show");
+  hideScanPlaceSK();
+  hideScanMarkSK(true);
+}
+function disableScanUI(){
+  if(scanOverlaySK) scanOverlaySK.classList.remove("show");
+  hideScanPlaceSK();
+  hideScanMarkSK(true);
+  hideScannedDigitSK(true);
+  hideCorrectPreviewSK(true);
+}
+
+let scanDigitTimerSK = null;
+function hideScannedDigitSK(hard){
+  if(scanDigitTimerSK){ clearTimeout(scanDigitTimerSK); scanDigitTimerSK = null; }
+  if(scanDigitWrapSK){
+    scanDigitWrapSK.classList.remove("show");
+    scanDigitWrapSK.classList.remove("slideOutLeft");
+    scanDigitWrapSK.classList.remove("goodBorder");
+    scanDigitWrapSK.classList.remove("badBorder");
+    scanDigitWrapSK.classList.remove("strikeSK");
+  }
+  if(scanDigitImgSK){
+    if(hard) scanDigitImgSK.removeAttribute("src");
+    scanDigitImgSK.alt = "";
+    scanDigitImgSK.style.transition = "";
+    scanDigitImgSK.style.opacity = "1";
+  }
+}
+function hideCorrectPreviewSK(hard){
+  if(scanCorrectWrapSK){
+    scanCorrectWrapSK.classList.remove("show");
+    scanCorrectWrapSK.classList.remove("slideOutLeft");
+  }
+  if(scanCorrectImgSK){
+    if(hard) scanCorrectImgSK.removeAttribute("src");
+    scanCorrectImgSK.alt = "";
+    scanCorrectImgSK.style.transition = "";
+    scanCorrectImgSK.style.opacity = "0";
+  }
+}
+
+async function showScannedDigitFeedbackAndExitSK(digit, isCorrect){
+  if(!scanDigitWrapSK || !scanDigitImgSK) return;
+  hideScannedDigitSK(true);
+  hideCorrectPreviewSK(true);
+
+  scanDigitImgSK.src = marboticSrc(digit);
+  scanDigitImgSK.alt = String(digit);
+
+  scanDigitWrapSK.classList.add(isCorrect ? "goodBorder" : "badBorder");
+  scanDigitWrapSK.classList.add("show");
+
+  await wait(80);
+
+  const holdMs = isCorrect ? scanGoodHoldMs : scanWrongHoldMs;
+  await wait(holdMs);
+
+  scanDigitWrapSK.classList.remove("slideOutLeft");
+  void scanDigitWrapSK.offsetHeight;
+  scanDigitWrapSK.classList.add("slideOutLeft");
+
+  await wait(560);
+  hideScannedDigitSK(true);
+}
+
+/* ========================= AANGEPAST: foutstreep langzamer via slider, daarna goed antwoord rechts infade ========================= */
+async function showWrongStrikeAndCorrectSK(wrongDigit, correctDigit){
+  if(!scanDigitWrapSK || !scanDigitImgSK || !scanCorrectWrapSK || !scanCorrectImgSK) return;
+
+  hideCorrectPreviewSK(true);
+
+  scanDigitWrapSK.classList.add("badBorder");
+  scanDigitWrapSK.classList.add("show");
+  scanDigitWrapSK.classList.remove("strikeSK");
+
+  scanDigitImgSK.style.transition = "";
+  scanDigitImgSK.style.opacity = "1";
+  scanDigitImgSK.src = marboticSrc(wrongDigit);
+  scanDigitImgSK.alt = String(wrongDigit);
+
+  await wait(80);
+
+  /* pauze voor streep */
+  const strikeDelayMs = clamp(Number(helpBeforeStrikeMs) || 500, 0, 3000);
+  if(strikeDelayMs > 0) await wait(strikeDelayMs);
+
+  /* streep duur via slider */
+  const strikeDurMs = clamp(Number(helpStrikeMs) || 650, 200, 3000);
+  scanDigitWrapSK.style.setProperty("--strikeDur", `${strikeDurMs}ms`);
+  scanDigitWrapSK.classList.add("strikeSK");
+
+  await wait(strikeDurMs + 30);
+
+  /* daarna goed antwoord rechts infaden */
+  const fadeMs = clamp(Number(helpFadeMs) || 320, 80, 2000);
+
+  scanCorrectWrapSK.classList.add("show");
+  scanCorrectImgSK.style.transition = "";
+  scanCorrectImgSK.style.opacity = "0";
+  scanCorrectImgSK.src = marboticSrc(correctDigit);
+  scanCorrectImgSK.alt = String(correctDigit);
+
+  await raf();
+  scanCorrectImgSK.style.transition = `opacity ${fadeMs}ms ease`;
+  scanCorrectImgSK.style.opacity = "1";
+  await wait(fadeMs + 20);
+
+  const afterFadeMs = clamp(Number(helpAfterFadeMs) || 400, 0, 3000);
+  if(afterFadeMs > 0) await wait(afterFadeMs);
+}
+
+function wrongWiggleScanAreaSK(){
+  scanArea.classList.remove("wrongSK");
+  void scanArea.offsetHeight;
+  scanArea.classList.add("wrongSK");
+  setTimeout(() => scanArea.classList.remove("wrongSK"), 240);
+}
+
+/* ========================= TIMELINE auto fit ========================= */
+const LV_MIN = 1;
+const LV_MAX = 9;
+const LEVELS_VIS_KEY = "slim_kijken_levels_visible_v2";
+let levelsVisible = (localStorage.getItem(LEVELS_VIS_KEY) ?? "0") === "1";
+let tlMeta = null;
+let chickEyeFrac = null;
+let baselineLocalY = 0;
+
+function timelineReady(){ return timelineGroup && timeline && levelsImg && chickAnchor && stillImg && gameCard; }
+function lum(r,g,b){ return 0.2126*r + 0.7152*g + 0.0722*b; }
+function safeDefaultTlMeta(){ return { leftFrac: 0.06, rightFrac: 0.94, baseFrac: 0.82 }; }
+
+function analyzeLevelsPng(imgEl){
+  try{
+    const w = imgEl.naturalWidth || 0;
+    const h = imgEl.naturalHeight || 0;
+    if(!w || !h) return safeDefaultTlMeta();
+
+    const cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(imgEl, 0, 0);
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+
+    const yStart = Math.floor(h * 0.55);
+    let bestY = Math.floor(h * 0.85);
+    let bestCount = -1;
+    for(let y=yStart; y<h; y++){
+      let c = 0;
+      const row = y * w * 4;
+      for(let x=0; x<w; x++){
+        const i = row + x*4;
+        const a = d[i+3];
+        if(a < 32) continue;
+        const L = lum(d[i], d[i+1], d[i+2]);
+        if(L > 245) continue;
+        c++;
+      }
+      if(c > bestCount){ bestCount = c; bestY = y; }
+    }
+
+    const col = new Array(w).fill(0);
+    let maxC = 0;
+    const yBot = Math.floor(h * 0.55);
+    for(let x=0; x<w; x++){
+      let c = 0;
+      for(let y=yBot; y<h; y++){
+        const i = (y*w + x) * 4;
+        const a = d[i+3];
+        if(a < 32) continue;
+        const L = lum(d[i], d[i+1], d[i+2]);
+        if(L > 245) continue;
+        c++;
+      }
+      col[x] = c;
+      if(c > maxC) maxC = c;
+    }
+
+    const thresh = maxC * 0.70;
+    const xs = [];
+    for(let x=0; x<w; x++){ if(col[x] >= thresh) xs.push(x); }
+
+    let clusters = [];
+    if(xs.length){
+      let s = xs[0], p = xs[0];
+      for(let i=1;i<xs.length;i++){
+        const x = xs[i];
+        if(x === p + 1){ p = x; continue; }
+        clusters.push([s,p]);
+        s = x; p = x;
+      }
+      clusters.push([s,p]);
+    }
+    const maxClusterW = w * 0.06;
+    clusters = clusters.filter(([a,b]) => (b-a+1) <= maxClusterW);
+
+    let leftX = w * 0.06;
+    let rightX = w * 0.94;
+    if(clusters.length >= 2){
+      leftX = (clusters[0][0] + clusters[0][1]) * 0.5;
+      rightX = (clusters[clusters.length-1][0] + clusters[clusters.length-1][1]) * 0.5;
+    }else if(xs.length >= 2){
+      leftX = xs[Math.floor(xs.length * 0.02)];
+      rightX = xs[Math.floor(xs.length * 0.98)];
+    }
+
+    leftX = clamp(leftX, w*0.01, w*0.45);
+    rightX = clamp(rightX, w*0.55, w*0.99);
+
+    return { leftFrac: leftX / w, rightFrac: rightX / w, baseFrac: bestY / h };
+  }catch(e){
+    return safeDefaultTlMeta();
+  }
+}
+
+function analyzeChickEyes(imgEl){
+  try{
+    const w = imgEl.naturalWidth || 0;
+    const h = imgEl.naturalHeight || 0;
+    if(!w || !h) return 0.42;
+
+    const cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(imgEl, 0, 0);
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+
+    const ys = [];
+    const yMax = Math.floor(h * 0.60);
+    const x0 = Math.floor(w * 0.25);
+    const x1 = Math.floor(w * 0.75);
+
+    for(let y=0; y<yMax; y++){
+      const row = y * w * 4;
+      for(let x=x0; x<x1; x++){
+        const i = row + x*4;
+        const a = d[i+3];
+        if(a < 32) continue;
+        const L = lum(d[i], d[i+1], d[i+2]);
+        if(L < 55) ys.push(y);
+      }
+    }
+    if(ys.length < 24) return 0.42;
+    ys.sort((a,b) => a-b);
+    const med = ys[Math.floor(ys.length/2)];
+    return clamp(med / h, 0.18, 0.62);
+  }catch(e){
+    return 0.42;
+  }
+}
+
+function tickTForLevel(level){
+  const lv = clamp(level, LV_MIN, LV_MAX);
+  const denom = Math.max(1, (LV_MAX - LV_MIN));
+  return (lv - LV_MIN) / denom;
+}
+function currentTickXLocalForLevel(level){
+  if(!tlMeta) return 0;
+  const w = timeline.clientWidth || 0;
+  const xL = tlMeta.leftFrac * w;
+  const xR = tlMeta.rightFrac * w;
+  return xL + tickTForLevel(level) * (xR - xL);
+}
+function setAnchorToLevel(level, opts = {}){
+  if(!timelineReady()) return;
+  if(!tlMeta) return;
+  if(chickEyeFrac == null) chickEyeFrac = 0.42;
+
+  const xLocal = currentTickXLocalForLevel(level);
+  const aH = chickAnchor.clientHeight || 0;
+  const eyeLocalY = chickEyeFrac * aH;
+  const topLocal = baselineLocalY - eyeLocalY;
+
+  if(opts.noTransition){
+    chickAnchor.classList.add("noMove");
+    chickAnchor.style.left = `${xLocal}px`;
+    chickAnchor.style.top = `${topLocal}px`;
+    chickAnchor.offsetHeight;
+    chickAnchor.classList.remove("noMove");
+    return;
+  }
+  chickAnchor.style.left = `${xLocal}px`;
+  chickAnchor.style.top = `${topLocal}px`;
+}
+
+function updateLevelsVisibilityUI(){
+  toggleLevelsBtn.textContent = levelsVisible ? "levels png verbergen" : "levels png tonen";
+  if(levelsVisible) levelsImg.classList.remove("levelsHidden");
+  else levelsImg.classList.add("levelsHidden");
+}
+
+let fitQueued = false;
+function scheduleFit(){
+  if(fitQueued) return;
+  fitQueued = true;
+  requestAnimationFrame(() => { fitQueued = false; fitTimelineToQuestion(); });
+}
+function fitTimelineToQuestion(){
+  if(!timelineReady()) return;
+  if(!levelsImg.naturalWidth || !levelsImg.naturalHeight) return;
+
+  if(!tlMeta) tlMeta = analyzeLevelsPng(levelsImg);
+  if(chickEyeFrac == null && stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+
+  timeline.style.aspectRatio = `${levelsImg.naturalWidth} / ${levelsImg.naturalHeight}`;
+
+  const r = gameCard.getBoundingClientRect();
+  const cs = getComputedStyle(gameCard);
+  const bw = parseFloat(cs.borderLeftWidth) || 0;
+
+  const targetLeft = r.left + bw;
+  const targetRight = r.right - bw;
+  const targetBaselineY = r.bottom - (bw * 0.5);
+
+  const baseW = 520;
+  timeline.style.width = `${baseW}px`;
+
+  const w = timeline.clientWidth || 1;
+  const h = timeline.clientHeight || 1;
+
+  const xL = tlMeta.leftFrac * w;
+  const xR = tlMeta.rightFrac * w;
+  const yB = tlMeta.baseFrac * h;
+  baselineLocalY = yB;
+
+  const denom = Math.max(1, (xR - xL));
+  const s = (targetRight - targetLeft) / denom;
+  const tx = targetLeft - s * xL;
+  const ty = targetBaselineY - s * yB;
+
+  timelineGroup.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+  setAnchorToLevel(LEVEL, { noTransition: true });
+}
+function initTimelineAuto(){
+  if(!timelineReady()) return;
+  updateLevelsVisibilityUI();
+  const tryInit = () => {
+    if(levelsImg.naturalWidth && levelsImg.naturalHeight){
+      tlMeta = analyzeLevelsPng(levelsImg);
+      if(stillImg.naturalWidth) chickEyeFrac = analyzeChickEyes(stillImg);
+      scheduleFit();
+    }
+  };
+  if(levelsImg.complete) tryInit();
+  levelsImg.addEventListener("load", tryInit);
+  if(stillImg.complete && stillImg.naturalWidth) tryInit();
+  stillImg.addEventListener("load", tryInit);
+
+  if(typeof ResizeObserver === "function"){
+    const ro = new ResizeObserver(() => scheduleFit());
+    ro.observe(gameCard);
+    ro.observe(document.body);
+  }
+  window.addEventListener("resize", scheduleFit);
+  window.addEventListener("orientationchange", scheduleFit);
+}
+
+/* ========================= Animatie kuiken ========================= */
+const TL_WHITE_THRESH = 255;
+const CHICK_UP = { fps:30, startFrame:13, endFrame:53, xStart:30, xEnd:40, y:0, scale:1.0 };
+const CHICK_DOWN = { fps:30, startFrame:0, endFrame:63, xStart:-6, xEnd:-15, y:0, scale:1.0 };
+let chickPlaying = false;
+let chickXAnim = null;
+function cancelChickXAnim(){ try{ if(chickXAnim) chickXAnim.cancel(); }catch(e){} chickXAnim = null; }
+function showOnlyStill(){ stillImg.classList.add("active"); if(animCanvas) animCanvas.classList.remove("active"); }
+function showCanvas(){ if(animCanvas) animCanvas.classList.add("active"); }
+function stopVideo(v){ try{ v.pause(); }catch(e){} }
+function setCanvasSizeToVideo(videoEl){
+  if(!animCanvas) return false;
+  const w = videoEl.videoWidth || 0;
+  const h = videoEl.videoHeight || 0;
+  if(!w || !h) return false;
+  if(animCanvas.width !== w) animCanvas.width = w;
+  if(animCanvas.height !== h) animCanvas.height = h;
+  return true;
+}
+function applyChromaKeyWhite(){
+  if(!chickCtx || !animCanvas) return;
+  const t = TL_WHITE_THRESH;
+  const img = chickCtx.getImageData(0, 0, animCanvas.width, animCanvas.height);
+  const d = img.data;
+  for(let i = 0; i < d.length; i += 4){
+    const r = d[i], g = d[i+1], b = d[i+2];
+    if(r >= t && g >= t && b >= t) d[i+3] = 0;
+  }
+  chickCtx.putImageData(img, 0, 0);
+}
+function drawFrame(videoEl){
+  if(!chickCtx || !animCanvas) return false;
+  if(!setCanvasSizeToVideo(videoEl)) return false;
+  chickCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+  chickCtx.drawImage(videoEl, 0, 0);
+  applyChromaKeyWhite();
+  return true;
+}
+async function ensureReady(videoEl){
+  if(videoEl.readyState >= 2) return true;
+  return await new Promise(resolve => {
+    let done = false;
+    const ok = () => { if(done) return; done = true; cleanup(); resolve(true); };
+    const bad = () => { if(done) return; done = true; cleanup(); resolve(false); };
+    const cleanup = () => {
+      videoEl.removeEventListener("loadeddata", ok);
+      videoEl.removeEventListener("loadedmetadata", ok);
+      videoEl.removeEventListener("error", bad);
+    };
+    videoEl.addEventListener("loadeddata", ok, { once:true });
+    videoEl.addEventListener("loadedmetadata", ok, { once:true });
+    videoEl.addEventListener("error", bad, { once:true });
+    try{ videoEl.load(); }catch(e){}
+    setTimeout(() => { cleanup(); resolve(videoEl.readyState >= 1); }, 900);
+  });
+}
+function segmentTimes(startFrame, endFrame, fps){
+  const f = Math.max(1, Number(fps));
+  const s = Math.max(0, Number(startFrame) / f);
+  const e = Math.max(s + (1 / f), Number(endFrame) / f);
+  return { start: s, end: e, durMs: (e - s) * 1000 };
+}
+async function seekTo(videoEl, timeSec){
+  return await new Promise(resolve => {
+    let done = false;
+    const finish = (ok) => { if(done) return; done = true; cleanup(); resolve(ok); };
+    const onSeeked = () => finish(true);
+    const onErr = () => finish(false);
+    const cleanup = () => {
+      videoEl.removeEventListener("seeked", onSeeked);
+      videoEl.removeEventListener("error", onErr);
+    };
+    videoEl.addEventListener("seeked", onSeeked, { once:true });
+    videoEl.addEventListener("error", onErr, { once:true });
+    try{ videoEl.currentTime = Math.max(0, Number(timeSec) || 0); }
+    catch(e){ cleanup(); resolve(false); return; }
+    setTimeout(() => finish(true), 700);
+  });
+}
+async function playSegmentOnCanvasNoFlash(videoEl, cfg){
+  if(!animCanvas || !chickCtx) return false;
+  cancelChickXAnim();
+  const ready = await ensureReady(videoEl);
+  if(!ready) return false;
+
+  const times = segmentTimes(cfg.startFrame, cfg.endFrame, cfg.fps);
+
+  stopVideo(videoEl);
+  await seekTo(videoEl, times.start);
+
+  animCanvas.style.transform = `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})`;
+
+  let playingOk = true;
+  try{ await videoEl.play(); }catch(e){ playingOk = false; }
+  if(!playingOk) return false;
+
+  const useRVFC = typeof videoEl.requestVideoFrameCallback === "function";
+  const gotFirstFrame = await new Promise(resolve => {
+    let done = false;
+    const finish = (ok) => { if(done) return; done = true; resolve(ok); };
+    const maxWait = setTimeout(() => finish(false), 900);
+
+    if(useRVFC){
+      videoEl.requestVideoFrameCallback(() => {
+        const ok = drawFrame(videoEl);
+        clearTimeout(maxWait);
+        finish(!!ok);
+      });
+    }else{
+      const onTime = () => {
+        const ok = drawFrame(videoEl);
+        clearTimeout(maxWait);
+        finish(!!ok);
+      };
+      videoEl.addEventListener("timeupdate", onTime, { once:true });
+      requestAnimationFrame(() => {
+        if(done) return;
+        const ok = drawFrame(videoEl);
+        clearTimeout(maxWait);
+        finish(!!ok);
+      });
+    }
+  });
+  if(!gotFirstFrame){ try{ videoEl.pause(); }catch(e){} return false; }
+
+  showCanvas();
+  stillImg.classList.remove("active");
+  await raf();
+
+  chickXAnim = animCanvas.animate(
+    [ { transform: `translate(${cfg.xStart}px, ${cfg.y}px) scale(${cfg.scale})` }, { transform: `translate(${cfg.xEnd}px, ${cfg.y}px) scale(${cfg.scale})` } ],
+    { duration: times.durMs, easing: "linear", fill: "forwards" }
+  );
+
+  if(useRVFC){
+    await new Promise(resolve => {
+      const step = () => {
+        drawFrame(videoEl);
+        if(videoEl.currentTime >= times.end || videoEl.ended){ resolve(true); return; }
+        videoEl.requestVideoFrameCallback(step);
+      };
+      videoEl.requestVideoFrameCallback(step);
+    });
+  }else{
+    await new Promise(resolve => {
+      const step = () => {
+        drawFrame(videoEl);
+        if(videoEl.currentTime >= times.end || videoEl.ended){ resolve(true); return; }
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  try{ videoEl.pause(); }catch(e){}
+  cancelChickXAnim();
+  return true;
+}
+
+async function animateTimeline(fromLevel, toLevel){
+  if(!timelineReady()) return;
+  setAnchorToLevel(fromLevel, { noTransition: true });
+  showOnlyStill();
+
+  const hasMp4 = upVid && downVid && animCanvas && chickCtx;
+  if(!hasMp4){
+    setAnchorToLevel(toLevel, { noTransition: true });
+    return;
+  }
+  if(chickPlaying) return;
+
+  chickPlaying = true;
+  stopVideo(upVid);
+  stopVideo(downVid);
+
+  const dir = toLevel > fromLevel ? "up" : "down";
+  const cfg = dir === "up" ? CHICK_UP : CHICK_DOWN;
+  const vid = dir === "up" ? upVid : downVid;
+
+  await playSegmentOnCanvasNoFlash(vid, cfg);
+
+  setAnchorToLevel(toLevel, { noTransition: true });
+  stillImg.classList.add("active");
+  await raf();
+  if(animCanvas) animCanvas.classList.remove("active");
+  chickPlaying = false;
+}
+
+/* ========================= GAME ========================= */
+let started = false;
+let locked = false;
+let questionState = { kind: "single", correct: 1, layoutId: "1a", bigAmount: 2, smallAmount: 1, bigLayoutId: "2a", smallLayoutId: "1a", smallSide: "right", smallDelayMs: 420 };
+
+function resetStreaks(){ streakGood = 0; streakBad = 0; }
+
+/* pair layout keuze sets */
+const PAIR_BIG_BY_AMOUNT = { 1: ["1a"], 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"], 5: ["5a"], 6: ["6a","6b"] };
+const PAIR_SMALL_BY_LEVEL = {
+  6: { 1:["1a"] },
+  7: { 1:["1a"], 2:["2a","2b","2c","2d"] },
+  8: { 1:["1a"], 2:["2a","2b","2c","2d"] },
+  9: { 1:["1a"], 2:["2a","2b","2c","2d"], 3:["3a","3c"] }
+};
+function pickPairLayout(level, amount, role){
+  if(role === "small"){
+    const map = PAIR_SMALL_BY_LEVEL[level] || PAIR_SMALL_BY_LEVEL[9];
+    const arr = (map && map[amount]) ? map[amount] : ["1a"];
+    return pick(arr);
+  }
+  const arr = PAIR_BIG_BY_AMOUNT[amount] || ["1a"];
+  return pick(arr);
+}
+function setQuestionFromState(){
+  if(!questionState) return;
+  if(questionState.kind === "pair"){
+    setBoard(boardHtmlForPair(questionState.bigLayoutId, questionState.smallLayoutId, questionState.smallSide, questionState.smallDelayMs));
+    return;
+  }
+  setBoard(boardHtmlForLayout(questionState.layoutId));
+}
+function buildQuestionState(){
+  if(LEVEL <= 5){
+    const cap = maxForLevel();
+    const n = pickNumberWeighted(cap);
+    const layoutId = pickQuestionLayoutDistinct(LEVEL, n);
+    return { kind: "single", correct: n, layoutId };
+  }
+  if(LEVEL === 6){
+    const smallAmount = 1;
+    const bigAmount = randInt(2, 6);
+    const bigLayoutId = pickPairLayout(6, bigAmount, "big");
+    const smallLayoutId = "1a";
+    const correct = bigAmount + smallAmount;
+    const smallSide = (Math.random() < 0.78) ? "right" : "left";
+    return { kind: "pair", correct, bigAmount, smallAmount, bigLayoutId, smallLayoutId, smallSide, smallDelayMs: 420 };
+  }
+  if(LEVEL === 7 || LEVEL === 8){
+    const cap = 8;
+    const smallAmount = (Math.random() < 0.55) ? 1 : 2;
+    const bigMax = Math.min(6, cap - smallAmount);
+    const bigMin = Math.max(smallAmount + 1, 2);
+    const bigAmount = randInt(bigMin, bigMax);
+    const bigLayoutId = pickPairLayout(9, bigAmount, "big");
+    const smallLayoutId = pickPairLayout(LEVEL, smallAmount, "small");
+    const correct = bigAmount + smallAmount;
+    const smallSide = (Math.random() < 0.78) ? "right" : "left";
+    return { kind: "pair", correct, bigAmount, smallAmount, bigLayoutId, smallLayoutId, smallSide, smallDelayMs: 420 };
+  }
+  {
+    const cap = 9;
+    const smallAmount = pick([1,2,3]);
+    const bigMax = Math.min(6, cap - smallAmount);
+    const bigMin = Math.max(smallAmount + 1, 2);
+    const bigAmount = randInt(bigMin, bigMax);
+    const bigLayoutId = pickPairLayout(9, bigAmount, "big");
+    const smallLayoutId = pickPairLayout(9, smallAmount, "small");
+    const correct = bigAmount + smallAmount;
+    const smallSide = (Math.random() < 0.78) ? "right" : "left";
+    return { kind: "pair", correct, bigAmount, smallAmount, bigLayoutId, smallLayoutId, smallSide, smallDelayMs: 420 };
+  }
+}
+
+async function handleAutoLevelOnGood(){
+  streakGood += 1;
+  streakBad = 0;
+  if(streakGood >= 5){
+    const before = LEVEL;
+    setLevel(LEVEL + 1);
+    resetStreaks();
+    if(LEVEL !== before){
+      beep("level");
+      await animateTimeline(before, LEVEL);
+    }
+    return true;
+  }
+  return false;
+}
+async function handleAutoLevelOnBad(){
+  streakBad += 1;
+  streakGood = 0;
+  if(streakBad >= 2){
+    const before = LEVEL;
+    setLevel(LEVEL - 1);
+    resetStreaks();
+    if(LEVEL !== before){
+      beep("level");
+      await animateTimeline(before, LEVEL);
+    }
+    return true;
+  }
+  return false;
+}
+
+/* ronde */
+async function flashAndAsk(){
+  locked = true;
+  previewToken++;
+  roundToken++;
+  const myRound = roundToken;
+
+  cancelBoardHide();
+  cancelAutoFlip();
+
+  answersEl.classList.add("answersHidden");
+  answersEl.innerHTML = "";
+  clearBoard();
+  hideScannedDigitSK(true);
+  hideCorrectPreviewSK(true);
+  hideScanMarkSK(true);
+  if(usesMarboticScan()) hideScanPlaceSK();
+
+  await wait(160);
+
+  /* level 8 en 9: timer.mp4 eerst */
+  if(usesMarboticScan()){
+    await playTimerSequenceInQuestion();
+    if(myRound !== roundToken) return;
+  }
+
+  questionState = buildQuestionState();
+  setQuestionFromState();
+  await wait(80);
+
+  if(LEVEL === 1){
+    renderAnswers(questionState.correct, onPick);
+    await wait(WAIT_BEFORE_IN_MS);
+    await animateInButtons();
+    locked = false;
+    previewCardsNonBlocking();
+    scheduleBoardHide(flashMs, myRound);
+    return;
+  }
+
+  await wait(flashMs);
+  if(myRound !== roundToken) return;
+
+  dissolveBoard(180);
+  await wait(240);
+  if(myRound !== roundToken) return;
+
+  if(usesMarboticScan()){
+    answersEl.innerHTML = "";
+    answersEl.classList.add("answersHidden");
+    showScanPlaceSK(true);
+    locked = false;
+    return;
+  }
+
+  renderAnswers(questionState.correct, onPick);
+  await wait(WAIT_BEFORE_IN_MS);
+  await animateInButtons();
+  locked = false;
+  previewCardsNonBlocking();
+}
+
+function nextRound(){ flashAndAsk(); }
+
+async function onPick(btn, value){
+  if(!started || locked) return;
+  locked = true;
+  previewToken++;
+  cancelBoardHide();
+  cancelAutoFlip();
+
+  const all = [...answersEl.querySelectorAll(".ansBtn")];
+  all.forEach(b => b.style.pointerEvents = "none");
+
+  if(usesAnswerCards()){
+    btn.classList.add("cardOpen");
+    await wait(LEVEL === 2 ? 110 : 40);
+  }
+
+  if(value === questionState.correct){
+    beep("ok");
+    btn.classList.add("correctHold");
+    await wait(520);
+    dissolveBoard(260);
+    const exitOrder = sortedButtonsForExit(all);
+    await animateOutButtons(exitOrder, 140);
+    btn.classList.remove("correctHold");
+    if(usesAnswerCards()) btn.classList.remove("cardOpen");
+    answersEl.classList.add("answersHidden");
+    all.forEach(b => b.style.pointerEvents = "");
+    await wait(160);
+    await handleAutoLevelOnGood();
+    nextRound();
+    return;
+  }
+
+  /* fout */
+  beep("no");
+  setQuestionFromState();
+  flashSvg.style.transition = "";
+  flashSvg.style.opacity = "1";
+
+  const notChosen = all.filter(b => b !== btn);
+  const chosen = btn;
+
+  chosen.classList.add("wrongHold");
+  await animateOutButtons(sortedButtonsForExit(notChosen), 120);
+
+  await wait(900);
+
+  dissolveBoard(220);
+  await wait(260);
+
+  if(usesAnswerCards()){
+    chosen.classList.remove("cardOpen");
+    await wait(220);
+  }
+  await animateOutButtons([chosen], 0);
+
+  chosen.classList.remove("wrongHold");
+  answersEl.classList.add("answersHidden");
+  await wait(240);
+
+  all.forEach(b => b.style.pointerEvents = "");
+  await handleAutoLevelOnBad();
+  nextRound();
+}
+
+/* ========================= LEVEL 8 + 9: scan afhandeling ========================= */
+async function onScanValue(value){
+  if(!started || locked) return;
+  if(!usesMarboticScan()) return;
+
+  locked = true;
+  previewToken++;
+  cancelBoardHide();
+  cancelAutoFlip();
+
+  hideScanPlaceSK();
+
+  if(value === questionState.correct){
+    beep("ok");
+    showScanMarkSK(true);
+    await showScannedDigitFeedbackAndExitSK(value, true);
+    await wait(120);
+    dissolveBoard(260);
+    await wait(160);
+    await handleAutoLevelOnGood();
+    nextRound();
+    return;
+  }
+
+  /* fout */
+  beep("no");
+  showScanMarkSK(false);
+  wrongWiggleScanAreaSK();
+
+  /* vraag opnieuw tonen */
+  setQuestionFromState();
+  flashSvg.style.transition = "";
+  flashSvg.style.opacity = "1";
+
+  /* uitleg: cirkel, hoeveelheid, doortellen */
+  clearCountHelpOverlaySK();
+  const helpInfo = await showWrongCountHelpSK();
+
+  /* gescand cijfer links tonen */
+  hideScannedDigitSK(true);
+  hideCorrectPreviewSK(true);
+  scanDigitWrapSK.classList.add("badBorder");
+  scanDigitWrapSK.classList.add("show");
+  scanDigitImgSK.src = marboticSrc(value);
+  scanDigitImgSK.alt = String(value);
+  scanDigitImgSK.style.transition = "";
+  scanDigitImgSK.style.opacity = "1";
+
+  /* wacht tot laatste doortel label klaar is, dan streep en goed antwoord */
+  const waitUntil = Math.max(0, Number(helpInfo.lastLabelAtMs) || 0);
+  if(waitUntil > 0) await wait(waitUntil);
+
+  await showWrongStrikeAndCorrectSK(value, questionState.correct);
+
+  /* schuif alles weg zoals normaal */
+  scanDigitWrapSK.classList.remove("slideOutLeft");
+  void scanDigitWrapSK.offsetHeight;
+  scanDigitWrapSK.classList.add("slideOutLeft");
+
+  scanCorrectWrapSK.classList.remove("slideOutLeft");
+  void scanCorrectWrapSK.offsetHeight;
+  scanCorrectWrapSK.classList.add("slideOutLeft");
+
+  await wait(560);
+  hideScannedDigitSK(true);
+  hideCorrectPreviewSK(true);
+
+  await wait(120);
+  dissolveBoard(220);
+  await wait(260);
+
+  await handleAutoLevelOnBad();
+  nextRound();
+}
+
+/* tune ui */
+function syncUI(){
+  if(flashMsValue) flashMsValue.textContent = String(flashMs);
+  if(flashMsRange && Number(flashMsRange.value) !== flashMs) flashMsRange.value = String(flashMs);
+
+  if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
+  if(cardMsRange && Number(cardMsRange.value) !== cardOpenMs) cardMsRange.value = String(cardOpenMs);
+
+  if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
+
+  if(scanCheckSecValue) scanCheckSecValue.textContent = formatSecComma(scanCheckDelayMs);
+  if(scanCheckSecRange && Number(scanCheckSecRange.value) !== stepRound(scanCheckDelayMs/1000, 0.1)) scanCheckSecRange.value = String(stepRound(scanCheckDelayMs/1000, 0.1));
+
+  if(scanGoodSecValue) scanGoodSecValue.textContent = formatSecComma(scanGoodHoldMs);
+  if(scanGoodSecRange && Number(scanGoodSecRange.value) !== stepRound(scanGoodHoldMs/1000, 0.1)) scanGoodSecRange.value = String(stepRound(scanGoodHoldMs/1000, 0.1));
+
+  if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
+  if(scanWrongSecRange && Number(scanWrongSecRange.value) !== stepRound(scanWrongHoldMs/1000, 0.1)) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs/1000, 0.1));
+
+  if(timerPlaySecValue) timerPlaySecValue.textContent = formatSecComma(timerPlayMs);
+  if(timerPlaySecRange && Number(timerPlaySecRange.value) !== stepRound(timerPlayMs/1000, 0.1)) timerPlaySecRange.value = String(stepRound(timerPlayMs/1000, 0.1));
+
+  if(timerGapSecValue) timerGapSecValue.textContent = formatSecComma(timerGapMs);
+  if(timerGapSecRange && Number(timerGapSecRange.value) !== stepRound(timerGapMs/1000, 0.1)) timerGapSecRange.value = String(stepRound(timerGapMs/1000, 0.1));
+
+  if(helpCountStartMsValue) helpCountStartMsValue.textContent = String(helpCircleWaitMs);
+  if(helpCountStartMsRange && Number(helpCountStartMsRange.value) !== helpCircleWaitMs) helpCountStartMsRange.value = String(helpCircleWaitMs);
+
+  if(helpAmountWaitMsValue) helpAmountWaitMsValue.textContent = String(helpAmountWaitMs);
+  if(helpAmountWaitMsRange && Number(helpAmountWaitMsRange.value) !== helpAmountWaitMs) helpAmountWaitMsRange.value = String(helpAmountWaitMs);
+
+  if(helpAmountSizePctValue) helpAmountSizePctValue.textContent = String(helpAmountSizePct);
+  if(helpAmountSizePctRange && Number(helpAmountSizePctRange.value) !== helpAmountSizePct) helpAmountSizePctRange.value = String(helpAmountSizePct);
+
+  if(helpCountStepMsValue) helpCountStepMsValue.textContent = String(helpCountStepMs);
+  if(helpCountStepMsRange && Number(helpCountStepMsRange.value) !== helpCountStepMs) helpCountStepMsRange.value = String(helpCountStepMs);
+
+  if(helpAfterCountMsValue) helpAfterCountMsValue.textContent = String(helpBeforeStrikeMs);
+  if(helpAfterCountMsRange && Number(helpAfterCountMsRange.value) !== helpBeforeStrikeMs) helpAfterCountMsRange.value = String(helpBeforeStrikeMs);
+
+  if(helpStrikeMsValue) helpStrikeMsValue.textContent = String(helpStrikeMs);
+  if(helpStrikeMsRange && Number(helpStrikeMsRange.value) !== helpStrikeMs) helpStrikeMsRange.value = String(helpStrikeMs);
+
+  if(helpFadeMsValue) helpFadeMsValue.textContent = String(helpFadeMs);
+  if(helpFadeMsRange && Number(helpFadeMsRange.value) !== helpFadeMs) helpFadeMsRange.value = String(helpFadeMs);
+
+  if(helpAfterFadeMsValue) helpAfterFadeMsValue.textContent = String(helpAfterFadeMs);
+  if(helpAfterFadeMsRange && Number(helpAfterFadeMsRange.value) !== helpAfterFadeMs) helpAfterFadeMsRange.value = String(helpAfterFadeMs);
+}
+
+function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
+function closeTune(){ tunePanel.classList.add("hidden"); }
+
+/* instellingen openen via lang indrukken op titel */
+let titleHoldTimer = null;
+let titleHoldFired = false;
+const TITLE_HOLD_MS = 1200;
+function clearTitleHold(){ if(titleHoldTimer){ clearTimeout(titleHoldTimer); titleHoldTimer = null; } }
+
+titlePill.addEventListener("pointerdown", () => {
+  titleHoldFired = false;
+  clearTitleHold();
+  titleHoldTimer = setTimeout(() => {
+    titleHoldFired = true;
+    beep("tap");
+    openTune();
+  }, TITLE_HOLD_MS);
+}, { passive:true });
+titlePill.addEventListener("pointerup", clearTitleHold, { passive:true });
+titlePill.addEventListener("pointercancel", clearTitleHold, { passive:true });
+titlePill.addEventListener("pointerleave", clearTitleHold, { passive:true });
+titlePill.addEventListener("click", (e) => { if(titleHoldFired){ e.preventDefault(); e.stopPropagation(); } });
+
+tuneBtn.addEventListener("click", () => { beep("tap"); if(tunePanel.classList.contains("hidden")) openTune(); else closeTune(); });
+tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+if(tuneCloseBottom) tuneCloseBottom.addEventListener("click", () => { beep("tap"); closeTune(); });
+
+flashMsRange.addEventListener("input", () => {
+  flashMs = Number(flashMsRange.value);
+  saveFlashMs(LEVEL, flashMs);
+  syncUI();
+});
+cardMsRange.addEventListener("input", () => {
+  cardOpenMs = Number(cardMsRange.value);
+  previewMs = cardOpenMs;
+  saveCardMs(LEVEL, cardOpenMs);
+  syncUI();
+});
+
+if(scanCheckSecRange){
+  scanCheckSecRange.addEventListener("input", () => {
+    const sec = clamp(Number(scanCheckSecRange.value), 0.1, 2.0);
+    const ms = clamp(Math.round(sec * 1000), 100, 2000);
+    scanCheckDelayMs = ms;
+    if(LEVEL >= 8) saveScanTiming(LEVEL, { checkMs: scanCheckDelayMs });
+    syncUI();
+  });
+}
+if(scanGoodSecRange){
+  scanGoodSecRange.addEventListener("input", () => {
+    const sec = clamp(Number(scanGoodSecRange.value), 0.1, 5.0);
+    const ms = clamp(Math.round(sec * 1000), 100, 5000);
+    scanGoodHoldMs = ms;
+    if(LEVEL >= 8) saveScanTiming(LEVEL, { goodMs: scanGoodHoldMs });
+    syncUI();
+  });
+}
+if(scanWrongSecRange){
+  scanWrongSecRange.addEventListener("input", () => {
+    const sec = clamp(Number(scanWrongSecRange.value), 0.1, 5.0);
+    const ms = clamp(Math.round(sec * 1000), 100, 5000);
+    scanWrongHoldMs = ms;
+    if(LEVEL >= 8) saveScanTiming(LEVEL, { wrongMs: scanWrongHoldMs });
+    syncUI();
+  });
+}
+
+if(timerPlaySecRange){
+  timerPlaySecRange.addEventListener("input", () => {
+    const sec = clamp(Number(timerPlaySecRange.value), 0.1, 5.0);
+    const ms = clamp(Math.round(sec * 1000), 100, 5000);
+    timerPlayMs = ms;
+    if(LEVEL >= 8) saveTimerSeq(LEVEL, { playMs: timerPlayMs });
+    syncUI();
+  });
+}
+if(timerGapSecRange){
+  timerGapSecRange.addEventListener("input", () => {
+    const sec = clamp(Number(timerGapSecRange.value), 0.0, 5.0);
+    const ms = clamp(Math.round(sec * 1000), 0, 5000);
+    timerGapMs = ms;
+    if(LEVEL >= 8) saveTimerSeq(LEVEL, { gapMs: timerGapMs });
+    syncUI();
+  });
+}
+
+/* uitleg sliders */
+if(helpCountStartMsRange){
+  helpCountStartMsRange.addEventListener("input", () => {
+    helpCircleWaitMs = clamp(Number(helpCountStartMsRange.value), 0, 2000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { circleWaitMs: helpCircleWaitMs });
+    syncUI();
+  });
+}
+if(helpAmountWaitMsRange){
+  helpAmountWaitMsRange.addEventListener("input", () => {
+    helpAmountWaitMs = clamp(Number(helpAmountWaitMsRange.value), 0, 3000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { amountWaitMs: helpAmountWaitMs });
+    syncUI();
+  });
+}
+if(helpAmountSizePctRange){
+  helpAmountSizePctRange.addEventListener("input", () => {
+    helpAmountSizePct = clamp(Number(helpAmountSizePctRange.value), 10, 30);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { amountSizePct: helpAmountSizePct });
+    syncUI();
+  });
+}
+if(helpCountStepMsRange){
+  helpCountStepMsRange.addEventListener("input", () => {
+    helpCountStepMs = clamp(Number(helpCountStepMsRange.value), 80, 2000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { countStepMs: helpCountStepMs });
+    syncUI();
+  });
+}
+if(helpAfterCountMsRange){
+  helpAfterCountMsRange.addEventListener("input", () => {
+    helpBeforeStrikeMs = clamp(Number(helpAfterCountMsRange.value), 0, 3000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { beforeStrikeMs: helpBeforeStrikeMs });
+    syncUI();
+  });
+}
+if(helpStrikeMsRange){
+  helpStrikeMsRange.addEventListener("input", () => {
+    helpStrikeMs = clamp(Number(helpStrikeMsRange.value), 200, 3000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { strikeMs: helpStrikeMs });
+    syncUI();
+  });
+}
+if(helpFadeMsRange){
+  helpFadeMsRange.addEventListener("input", () => {
+    helpFadeMs = clamp(Number(helpFadeMsRange.value), 80, 2000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { fadeMs: helpFadeMs });
+    syncUI();
+  });
+}
+if(helpAfterFadeMsRange){
+  helpAfterFadeMsRange.addEventListener("input", () => {
+    helpAfterFadeMs = clamp(Number(helpAfterFadeMsRange.value), 0, 3000);
+    if(LEVEL >= 8) saveHelpSeq(LEVEL, { afterFadeMs: helpAfterFadeMs });
+    syncUI();
+  });
+}
+
+newRoundBtn.addEventListener("click", () => { beep("tap"); if(started) nextRound(); });
+
+testWrongBtn.addEventListener("click", async () => {
+  beep("tap");
+  if(!started || locked) return;
+  const cap = maxForLevel();
+  const wrong = (questionState.correct === cap) ? 1 : questionState.correct + 1;
+  if(usesMarboticScan()){ await onScanValue(wrong); return; }
+  const btns = [...answersEl.querySelectorAll(".ansBtn")];
+  if(btns[0]) await onPick(btns[0], wrong);
+});
+testGoodBtn.addEventListener("click", async () => {
+  beep("tap");
+  if(!started || locked) return;
+  if(usesMarboticScan()){ await onScanValue(questionState.correct); return; }
+  const btns = [...answersEl.querySelectorAll(".ansBtn")];
+  if(btns[0]) await onPick(btns[0], questionState.correct);
+});
+
+levelUpBtn.addEventListener("click", async () => {
+  beep("tap");
+  if(locked) return;
+  const before = LEVEL;
+  setLevel(LEVEL + 1);
+  syncUI();
+  if(LEVEL !== before) await animateTimeline(before, LEVEL);
+});
+levelDownBtn.addEventListener("click", async () => {
+  beep("tap");
+  if(locked) return;
+  const before = LEVEL;
+  setLevel(LEVEL - 1);
+  syncUI();
+  if(LEVEL !== before) await animateTimeline(before, LEVEL);
+});
+
+toggleLevelsBtn.addEventListener("click", () => {
+  beep("tap");
+  levelsVisible = !levelsVisible;
+  try{ localStorage.setItem(LEVELS_VIS_KEY, levelsVisible ? "1" : "0"); }catch(e){}
+  updateLevelsVisibilityUI();
+});
+
+/* start */
+function startGame(){
+  if(started) return;
+  started = true;
+  setLevel(1);
+  resetStreaks();
+  startOverlay.style.display = "none";
+  syncUI();
+  scheduleFit();
+  setAnchorToLevel(LEVEL, { noTransition: true });
+  showOnlyStill();
+  nextRound();
+}
+startBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); beep("tap"); startGame(); });
+startOverlay.addEventListener("click", (e) => { if(e.target === startOverlay){ beep("tap"); startGame(); } });
+
+homeBtn.addEventListener("click", () => {
+  beep("tap");
+  try{ window.location.href = "index.html"; }catch(e){}
+});
+
+/* reflow */
+let reflowTimer = null;
+function onReflow(){
+  if(!started) return;
+  if(reflowTimer) clearTimeout(reflowTimer);
+  reflowTimer = setTimeout(async () => {
+    locked = true;
+    previewToken++;
+    roundToken++;
+    const myRound = roundToken;
+
+    cancelBoardHide();
+    cancelAutoFlip();
+
+    answersEl.classList.add("answersHidden");
+    answersEl.innerHTML = "";
+    hideScannedDigitSK(true);
+    hideCorrectPreviewSK(true);
+    hideScanMarkSK(true);
+    if(usesMarboticScan()) hideScanPlaceSK();
+    clearBoard();
+
+    await wait(80);
+    setQuestionFromState();
+    await wait(80);
+
+    if(usesMarboticScan()){
+      locked = false;
+      showScanPlaceSK(false);
+      scheduleFit();
+      setAnchorToLevel(LEVEL, { noTransition: true });
+      setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
+      return;
+    }
+
+    renderAnswers(questionState.correct, onPick);
+    await wait(WAIT_BEFORE_IN_MS);
+    await animateInButtons();
+    locked = false;
+    previewCardsNonBlocking();
+    scheduleFit();
+    setAnchorToLevel(LEVEL, { noTransition: true });
+
+    if(LEVEL === 1) scheduleBoardHide(flashMs, myRound);
+    else setTimeout(() => { if(myRound === roundToken) dissolveBoard(160); }, 140);
+  }, 220);
+}
+window.addEventListener("resize", onReflow);
+window.addEventListener("orientationchange", onReflow);
+
+/* ========================= LEVEL 8 + 9: Marbotic herkenning ========================= */
+const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+let calibration = null;
+let classificationStats = null;
+let expectedTouchPoints = 3;
+let hasResultForCurrentTouches = false;
+
+let scanCheckTimerSK = null;
+
+function initCalibration(calibrationData) {
+  if (!calibrationData || typeof calibrationData !== "object") {
+    calibration = null;
+    classificationStats = null;
+    expectedTouchPoints = 3;
+    return;
+  }
+  expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number") ? calibrationData.expectedTouchPoints : 3;
+  calibration = buildCalibrationFromData(calibrationData);
+  recomputeClassificationStats();
+}
+
+function buildCalibrationFromData(data) {
+  const obj = {};
+  DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+  DIGIT_ORDER.forEach(function (d) {
+    const entry = data[String(d)];
+    if (!entry || !Array.isArray(entry.samples)) return;
+    entry.samples.forEach(function (s) {
+      if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+      const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+      const features = computeFeatures(pts);
+      obj[String(d)].samples.push({ points: pts, features });
+    });
+  });
+  return obj;
+}
+
+function computeFeatures(points) {
+  if (!points || points.length !== 3) return { vector: [0,0,0] };
+  const p0 = points[0], p1 = points[1], p2 = points[2];
+  const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+  const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+  let maxDist = 0;
+  for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+  if (maxDist < 1e-6) maxDist = 1;
+  for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+  const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+  const L01 = dist(isoPoints[0], isoPoints[1]);
+  const L12 = dist(isoPoints[1], isoPoints[2]);
+  const L20 = dist(isoPoints[2], isoPoints[0]);
+
+  const sides = [
+    { len: L01, i: 0, j: 1 },
+    { len: L12, i: 1, j: 2 },
+    { len: L20, i: 2, j: 0 }
+  ];
+  const maxSideLen = Math.max(L01, L12, L20) || 1;
+  const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+  const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+  const A = isoPoints[largest.i];
+  const B = isoPoints[largest.j];
+  const CIndex = 3 - largest.i - largest.j;
+  const C = isoPoints[CIndex];
+
+  const orientationVal = (a,b,c) => {
+    const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+    return v > 0 ? 1 : v < 0 ? -1 : 0;
+  };
+  const orientation = orientationVal(A,B,C);
+
+  const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+  const denom = 2 * AC * BC;
+  let cosAngle = 0;
+  if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+  let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+  let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+  let width = maxX-minX, height = maxY-minY;
+  if (width < 1e-6) width = 1;
+  if (height < 1e-6) height = 1;
+
+  const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+  const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+  const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+
+  const aspect = height / (width + height);
+  const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+  return { vector };
+}
+
+function buildFeatureVector(f) {
+  const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+  return [
+    f.sides[0]*wSides,
+    f.sides[1]*wSides,
+    f.sides[2]*wSides,
+    f.cosAngle*wCos,
+    f.orientation*wOrient,
+    f.yNorm[0]*wY,
+    f.yNorm[1]*wY,
+    f.yNorm[2]*wY,
+    f.xPattern[0]*wX,
+    f.xPattern[1]*wX,
+    f.xPattern[2]*wX,
+    f.aspect*wAspect
+  ];
+}
+
+function vectorDistance(a, b) {
+  if (!a || !b || a.length !== b.length) return Infinity;
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+  return Math.sqrt(sum);
+}
+
+function recomputeClassificationStats() {
+  if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+  const allSamples = [];
+  DIGIT_ORDER.forEach(d => {
+    const entry = calibration[String(d)];
+    if (!entry) return;
+    (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+  });
+
+  if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+  const sameMin = [];
+  const betweenMin = [];
+  for (let i = 0; i < allSamples.length; i++) {
+    const a = allSamples[i];
+    let minSame = Infinity, minOther = Infinity;
+    for (let j = 0; j < allSamples.length; j++) {
+      if (i === j) continue;
+      const b = allSamples[j];
+      const dist = vectorDistance(a.vector, b.vector);
+      if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+      else minOther = Math.min(minOther, dist);
+    }
+    if (minSame < Infinity) sameMin.push(minSame);
+    if (minOther < Infinity) betweenMin.push(minOther);
+  }
+
+  const maxSame = Math.max.apply(null, sameMin);
+  const minBetween = Math.min.apply(null, betweenMin);
+  let thresholdBase;
+  if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+  else thresholdBase = maxSame * 1.3;
+
+  classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+}
+
+function recognizeDigit(points) {
+  if (!calibration || !classificationStats) return null;
+  if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+  const vec = computeFeatures(points).vector;
+  if (!vec) return null;
+
+  let bestDigit = null;
+  let bestDist = Infinity;
+  DIGIT_ORDER.forEach(function (d) {
+    const entry = calibration[String(d)];
+    if (!entry) return;
+    const samples = entry.samples || [];
+    for (let i = 0; i < samples.length; i++) {
+      const dist = vectorDistance(vec, samples[i].features.vector);
+      if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+    }
+  });
+
+  if (bestDigit === null) return null;
+  if (bestDist > classificationStats.thresholdUnknown) return null;
+  if (bestDist > classificationStats.thresholdBase) return null;
+  return bestDigit;
+}
+
+function getPointsFromTouches(touchList) {
+  const rect = scanArea.getBoundingClientRect();
+  const points = [];
+  for (let i = 0; i < touchList.length; i++) {
+    const t = touchList[i];
+    const x = t.clientX;
+    const y = t.clientY;
+    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) points.push({ x, y });
+  }
+  return points;
+}
+
+function clearScanCheckTimer(){
+  if(scanCheckTimerSK){ clearTimeout(scanCheckTimerSK); scanCheckTimerSK = null; }
+}
+function scheduleScanCheck(pts){
+  clearScanCheckTimer();
+  const delay = clamp(Number(scanCheckDelayMs) || 300, 100, 2000);
+  scanCheckTimerSK = setTimeout(() => {
+    if(locked) return;
+    if(!usesMarboticScan()) return;
+    if(!started) return;
+    if(hasResultForCurrentTouches) return;
+
+    const digit = recognizeDigit(pts);
+    if (digit !== null && typeof digit === "number"){
+      hasResultForCurrentTouches = true;
+      onScanValue(digit);
+    }
+  }, delay);
+}
+
+function handleTouchEventSK(e){
+  if(!usesMarboticScan()) return;
+  if(!calibration || !classificationStats) return;
+  if(!started) return;
+
+  const touches = e.touches || [];
+  const pts = getPointsFromTouches(touches);
+
+  if (pts.length === 0){
+    hasResultForCurrentTouches = false;
+    clearScanCheckTimer();
+    return;
+  }
+  if (pts.length !== expectedTouchPoints){
+    hasResultForCurrentTouches = false;
+    clearScanCheckTimer();
+    if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
+    if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
+    if(scanHintSK) scanHintSK.textContent = "";
+    return;
+  }
+
+  if(scanTitleSK) scanTitleSK.textContent = "Even stil houden.";
+  if(scanSubSK) scanSubSK.textContent = "We lezen de puntjes.";
+  if(scanHintSK) scanHintSK.textContent = "";
+
+  if(!hasResultForCurrentTouches && !locked){
+    scheduleScanCheck(pts);
+  }
+}
+["touchstart","touchmove","touchend","touchcancel"].forEach(type => {
+  scanArea.addEventListener(type, handleTouchEventSK, { passive: true });
+});
+
+/* init */
+clearBoard();
+setLevel(1);
+resetStreaks();
+syncUI();
+initTimelineAuto();
+scheduleFit();
+setAnchorToLevel(LEVEL, { noTransition: true });
+showOnlyStill();
+updateLevelsVisibilityUI();
+
+/* calibration laden */
+fetch("calibration.json", { cache: "no-store" })
+  .then(r => r.json())
+  .then(data => initCalibration(data))
+  .catch(() => {});
+
+})();
+</script>
+
+</body>
+</html>
