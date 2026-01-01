@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="nl">
 <head>
 <meta charset="utf-8" />
@@ -182,6 +181,7 @@ height: 100%;
 max-width: 100%;
 max-height: 100%;
 }
+
 /* nieuw: timer video in vraagvenster */
 .timerVid{
 position:absolute;
@@ -203,8 +203,30 @@ inset:0;
 pointer-events:none;
 z-index: 14;
 }
-.countCircleSK{
+.countEllipseSvgSK{
 position:absolute;
+inset:0;
+width:100%;
+height:100%;
+overflow:visible;
+}
+.countEllipseSK{
+fill: rgba(255,255,255,0.0);
+stroke: rgba(229, 140, 116, 0.95);
+stroke-width: 5;
+stroke-linecap: round;
+stroke-linejoin: round;
+filter: drop-shadow(0 10px 22px rgba(0,0,0,0.08));
+stroke-dasharray: var(--dash, 0);
+stroke-dashoffset: var(--dash, 0);
+animation: ellipseDrawSK 520ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes ellipseDrawSK{
+to{ stroke-dashoffset: 0; }
+}
+.countBigLabelSK{
+position:absolute;
+transform: translate(-50%, -50%);
 display:grid;
 place-items:center;
 border-radius: 999px;
@@ -213,9 +235,15 @@ border: 3px solid rgba(229, 140, 116, 0.92);
 box-shadow: 0 12px 26px rgba(0,0,0,0.10);
 color: rgba(77,74,72,0.92);
 font-weight: 950;
-transform: translate(-50%, -50%);
 line-height: 1;
+opacity: 0;
+animation: bigLabelPopSK 260ms cubic-bezier(.22,.61,.35,1) forwards;
 }
+@keyframes bigLabelPopSK{
+0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.55); }
+100%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
 .pipLabelSK{
 position:absolute;
 transform: translate(-50%, -50%);
@@ -387,6 +415,25 @@ cursor:pointer;
 box-shadow: 0 10px 20px rgba(0,0,0,0.10);
 }
 .tuneClose:active{ transform: translateY(1px) scale(0.99); }
+
+/* nieuw: sluit knop rechtsonder in testpanel */
+.tuneCloseBottomRow{
+display:flex;
+justify-content:flex-end;
+margin-top: 12px;
+}
+.tuneCloseBottom{
+appearance:none;
+border:none;
+background:#f8c3b0;
+border-radius: 12px;
+padding: 10px 12px;
+font-weight: 900;
+cursor:pointer;
+box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+}
+.tuneCloseBottom:active{ transform: translateY(1px) scale(0.99); }
+
 .tuneSection{
 margin-top: 8px;
 padding-top: 10px;
@@ -796,12 +843,6 @@ transform: translateY(-50%) translateX(0) scale(0.98);
 transition: opacity 140ms ease;
 z-index: 25;
 border: 6px solid rgba(245,180,152,0.20);
-overflow: hidden;
-}
-
-/* NIEUW: bij fout, tegel breder zodat fout plus goed naast elkaar passen */
-.scanDigitWrapSK.wide{
-width: 172px;
 }
 .scanDigitWrapSK.show{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
 
@@ -812,73 +853,67 @@ border-color: rgba(144, 204, 152, 0.92);
 border-color: rgba(229, 140, 116, 0.70);
 }
 
-/* NIEUW: layout binnen de scan tegel */
-.scanDigitInnerSK{
-width: 100%;
-height: 100%;
-display:flex;
-align-items:center;
-justify-content:center;
-gap: 8px;
-padding: 8px 10px;
-}
-.scanDigitSlotSK{
-position: relative;
-flex: 1 1 0;
-height: 100%;
-display:grid;
-place-items:center;
-}
-.scanDigitImgSK{
+.scanDigitWrapSK img{
 display:block;
-width: 100%;
-height: 100%;
+width: 78%;
+height: auto;
+max-height: 78%;
 object-fit: contain;
 filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
 will-change: transform, opacity;
 }
-.scanDigitGoodImgSK{
-opacity: 0;
-}
-.scanDigitSlotSK.only{
-flex: 0 0 100%;
-}
-.scanDigitInnerSK.single .scanDigitGoodSlotSK{
-display:none;
-}
-.scanDigitInnerSK.single .scanDigitWrongSlotSK{
-flex: 0 0 100%;
-}
-.scanDigitInnerSK.duo .scanDigitGoodImgSK{
-opacity: 0;
-}
 
-/* NIEUW: rode streep over fout antwoord */
-.strikeLineSK{
-position:absolute;
-inset: 12%;
-border-radius: 999px;
-pointer-events:none;
-transform: scaleX(0);
-transform-origin: 0% 50%;
-opacity: 0;
-}
-.strikeLineSK::before{
+/* nieuw: rode streep door antwoord in de tegel */
+.scanDigitWrapSK.strikeSK::after{
 content:"";
 position:absolute;
-left: -10%;
+left: 10px;
+right: 10px;
 top: 50%;
-width: 120%;
-height: 4px;
-background: rgba(217, 75, 75, 0.95);
-transform: rotate(-18deg);
-border-radius: 999px;
-box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+height: 6px;
+background: rgba(217, 75, 75, 0.92);
+transform: translateY(-50%) rotate(-14deg);
+border-radius: 6px;
+box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+opacity: 0;
+animation: strikeInSK 240ms cubic-bezier(.22,.61,.35,1) forwards;
 }
-.strikeLineSK.draw{
+@keyframes strikeInSK{
+to{ opacity: 1; }
+}
+
+/* nieuw: goed antwoord rechts van de tegel */
+.scanCorrectWrapSK{
+position:absolute;
+left: calc(14px + 86px + 18px);
+top: 50%;
+width: 86px;
+height: 86px;
+border-radius: 16px;
+background: rgba(255,255,255,0.95);
+box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+display:grid;
+place-items:center;
+pointer-events:none;
+opacity: 0;
+transform: translateY(-50%) translateX(0) scale(0.98);
+transition: opacity 140ms ease;
+z-index: 25;
+border: 6px solid rgba(144, 204, 152, 0.55);
+}
+.scanCorrectWrapSK.show{
 opacity: 1;
-transform: scaleX(1);
-transition: transform 320ms cubic-bezier(.22,.61,.35,1), opacity 200ms ease;
+transform: translateY(-50%) translateX(0) scale(1);
+}
+.scanCorrectWrapSK img{
+display:block;
+width: 78%;
+height: auto;
+max-height: 78%;
+object-fit: contain;
+filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+will-change: opacity;
+opacity: 0;
 }
 
 /* schuif links, voorbij de stippellijn middellijn, verdwijnt */
@@ -891,6 +926,16 @@ animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
 100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
 }
 
+/* nieuw: correct tile schuift mee */
+.scanCorrectWrapSK.slideOutLeft{
+animation: scanSlideOutLeftCorrect 520ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes scanSlideOutLeftCorrect{
+0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
+70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.65; }
+100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
+}
+
 .scan-surface.wrongSK{ animation: wiggleSK 220ms ease; }
 @keyframes wiggleSK{
 0%{ transform: translateX(0); }
@@ -899,7 +944,6 @@ animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
 100%{ transform: translateX(0); }
 }
 </style>
-
 </head>
 <body>
 <section class="left" aria-label="Spel">
@@ -920,8 +964,10 @@ animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
 <div class="flashBoard" id="flashBoard">
 <video class="timerVid" id="timerVid" src="timer.mp4" muted playsinline preload="auto"></video>
 <div class="flashSvg" id="flashSvg"></div>
+
 <!-- NIEUW: uitleg overlay (alleen gebruikt bij fout in level 8 en 9) -->
 <div class="countHelpOverlay" id="countHelpOverlay" aria-hidden="true"></div>
+
 </div>
 </div>
 </div>
@@ -936,28 +982,27 @@ animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards;
 
 <!-- level 8 en 9: scan overlay en gescand cijfer feedback -->
 <div class="scanDigitWrapSK" id="scanDigitWrapSK" aria-hidden="true">
-  <!-- NIEUW: fout plus goed naast elkaar, met rode streep -->
-  <div class="scanDigitInnerSK single" id="scanDigitInnerSK" aria-hidden="true">
-    <div class="scanDigitSlotSK scanDigitWrongSlotSK" id="scanDigitWrongSlotSK">
-      <img class="scanDigitImgSK" id="scanDigitWrongImgSK" alt="" />
-      <div class="strikeLineSK" id="scanStrikeSK" aria-hidden="true"></div>
-    </div>
-    <div class="scanDigitSlotSK scanDigitGoodSlotSK" id="scanDigitGoodSlotSK">
-      <img class="scanDigitImgSK scanDigitGoodImgSK" id="scanDigitCorrectImgSK" alt="" />
-    </div>
-  </div>
+<img id="scanDigitImgSK" alt="" />
+</div>
+
+<!-- nieuw: goed antwoord rechts van de scan tegel -->
+<div class="scanCorrectWrapSK" id="scanCorrectWrapSK" aria-hidden="true">
+<img id="scanCorrectImgSK" alt="" />
 </div>
 
 <div class="scanOverlaySK" id="scanOverlaySK" aria-hidden="true">
 <div class="scanUISK">
+
 <!-- nieuw: feedback icoon op de oude plek -->
 <div class="scanMarkWrapSK" id="scanMarkWrapSK" aria-hidden="true">
 <div class="scanMarkSK" id="scanMarkSK"></div>
 </div>
+
 <!-- scanplek afbeelding onderin, 33% -->
 <div class="scanPlaceWrapSK hidden" id="scanPlaceWrapSK" aria-hidden="true">
 <img class="scanPlaceImgSK" id="scanPlaceImgSK" src="marbotic_scanplek.png" alt="" draggable="false" />
 </div>
+
 </div>
 </div>
 </section>
@@ -1079,6 +1124,7 @@ level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is 
 <input type="range" id="helpAfterFadeMsRange" min="0" max="2000" step="20" value="400" />
 <div class="tuneValue" id="helpAfterFadeMsValue">400</div>
 </div>
+
 </div>
 
 <div class="tuneSection" style="padding-top:12px;">
@@ -1089,6 +1135,11 @@ level gaat automatisch, 5 goed achter elkaar is omhoog, 2 fout achter elkaar is 
 </div>
 <div class="tuneButtons" style="margin-top:10px;">
 <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
+</div>
+
+<!-- nieuw: sluit knop rechtsonder -->
+<div class="tuneCloseBottomRow">
+<button class="tuneCloseBottom" id="tuneCloseBottom" type="button">Sluit</button>
 </div>
 </div>
 </div>
@@ -1118,6 +1169,7 @@ const homeBtn = $("homeBtn");
 const tuneBtn = $("tuneBtn");
 const tunePanel = $("tunePanel");
 const tuneClose = $("tuneClose");
+const tuneCloseBottom = $("tuneCloseBottom");
 const flashMsRange = $("flashMsRange");
 const flashMsValue = $("flashMsValue");
 const cardMsRange = $("cardMsRange");
@@ -1168,15 +1220,9 @@ const countHelpOverlay = $("countHelpOverlay");
 
 /* level 8 en 9 scan ui */
 const scanDigitWrapSK = $("scanDigitWrapSK");
-
-/* NIEUW: scan tegel onderdelen (fout plus goed, rode streep) */
-const scanDigitInnerSK = $("scanDigitInnerSK");
-const scanDigitWrongSlotSK = $("scanDigitWrongSlotSK");
-const scanDigitGoodSlotSK = $("scanDigitGoodSlotSK");
-const scanDigitWrongImgSK = $("scanDigitWrongImgSK");
-const scanDigitCorrectImgSK = $("scanDigitCorrectImgSK");
-const scanStrikeSK = $("scanStrikeSK");
-
+const scanDigitImgSK = $("scanDigitImgSK");
+const scanCorrectWrapSK = $("scanCorrectWrapSK");
+const scanCorrectImgSK = $("scanCorrectImgSK");
 const scanOverlaySK = $("scanOverlaySK");
 const scanTitleSK = $("scanTitleSK");
 const scanSubSK = $("scanSubSK");
@@ -1786,7 +1832,6 @@ return null;
 
 function fallbackSmallPipsSK(amount){
 const a = Number(amount) || 1;
-/* genormaliseerd, typische dobbelsteen posities */
 if(a === 1) return [{ x:0.50, y:0.50 }];
 if(a === 2) return [{ x:0.30, y:0.30 }, { x:0.70, y:0.70 }];
 return [{ x:0.30, y:0.30 }, { x:0.50, y:0.50 }, { x:0.70, y:0.70 }];
@@ -1799,8 +1844,11 @@ const yy = clamp(y, rect.top + p, rect.bottom - p);
 return { x: xx, y: yy };
 }
 
-/* AANGEPAST: cirkel in het midden van de grootste groep, doortellen start op meest links boven in de kleine groep
-NIEUW: gebruikt instelbare timing via sliders, returned totale duur tot laatste tel label verschijnt
+/* AANGEPAST:
+1) eerst een cirkel (ellipse) om alle stippen van de grootste groep
+2) daarna pas het getal van die grootste groep
+3) daarna doortellen, labels komen naast de stippen, start bij meest links boven
+timing komt uit sliders
 */
 async function showWrongCountHelpSK(){
 if(!countHelpOverlay) return { lastLabelAtMs: 0, labelsCount: 0 };
@@ -1830,58 +1878,132 @@ const smallAmount = Number(questionState.smallAmount) || 0;
 
 let dotDiaPx = Math.min(bigRect.width, bigRect.height) * 0.13;
 
+/* pip data big: voor ellips om de stippen */
+const bigLayoutId = String(questionState.bigLayoutId || "");
+const bigPipData = await getPipDataForLayoutSK(bigLayoutId);
+
+let bigPips = [];
+let bigDotRadiusPx = dotDiaPx * 0.5;
+
+if(bigPipData && bigPipData.pips && bigPipData.pips.length){
+const scale = Math.min(bigRect.width / Math.max(1, bigPipData.vbW), bigRect.height / Math.max(1, bigPipData.vbH));
+const rAvg = bigPipData.pips.reduce((a,p) => a + (Number(p.r) || 0), 0) / Math.max(1, bigPipData.pips.length);
+bigDotRadiusPx = clamp(rAvg * scale, 6, 38);
+
+bigPips = bigPipData.pips.map(p => ({
+x: (p.cx - bigPipData.vbX) / Math.max(1e-6, bigPipData.vbW),
+y: (p.cy - bigPipData.vbY) / Math.max(1e-6, bigPipData.vbH),
+r: (Number(p.r) || 0)
+}));
+}
+
+/* pip data small: voor doortellen */
 const smallLayoutId = String(questionState.smallLayoutId || "");
-const pipData = await getPipDataForLayoutSK(smallLayoutId);
+const smallPipData = await getPipDataForLayoutSK(smallLayoutId);
 
 let smallPips = [];
-if(pipData && pipData.pips && pipData.pips.length){
-const scale = Math.min(smallRect.width / Math.max(1, pipData.vbW), smallRect.height / Math.max(1, pipData.vbH));
-const rAvg = pipData.pips.reduce((a,p) => a + (Number(p.r) || 0), 0) / Math.max(1, pipData.pips.length);
+if(smallPipData && smallPipData.pips && smallPipData.pips.length){
+const scale = Math.min(smallRect.width / Math.max(1, smallPipData.vbW), smallRect.height / Math.max(1, smallPipData.vbH));
+const rAvg = smallPipData.pips.reduce((a,p) => a + (Number(p.r) || 0), 0) / Math.max(1, smallPipData.pips.length);
 dotDiaPx = clamp(2 * rAvg * scale, 10, 64);
 
-smallPips = pipData.pips.map(p => ({
-x: (p.cx - pipData.vbX) / Math.max(1e-6, pipData.vbW),
-y: (p.cy - pipData.vbY) / Math.max(1e-6, pipData.vbH),
-cx: p.cx, cy: p.cy
+smallPips = smallPipData.pips.map(p => ({
+x: (p.cx - smallPipData.vbX) / Math.max(1e-6, smallPipData.vbW),
+y: (p.cy - smallPipData.vbY) / Math.max(1e-6, smallPipData.vbH)
 }));
 
-/* sorteer: boven naar beneden, links naar rechts */
+/* sorteer: meest links boven eerst */
 smallPips.sort((a,b) => (a.y - b.y) || (a.x - b.x));
 }else{
 smallPips = fallbackSmallPipsSK(smallAmount);
 }
 
-const circleDia = clamp(dotDiaPx * 1.75, 22, 96);
-const circle = document.createElement("div");
-circle.className = "countCircleSK";
-circle.textContent = String(bigAmount);
-circle.style.width = `${circleDia}px`;
-circle.style.height = `${circleDia}px`;
-circle.style.fontSize = `${Math.min(circleDia * 0.70, circleDia - 8)}px`;
+/* timing */
+const tCircle = clamp(Number(helpCountStartMs) || 220, 0, 2000);
+const tStep = clamp(Number(helpCountStepMs) || 320, 80, 2000);
+const tBigNumber = tCircle + tStep;
+const tFirstSmall = tBigNumber + tStep;
 
-/* AANGEPAST: midden in de grootste groep */
-const bigCenterX = bigRect.left + bigRect.width * 0.5;
-const bigCenterY = bigRect.top + bigRect.height * 0.5;
+function addEllipseAroundBig(){
+if(localToken !== countHelpTokenSK) return;
 
-const circlePos = clampToRectSK(
-bigCenterX - overlayRect.left,
-bigCenterY - overlayRect.top,
-{ left: 0, top: 0, right: overlayRect.width, bottom: overlayRect.height },
-circleDia * 0.60
-);
+let minX = 0.18, minY = 0.18, maxX = 0.82, maxY = 0.82;
 
-circle.style.left = `${circlePos.x}px`;
-circle.style.top = `${circlePos.y}px`;
-countHelpOverlay.appendChild(circle);
+if(bigPips.length){
+minX = Math.min(...bigPips.map(p => p.x));
+minY = Math.min(...bigPips.map(p => p.y));
+maxX = Math.max(...bigPips.map(p => p.x));
+maxY = Math.max(...bigPips.map(p => p.y));
+}
 
-const fontPx = clamp(Math.floor(dotDiaPx * 0.85), 9, Math.floor(dotDiaPx));
-const pad = Math.max(4, dotDiaPx * 0.35);
+const pxMinX = bigRect.left + minX * bigRect.width - bigDotRadiusPx;
+const pxMaxX = bigRect.left + maxX * bigRect.width + bigDotRadiusPx;
+const pxMinY = bigRect.top + minY * bigRect.height - bigDotRadiusPx;
+const pxMaxY = bigRect.top + maxY * bigRect.height + bigDotRadiusPx;
 
+const pad = clamp(Math.max(10, bigDotRadiusPx * 1.15), 10, 44);
+
+const left = (pxMinX - overlayRect.left) - pad;
+const right = (pxMaxX - overlayRect.left) + pad;
+const top = (pxMinY - overlayRect.top) - pad;
+const bottom = (pxMaxY - overlayRect.top) + pad;
+
+const cx = (left + right) / 2;
+const cy = (top + bottom) / 2;
+const rx = Math.max(16, (right - left) / 2);
+const ry = Math.max(16, (bottom - top) / 2);
+
+const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+svg.setAttribute("class", "countEllipseSvgSK");
+svg.setAttribute("viewBox", `0 0 ${overlayRect.width} ${overlayRect.height}`);
+svg.setAttribute("preserveAspectRatio", "none");
+
+const ell = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+ell.setAttribute("class", "countEllipseSK");
+ell.setAttribute("cx", String(cx));
+ell.setAttribute("cy", String(cy));
+ell.setAttribute("rx", String(rx));
+ell.setAttribute("ry", String(ry));
+
+/* stroke dash om te "tekenen" */
+const approxLen = 2 * Math.PI * Math.sqrt((rx*rx + ry*ry) / 2);
+ell.style.setProperty("--dash", String(Math.max(40, Math.floor(approxLen))));
+
+svg.appendChild(ell);
+countHelpOverlay.appendChild(svg);
+}
+
+function addBigNumber(){
+if(localToken !== countHelpTokenSK) return;
+
+/* plaats het getal in de buurt van de ellips, iets boven rechts */
+const label = document.createElement("div");
+label.className = "countBigLabelSK";
+label.textContent = String(bigAmount);
+
+const dia = clamp(Math.min(bigRect.width, bigRect.height) * 0.16, 26, 96);
+label.style.width = `${dia}px`;
+label.style.height = `${dia}px`;
+label.style.fontSize = `${Math.min(dia * 0.70, dia - 8)}px`;
+
+const lx = (bigRect.left + bigRect.width * 0.72) - overlayRect.left;
+const ly = (bigRect.top + bigRect.height * 0.22) - overlayRect.top;
+
+const clamped = clampToRectSK(lx, ly, { left:0, top:0, right: overlayRect.width, bottom: overlayRect.height }, dia * 0.60);
+label.style.left = `${clamped.x}px`;
+label.style.top = `${clamped.y}px`;
+
+countHelpOverlay.appendChild(label);
+}
+
+scheduleCountHelpTimerSK(addEllipseAroundBig, tCircle);
+scheduleCountHelpTimerSK(addBigNumber, tBigNumber);
+
+/* doortellen labels naast stippen van kleine groep */
+const fontPx = clamp(Math.floor(dotDiaPx * 0.82), 10, Math.floor(dotDiaPx));
+const offsetX = clamp(dotDiaPx * 0.62, 10, 44);
+const padLabel = Math.max(6, dotDiaPx * 0.45);
 const startNum = bigAmount + 1;
-
-/* AANGEPAST: timing uit sliders */
-const initialDelay = clamp(Number(helpCountStartMs) || 220, 0, 2000);
-const stepDelay = clamp(Number(helpCountStepMs) || 320, 80, 2000);
 
 for(let i=0;i<smallPips.length;i++){
 const n = startNum + i;
@@ -1889,6 +2011,7 @@ const pip = smallPips[i];
 
 scheduleCountHelpTimerSK(() => {
 if(localToken !== countHelpTokenSK) return;
+
 const label = document.createElement("div");
 label.className = "pipLabelSK";
 label.textContent = String(n);
@@ -1897,25 +2020,30 @@ label.style.fontSize = `${fontPx}px`;
 const px = smallRect.left + pip.x * smallRect.width;
 const py = smallRect.top + pip.y * smallRect.height;
 
-/* label op de stip */
-let lx = px - overlayRect.left;
-let ly = py - overlayRect.top;
+/* direct naast de stip, rechts */
+let lx = (px - overlayRect.left) + offsetX;
+let ly = (py - overlayRect.top);
 
 const clamped = clampToRectSK(
 lx, ly,
 { left: 0, top: 0, right: overlayRect.width, bottom: overlayRect.height },
-pad
+padLabel
 );
 
 label.style.left = `${clamped.x}px`;
 label.style.top = `${clamped.y}px`;
 
 countHelpOverlay.appendChild(label);
-}, initialDelay + i * stepDelay);
+}, tFirstSmall + i * tStep);
 }
 
-const lastLabelAtMs = smallPips.length ? (initialDelay + (smallPips.length - 1) * stepDelay) : 0;
+const lastLabelAtMs = smallPips.length ? (tFirstSmall + (smallPips.length - 1) * tStep) : tBigNumber;
 return { lastLabelAtMs, labelsCount: smallPips.length };
+}
+
+/* html helpers */
+function boardHtmlForLayout(layoutId){
+return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
 }
 
 function setBoard(html){ flashSvg.innerHTML = html; }
@@ -2252,38 +2380,10 @@ if(scanOverlaySK) scanOverlaySK.classList.remove("show");
 hideScanPlaceSK();
 hideScanMarkSK(true);
 hideScannedDigitSK(true);
+hideCorrectPreviewSK(true);
 }
 
-/* ===== NIEUW: scan tegel reset en states ===== */
 let scanDigitTimerSK = null;
-function resetScanTileInternalsSK(){
-if(scanDigitInnerSK){
-scanDigitInnerSK.classList.remove("single","duo");
-scanDigitInnerSK.classList.add("single");
-}
-if(scanDigitWrapSK){
-scanDigitWrapSK.classList.remove("wide");
-}
-if(scanStrikeSK){
-scanStrikeSK.classList.remove("draw");
-scanStrikeSK.style.transition = "";
-scanStrikeSK.style.opacity = "";
-scanStrikeSK.style.transform = "";
-}
-if(scanDigitWrongImgSK){
-scanDigitWrongImgSK.style.transition = "";
-scanDigitWrongImgSK.style.opacity = "1";
-scanDigitWrongImgSK.removeAttribute("src");
-scanDigitWrongImgSK.alt = "";
-}
-if(scanDigitCorrectImgSK){
-scanDigitCorrectImgSK.style.transition = "";
-scanDigitCorrectImgSK.style.opacity = "0";
-scanDigitCorrectImgSK.removeAttribute("src");
-scanDigitCorrectImgSK.alt = "";
-}
-}
-
 function hideScannedDigitSK(hard){
 if(scanDigitTimerSK){ clearTimeout(scanDigitTimerSK); scanDigitTimerSK = null; }
 if(scanDigitWrapSK){
@@ -2291,31 +2391,37 @@ scanDigitWrapSK.classList.remove("show");
 scanDigitWrapSK.classList.remove("slideOutLeft");
 scanDigitWrapSK.classList.remove("goodBorder");
 scanDigitWrapSK.classList.remove("badBorder");
-scanDigitWrapSK.classList.remove("wide");
+scanDigitWrapSK.classList.remove("strikeSK");
 }
-if(hard) resetScanTileInternalsSK();
+if(scanDigitImgSK){
+if(hard) scanDigitImgSK.removeAttribute("src");
+scanDigitImgSK.alt = "";
+scanDigitImgSK.style.transition = "";
+scanDigitImgSK.style.opacity = "1";
+}
+}
+
+function hideCorrectPreviewSK(hard){
+if(scanCorrectWrapSK){
+scanCorrectWrapSK.classList.remove("show");
+scanCorrectWrapSK.classList.remove("slideOutLeft");
+}
+if(scanCorrectImgSK){
+if(hard) scanCorrectImgSK.removeAttribute("src");
+scanCorrectImgSK.alt = "";
+scanCorrectImgSK.style.transition = "";
+scanCorrectImgSK.style.opacity = "0";
+}
 }
 
 async function showScannedDigitFeedbackAndExitSK(digit, isCorrect){
-if(!scanDigitWrapSK || !scanDigitWrongImgSK) return;
+if(!scanDigitWrapSK || !scanDigitImgSK) return;
 
 hideScannedDigitSK(true);
-resetScanTileInternalsSK();
+hideCorrectPreviewSK(true);
 
-if(scanDigitInnerSK){
-scanDigitInnerSK.classList.remove("duo");
-scanDigitInnerSK.classList.add("single");
-}
-scanDigitWrapSK.classList.remove("wide");
-
-scanDigitWrongImgSK.src = `marbotic${digit}.png`;
-scanDigitWrongImgSK.alt = String(digit);
-if(scanDigitCorrectImgSK){
-scanDigitCorrectImgSK.style.opacity = "0";
-scanDigitCorrectImgSK.removeAttribute("src");
-scanDigitCorrectImgSK.alt = "";
-}
-if(scanStrikeSK) scanStrikeSK.classList.remove("draw");
+scanDigitImgSK.src = `marbotic${digit}.png`;
+scanDigitImgSK.alt = String(digit);
 
 scanDigitWrapSK.classList.add(isCorrect ? "goodBorder" : "badBorder");
 scanDigitWrapSK.classList.add("show");
@@ -2334,44 +2440,46 @@ await wait(560);
 hideScannedDigitSK(true);
 }
 
-/* NIEUW: bij fout, rode streep door fout antwoord en juiste antwoord ernaast infaden */
-async function showWrongStrikeAndCorrectInScanTileSK(wrongDigit, correctDigit){
-if(!scanDigitWrapSK || !scanDigitWrongImgSK || !scanDigitCorrectImgSK || !scanStrikeSK) return;
+/* NIEUW: bij fout, rode streep door gescand antwoord, daarna goed antwoord rechts infade */
+async function showWrongStrikeAndCorrectSK(wrongDigit, correctDigit){
+if(!scanDigitWrapSK || !scanDigitImgSK || !scanCorrectWrapSK || !scanCorrectImgSK) return;
 
-resetScanTileInternalsSK();
+hideCorrectPreviewSK(true);
 
-if(scanDigitInnerSK){
-scanDigitInnerSK.classList.remove("single");
-scanDigitInnerSK.classList.add("duo");
-}
-scanDigitWrapSK.classList.add("wide");
 scanDigitWrapSK.classList.add("badBorder");
 scanDigitWrapSK.classList.add("show");
+scanDigitWrapSK.classList.remove("strikeSK");
 
-scanDigitWrongImgSK.src = `marbotic${wrongDigit}.png`;
-scanDigitWrongImgSK.alt = String(wrongDigit);
-
-scanDigitCorrectImgSK.src = `marbotic${correctDigit}.png`;
-scanDigitCorrectImgSK.alt = String(correctDigit);
-scanDigitCorrectImgSK.style.opacity = "0";
-scanDigitCorrectImgSK.style.transition = "";
-
-scanStrikeSK.classList.remove("draw");
-void scanStrikeSK.offsetHeight;
+scanDigitImgSK.style.transition = "";
+scanDigitImgSK.style.opacity = "1";
+scanDigitImgSK.src = `marbotic${wrongDigit}.png`;
+scanDigitImgSK.alt = String(wrongDigit);
 
 await wait(80);
 
+/* rode streep na korte pauze, gebruik helpAfterCountMs als instelbare wacht vóór de streep */
+const strikeDelayMs = clamp(Number(helpAfterCountMs) || 500, 0, 3000);
+if(strikeDelayMs > 0) await wait(strikeDelayMs);
+
+scanDigitWrapSK.classList.add("strikeSK");
+
+/* daarna goed antwoord rechts infaden, met helpFadeMs */
 const fadeMs = clamp(Number(helpFadeMs) || 320, 80, 2000);
 
-/* rode streep tekenen */
-scanStrikeSK.style.transition = `transform ${fadeMs}ms cubic-bezier(.22,.61,.35,1), opacity 200ms ease`;
-scanStrikeSK.classList.add("draw");
+scanCorrectWrapSK.classList.add("show");
+scanCorrectImgSK.style.transition = "";
+scanCorrectImgSK.style.opacity = "0";
+scanCorrectImgSK.src = `marbotic${correctDigit}.png`;
+scanCorrectImgSK.alt = String(correctDigit);
 
-/* juiste antwoord infaden */
-scanDigitCorrectImgSK.style.transition = `opacity ${fadeMs}ms ease`;
-scanDigitCorrectImgSK.style.opacity = "1";
+await raf();
+scanCorrectImgSK.style.transition = `opacity ${fadeMs}ms ease`;
+scanCorrectImgSK.style.opacity = "1";
+await wait(fadeMs + 20);
 
-await wait(fadeMs + 30);
+/* pauze na fade */
+const afterFadeMs = clamp(Number(helpAfterFadeMs) || 400, 0, 3000);
+if(afterFadeMs > 0) await wait(afterFadeMs);
 }
 
 function wrongWiggleScanAreaSK(){
@@ -2999,6 +3107,7 @@ answersEl.classList.add("answersHidden");
 answersEl.innerHTML = "";
 clearBoard();
 hideScannedDigitSK(true);
+hideCorrectPreviewSK(true);
 hideScanMarkSK(true);
 if(usesMarboticScan()) hideScanPlaceSK();
 await wait(160);
@@ -3168,44 +3277,38 @@ setQuestionFromState();
 flashSvg.style.transition = "";
 flashSvg.style.opacity = "1";
 
-/* uitleg tonen, cirkel midden in grootste groep, doortellen op kleinste groep */
+/* uitleg tonen: ellips om grootste groep, big getal, doortellen naast kleine stippen */
 clearCountHelpOverlaySK();
 const helpInfo = await showWrongCountHelpSK();
 
-/* toon gescand cijfer links, rood, enkel */
+/* toon gescand cijfer links, rood */
 hideScannedDigitSK(true);
-resetScanTileInternalsSK();
-
-if(scanDigitInnerSK){
-scanDigitInnerSK.classList.remove("duo");
-scanDigitInnerSK.classList.add("single");
-}
-scanDigitWrapSK.classList.remove("wide");
+hideCorrectPreviewSK(true);
 scanDigitWrapSK.classList.add("badBorder");
 scanDigitWrapSK.classList.add("show");
+scanDigitImgSK.src = `marbotic${value}.png`;
+scanDigitImgSK.alt = String(value);
+scanDigitImgSK.style.transition = "";
+scanDigitImgSK.style.opacity = "1";
 
-scanDigitWrongImgSK.src = `marbotic${value}.png`;
-scanDigitWrongImgSK.alt = String(value);
-
-/* wacht tot tel labels klaar zijn, plus instelbare pauze */
-const afterCountMs = clamp(Number(helpAfterCountMs) || 500, 0, 3000);
+/* wacht tot tel labels klaar zijn, hierna de fout feedback: streep, daarna goed antwoord rechts infade */
 const waitUntil = Math.max(0, Number(helpInfo.lastLabelAtMs) || 0);
 if(waitUntil > 0) await wait(waitUntil);
-if(afterCountMs > 0) await wait(afterCountMs);
 
-/* NU: rode streep door fout antwoord en juiste antwoord ernaast infaden */
-await showWrongStrikeAndCorrectInScanTileSK(value, questionState.correct);
+await showWrongStrikeAndCorrectSK(value, questionState.correct);
 
-/* wacht na fade */
-const afterFadeMs = clamp(Number(helpAfterFadeMs) || 400, 0, 3000);
-if(afterFadeMs > 0) await wait(afterFadeMs);
-
-/* schuif weg zoals normaal */
+/* schuif alles weg zoals normaal */
 scanDigitWrapSK.classList.remove("slideOutLeft");
 void scanDigitWrapSK.offsetHeight;
 scanDigitWrapSK.classList.add("slideOutLeft");
+
+scanCorrectWrapSK.classList.remove("slideOutLeft");
+void scanCorrectWrapSK.offsetHeight;
+scanCorrectWrapSK.classList.add("slideOutLeft");
+
 await wait(560);
 hideScannedDigitSK(true);
+hideCorrectPreviewSK(true);
 
 /* vraag weg en door */
 await wait(120);
@@ -3295,6 +3398,7 @@ if(tunePanel.classList.contains("hidden")) openTune();
 else closeTune();
 });
 tuneClose.addEventListener("click", () => { beep("tap"); closeTune(); });
+if(tuneCloseBottom) tuneCloseBottom.addEventListener("click", () => { beep("tap"); closeTune(); });
 
 flashMsRange.addEventListener("input", () => {
 flashMs = Number(flashMsRange.value);
@@ -3518,6 +3622,7 @@ cancelAutoFlip();
 answersEl.classList.add("answersHidden");
 answersEl.innerHTML = "";
 hideScannedDigitSK(true);
+hideCorrectPreviewSK(true);
 hideScanMarkSK(true);
 if(usesMarboticScan()) hideScanPlaceSK();
 
