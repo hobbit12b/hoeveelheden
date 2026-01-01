@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Slim kijken</title>
-
 <style>
 :root{
   --bg-left:#fdeeea;
@@ -22,6 +21,7 @@
   --correctBorder: rgba(144, 204, 152, 0.70);
   --activeFill: rgba(229, 140, 116, 0.18);
 }
+
 *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
 html, body{
   height:100%;
@@ -47,6 +47,7 @@ body{
 @media (orientation: portrait){
   body{ grid-template-columns: 1fr; grid-template-rows: 54fr 46fr; }
 }
+
 .left{
   background: var(--bg-left);
   padding: 28px 26px 22px 26px;
@@ -73,6 +74,7 @@ body{
   .scan-surface{ border-top: 6px dashed var(--midLine); }
   .left{ padding: 22px; gap: 16px; }
 }
+
 .topbar{
   display:flex;
   align-items:center;
@@ -81,6 +83,7 @@ body{
   position: relative;
   z-index: 2;
 }
+
 .homeBtn, .tuneBtn{
   width:72px;
   height:72px;
@@ -99,6 +102,7 @@ body{
 }
 .homeBtn:active, .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
 .homeBtn svg{ width: 42px; height: 42px; display:block; }
+
 .titlePill{
   padding: 18px 44px;
   border-radius: 22px;
@@ -116,6 +120,7 @@ body{
   width: min(660px, 100%);
   text-transform: lowercase;
 }
+
 .content{
   flex:1 1 auto;
   display:flex;
@@ -126,6 +131,7 @@ body{
   position: relative;
   overflow:hidden;
 }
+
 .gameCard{
   width: min(980px, 100%);
   height: min(520px, 58vh);
@@ -144,6 +150,7 @@ body{
 @media (orientation: portrait){
   .gameCard{ height: min(420px, 34vh); }
 }
+
 .flashBoard{
   width: 100%;
   height: 100%;
@@ -164,7 +171,14 @@ body{
     transform: none;
   }
 }
-.flashSvg{ width: 100%; height: 100%; display:flex; align-items:center; justify-content:center; }
+
+.flashSvg{
+  width: 100%;
+  height: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 .flashSvg svg{ width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
 
 /* nieuw: timer video in vraagvenster */
@@ -213,9 +227,9 @@ body{
   place-items:center;
   border-radius: 999px;
   background: rgba(255,255,255,0.96);
-  border: 4px solid rgba(229, 140, 116, 0.92);
+  border: 3px solid rgba(229, 140, 116, 0.92);
   box-shadow: 0 12px 26px rgba(0,0,0,0.10);
-  color: rgba(25,25,25,0.92);
+  color: rgba(77,74,72,0.92);
   font-weight: 950;
   line-height: 1;
   opacity: 0;
@@ -225,11 +239,12 @@ body{
   0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.55); }
   100%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
+
 .pipLabelSK{
   position:absolute;
   transform: translate(-50%, -50%);
   font-weight: 950;
-  color: rgba(25,25,25,0.92);
+  color: rgba(25,25,25,0.82);
   text-shadow: 0 1px 0 rgba(255,255,255,0.85);
   opacity: 0;
   animation: pipPopSK 260ms cubic-bezier(.22,.61,.35,1) forwards;
@@ -252,6 +267,7 @@ body{
 @media (min-aspect-ratio: 4/3){
   .scanStage{ padding: 12px; }
 }
+
 .answersWrap{ width: min(560px, 92%); max-width: 560px; }
 .answers{
   display:grid;
@@ -264,6 +280,7 @@ body{
   .answers{ grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .answersWrap{ width: min(640px, 92%); }
 }
+
 .ansBtn{
   appearance:none;
   border:none;
@@ -287,10 +304,7 @@ body{
   .answersWrap{ width: min(360px, 92%); }
   .ansBtn{ width: clamp(86px, 10.5vw, 120px); }
 }
-.ansBtn:active{
-  transform: translateY(var(--pressDown));
-  box-shadow: 0 8px 16px rgba(0,0,0,0.10);
-}
+.ansBtn:active{ transform: translateY(var(--pressDown)); box-shadow: 0 8px 16px rgba(0,0,0,0.10); }
 .ansBtn.pressBounce{ animation: pressBounce 280ms cubic-bezier(.22,.61,.35,1) 1; }
 @keyframes pressBounce{
   0%{ transform: translateY(0); }
@@ -299,6 +313,7 @@ body{
 }
 .ansBtn.wrongHold{ background: var(--wrongFill); border-color: var(--wrongBorder); }
 .ansBtn.correctHold{ background: var(--correctFill); border-color: var(--correctBorder); }
+
 .answersHidden{ opacity:0; pointer-events:none; }
 
 .startOverlay{
@@ -362,6 +377,7 @@ body{
   color: #4d4a48;
 }
 .tunePanel.hidden{ display:none; }
+
 .tuneHeader{
   display:flex;
   align-items:center;
@@ -386,6 +402,7 @@ body{
   box-shadow: 0 10px 20px rgba(0,0,0,0.10);
 }
 .tuneClose:active{ transform: translateY(1px) scale(0.99); }
+
 /* nieuw: sluit knop rechtsonder in testpanel */
 .tuneCloseBottomRow{ display:flex; justify-content:flex-end; margin-top: 12px; }
 .tuneCloseBottom{
@@ -400,7 +417,11 @@ body{
 }
 .tuneCloseBottom:active{ transform: translateY(1px) scale(0.99); }
 
-.tuneSection{ margin-top: 8px; padding-top: 10px; border-top:2px solid rgba(245,180,152,0.45); }
+.tuneSection{
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top:2px solid rgba(245,180,152,0.45);
+}
 .tuneRow{
   display:grid;
   grid-template-columns: 170px 1fr 92px;
@@ -425,7 +446,9 @@ body{
   color: rgba(77,74,72,0.86);
 }
 .tuneRow input[type="range"]{ width: 100%; }
+
 .tuneButtons{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
 .tuneBtnSmall{
   appearance:none;
   border:none;
@@ -442,165 +465,44 @@ body{
 .tuneBtnSmall:active{ transform: translateY(1px) scale(0.99); }
 
 .cardWrap{ width:100%; height:100%; border-radius:18px; overflow:hidden; display:grid; place-items:center; perspective: 900px; }
-.cardInner{
-  width:100%;
-  height:100%;
-  position:relative;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transition: transform 420ms cubic-bezier(.22,.61,.35,1);
-  transform: translateZ(0);
-}
-.cardBack, .cardFront{
-  position:absolute;
-  inset:0;
-  display:grid;
-  place-items:center;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius:18px;
-  overflow:hidden;
-}
-.cardBack{
-  background:#f8c3b0;
-  font-size:32px;
-  background-image: url("vogeltje_achterkantkaart.png");
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.cardFront{
-  background:#ffffff;
-  transform: rotateY(180deg);
-  -webkit-transform: rotateY(180deg);
-}
+.cardInner{ width:100%; height:100%; position:relative; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; transition: transform 420ms cubic-bezier(.22,.61,.35,1); transform: translateZ(0); }
+.cardBack, .cardFront{ position:absolute; inset:0; display:grid; place-items:center; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius:18px; overflow:hidden; }
+.cardBack{ background:#f8c3b0; font-size:32px; background-image: url("vogeltje_achterkantkaart.png"); background-size: contain; background-position: center; background-repeat: no-repeat; }
+.cardFront{ background:#ffffff; transform: rotateY(180deg); -webkit-transform: rotateY(180deg); }
 .ansBtn.cardOpen .cardInner{ transform: rotateY(180deg); -webkit-transform: rotateY(180deg); }
 
-.timelineOverlay{
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  pointer-events:none;
-  user-select:none;
-  overflow: visible;
-  background: transparent;
-}
-.timelineGroup{
-  position:absolute;
-  left: 0;
-  top: 0;
-  transform-origin: 0 0;
-  will-change: transform;
-  pointer-events:none;
-}
-.progressTimeline{
-  position:absolute;
-  left: 0;
-  top: 0;
-  width: 520px;
-  height: auto;
-  z-index: 20;
-}
+.timelineOverlay{ position: fixed; inset: 0; z-index: 2000; pointer-events:none; user-select:none; overflow: visible; background: transparent; }
+.timelineGroup{ position:absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; pointer-events:none; }
+.progressTimeline{ position:absolute; left: 0; top: 0; width: 520px; height: auto; z-index: 20; }
 .progressLine{ position:absolute; inset:0; width:100%; height:100%; object-fit: fill; }
 .progressLine.levelsHidden{ opacity: 0; }
-.progressChickAnchor{
-  position:absolute;
-  left: 0;
-  top: 0;
-  transform: translateX(-50%);
-  width: 82px;
-  height: 82px;
-  pointer-events:none;
-  transition: left 520ms cubic-bezier(.22,.61,.35,1);
-  will-change: left, transform, top;
-}
+.progressChickAnchor{ position:absolute; left: 0; top: 0; transform: translateX(-50%); width: 82px; height: 82px; pointer-events:none; transition: left 520ms cubic-bezier(.22,.61,.35,1); will-change: left, transform, top; }
 .progressChickAnchor.noMove{ transition: none !important; }
-.chickLayer{
-  position:absolute;
-  left:0;
-  top:0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  pointer-events:none;
-  transform-origin: 50% 100%;
-  will-change: transform, opacity;
-  display:block;
-  object-fit: contain;
-}
+.chickLayer{ position:absolute; left:0; top:0; width: 100%; height: 100%; opacity: 0; pointer-events:none; transform-origin: 50% 100%; will-change: transform, opacity; display:block; object-fit: contain; }
 .chickLayer.active{ opacity: 1; }
 .stillLayer{ z-index: 3; }
 .animLayer{ z-index: 2; }
 #animCanvas{ opacity:0; }
 #animCanvas.active{ opacity:1; }
 
-.qWrap{
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  position: relative;
-  overflow: hidden;
-  padding: clamp(8px, 2.2vw, 20px);
-}
-.layoutImg{
-  width: 58%;
-  height: 58%;
-  max-width: 58%;
-  max-height: 58%;
-  object-fit: contain;
-  display: block;
-  margin: auto;
-}
-.ansBtn .layoutImg{
-  width: 98%;
-  height: 98%;
-  max-width: 98%;
-  max-height: 98%;
-  object-fit: contain;
-}
+.qWrap{ width: 100%; height: 100%; display: grid; place-items: center; position: relative; overflow: hidden; padding: clamp(8px, 2.2vw, 20px); }
+.layoutImg{ width: 58%; height: 58%; max-width: 58%; max-height: 58%; object-fit: contain; display: block; margin: auto; }
+.ansBtn .layoutImg{ width: 98%; height: 98%; max-width: 98%; max-height: 98%; object-fit: contain; }
 
-.pairWrap{
-  width: 100%;
-  height: 100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: clamp(10px, 2.4vw, 22px);
-}
+.pairWrap{ width: 100%; height: 100%; display:flex; align-items:center; justify-content:center; gap: clamp(10px, 2.4vw, 22px); }
 .pairWrap.smallRight{ flex-direction: row; }
 .pairWrap.smallLeft{ flex-direction: row-reverse; }
 .pairItem{ flex: 0 1 46%; height: 100%; display:grid; place-items:center; }
 .pairImg{ width: 100%; height: 100%; object-fit: contain; display:block; }
-.pairItem.small{
-  opacity: 0;
-  transform: translateY(4px) scale(0.96);
-  animation: smallAppear 360ms cubic-bezier(.22,.61,.35,1) forwards;
-  animation-delay: var(--delay, 420ms);
-}
+.pairItem.small{ opacity: 0; transform: translateY(4px) scale(0.96); animation: smallAppear 360ms cubic-bezier(.22,.61,.35,1) forwards; animation-delay: var(--delay, 420ms); }
 @keyframes smallAppear{ to{ opacity: 1; transform: translateY(0) scale(1); } }
 
 .marboticFace{ width: 100%; height: 100%; display:grid; place-items:center; padding: 16%; }
 .marboticImg{ width: 100%; height: 100%; object-fit: contain; display:block; }
 
-.extraDot{
-  position: absolute;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: rgba(25,25,25,0.30);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.65);
-  will-change: transform, opacity, background;
-}
-.extraDot.show{
-  animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards;
-  animation-delay: var(--appearDelay, 260ms);
-}
-.extraDot.blacken{
-  animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 520ms ease forwards;
-  animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms);
-}
+.extraDot{ position: absolute; width: 46px; height: 46px; border-radius: 50%; background: rgba(25,25,25,0.30); opacity: 0; transform: translate(-50%, -50%) scale(0.65); will-change: transform, opacity, background; }
+.extraDot.show{ animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards; animation-delay: var(--appearDelay, 260ms); }
+.extraDot.blacken{ animation: dotAppear 820ms cubic-bezier(.22,.61,.35,1) forwards, dotBlacken 520ms ease forwards; animation-delay: var(--appearDelay, 260ms), var(--blackDelay, 1020ms); }
 @keyframes dotAppear{
   0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
   60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
@@ -612,15 +514,7 @@ body{
 .tuneBtn{ display:none; }
 
 /* ========================= LEVEL 8 + 9: scan UI (zelfde scan manier als Tellen en scannen) ========================= */
-.scanOverlaySK{
-  position:absolute;
-  inset:0;
-  padding: 28px;
-  pointer-events:none;
-  z-index: 6;
-  opacity: 0;
-  transition: opacity 160ms ease;
-}
+.scanOverlaySK{ position:absolute; inset:0; padding: 28px; pointer-events:none; z-index: 6; opacity: 0; transition: opacity 160ms ease; }
 .scanOverlaySK.show{ opacity: 1; }
 .scanUISK{ position: relative; width: 100%; height: 100%; }
 
@@ -682,21 +576,7 @@ body{
 .scanMarkSK svg{ width: 100%; height: 100%; display:block; }
 
 /* bestaande styles blijven staan (worden niet meer gebruikt) */
-.miniTileSK{
-  width: 66px;
-  height: 66px;
-  border-radius: 10px;
-  background: rgba(229, 140, 116, 0.55);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  color:#fff;
-  font-weight: 900;
-  font-size: 20px;
-  line-height: 1;
-  place-items:center;
-}
+.miniTileSK{ width: 66px; height: 66px; border-radius: 10px; background: rgba(229, 140, 116, 0.55); box-shadow: 0 10px 22px rgba(0,0,0,0.10); display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; color:#fff; font-weight: 900; font-size: 20px; line-height: 1; place-items:center; }
 .scanTitleSK{ font-size: clamp(22px, 2vw, 34px); font-weight: 800; color: #7b7876; margin-top: 6px; }
 .scanSubSK{ font-size: clamp(16px, 1.3vw, 20px); color: rgba(123,120,118,0.75); margin-top: -4px; }
 .scanHintSK{ font-size: 13px; color: rgba(0,0,0,0.55); margin-top: 10px; }
@@ -719,7 +599,6 @@ body{
   transition: opacity 140ms ease;
   z-index: 25;
   border: 6px solid rgba(245,180,152,0.20);
-  --strikeDur: 650ms; /* NIEUW: default foutstreep duur */
 }
 .scanDigitWrapSK.show{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
 .scanDigitWrapSK.goodBorder{ border-color: rgba(144, 204, 152, 0.92); }
@@ -734,7 +613,11 @@ body{
   will-change: transform, opacity;
 }
 
-/* NIEUW: foutstreep langzamer en echt "getekend" */
+/* ========================= AANGEPAST: rode streep wordt getekend, duur via slider ========================= */
+.scanDigitWrapSK{
+  --strikeDur: 650ms;
+  --strikeRot: -14deg;
+}
 .scanDigitWrapSK.strikeSK::after{
   content:"";
   position:absolute;
@@ -745,12 +628,13 @@ body{
   background: rgba(217, 75, 75, 0.92);
   border-radius: 6px;
   box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+  opacity: 1;
   transform-origin: left center;
-  animation: strikeDrawSK var(--strikeDur, 650ms) cubic-bezier(.22,.61,.35,1) forwards;
+  transform: translateY(-50%) rotate(var(--strikeRot)) scaleX(0);
+  animation: strikeDrawSK var(--strikeDur) cubic-bezier(.22,.61,.35,1) forwards;
 }
 @keyframes strikeDrawSK{
-  0%{ transform: translateY(-50%) rotate(-14deg) scaleX(0); }
-  100%{ transform: translateY(-50%) rotate(-14deg) scaleX(1); }
+  to{ transform: translateY(-50%) rotate(var(--strikeRot)) scaleX(1); }
 }
 
 /* nieuw: goed antwoord rechts van de tegel */
@@ -791,6 +675,7 @@ body{
   70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.75; }
   100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
 }
+
 /* nieuw: correct tile schuift mee */
 .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutLeftCorrect 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes scanSlideOutLeftCorrect{
@@ -820,7 +705,6 @@ body{
         <path d="M12 30l20-16 20 16" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-
     <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
     <div class="titlePill" id="titlePill">slim kijken</div>
   </div>
@@ -831,7 +715,7 @@ body{
         <video class="timerVid" id="timerVid" src="timer.mp4" muted playsinline preload="auto"></video>
         <div class="flashSvg" id="flashSvg"></div>
 
-        <!-- NIEUW: uitleg overlay (alleen gebruikt bij fout in level 8 en 9) -->
+        <!-- uitleg overlay (alleen gebruikt bij fout in level 8 en 9) -->
         <div class="countHelpOverlay" id="countHelpOverlay" aria-hidden="true"></div>
       </div>
     </div>
@@ -850,19 +734,19 @@ body{
     <img id="scanDigitImgSK" alt="" />
   </div>
 
-  <!-- nieuw: goed antwoord rechts van de scan tegel -->
+  <!-- goed antwoord rechts van de scan tegel -->
   <div class="scanCorrectWrapSK" id="scanCorrectWrapSK" aria-hidden="true">
     <img id="scanCorrectImgSK" alt="" />
   </div>
 
   <div class="scanOverlaySK" id="scanOverlaySK" aria-hidden="true">
     <div class="scanUISK">
-      <!-- nieuw: feedback icoon op de oude plek -->
+      <!-- feedback icoon op de oude plek -->
       <div class="scanMarkWrapSK" id="scanMarkWrapSK" aria-hidden="true">
         <div class="scanMarkSK" id="scanMarkSK"></div>
       </div>
 
-      <!-- scanplek afbeelding onderin, 33% -->
+      <!-- scanplek afbeelding onderin -->
       <div class="scanPlaceWrapSK hidden" id="scanPlaceWrapSK" aria-hidden="true">
         <img class="scanPlaceImgSK" id="scanPlaceImgSK" src="marbotic_scanplek.png" alt="" draggable="false" />
       </div>
@@ -930,7 +814,7 @@ body{
     </div>
   </div>
 
-  <!-- AANGEPAST: scan timing instellingen -->
+  <!-- scan timing instellingen -->
   <div class="tuneSection">
     <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">scan, level 8 en 9</div>
 
@@ -952,36 +836,37 @@ body{
       <div class="tuneValue" id="scanWrongSecValue">2,0</div>
     </div>
 
-    <!-- NIEUW: timer.mp4 timing instellingen (alleen level 8 en 9) -->
+    <!-- timer.mp4 timing instellingen (alleen level 8 en 9) -->
     <div class="tuneRow">
       <div class="tuneLabel">timer duur</div>
       <input type="range" id="timerPlaySecRange" min="0.1" max="3" step="0.1" value="2.0" />
       <div class="tuneValue" id="timerPlaySecValue">2,0</div>
     </div>
-
     <div class="tuneRow">
       <div class="tuneLabel">pauze na timer</div>
       <input type="range" id="timerGapSecRange" min="0" max="2" step="0.1" value="0.7" />
       <div class="tuneValue" id="timerGapSecValue">0,7</div>
     </div>
 
-    <!-- ========================= AANGEPAST: uitleg sliders volgens wens ========================= -->
+    <!-- ========================= AANGEPAST: uitleg sliders (level 8 en 9 bij fout) ========================= -->
     <div class="tuneRow">
       <div class="tuneLabel">wachttijd cirkel</div>
-      <input type="range" id="helpCountStartMsRange" min="0" max="3000" step="20" value="220" />
+      <input type="range" id="helpCountStartMsRange" min="0" max="1200" step="20" value="220" />
       <div class="tuneValue" id="helpCountStartMsValue">220</div>
     </div>
 
+    <!-- NIEUW -->
     <div class="tuneRow">
       <div class="tuneLabel">wachttijd hoeveelheid</div>
-      <input type="range" id="helpAmountWaitMsRange" min="0" max="3000" step="20" value="320" />
+      <input type="range" id="helpAmountWaitMsRange" min="0" max="2000" step="20" value="320" />
       <div class="tuneValue" id="helpAmountWaitMsValue">320</div>
     </div>
 
+    <!-- NIEUW -->
     <div class="tuneRow">
       <div class="tuneLabel">grootte hoeveelheid</div>
-      <input type="range" id="helpAmountSizeRange" min="0.6" max="1.8" step="0.05" value="1.25" />
-      <div class="tuneValue" id="helpAmountSizeValue">1,25</div>
+      <input type="range" id="helpAmountSizePctRange" min="10" max="30" step="1" value="16" />
+      <div class="tuneValue" id="helpAmountSizePctValue">16</div>
     </div>
 
     <div class="tuneRow">
@@ -991,25 +876,26 @@ body{
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">pauze na tellen</div>
+      <div class="tuneLabel">pauze voor streep</div>
       <input type="range" id="helpAfterCountMsRange" min="0" max="2000" step="20" value="500" />
       <div class="tuneValue" id="helpAfterCountMsValue">500</div>
     </div>
 
+    <!-- NIEUW -->
     <div class="tuneRow">
-      <div class="tuneLabel">foutstreep duur</div>
-      <input type="range" id="helpStrikeDurMsRange" min="120" max="1600" step="20" value="650" />
-      <div class="tuneValue" id="helpStrikeDurMsValue">650</div>
+      <div class="tuneLabel">foutstreep</div>
+      <input type="range" id="helpStrikeMsRange" min="200" max="2000" step="20" value="650" />
+      <div class="tuneValue" id="helpStrikeMsValue">650</div>
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">fade duur</div>
+      <div class="tuneLabel">fade goed antwoord</div>
       <input type="range" id="helpFadeMsRange" min="80" max="1200" step="20" value="320" />
       <div class="tuneValue" id="helpFadeMsValue">320</div>
     </div>
 
     <div class="tuneRow">
-      <div class="tuneLabel">pauze na fade</div>
+      <div class="tuneLabel">pauze na goed</div>
       <input type="range" id="helpAfterFadeMsRange" min="0" max="2000" step="20" value="400" />
       <div class="tuneValue" id="helpAfterFadeMsValue">400</div>
     </div>
@@ -1021,12 +907,9 @@ body{
       <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
       <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
     </div>
-
     <div class="tuneButtons" style="margin-top:10px;">
       <button class="tuneBtnSmall secondary" id="toggleLevelsBtn" type="button">levels png verbergen</button>
     </div>
-
-    <!-- nieuw: sluit knop rechtsonder -->
     <div class="tuneCloseBottomRow">
       <button class="tuneCloseBottom" id="tuneCloseBottom" type="button">Sluit</button>
     </div>
@@ -1035,705 +918,136 @@ body{
 
 <script>
 (() => {
-  "use strict";
+"use strict";
 
-  const clamp = (v,a,b) => {
-    v = Number(v);
-    if(!Number.isFinite(v)) v = a;
-    return Math.max(a, Math.min(b, v));
-  };
-  const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const wait = (ms) => new Promise(r => setTimeout(r, ms));
-  const raf = () => new Promise(r => requestAnimationFrame(() => r()));
-  const $ = (id) => document.getElementById(id);
+/* FIX: clamp NaN safe, zodat flashMs en card tijden nooit NaN kunnen worden */
+const clamp = (v,a,b) => { v = Number(v); if(!Number.isFinite(v)) v = a; return Math.max(a, Math.min(b, v)); };
+const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const raf = () => new Promise(r => requestAnimationFrame(() => r()));
+const $ = (id) => document.getElementById(id);
 
-  const startOverlay = $("startOverlay");
-  const startBtn = $("startBtn");
-  const titlePill = $("titlePill");
-  const gameCard = $("gameCard");
-  const homeBtn = $("homeBtn");
-  const tuneBtn = $("tuneBtn");
-  const tunePanel = $("tunePanel");
-  const tuneClose = $("tuneClose");
-  const tuneCloseBottom = $("tuneCloseBottom");
+const startOverlay = $("startOverlay");
+const startBtn = $("startBtn");
+const titlePill = $("titlePill");
+const gameCard = $("gameCard");
+const homeBtn = $("homeBtn");
+const tuneBtn = $("tuneBtn");
+const tunePanel = $("tunePanel");
+const tuneClose = $("tuneClose");
+const tuneCloseBottom = $("tuneCloseBottom");
 
-  const flashMsRange = $("flashMsRange");
-  const flashMsValue = $("flashMsValue");
-  const cardMsRange = $("cardMsRange");
-  const cardMsValue = $("cardMsValue");
-  const tuneLevelValue = $("tuneLevelValue");
-  const newRoundBtn = $("newRoundBtn");
-  const testWrongBtn = $("testWrongBtn");
-  const testGoodBtn = $("testGoodBtn");
-  const levelUpBtn = $("levelUpBtn");
-  const levelDownBtn = $("levelDownBtn");
-  const toggleLevelsBtn = $("toggleLevelsBtn");
+const flashMsRange = $("flashMsRange");
+const flashMsValue = $("flashMsValue");
+const cardMsRange = $("cardMsRange");
+const cardMsValue = $("cardMsValue");
+const tuneLevelValue = $("tuneLevelValue");
 
-  const scanCheckSecRange = $("scanCheckSecRange");
-  const scanCheckSecValue = $("scanCheckSecValue");
-  const scanGoodSecRange = $("scanGoodSecRange");
-  const scanGoodSecValue = $("scanGoodSecValue");
-  const scanWrongSecRange = $("scanWrongSecRange");
-  const scanWrongSecValue = $("scanWrongSecValue");
+const newRoundBtn = $("newRoundBtn");
+const testWrongBtn = $("testWrongBtn");
+const testGoodBtn = $("testGoodBtn");
+const levelUpBtn = $("levelUpBtn");
+const levelDownBtn = $("levelDownBtn");
+const toggleLevelsBtn = $("toggleLevelsBtn");
 
-  const timerPlaySecRange = $("timerPlaySecRange");
-  const timerPlaySecValue = $("timerPlaySecValue");
-  const timerGapSecRange = $("timerGapSecRange");
-  const timerGapSecValue = $("timerGapSecValue");
+/* scan timing sliders */
+const scanCheckSecRange = $("scanCheckSecRange");
+const scanCheckSecValue = $("scanCheckSecValue");
+const scanGoodSecRange = $("scanGoodSecRange");
+const scanGoodSecValue = $("scanGoodSecValue");
+const scanWrongSecRange = $("scanWrongSecRange");
+const scanWrongSecValue = $("scanWrongSecValue");
 
-  /* uitleg sliders */
-  const helpCountStartMsRange = $("helpCountStartMsRange");
-  const helpCountStartMsValue = $("helpCountStartMsValue");
-  const helpCountStepMsRange = $("helpCountStepMsRange");
-  const helpCountStepMsValue = $("helpCountStepMsValue");
-  const helpAfterCountMsRange = $("helpAfterCountMsRange");
-  const helpAfterCountMsValue = $("helpAfterCountMsValue");
-  const helpFadeMsRange = $("helpFadeMsRange");
-  const helpFadeMsValue = $("helpFadeMsValue");
-  const helpAfterFadeMsRange = $("helpAfterFadeMsRange");
-  const helpAfterFadeMsValue = $("helpAfterFadeMsValue");
+/* timer.mp4 sliders */
+const timerPlaySecRange = $("timerPlaySecRange");
+const timerPlaySecValue = $("timerPlaySecValue");
+const timerGapSecRange = $("timerGapSecRange");
+const timerGapSecValue = $("timerGapSecValue");
 
-  /* NIEUW: extra sliders volgens opdracht */
-  const helpAmountWaitMsRange = $("helpAmountWaitMsRange");
-  const helpAmountWaitMsValue = $("helpAmountWaitMsValue");
-  const helpAmountSizeRange = $("helpAmountSizeRange");
-  const helpAmountSizeValue = $("helpAmountSizeValue");
-  const helpStrikeDurMsRange = $("helpStrikeDurMsRange");
-  const helpStrikeDurMsValue = $("helpStrikeDurMsValue");
+/* uitleg timing sliders */
+const helpCountStartMsRange = $("helpCountStartMsRange");
+const helpCountStartMsValue = $("helpCountStartMsValue");
 
-  const flashSvg = $("flashSvg");
-  const answersEl = $("answers");
-  const scanArea = $("scanArea");
+const helpAmountWaitMsRange = $("helpAmountWaitMsRange");
+const helpAmountWaitMsValue = $("helpAmountWaitMsValue");
 
-  const timerVid = $("timerVid");
-  const countHelpOverlay = $("countHelpOverlay");
+const helpAmountSizePctRange = $("helpAmountSizePctRange");
+const helpAmountSizePctValue = $("helpAmountSizePctValue");
 
-  const scanDigitWrapSK = $("scanDigitWrapSK");
-  const scanDigitImgSK = $("scanDigitImgSK");
-  const scanCorrectWrapSK = $("scanCorrectWrapSK");
-  const scanCorrectImgSK = $("scanCorrectImgSK");
-  const scanOverlaySK = $("scanOverlaySK");
+const helpCountStepMsRange = $("helpCountStepMsRange");
+const helpCountStepMsValue = $("helpCountStepMsValue");
+const helpAfterCountMsRange = $("helpAfterCountMsRange");
+const helpAfterCountMsValue = $("helpAfterCountMsValue");
 
-  const scanPlaceWrapSK = $("scanPlaceWrapSK");
-  const scanPlaceImgSK = $("scanPlaceImgSK");
+const helpStrikeMsRange = $("helpStrikeMsRange");
+const helpStrikeMsValue = $("helpStrikeMsValue");
 
-  const scanMarkWrapSK = $("scanMarkWrapSK");
-  const scanMarkSK = $("scanMarkSK");
+const helpFadeMsRange = $("helpFadeMsRange");
+const helpFadeMsValue = $("helpFadeMsValue");
+const helpAfterFadeMsRange = $("helpAfterFadeMsRange");
+const helpAfterFadeMsValue = $("helpAfterFadeMsValue");
 
-  const timelineGroup = $("timelineGroup");
-  const timeline = $("timeline");
-  const levelsImg = $("levelsImg");
-  const chickAnchor = $("chickAnchor");
-  const stillImg = $("stillImg");
-  const upVid = $("upVid");
-  const downVid = $("downVid");
-  const animCanvas = $("animCanvas");
-  const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
+const flashSvg = $("flashSvg");
+const answersEl = $("answers");
+const scanArea = $("scanArea");
 
-  const WAIT_BEFORE_IN_MS = 0;
-  const IN_DUR_MS = 800;
-  const OUT_DUR_MS = 750;
-  const PREVIEW_GAP_MS = 120;
+/* timer video */
+const timerVid = $("timerVid");
 
-  let previewMs = 1700;
+/* uitleg overlay container */
+const countHelpOverlay = $("countHelpOverlay");
 
-  let LEVEL = 1;
-  let streakGood = 0;
-  let streakBad = 0;
+/* scan ui */
+const scanDigitWrapSK = $("scanDigitWrapSK");
+const scanDigitImgSK = $("scanDigitImgSK");
+const scanCorrectWrapSK = $("scanCorrectWrapSK");
+const scanCorrectImgSK = $("scanCorrectImgSK");
+const scanOverlaySK = $("scanOverlaySK");
+const scanTitleSK = $("scanTitleSK");
+const scanSubSK = $("scanSubSK");
+const scanHintSK = $("scanHintSK");
+const scanPlaceWrapSK = $("scanPlaceWrapSK");
+const scanPlaceImgSK = $("scanPlaceImgSK");
+const scanMarkWrapSK = $("scanMarkWrapSK");
+const scanMarkSK = $("scanMarkSK");
 
-  const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
-  const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 300, 5: 300, 6: 400, 7: 450, 8: 450, 9: 500 };
-  let flashMsByLevel = (() => {
-    try{
-      const raw = localStorage.getItem(FLASH_KEY);
-      if(raw){
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object") return obj;
-      }
-    }catch(e){}
-    return { ...DEFAULT_FLASH_BY_LEVEL };
-  })();
-  function getFlashMs(level){
-    const v = Number(flashMsByLevel[level] ?? DEFAULT_FLASH_BY_LEVEL[level] ?? 300);
-    return clamp(v, 100, 2400);
-  }
-  function saveFlashMs(level, ms){
-    flashMsByLevel[level] = clamp(Number(ms) || 300, 100, 2400);
-    try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
-  }
+const timelineGroup = $("timelineGroup");
+const timeline = $("timeline");
+const levelsImg = $("levelsImg");
+const chickAnchor = $("chickAnchor");
+const stillImg = $("stillImg");
+const upVid = $("upVid");
+const downVid = $("downVid");
+const animCanvas = $("animCanvas");
+const chickCtx = animCanvas ? animCanvas.getContext("2d", { willReadFrequently: true }) : null;
 
-  const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
-  const DEFAULT_CARD_BY_LEVEL = { 2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700 };
-  let cardMsByLevel = (() => {
-    try{
-      const raw = localStorage.getItem(CARD_KEY);
-      if(raw){
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object") return obj;
-      }
-    }catch(e){}
-    return { ...DEFAULT_CARD_BY_LEVEL };
-  })();
-  function getCardMs(level){
-    const v = Number(cardMsByLevel[level] ?? DEFAULT_CARD_BY_LEVEL[level] ?? 1700);
-    return clamp(v, 300, 4000);
-  }
-  function saveCardMs(level, ms){
-    cardMsByLevel[level] = clamp(Number(ms) || 1700, 300, 4000);
-    try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
-  }
+const WAIT_BEFORE_IN_MS = 0;
+const IN_DUR_MS = 800;
+const OUT_DUR_MS = 750;
+const PREVIEW_GAP_MS = 120;
 
-  let flashMs = getFlashMs(LEVEL);
-  let cardOpenMs = getCardMs(LEVEL);
+let previewMs = 1700;
+let LEVEL = 1;
+let streakGood = 0;
+let streakBad = 0;
 
-  const SCAN_KEY = "slim_kijken_scan_timing_by_level_v1";
-  const DEFAULT_SCAN_BY_LEVEL = { 8: { checkMs: 300, goodMs: 1000, wrongMs: 2000 }, 9: { checkMs: 300, goodMs: 1000, wrongMs: 2000 } };
-  let scanTimingByLevel = (() => {
-    try{
-      const raw = localStorage.getItem(SCAN_KEY);
-      if(raw){
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object") return obj;
-      }
-    }catch(e){}
-    return { ...DEFAULT_SCAN_BY_LEVEL };
-  })();
-  function stepRound(v, step){
-    const n = Number(v);
-    if(!Number.isFinite(n)) return 0;
-    const s = Number(step) || 0.1;
-    return Math.round(n / s) * s;
-  }
-  function getScanTiming(level){
-    const base = scanTimingByLevel[level] || DEFAULT_SCAN_BY_LEVEL[level] || { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
-    const checkMs = clamp(Number(base.checkMs ?? 300), 100, 2000);
-    const goodMs = clamp(Number(base.goodMs ?? 1000), 100, 5000);
-    const wrongMs = clamp(Number(base.wrongMs ?? 2000), 100, 5000);
-    return { checkMs, goodMs, wrongMs };
-  }
-  function saveScanTiming(level, partial){
-    const current = getScanTiming(level);
-    const merged = {
-      checkMs: ("checkMs" in partial) ? clamp(Number(partial.checkMs), 100, 2000) : current.checkMs,
-      goodMs: ("goodMs" in partial) ? clamp(Number(partial.goodMs), 100, 5000) : current.goodMs,
-      wrongMs: ("wrongMs" in partial) ? clamp(Number(partial.wrongMs), 100, 5000) : current.wrongMs
-    };
-    scanTimingByLevel[level] = merged;
-    try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
-    return merged;
-  }
-  function formatSecComma(ms){
-    const s = stepRound((Number(ms) || 0) / 1000, 0.1).toFixed(1);
-    return s.replace(".", ",");
-  }
-  function formatDecComma(val, digits){
-    const d = Math.max(0, Number(digits) || 1);
-    const s = (Number(val) || 0).toFixed(d);
-    return s.replace(".", ",");
-  }
-
-  const TIMER_SEQ_KEY = "slim_kijken_timer_seq_by_level_v1";
-  const DEFAULT_TIMER_SEQ_BY_LEVEL = { 8: { playMs: 2000, gapMs: 700 }, 9: { playMs: 2000, gapMs: 700 } };
-  let timerSeqByLevel = (() => {
-    try{
-      const raw = localStorage.getItem(TIMER_SEQ_KEY);
-      if(raw){
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object") return obj;
-      }
-    }catch(e){}
-    return { ...DEFAULT_TIMER_SEQ_BY_LEVEL };
-  })();
-  function getTimerSeq(level){
-    const base = timerSeqByLevel[level] || DEFAULT_TIMER_SEQ_BY_LEVEL[level] || { playMs: 2000, gapMs: 700 };
-    const playMs = clamp(Number(base.playMs ?? 2000), 100, 5000);
-    const gapMs = clamp(Number(base.gapMs ?? 700), 0, 5000);
-    return { playMs, gapMs };
-  }
-  function saveTimerSeq(level, partial){
-    const current = getTimerSeq(level);
-    const merged = {
-      playMs: ("playMs" in partial) ? clamp(Number(partial.playMs), 100, 5000) : current.playMs,
-      gapMs: ("gapMs" in partial) ? clamp(Number(partial.gapMs), 0, 5000) : current.gapMs
-    };
-    timerSeqByLevel[level] = merged;
-    try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
-    return merged;
-  }
-
-  /* ========================= AANGEPAST: uitleg sequence timing (level 8 en 9) ========================= */
-  const HELP_SEQ_KEY = "slim_kijken_help_seq_by_level_v2";
-  const DEFAULT_HELP_SEQ_BY_LEVEL = {
-    8: {
-      circleWaitMs: 220,
-      amountWaitMs: 320,
-      amountSize: 1.25,
-      countStepMs: 320,
-      afterCountMs: 500,
-      strikeDurMs: 650,
-      fadeMs: 320,
-      afterFadeMs: 400
-    },
-    9: {
-      circleWaitMs: 220,
-      amountWaitMs: 320,
-      amountSize: 1.25,
-      countStepMs: 320,
-      afterCountMs: 500,
-      strikeDurMs: 650,
-      fadeMs: 320,
-      afterFadeMs: 400
+/* flitstijd per level */
+const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
+const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 300, 5: 300, 6: 400, 7: 450, 8: 450, 9: 500 };
+let flashMsByLevel = (() => {
+  try{
+    const raw = localStorage.getItem(FLASH_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object") return obj;
     }
-  };
-
-  let helpSeqByLevel = (() => {
-    try{
-      const raw = localStorage.getItem(HELP_SEQ_KEY);
-      if(raw){
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object") return obj;
-      }
-    }catch(e){}
-    return { ...DEFAULT_HELP_SEQ_BY_LEVEL };
-  })();
-
-  function getHelpSeq(level){
-    const base = helpSeqByLevel[level] || DEFAULT_HELP_SEQ_BY_LEVEL[level] || DEFAULT_HELP_SEQ_BY_LEVEL[8];
-    return {
-      circleWaitMs: clamp(Number(base.circleWaitMs ?? 220), 0, 4000),
-      amountWaitMs: clamp(Number(base.amountWaitMs ?? 320), 0, 4000),
-      amountSize: clamp(Number(base.amountSize ?? 1.25), 0.6, 1.8),
-      countStepMs: clamp(Number(base.countStepMs ?? 320), 80, 2000),
-      afterCountMs: clamp(Number(base.afterCountMs ?? 500), 0, 3000),
-      strikeDurMs: clamp(Number(base.strikeDurMs ?? 650), 120, 2000),
-      fadeMs: clamp(Number(base.fadeMs ?? 320), 80, 2000),
-      afterFadeMs: clamp(Number(base.afterFadeMs ?? 400), 0, 3000)
-    };
-  }
-  function saveHelpSeq(level, partial){
-    const cur = getHelpSeq(level);
-    const merged = {
-      circleWaitMs: ("circleWaitMs" in partial) ? clamp(Number(partial.circleWaitMs), 0, 4000) : cur.circleWaitMs,
-      amountWaitMs: ("amountWaitMs" in partial) ? clamp(Number(partial.amountWaitMs), 0, 4000) : cur.amountWaitMs,
-      amountSize: ("amountSize" in partial) ? clamp(Number(partial.amountSize), 0.6, 1.8) : cur.amountSize,
-      countStepMs: ("countStepMs" in partial) ? clamp(Number(partial.countStepMs), 80, 2000) : cur.countStepMs,
-      afterCountMs: ("afterCountMs" in partial) ? clamp(Number(partial.afterCountMs), 0, 3000) : cur.afterCountMs,
-      strikeDurMs: ("strikeDurMs" in partial) ? clamp(Number(partial.strikeDurMs), 120, 2000) : cur.strikeDurMs,
-      fadeMs: ("fadeMs" in partial) ? clamp(Number(partial.fadeMs), 80, 2000) : cur.fadeMs,
-      afterFadeMs: ("afterFadeMs" in partial) ? clamp(Number(partial.afterFadeMs), 0, 3000) : cur.afterFadeMs
-    };
-    helpSeqByLevel[level] = merged;
-    try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(helpSeqByLevel)); }catch(e){}
-    return merged;
-  }
-
-  let scanCheckDelayMs = getScanTiming(LEVEL).checkMs;
-  let scanGoodHoldMs = getScanTiming(LEVEL).goodMs;
-  let scanWrongHoldMs = getScanTiming(LEVEL).wrongMs;
-
-  let timerPlayMs = getTimerSeq(LEVEL).playMs;
-  let timerGapMs = getTimerSeq(LEVEL).gapMs;
-
-  /* uitleg variabelen */
-  let helpCircleWaitMs = getHelpSeq(LEVEL).circleWaitMs;
-  let helpAmountWaitMs = getHelpSeq(LEVEL).amountWaitMs;
-  let helpAmountSize = getHelpSeq(LEVEL).amountSize;
-  let helpCountStepMs = getHelpSeq(LEVEL).countStepMs;
-  let helpAfterCountMs = getHelpSeq(LEVEL).afterCountMs;
-  let helpStrikeDurMs = getHelpSeq(LEVEL).strikeDurMs;
-  let helpFadeMs = getHelpSeq(LEVEL).fadeMs;
-  let helpAfterFadeMs = getHelpSeq(LEVEL).afterFadeMs;
-
-  let roundToken = 0;
-  let boardHideTimer = null;
-  let autoFlipTimer = null;
-
-  function cancelBoardHide(){ if(boardHideTimer){ clearTimeout(boardHideTimer); boardHideTimer = null; } }
-  function cancelAutoFlip(){ if(autoFlipTimer){ clearTimeout(autoFlipTimer); autoFlipTimer = null; } }
-  function scheduleBoardHide(ms, token){
-    cancelBoardHide();
-    boardHideTimer = setTimeout(() => {
-      if(token !== roundToken) return;
-      dissolveBoard(180);
-    }, Math.max(0, Number(ms) || 0));
-  }
-
-  function isPortrait(){ return window.matchMedia && window.matchMedia("(orientation: portrait)").matches; }
-
-  function usesAnswerCards(){ return (LEVEL >= 2); }
-  function timedAutoFlipLevels(){ return (LEVEL >= 3 && LEVEL <= 7); }
-  function usesMarboticScan(){ return (LEVEL >= 8); }
-
-  function setLevel(n){
-    LEVEL = clamp(n, 1, 9);
-    titlePill.textContent = `slim kijken, level ${LEVEL}`;
-    if(tuneLevelValue) tuneLevelValue.textContent = String(LEVEL);
-
-    flashMs = getFlashMs(LEVEL);
-    if(flashMsRange) flashMsRange.value = String(flashMs);
-    if(flashMsValue) flashMsValue.textContent = String(flashMs);
-
-    cardOpenMs = getCardMs(LEVEL);
-    previewMs = cardOpenMs;
-    if(cardMsRange) cardMsRange.value = String(cardOpenMs);
-    if(cardMsValue) cardMsValue.textContent = String(cardOpenMs);
-
-    {
-      const st = getScanTiming(LEVEL);
-      scanCheckDelayMs = st.checkMs;
-      scanGoodHoldMs = st.goodMs;
-      scanWrongHoldMs = st.wrongMs;
-
-      if(scanCheckSecRange) scanCheckSecRange.value = String(stepRound(scanCheckDelayMs / 1000, 0.1));
-      if(scanCheckSecValue) scanCheckSecValue.textContent = formatSecComma(scanCheckDelayMs);
-
-      if(scanGoodSecRange) scanGoodSecRange.value = String(stepRound(scanGoodHoldMs / 1000, 0.1));
-      if(scanGoodSecValue) scanGoodSecValue.textContent = formatSecComma(scanGoodHoldMs);
-
-      if(scanWrongSecRange) scanWrongSecRange.value = String(stepRound(scanWrongHoldMs / 1000, 0.1));
-      if(scanWrongSecValue) scanWrongSecValue.textContent = formatSecComma(scanWrongHoldMs);
-    }
-
-    {
-      const ts = getTimerSeq(LEVEL);
-      timerPlayMs = ts.playMs;
-      timerGapMs = ts.gapMs;
-
-      if(timerPlaySecRange) timerPlaySecRange.value = String(stepRound(timerPlayMs / 1000, 0.1));
-      if(timerPlaySecValue) timerPlaySecValue.textContent = formatSecComma(timerPlayMs);
-
-      if(timerGapSecRange) timerGapSecRange.value = String(stepRound(timerGapMs / 1000, 0.1));
-      if(timerGapSecValue) timerGapSecValue.textContent = formatSecComma(timerGapMs);
-    }
-
-    {
-      const hs = getHelpSeq(LEVEL);
-
-      helpCircleWaitMs = hs.circleWaitMs;
-      helpAmountWaitMs = hs.amountWaitMs;
-      helpAmountSize = hs.amountSize;
-      helpCountStepMs = hs.countStepMs;
-      helpAfterCountMs = hs.afterCountMs;
-      helpStrikeDurMs = hs.strikeDurMs;
-      helpFadeMs = hs.fadeMs;
-      helpAfterFadeMs = hs.afterFadeMs;
-
-      if(helpCountStartMsRange) helpCountStartMsRange.value = String(helpCircleWaitMs);
-      if(helpCountStartMsValue) helpCountStartMsValue.textContent = String(helpCircleWaitMs);
-
-      if(helpAmountWaitMsRange) helpAmountWaitMsRange.value = String(helpAmountWaitMs);
-      if(helpAmountWaitMsValue) helpAmountWaitMsValue.textContent = String(helpAmountWaitMs);
-
-      if(helpAmountSizeRange) helpAmountSizeRange.value = String(helpAmountSize);
-      if(helpAmountSizeValue) helpAmountSizeValue.textContent = formatDecComma(helpAmountSize, 2);
-
-      if(helpCountStepMsRange) helpCountStepMsRange.value = String(helpCountStepMs);
-      if(helpCountStepMsValue) helpCountStepMsValue.textContent = String(helpCountStepMs);
-
-      if(helpAfterCountMsRange) helpAfterCountMsRange.value = String(helpAfterCountMs);
-      if(helpAfterCountMsValue) helpAfterCountMsValue.textContent = String(helpAfterCountMs);
-
-      if(helpStrikeDurMsRange) helpStrikeDurMsRange.value = String(helpStrikeDurMs);
-      if(helpStrikeDurMsValue) helpStrikeDurMsValue.textContent = String(helpStrikeDurMs);
-
-      if(helpFadeMsRange) helpFadeMsRange.value = String(helpFadeMs);
-      if(helpFadeMsValue) helpFadeMsValue.textContent = String(helpFadeMs);
-
-      if(helpAfterFadeMsRange) helpAfterFadeMsRange.value = String(helpAfterFadeMs);
-      if(helpAfterFadeMsValue) helpAfterFadeMsValue.textContent = String(helpAfterFadeMs);
-
-      if(scanDigitWrapSK) scanDigitWrapSK.style.setProperty("--strikeDur", `${helpStrikeDurMs}ms`);
-    }
-
-    setAnchorToLevel(LEVEL, { noTransition: true });
-
-    if(usesMarboticScan()){ enableScanUI(); }
-    else{ disableScanUI(); }
-  }
-
-  function maxForLevel(){
-    if(LEVEL === 1) return 4;
-    if(LEVEL === 2) return 4;
-    if(LEVEL === 3) return 4;
-    if(LEVEL === 4) return 6;
-    if(LEVEL === 5) return 6;
-    if(LEVEL === 6) return 7;
-    if(LEVEL === 7) return 8;
-    if(LEVEL === 8) return 8;
-    return 9;
-  }
-
-  function pickNumberWeighted(cap){
-    const w1 = 0.30;
-    const weights = [];
-    for(let i=1;i<=cap;i++){ weights.push(i === 1 ? w1 : 1); }
-    const sum = weights.reduce((a,b) => a + b, 0);
-    let r = Math.random() * sum;
-    for(let i=0;i<weights.length;i++){
-      r -= weights[i];
-      if(r <= 0) return i + 1;
-    }
-    return cap;
-  }
-
-  let audioCtx = null;
-  function beep(type){
-    try{
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      const t = audioCtx.currentTime;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = "sine";
-      if(type === "ok") o.frequency.setValueAtTime(740, t);
-      if(type === "no") o.frequency.setValueAtTime(220, t);
-      if(type === "tap") o.frequency.setValueAtTime(520, t);
-      if(type === "level") o.frequency.setValueAtTime(620, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(t); o.stop(t + 0.22);
-    }catch(e){}
-  }
-  function softBeep(type){
-    try{
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      const t = audioCtx.currentTime;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = "sine";
-      if(type === "ok") o.frequency.setValueAtTime(980, t);
-      if(type === "no") o.frequency.setValueAtTime(160, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.05, t + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(t); o.stop(t + 0.13);
-    }catch(e){}
-  }
-
-  const DICE_DIR = "dobbelstenen";
-  const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
-  const marboticSrc = (n) => `marbotic${n}.png`;
-
-  const STD_LAYOUT = { 1:"1a", 2:"2a", 3:"3a", 4:"4a", 5:"5a", 6:"6a" };
-  function standardLayoutId(n){ return STD_LAYOUT[n] || `${n}a`; }
-
-  function allowedQuestionLayoutsSingle(level, n){
-    if(n === 1) return ["1a"];
-    if(level === 1 || level === 2){
-      if(n >= 1 && n <= 4) return [standardLayoutId(n)];
-      return [];
-    }
-    if(level === 3){
-      const base = { 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"] };
-      if(n === 1) return ["1a"];
-      return base[n] || [];
-    }
-    if(level === 4){
-      const base = { 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"] };
-      if(n === 1) return ["1a"];
-      if(n === 5) return ["5a"];
-      if(n === 6) return ["6a"];
-      return base[n] || [];
-    }
-    if(level === 5){
-      const base = { 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"], 5: ["5a","5b","5c"], 6: ["6a","6b"] };
-      if(n === 1) return ["1a"];
-      return base[n] || [];
-    }
-    return [standardLayoutId(n)];
-  }
-  function questionAvoidLayoutId(level, n){
-    if(level === 3){
-      if(n >= 2 && n <= 4) return standardLayoutId(n);
-      return null;
-    }
-    if(level === 4){
-      if(n >= 2 && n <= 4) return standardLayoutId(n);
-      return null;
-    }
-    if(level === 5){ return standardLayoutId(n); }
-    return null;
-  }
-  function pickQuestionLayoutDistinct(level, n){
-    const allowed = allowedQuestionLayoutsSingle(level, n);
-    const avoid = questionAvoidLayoutId(level, n);
-    if(!avoid) return allowed.length ? pick(allowed) : standardLayoutId(n);
-    const filtered = allowed.filter(x => x !== avoid);
-    return (filtered.length ? pick(filtered) : pick(allowed));
-  }
-
-  function boardHtmlForLayout(layoutId){
-    return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
-  }
-  function boardHtmlForPair(bigId, smallId, smallSide, delayMs){
-    const cls = (smallSide === "left") ? "pairWrap smallLeft" : "pairWrap smallRight";
-    const d = Number(delayMs ?? 420);
-    return `
-      <div class="qWrap">
-        <div class="${cls}">
-          <div class="pairItem big"><img class="pairImg" src="${diceSrc(bigId)}" alt="" draggable="false"></div>
-          <div class="pairItem small" style="--delay:${d}ms"><img class="pairImg" src="${diceSrc(smallId)}" alt="" draggable="false"></div>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ========================= UITLEG overlay helpers (level 8 en 9 bij fout) ========================= */
-  let countHelpTokenSK = 0;
-  let countHelpTimersSK = [];
-  function clearCountHelpOverlaySK(){
-    countHelpTokenSK++;
-    countHelpTimersSK.forEach(t => { try{ clearTimeout(t); }catch(e){} });
-    countHelpTimersSK = [];
-    if(countHelpOverlay) countHelpOverlay.innerHTML = "";
-  }
-  function scheduleCountHelpTimerSK(fn, ms){
-    const t = setTimeout(fn, ms);
-    countHelpTimersSK.push(t);
-    return t;
-  }
-  function waitForImgLoad(imgEl){
-    if(!imgEl) return Promise.resolve(false);
-    if(imgEl.complete && imgEl.naturalWidth) return Promise.resolve(true);
-    return new Promise(resolve => {
-      let done = false;
-      const finish = (ok) => {
-        if(done) return;
-        done = true;
-        cleanup();
-        resolve(ok);
-      };
-      const cleanup = () => {
-        imgEl.removeEventListener("load", onLoad);
-        imgEl.removeEventListener("error", onErr);
-      };
-      const onLoad = () => finish(true);
-      const onErr = () => finish(false);
-      imgEl.addEventListener("load", onLoad, { once:true });
-      imgEl.addEventListener("error", onErr, { once:true });
-      setTimeout(() => finish(!!imgEl.naturalWidth), 900);
-    });
-  }
-
-  const pipSvgCacheSK = new Map();
-  function parseSvgPipsSK(svgText){
-    try{
-      const dp = new DOMParser();
-      const doc = dp.parseFromString(svgText, "image/svg+xml");
-      const svg = doc.querySelector("svg");
-      if(!svg) return null;
-
-      let vb = svg.getAttribute("viewBox") || "";
-      let vbX = 0, vbY = 0, vbW = 0, vbH = 0;
-      if(vb && vb.trim()){
-        const parts = vb.trim().split(/[\s,]+/).map(Number);
-        if(parts.length >= 4){
-          vbX = Number(parts[0]) || 0;
-          vbY = Number(parts[1]) || 0;
-          vbW = Number(parts[2]) || 0;
-          vbH = Number(parts[3]) || 0;
-        }
-      }
-      if(!vbW || !vbH){
-        const wAttr = svg.getAttribute("width");
-        const hAttr = svg.getAttribute("height");
-        vbW = parseFloat(wAttr) || 100;
-        vbH = parseFloat(hAttr) || 100;
-        vbX = 0;
-        vbY = 0;
-      }
-
-      const circles = [...svg.querySelectorAll("circle")];
-      const pips = circles.map(c => {
-        const cx = Number(c.getAttribute("cx"));
-        const cy = Number(c.getAttribute("cy"));
-        const r = Number(c.getAttribute("r"));
-        const fill = (c.getAttribute("fill") || "").trim().toLowerCase();
-        const op = Number(c.getAttribute("opacity") ?? "1");
-        if(!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(r)) return null;
-        if(r <= 0) return null;
-        if(fill === "none") return null;
-        if(op <= 0.01) return null;
-        return { cx, cy, r };
-      }).filter(Boolean);
-
-      if(!pips.length) return null;
-      return { vbX, vbY, vbW, vbH, pips };
-    }catch(e){
-      return null;
-    }
-  }
-  async function getPipDataForLayoutSK(layoutId){
-    const key = String(layoutId || "");
-    if(!key) return null;
-    if(pipSvgCacheSK.has(key)) return pipSvgCacheSK.get(key);
-    try{
-      const res = await fetch(diceSrc(key), { cache: "force-cache" });
-      const txt = await res.text();
-      const data = parseSvgPipsSK(txt);
-      pipSvgCacheSK.set(key, data);
-      return data;
-    }catch(e){
-      pipSvgCacheSK.set(key, null);
-      return null;
-    }
-  }
-  function fallbackSmallPipsSK(amount){
-    const a = Number(amount) || 1;
-    if(a === 1) return [{ x:0.50, y:0.50 }];
-    if(a === 2) return [{ x:0.30, y:0.30 }, { x:0.70, y:0.70 }];
-    return [{ x:0.30, y:0.30 }, { x:0.50, y:0.50 }, { x:0.70, y:0.70 }];
-  }
-  function clampToRectSK(x, y, rect, pad){
-    const p = Math.max(0, Number(pad) || 0);
-    const xx = clamp(x, rect.left + p, rect.right - p);
-    const yy = clamp(y, rect.top + p, rect.bottom - p);
-    return { x: xx, y: yy };
-  }
-
-  /* ========================= AANGEPAST: flow bij fout level 8 en 9 =========================
-     1) vraag opnieuw tonen
-     2) na wachttijd cirkel: cirkel om grootste groep
-     3) na wachttijd hoeveelheid: hoeveelheid groot en dik (met slider grootte hoeveelheid)
-     4) daarna cijfers naast stippen, volgens referentie afstand en plaatsing
-  */
-  async function showWrongCountHelpSK(){
-    if(!countHelpOverlay) return { lastLabelAtMs: 0, labelsCount: 0 };
-    if(!usesMarboticScan()) return { lastLabelAtMs: 0, labelsCount: 0 };
-    if(LEVEL < 8) return { lastLabelAtMs: 0, labelsCount: 0 };
-    if(!questionState || questionState.kind !== "pair") return { lastLabelAtMs: 0, labelsCount: 0 };
-
-    const localToken = ++countHelpTokenSK;
-    countHelpOverlay.innerHTML = "";
-
-    await raf(); await raf();
-    if(localToken !== countHelpTokenSK) return { lastLabelAtMs: 0, labelsCount: 0 };
-
-    const bigImg = flashSvg ? flashSvg.querySelector(".pairItem.big img") : null;
-    const smallImg = flashSvg ? flashSvg.querySelector(".pairItem.small img") : null;
-    if(!bigImg || !smallImg) return { lastLabelAtMs: 0, labelsCount: 0 };
-
-    await Promise.all([waitForImgLoad(bigImg), waitForImgLoad(smallImg)]);
-    if(localToken !== countHelpTokenSK) return { lastLabelAtMs: 0, labelsCount: 0 };
-
-    const overlayRect = countHelpOverlay.getBoundingClientRect();
-    const bigRect = bigImg.getBoundingClientRect();
-    const smallRect = smallImg.getBoundingClientRect();
-
-    const bigAmount = Number(questionState.bigAmount) || 0;
-    const smallAmount = Number(questionState.smallAmount) || 0;
-
-    let dotDiaPx = Math.min(bigRect.width, bigRect.height) * 0.13;
-
-    const bigLayoutId = String(questionState.bigLayoutId || "");
-    const bigPipData = await getPipDataForLayoutSK(bigLayoutId);
-
-    let bigPips = [];
-    let bigDotRadiusPx = dotDiaPx * 0.5;
-
-    if(bigPipData && bigPipData.pips && bigPipData.pips.length){
-      const scale = Math.min(bigRect.width / Math.max(1, bigPipData.vbW), bigRect.height / Math.max(1, bigPipData.vbH));
-      const rAvg
+  }catch(e){}
+  return { ...DEFAULT_FLASH_BY_LEVEL };
+})();
+function getFlashMs(level){
+  const v = Number(flashMsByLevel[level] ?? DEFAULT_FLASH_BY_LEVEL[level] ?? 300);
+  return clamp(v, 100, 2400);
+}
+function saveFlashMs(level, ms){
+  flashMsByLevel[level] = clamp(Number
