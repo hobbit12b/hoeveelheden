@@ -865,14 +865,14 @@ body{
     <!-- NIEUW -->
     <div class="tuneRow">
       <div class="tuneLabel">grootte hoeveelheid</div>
-      <input type="range" id="helpAmountSizePctRange" min="10" max="30" step="1" value="16" />
-      <div class="tuneValue" id="helpAmountSizePctValue">16</div>
+      <input type="range" id="helpAmountSizePctRange" min="10" max="30" step="1" value="27" />
+      <div class="tuneValue" id="helpAmountSizePctValue">27</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">wachttijd volgende cijfer</div>
-      <input type="range" id="helpCountStepMsRange" min="80" max="1200" step="20" value="320" />
-      <div class="tuneValue" id="helpCountStepMsValue">320</div>
+      <input type="range" id="helpCountStepMsRange" min="80" max="1200" step="20" value="500" />
+      <div class="tuneValue" id="helpCountStepMsValue">500</div>
     </div>
 
     <div class="tuneRow">
@@ -884,14 +884,14 @@ body{
     <!-- NIEUW -->
     <div class="tuneRow">
       <div class="tuneLabel">foutstreep</div>
-      <input type="range" id="helpStrikeMsRange" min="200" max="2000" step="20" value="650" />
-      <div class="tuneValue" id="helpStrikeMsValue">650</div>
+      <input type="range" id="helpStrikeMsRange" min="200" max="2000" step="20" value="480" />
+      <div class="tuneValue" id="helpStrikeMsValue">480</div>
     </div>
 
     <div class="tuneRow">
       <div class="tuneLabel">fade goed antwoord</div>
-      <input type="range" id="helpFadeMsRange" min="80" max="1200" step="20" value="320" />
-      <div class="tuneValue" id="helpFadeMsValue">320</div>
+      <input type="range" id="helpFadeMsRange" min="80" max="1200" step="20" value="1200" />
+      <div class="tuneValue" id="helpFadeMsValue">1200</div>
     </div>
 
     <div class="tuneRow">
@@ -1036,26 +1036,14 @@ let streakBad = 0;
 const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
 const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 300, 5: 300, 6: 400, 7: 450, 8: 500, 9: 500 };
 let flashMsByLevel = (() => {
-  const VER = 2;
   try{
     const raw = localStorage.getItem(FLASH_KEY);
     if(raw){
       const obj = JSON.parse(raw);
-      if(obj && typeof obj === "object"){
-        const curVer = Number(obj.__ver ?? 0);
-        if(curVer < VER){
-          /* nieuwe aanbevolen startwaarden */
-          obj[8] = 500;
-          obj.__ver = VER;
-          try{ localStorage.setItem(FLASH_KEY, JSON.stringify(obj)); }catch(e){}
-        }
-        return obj;
-      }
+      if(obj && typeof obj === "object") return obj;
     }
   }catch(e){}
-  const base = { ...DEFAULT_FLASH_BY_LEVEL };
-  base.__ver = VER;
-  return base;
+  return { ...DEFAULT_FLASH_BY_LEVEL };
 })();
 function getFlashMs(level){
   const v = Number(flashMsByLevel[level] ?? DEFAULT_FLASH_BY_LEVEL[level] ?? 300);
@@ -1068,7 +1056,7 @@ function saveFlashMs(level, ms){
 
 /* kaart open tijd per level */
 const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
-const DEFAULT_CARD_BY_LEVEL = { 2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700 };
+const DEFAULT_CARD_BY_LEVEL = {2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700, 8: 1700, 9: 1700};
 let cardMsByLevel = (() => {
   try{
     const raw = localStorage.getItem(CARD_KEY);
@@ -1170,38 +1158,64 @@ const DEFAULT_HELP_SEQ_BY_LEVEL = {
   9: { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 27, countStepMs: 500, beforeStrikeMs: 500, strikeMs: 480, fadeMs: 1200, afterFadeMs: 400 }
 };
 let helpSeqByLevel = (() => {
-  const VER = 2;
   try{
     const raw = localStorage.getItem(HELP_SEQ_KEY);
     if(raw){
       const obj = JSON.parse(raw);
-      if(obj && typeof obj === "object"){
-        const curVer = Number(obj.__ver ?? 0);
-        if(curVer < VER){
-          /* nieuwe aanbevolen startwaarden voor level 8 en 9 */
-          obj[8] = { ...DEFAULT_HELP_SEQ_BY_LEVEL[8] };
-          obj[9] = { ...DEFAULT_HELP_SEQ_BY_LEVEL[9] };
-          obj.__ver = VER;
-          try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(obj)); }catch(e){}
-        }
-        return obj;
-      }
+      if(obj && typeof obj === "object") return obj;
     }
   }catch(e){}
-  const base = { ...DEFAULT_HELP_SEQ_BY_LEVEL };
-  base.__ver = VER;
-  return base;
+  return { ...DEFAULT_HELP_SEQ_BY_LEVEL };
 })();
+
+/* preset voor level 8 en 9, eenmaal toepassen zodat de sliders meteen goed staan */
+const PRESET_L89_KEY = "slim_kijken_preset_level_8_9_v1";
+const PRESET_L89_VERSION = "2026_01_01";
+function applyPresetLevel89Once(){
+  try{
+    const cur = localStorage.getItem(PRESET_L89_KEY);
+    if(cur === PRESET_L89_VERSION) return;
+  }catch(e){}
+
+  /* flitstijd */
+  flashMsByLevel[8] = 500;
+  flashMsByLevel[9] = 500;
+  try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+
+  /* kaart open tijd */
+  cardMsByLevel[8] = 1700;
+  cardMsByLevel[9] = 1700;
+  try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+
+  /* scan timing */
+  scanTimingByLevel[8] = { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
+  scanTimingByLevel[9] = { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
+  try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
+
+  /* timer video timing */
+  timerSeqByLevel[8] = { playMs: 2000, gapMs: 700 };
+  timerSeqByLevel[9] = { playMs: 2000, gapMs: 700 };
+  try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
+
+  /* uitleg timing */
+  helpSeqByLevel[8] = { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 27, countStepMs: 500, beforeStrikeMs: 500, strikeMs: 480, fadeMs: 1200, afterFadeMs: 400 };
+  helpSeqByLevel[9] = { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 27, countStepMs: 500, beforeStrikeMs: 500, strikeMs: 480, fadeMs: 1200, afterFadeMs: 400 };
+  try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(helpSeqByLevel)); }catch(e){}
+
+  try{ localStorage.setItem(PRESET_L89_KEY, PRESET_L89_VERSION); }catch(e){}
+}
+applyPresetLevel89Once();
+
 function getHelpSeq(level){
   const base = helpSeqByLevel[level] || DEFAULT_HELP_SEQ_BY_LEVEL[level] || DEFAULT_HELP_SEQ_BY_LEVEL[8];
   return {
     circleWaitMs: clamp(Number(base.circleWaitMs ?? 220), 0, 2000),
     amountWaitMs: clamp(Number(base.amountWaitMs ?? 320), 0, 3000),
-    amountSizePct: clamp(Number(base.amountSizePct ?? 16), 10, 30),
-    countStepMs: clamp(Number(base.countStepMs ?? 320), 80, 2000),
+    amountSizePct: clamp(Number(base.amountSizePct ?? 27), 10, 30),
+    countStepMs: clamp(Number(base.countStepMs ?? 500), 80, 2000),
     beforeStrikeMs: clamp(Number(base.beforeStrikeMs ?? 500), 0, 3000),
-    strikeMs: clamp(Number(base.strikeMs ?? 650), 200, 3000),
-    fadeMs: clamp(Number(base.fadeMs ?? 320), 80, 2000),
+    strikeMs: clamp(Number(base.strikeMs ?? 480), 200, 3000),
+    fadeMs: clamp(Number(base.fadeMs ?? 1200), 80, 2000),
     afterFadeMs: clamp(Number(base.afterFadeMs ?? 400), 0, 3000)
   };
 }
@@ -1413,13 +1427,7 @@ function softBeep(type){
 
 /* assets */
 const DICE_DIR = "dobbelstenen";
-const diceSrc = (id) => {
-  const s = String(id || "").trim();
-  if(!s) return "";
-  if(/\.(png|svg|jpg|jpeg|webp)$/i.test(s)) return `${DICE_DIR}/${s}`;
-  /* dobbelstenen in deze versie zijn png bestanden */
-  return `${DICE_DIR}/${s}.png`;
-};
+const diceSrc = (id) => `${DICE_DIR}/${id}.svg`;
 const marboticSrc = (n) => `marbotic${n}.png`;
 
 /* antwoord dice basis */
@@ -1519,9 +1527,7 @@ function waitForImgLoad(imgEl){
   });
 }
 
-const pipCacheSK = new Map();
-
-/* SVG dobbelstenen: lees stippen uit <circle> elementen */
+const pipSvgCacheSK = new Map();
 function parseSvgPipsSK(svgText){
   try{
     const dp = new DOMParser();
@@ -1568,140 +1574,21 @@ function parseSvgPipsSK(svgText){
     return null;
   }
 }
-
-/* PNG dobbelstenen: detecteer stippen via canvas, werkt met jouw dobbelsteen png's */
-async function parsePngPipsSK(imgSrc){
-  try{
-    const img = new Image();
-    img.decoding = "async";
-    img.src = imgSrc;
-
-    const ok = await waitForImgLoad(img);
-    if(!ok) return null;
-
-    const w0 = img.naturalWidth || 0;
-    const h0 = img.naturalHeight || 0;
-    if(!w0 || !h0) return null;
-
-    /* downscale voor snelheid, maar behoud verhouding */
-    const maxSide = 220;
-    const scaleDown = Math.min(1, maxSide / Math.max(w0, h0));
-    const w = Math.max(1, Math.round(w0 * scaleDown));
-    const h = Math.max(1, Math.round(h0 * scaleDown));
-
-    const cv = document.createElement("canvas");
-    cv.width = w; cv.height = h;
-    const ctx = cv.getContext("2d", { willReadFrequently: true });
-    ctx.clearRect(0,0,w,h);
-    ctx.drawImage(img, 0, 0, w, h);
-
-    const imgData = ctx.getImageData(0,0,w,h);
-    const d = imgData.data;
-
-    const lum = (r,g,b) => 0.2126*r + 0.7152*g + 0.0722*b;
-
-    /* mask: donkere pixels met alpha */
-    const mask = new Uint8Array(w*h);
-    for(let y=0;y<h;y++){
-      for(let x=0;x<w;x++){
-        const i = (y*w + x)*4;
-        const a = d[i+3];
-        if(a < 32) continue;
-        const L = lum(d[i], d[i+1], d[i+2]);
-        if(L < 90) mask[y*w + x] = 1;
-      }
-    }
-
-    /* component labeling (8-connected) */
-    const visited = new Uint8Array(w*h);
-    const comps = [];
-    const stack = [];
-    const push = (idx) => { visited[idx] = 1; stack.push(idx); };
-
-    for(let idx=0; idx<w*h; idx++){
-      if(!mask[idx] || visited[idx]) continue;
-      let area = 0;
-      let sumX = 0, sumY = 0;
-      let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-
-      push(idx);
-      while(stack.length){
-        const cur = stack.pop();
-        area++;
-        const y = Math.floor(cur / w);
-        const x = cur - y*w;
-
-        sumX += x; sumY += y;
-        if(x < minX) minX = x;
-        if(y < minY) minY = y;
-        if(x > maxX) maxX = x;
-        if(y > maxY) maxY = y;
-
-        for(let yy=y-1; yy<=y+1; yy++){
-          if(yy<0 || yy>=h) continue;
-          const row = yy*w;
-          for(let xx=x-1; xx<=x+1; xx++){
-            if(xx<0 || xx>=w) continue;
-            const ni = row + xx;
-            if(mask[ni] && !visited[ni]) push(ni);
-          }
-        }
-      }
-
-      const bbW = (maxX-minX+1), bbH = (maxY-minY+1);
-      const bbArea = bbW * bbH;
-      const fill = area / Math.max(1, bbArea);
-
-      /* heuristiek: stippen zijn compact en niet te klein */
-      if(area < 18) continue;
-      if(bbArea < 120) continue;
-      if(bbArea > (w*h*0.22)) continue;
-      if(fill < 0.18) continue;
-
-      const cx = (sumX/area + 0.5) / w;
-      const cy = (sumY/area + 0.5) / h;
-      const r = Math.sqrt(area / Math.PI) / Math.min(w, h);
-
-      comps.push({ cx, cy, r, area });
-    }
-
-    if(!comps.length) return null;
-
-    comps.sort((a,b)=>b.area-a.area);
-    const pips = comps.slice(0, 12)
-      .map(p => ({ cx: p.cx, cy: p.cy, r: p.r }))
-      .sort((a,b)=>(a.cy-b.cy) || (a.cx-b.cx));
-
-    return { vbX: 0, vbY: 0, vbW: 1, vbH: 1, pips };
-  }catch(e){
-    return null;
-  }
-}
-
 async function getPipDataForLayoutSK(layoutId){
   const key = String(layoutId || "");
   if(!key) return null;
-  if(pipCacheSK.has(key)) return pipCacheSK.get(key);
-
-  const src = diceSrc(key);
-  let data = null;
-
+  if(pipSvgCacheSK.has(key)) return pipSvgCacheSK.get(key);
   try{
-    if(/\.svg(\?|#|$)/i.test(src)){
-      const res = await fetch(src, { cache: "force-cache" });
-      const txt = await res.text();
-      data = parseSvgPipsSK(txt);
-    }else{
-      data = await parsePngPipsSK(src);
-    }
+    const res = await fetch(diceSrc(key), { cache: "force-cache" });
+    const txt = await res.text();
+    const data = parseSvgPipsSK(txt);
+    pipSvgCacheSK.set(key, data);
+    return data;
   }catch(e){
-    data = null;
+    pipSvgCacheSK.set(key, null);
+    return null;
   }
-
-  pipCacheSK.set(key, data);
-  return data;
 }
-
 function fallbackSmallPipsSK(amount){
   const a = Number(amount) || 1;
   if(a === 1) return [{ x:0.50, y:0.50 }];
@@ -1860,7 +1747,8 @@ async function showWrongCountHelpSK(){
     label.style.borderWidth = `${borderW}px`;
     label.style.fontWeight = "950";
 
-    const lx = (bigRect.left + bigRect.width * 0.72) - overlayRect.left;
+    const xFrac = (smallRect.left > bigRect.left) ? 0.28 : 0.72;
+    const lx = (bigRect.left + bigRect.width * xFrac) - overlayRect.left;
     const ly = (bigRect.top + bigRect.height * 0.22) - overlayRect.top;
 
     const clamped = clampToRectSK(lx, ly, { left:0, top:0, right: overlayRect.width, bottom: overlayRect.height }, dia * 0.60);
@@ -1873,9 +1761,11 @@ async function showWrongCountHelpSK(){
   scheduleCountHelpTimerSK(addEllipseAroundBig, tCircle);
   scheduleCountHelpTimerSK(addBigNumber, tBigNumber);
 
-  /* doortellen labels naast stippen van kleine groep, plaatsing op basis foto: rechts en iets omhoog */
+  /* doortellen labels naast stippen van kleine groep, aan buitenkant van de dobbelsteen */
   const fontPx = clamp(Math.floor(dotDiaPx * 0.74), 12, Math.floor(dotDiaPx * 0.92));
-  const offsetX = clamp(dotDiaPx * 1.05, 12, 86);
+  const isSmallRight = (smallRect.left > bigRect.left);
+  const sideSign = isSmallRight ? 1 : -1;
+  const offsetX = clamp(dotDiaPx * 1.05, 12, 86) * sideSign;
   const offsetY = clamp(-dotDiaPx * 0.58, -86, -12);
   const padLabel = Math.max(6, dotDiaPx * 0.45);
 
