@@ -341,7 +341,7 @@ body{
   inset:0;
   background: rgba(253,238,234,0.55);
   backdrop-filter: blur(2px);
-  display:flex;
+  display:none;
   align-items:center;
   justify-content:center;
   z-index: 999;
@@ -704,24 +704,18 @@ body{
   0%{ transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
   100%{ transform: translateX(-50%) translateY(-560%) scale(0.96); opacity: 1; }
 }
-
-@keyframes scanPlaceSlideOutDownSK{
-  0%{ transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
-  100%{ transform: translateX(-50%) translateY(560%) scale(0.96); opacity: 0; }
-}
-
   70%{ transform: translateX(-50%) translateY(-320%) scale(0.98); opacity: 0.72; }
   100%{ transform: translateX(-50%) translateY(-520%) scale(0.96); opacity: 0; }
 }
 
 
 @media (orientation: portrait){
-  /* scanplek (marbotic_scanplek.png): even groot als landscape, lager geplaatst */
+  /* scanplek (marbotic_scanplek.png): zelfde formaat als liggend, iets lager */
   .scanPlaceWrapSK{
     width: 33%;
     max-width: 260px;
     min-width: 140px;
-    bottom: calc(6px + env(safe-area-inset-bottom));
+    bottom: calc(4px + env(safe-area-inset-bottom));
   }
 
   /* gescand cijfer: standaard gecentreerd (goed antwoord) */
@@ -840,6 +834,12 @@ body{
   0%{ transform: translateX(-50%) scale(1); opacity: 1; }
   100%{ transform: translateX(-50%) translateX(-190%) scale(0.96); opacity: 1; }
 }
+
+@keyframes scanPlaceSlideOutDownSK{
+  0%{ transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  100%{ transform: translateX(-50%) translateY(220%) scale(0.98); opacity: 1; }
+}
+
   70%{ transform: translateX(-50%) translateX(-110%) scale(0.98); opacity: 0.72; }
   100%{ transform: translateX(-50%) translateX(-180%) scale(0.96); opacity: 0; }
 }
@@ -974,7 +974,7 @@ body{
   </div>
 </div>
 
-<div class="startOverlay" id="startOverlay" style="display:none" role="dialog" aria-modal="true" aria-label="Start">
+<div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
   <div class="startCard">
     <h1>tik om te starten</h1>
     <p>Je start altijd in level 1. Bij 5 goed achter elkaar ga je omhoog, bij 2 fout achter elkaar ga je omlaag.</p>
@@ -2171,13 +2171,12 @@ function pauseCssAnimationsDeep(root){
   }catch(e){}
 }
 
-function showQuestionHeart(durationMs){
+function showQuestionHeart(){
   if(!qHeart) return;
   qHeart.classList.remove("show");
   void qHeart.offsetWidth;
   qHeart.classList.add("show");
-  const dur = (typeof durationMs === "number") ? durationMs : 520;
-  setTimeout(() => { try{ qHeart.classList.remove("show"); }catch(e){} }, dur);
+  setTimeout(() => { try{ qHeart.classList.remove("show"); }catch(e){} }, 900);
 }
 function hideQuestionHeart(){
   if(!qHeart) return;
@@ -2392,18 +2391,13 @@ function renderAnswers(correct, onPick){
 
     /* level 1 tot en met 5, dobbelsteen svg als antwoord */
     let layoutId = standardLayoutId(v);
-
-    /* level 5: ook varianten b, c, d gebruiken bij antwoordknoppen */
-    if(LEVEL === 5){
-      const allowed = allowedQuestionLayoutsSingle(5, v);
-      if(Array.isArray(allowed) && allowed.length){
-        layoutId = pick(allowed);
-      }
-      if(questionState && typeof questionState.layoutId === "string" && v === questionState.correct){
-        layoutId = pickAnswerLayoutDistinct(5, v, questionState.layoutId);
-      }
+    if(LEVEL >= 3 && LEVEL <= 5){
+      const opts = allowedQuestionLayoutsSingle(LEVEL, v);
+      if(opts && opts.length) layoutId = pick(opts);
     }
-
+    if(LEVEL === 5 && questionState && typeof questionState.layoutId === "string" && v === questionState.correct){
+      layoutId = pickAnswerLayoutDistinct(5, v, questionState.layoutId);
+    }
     const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
     if(usesAnswerCards()){
       btn.innerHTML = `<div class="cardWrap">
@@ -2522,13 +2516,20 @@ function hideScanMarkSK(hard){
 function showScanMarkSK(isCorrect){
   if(!scanMarkWrapSK || !scanMarkSK) return;
   hideScanMarkSK(true);
-  scanMarkWrapSK.classList.add(isCorrect ? "good" : "bad");
-  scanMarkSK.innerHTML = isCorrect ? HEART_SVG_SK : CROSS_SVG_SK;
+
+  /* level 8 en 9: geen goed hartje in het scanvenster */
+  if(isCorrect){
+    softBeep("ok");
+    return;
+  }
+
+  scanMarkWrapSK.classList.add("bad");
+  scanMarkSK.innerHTML = CROSS_SVG_SK;
   scanMarkWrapSK.classList.add("show");
-  softBeep(isCorrect ? "ok" : "no");
+  softBeep("no");
   scanMarkTimerSK = setTimeout(() => {
     if(scanMarkWrapSK) scanMarkWrapSK.classList.remove("show","good","bad");
-  }, isCorrect ? 520 : 620);
+  }, 620);
 }
 
 function enableScanUI(){
@@ -3197,17 +3198,7 @@ function buildQuestionState(){
   if(LEVEL <= 5){
     const cap = maxForLevel();
     let n = pickNumberWeighted(cap);
-
-    /* level 5: geen hoeveelheid 1 flitsen */
-    if(LEVEL === 5){
-      let tries = 0;
-      while(n === 1 && tries < 10){
-        n = pickNumberWeighted(cap);
-        tries++;
-      }
-      if(n === 1) n = 2;
-    }
-
+    if(LEVEL === 5){ while(n === 1){ n = pickNumberWeighted(cap); } }
     const layoutId = pickQuestionLayoutDistinct(LEVEL, n);
     return { kind: "single", correct: n, layoutId };
   }
@@ -3319,15 +3310,7 @@ async function flashAndAsk(){
     return;
   }
 
-  /* level 7: zorg dat alle stippen tegelijk verdwijnen */
-  let holdMs = flashMs;
-  if(LEVEL === 7 && questionState && questionState.kind === "pair"){
-    const d = Number(questionState.smallDelayMs ?? 0);
-    const appearMs = 360;
-    holdMs = Math.max(holdMs, d + appearMs);
-  }
-
-  await wait(holdMs);
+  await wait(flashMs);
   if(myRound !== roundToken) return;
 
   dissolveBoard(180);
@@ -3369,6 +3352,8 @@ async function onPick(btn, value){
   if(value === questionState.correct){
     beep("ok");
     btn.classList.add("correctHold");
+    /* level 7: stop animaties direct, zodat alle punten tegelijk verdwijnen */
+    try{ pauseCssAnimationsDeep(flashSvg); }catch(e){}
     await wait(520);
     dissolveBoard(260);
     const exitOrder = sortedButtonsForExit(all);
@@ -3477,8 +3462,9 @@ async function onScanValue(value){
 
   if(value === questionState.correct){
     beep("ok");
-    showQuestionHeart(900);
-await showScannedDigitFeedbackAndExitSK(value, true);
+    showQuestionHeart();
+    showScanMarkSK(true);
+    await showScannedDigitFeedbackAndExitSK(value, true);
     await wait(120);
     dissolveBoard(260);
     await wait(160);
@@ -3805,6 +3791,9 @@ function startGame(){
 startBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); beep("tap"); startGame(); });
 startOverlay.addEventListener("click", (e) => { if(e.target === startOverlay){ beep("tap"); startGame(); } });
 
+/* auto start, geen startscherm */
+startGame();
+
 homeBtn.addEventListener("click", () => {
   beep("tap");
   try{ window.location.href = "index.html"; }catch(e){}
@@ -4116,9 +4105,6 @@ scheduleFit();
 setAnchorToLevel(LEVEL, { noTransition: true });
 showOnlyStill();
 updateLevelsVisibilityUI();
-
-startGame();
-
 
 /* calibration laden */
 fetch("calibration.json", { cache: "no-store" })
