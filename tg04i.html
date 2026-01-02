@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Slim kijken</title>
@@ -191,6 +191,26 @@ body{
   display:none;
   z-index: 12;
   pointer-events:none;
+}
+
+/* nieuw: hartje feedback in vraagvenster (level 8 en 9 bij goed antwoord) */
+.qHeart{
+  position:absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.72);
+  opacity: 0;
+  pointer-events:none;
+  z-index: 16;
+  color: #e85c7a;
+  filter: drop-shadow(0 14px 26px rgba(0,0,0,0.12));
+}
+.qHeart svg{ width: clamp(52px, 7vw, 76px); height: clamp(52px, 7vw, 76px); display:block; }
+.qHeart.show{ opacity: 1; animation: qHeartPopSK 420ms cubic-bezier(.22,.61,.35,1) 1; }
+@keyframes qHeartPopSK{
+  0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.58); }
+  60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.10); }
+  100%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ========================= NIEUW: uitleg overlay (level 8 en 9 bij fout) ========================= */
@@ -615,7 +635,7 @@ body{
 
 /* ========================= AANGEPAST: rode streep wordt getekend, duur via slider ========================= */
 .scanDigitWrapSK{
-  --strikeDur: 650ms;
+  --strikeDur: 480ms;
   --strikeRot: -14deg;
 }
 .scanDigitWrapSK.strikeSK::after{
@@ -668,18 +688,172 @@ body{
   opacity: 0;
 }
 
+
+
+/* ========================= AANGEPAST: portrait iPad scan layout (level 8 en 9) ========================= */
+@keyframes scanSlideOutUpSK{
+  0%{ transform: translate(var(--baseTX, 0px), -50%) scale(1); opacity: 1; }
+  100%{ transform: translate(var(--baseTX, 0px), -50%) translateY(-190%) scale(0.96); opacity: 1; }
+}
+  70%{ transform: translate(var(--baseTX, 0px), -50%) translateY(-110%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translate(var(--baseTX, 0px), -50%) translateY(-180%) scale(0.96); opacity: 0; }
+}
+
+
+@keyframes scanPlaceSlideOutUpSK{
+  0%{ transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  100%{ transform: translateX(-50%) translateY(-560%) scale(0.96); opacity: 1; }
+}
+  70%{ transform: translateX(-50%) translateY(-320%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translateX(-50%) translateY(-520%) scale(0.96); opacity: 0; }
+}
+
+
+@media (orientation: portrait){
+  /* scanplek (marbotic_scanplek.png): 50% kleiner, iets lager */
+  .scanPlaceWrapSK{
+    width: 16.5%;
+    max-width: 130px;
+    min-width: 70px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  /* gescand cijfer: standaard gecentreerd (goed antwoord) */
+  .scanDigitWrapSK{
+    left: 50%;
+    --baseTX: -50%;
+    transform: translate(var(--baseTX), -50%) scale(0.98);
+  }
+  .scanDigitWrapSK.show{ transform: translate(var(--baseTX), -50%) scale(1); }
+
+  /* goed antwoord tegel (bij fout): rechts van het midden, samen gecentreerd met scan tegel */
+  .scanCorrectWrapSK{
+    left: calc(50% + 9px);
+    --baseTX: 0px;
+    transform: translate(var(--baseTX), -50%) scale(0.98);
+  }
+  .scanCorrectWrapSK.show{ transform: translate(var(--baseTX), -50%) scale(1); }
+
+  .scan-surface.twoTiles .scanDigitWrapSK{
+    left: calc(50% - 95px);
+    --baseTX: 0px;
+  }
+
+  /* uit beeld: niet naar links, maar omhoog achter de middenlijn */
+  .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+
+  /* geen kruisje bij fout in portrait */
+  .scanMarkWrapSK.bad{ display:none !important; }
+}
+
+/* nieuw: rode streep door gekozen antwoordknop */
+.ansBtn{
+  --strikeDur: 480ms;
+  --strikeRot: -14deg;
+}
+.ansBtn.strikeBtnSK::after{
+  content:"";
+  position:absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  height: 6px;
+  background: rgba(217, 75, 75, 0.92);
+  border-radius: 6px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+  opacity: 1;
+  transform-origin: left center;
+  transform: translateY(-50%) rotate(var(--strikeRot)) scaleX(0);
+  animation: strikeDrawSK var(--strikeDur) cubic-bezier(.22,.61,.35,1) forwards;
+  pointer-events: none;
+}
+
+
+.ansBtn.strikeBtnSK.unstrikeBtnSK::after{
+  transform-origin: right center;
+  animation: strikeEraseSK var(--strikeEraseDur, 360ms) cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes strikeEraseSK{
+  from{ transform: translateY(-50%) rotate(var(--strikeRot)) scaleX(1); }
+  to{ transform: translateY(-50%) rotate(var(--strikeRot)) scaleX(0); }
+}
+
+/* nieuw: goed antwoord naast gekozen antwoordknop (los van scan UI) */
+.btnCorrectWrapSK{
+  position: fixed;
+  left: -9999px;
+  top: 0px;
+  width: 86px;
+  height: 86px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+  border: 2px solid rgba(245,180,152,0.55);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) translateX(0) scale(0.98);
+  transition: opacity 180ms cubic-bezier(.22,.61,.35,1), transform 220ms cubic-bezier(.22,.61,.35,1);
+  z-index: 5000;
+}
+.btnCorrectWrapSK.show{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+.btnCorrectWrapSK img{
+  display:block;
+  width: 78%;
+  height: auto;
+  max-height: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+  will-change: opacity;
+  opacity: 0;
+}
+.btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutLeftSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+@keyframes btnSlideOutLeftSK{
+  0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
+  100%{ transform: translateY(-50%) translateX(-190%) scale(0.96); opacity: 1; }
+}
+  70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.65; }
+  100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
+}
+
+
+.btnCorrectWrapSK.fadeOut{
+  animation: btnFadeOutSK var(--fadeOutMs, 360ms) cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes btnFadeOutSK{
+  0%{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+  100%{ opacity: 0; transform: translateY(-50%) translateX(0) scale(0.98); }
+}
+
+
+/* scanplek verdwijnt zoals de antwoordknoppen */
+.scanPlaceWrapSK.slideOutLeft{ transition: none !important; animation: scanPlaceSlideOutLeftSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+@keyframes scanPlaceSlideOutLeftSK{
+  0%{ transform: translateX(-50%) scale(1); opacity: 1; }
+  100%{ transform: translateX(-50%) translateX(-190%) scale(0.96); opacity: 1; }
+}
+  70%{ transform: translateX(-50%) translateX(-110%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translateX(-50%) translateX(-180%) scale(0.96); opacity: 0; }
+}
+
 /* schuif links, voorbij de stippellijn middellijn, verdwijnt */
-.scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+.scanDigitWrapSK.slideOutLeft{ transition: none !important; animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes scanSlideOutLeft{
   0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
+  100%{ transform: translateY(-50%) translateX(-190%) scale(0.96); opacity: 1; }
+}
   70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.75; }
   100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
 }
 
 /* nieuw: correct tile schuift mee */
-.scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutLeftCorrect 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+.scanCorrectWrapSK.slideOutLeft{ transition: none !important; animation: scanSlideOutLeftCorrect 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes scanSlideOutLeftCorrect{
   0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
+  100%{ transform: translateY(-50%) translateX(-190%) scale(0.96); opacity: 1; }
+}
   70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.65; }
   100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
 }
@@ -690,6 +864,21 @@ body{
   28%{ transform: translateX(-6px); }
   58%{ transform: translateX(5px); }
   100%{ transform: translateX(0); }
+}
+
+/* ========================= FIX: portrait slideOutLeft gaat omhoog achter de middenlijn ========================= */
+@keyframes btnSlideOutUpSK{
+  0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
+  100%{ transform: translateY(-50%) translateX(0) translateY(-190%) scale(0.96); opacity: 1; }
+}
+  70%{ transform: translateY(-50%) translateX(0) translateY(-110%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translateY(-50%) translateX(0) translateY(-180%) scale(0.96); opacity: 0; }
+}
+@media (orientation: portrait){
+  .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanPlaceWrapSK.slideOutLeft{ animation: scanPlaceSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 }
 </style>
 </head>
@@ -713,6 +902,11 @@ body{
     <div class="gameCard" id="gameCard" aria-label="Vraagvak">
       <div class="flashBoard" id="flashBoard">
         <video class="timerVid" id="timerVid" src="timer.mp4" muted playsinline preload="auto"></video>
+        <div class="qHeart" id="qHeart" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21s-7.2-4.2-9.6-8.3C.3 9.2 2.1 5.8 5.6 5.3c1.7-.2 3.3.6 4.4 1.9 1.1-1.3 2.7-2.1 4.4-1.9 3.5.5 5.3 3.9 3.2 7.4C19.2 16.8 12 21 12 21z" fill="currentColor"/>
+          </svg>
+        </div>
         <div class="flashSvg" id="flashSvg"></div>
 
         <!-- uitleg overlay (alleen gebruikt bij fout in level 8 en 9) -->
@@ -737,6 +931,12 @@ body{
   <!-- goed antwoord rechts van de scan tegel -->
   <div class="scanCorrectWrapSK" id="scanCorrectWrapSK" aria-hidden="true">
     <img id="scanCorrectImgSK" alt="" />
+  </div>
+
+
+  <!-- goed antwoord naast de gekozen antwoordknop -->
+  <div class="btnCorrectWrapSK" id="btnCorrectWrapSK" aria-hidden="true">
+    <img id="btnCorrectImgSK" alt="" />
   </div>
 
   <div class="scanOverlaySK" id="scanOverlaySK" aria-hidden="true">
@@ -793,6 +993,7 @@ body{
     <div class="tuneButtons" style="margin-top:10px;">
       <button class="tuneBtnSmall secondary" id="levelDownBtn" type="button">level terug</button>
       <button class="tuneBtnSmall" id="levelUpBtn" type="button">level vooruit</button>
+      <button class="tuneBtnSmall secondary" id="jumpTo9Btn" type="button">naar level 9</button>
     </div>
   </div>
 
@@ -919,6 +1120,19 @@ body{
 <script>
 (() => {
 "use strict";
+/* zoom blokkeren (pinch, dubbel tik, ctrl scroll) */
+window.addEventListener("gesturestart", (e) => e.preventDefault(), { passive:false });
+window.addEventListener("gesturechange", (e) => e.preventDefault(), { passive:false });
+window.addEventListener("gestureend", (e) => e.preventDefault(), { passive:false });
+window.addEventListener("wheel", (e) => { if(e.ctrlKey) e.preventDefault(); }, { passive:false });
+
+let __lastTouchEnd = 0;
+document.addEventListener("touchend", (e) => {
+  const now = Date.now();
+  if(now - __lastTouchEnd <= 300) e.preventDefault();
+  __lastTouchEnd = now;
+}, { passive:false });
+
 
 /* FIX: clamp NaN safe, zodat flashMs en card tijden nooit NaN kunnen worden */
 const clamp = (v,a,b) => { v = Number(v); if(!Number.isFinite(v)) v = a; return Math.max(a, Math.min(b, v)); };
@@ -949,6 +1163,7 @@ const testWrongBtn = $("testWrongBtn");
 const testGoodBtn = $("testGoodBtn");
 const levelUpBtn = $("levelUpBtn");
 const levelDownBtn = $("levelDownBtn");
+const jumpTo9Btn = $("jumpTo9Btn");
 const toggleLevelsBtn = $("toggleLevelsBtn");
 
 /* scan timing sliders */
@@ -995,6 +1210,9 @@ const scanArea = $("scanArea");
 /* timer video */
 const timerVid = $("timerVid");
 
+/* hartje feedback in vraagvenster */
+const qHeart = $("qHeart");
+
 /* uitleg overlay container */
 const countHelpOverlay = $("countHelpOverlay");
 
@@ -1003,6 +1221,8 @@ const scanDigitWrapSK = $("scanDigitWrapSK");
 const scanDigitImgSK = $("scanDigitImgSK");
 const scanCorrectWrapSK = $("scanCorrectWrapSK");
 const scanCorrectImgSK = $("scanCorrectImgSK");
+const btnCorrectWrapSK = $("btnCorrectWrapSK");
+const btnCorrectImgSK = $("btnCorrectImgSK");
 const scanOverlaySK = $("scanOverlaySK");
 const scanTitleSK = $("scanTitleSK");
 const scanSubSK = $("scanSubSK");
@@ -1034,7 +1254,7 @@ let streakBad = 0;
 
 /* flitstijd per level */
 const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
-const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 300, 5: 300, 6: 400, 7: 450, 8: 500, 9: 500 };
+const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 350, 5: 300, 6: 400, 7: 950, 8: 800, 9: 600 };
 let flashMsByLevel = (() => {
   try{
     const raw = localStorage.getItem(FLASH_KEY);
@@ -1045,6 +1265,20 @@ let flashMsByLevel = (() => {
   }catch(e){}
   return { ...DEFAULT_FLASH_BY_LEVEL };
 })();
+
+/* migratie: alleen oude standaardwaarden bijwerken (laat eigen instellingen staan) */
+(function migrateLegacyFlash(){
+  try{
+    const oldToNewFlash = { 4: { old: 300, neu: 350 }, 7: { old: 450, neu: 950 }, 8: { old: 500, neu: 800 }, 9: { old: 500, neu: 600 } };
+    for(const k in oldToNewFlash){
+      const lvl = Number(k);
+      const cur = Number(flashMsByLevel[lvl]);
+      if(Number.isFinite(cur) && cur === oldToNewFlash[k].old){ flashMsByLevel[lvl] = oldToNewFlash[k].neu; }
+    }
+    localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel));
+  }catch(e){}
+})();
+
 function getFlashMs(level){
   const v = Number(flashMsByLevel[level] ?? DEFAULT_FLASH_BY_LEVEL[level] ?? 300);
   return clamp(v, 100, 2400);
@@ -1056,7 +1290,7 @@ function saveFlashMs(level, ms){
 
 /* kaart open tijd per level */
 const CARD_KEY = "slim_kijken_card_open_ms_by_level_v1";
-const DEFAULT_CARD_BY_LEVEL = {2: 1700, 3: 1700, 4: 1700, 5: 1700, 6: 1700, 7: 1700, 8: 1700, 9: 1700};
+const DEFAULT_CARD_BY_LEVEL = {2: 1700, 3: 1700, 4: 1300, 5: 1300, 6: 1700, 7: 1700, 8: 1700, 9: 1700 };
 let cardMsByLevel = (() => {
   try{
     const raw = localStorage.getItem(CARD_KEY);
@@ -1067,6 +1301,20 @@ let cardMsByLevel = (() => {
   }catch(e){}
   return { ...DEFAULT_CARD_BY_LEVEL };
 })();
+
+/* migratie: alleen oude standaardwaarden bijwerken (laat eigen instellingen staan) */
+(function migrateLegacyCards(){
+  try{
+    const oldToNewCard = { 4: { old: 1700, neu: 1300 }, 5: { old: 1700, neu: 1300 } };
+    for(const k in oldToNewCard){
+      const lvl = Number(k);
+      const cur = Number(cardMsByLevel[lvl]);
+      if(Number.isFinite(cur) && cur === oldToNewCard[k].old){ cardMsByLevel[lvl] = oldToNewCard[k].neu; }
+    }
+    localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel));
+  }catch(e){}
+})();
+
 function getCardMs(level){
   const v = Number(cardMsByLevel[level] ?? DEFAULT_CARD_BY_LEVEL[level] ?? 1700);
   return clamp(v, 300, 4000);
@@ -1168,54 +1416,56 @@ let helpSeqByLevel = (() => {
   return { ...DEFAULT_HELP_SEQ_BY_LEVEL };
 })();
 
-/* preset voor level 8 en 9, eenmaal toepassen zodat de sliders meteen goed staan */
-const PRESET_L89_KEY = "slim_kijken_preset_level_8_9_v1";
-const PRESET_L89_VERSION = "2026_01_01";
-function applyPresetLevel89Once(){
-  try{
-    const cur = localStorage.getItem(PRESET_L89_KEY);
-    if(cur === PRESET_L89_VERSION) return;
-  }catch(e){}
 
-  /* flitstijd */
-  flashMsByLevel[8] = 500;
-  flashMsByLevel[9] = 500;
-  try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+/* preset: level 8 en 9 standaardwaarden bij openen van het spel */
+const PRESET_89_KEY = "slim_kijken_preset_level8_9_v1";
+const PRESET_89_VERSION = 2;
 
-  /* kaart open tijd */
+function applyPresetLevel8and9(){
+  let v = 0;
+  try{ v = Number(localStorage.getItem(PRESET_89_KEY) || 0); }catch(e){}
+  if(v === PRESET_89_VERSION) return;
+
+  /* flits */
+  flashMsByLevel[8] = 800;
+  flashMsByLevel[9] = 600;
+
+  /* kaarten */
   cardMsByLevel[8] = 1700;
   cardMsByLevel[9] = 1700;
-  try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
 
-  /* scan timing */
+  /* scan */
   scanTimingByLevel[8] = { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
   scanTimingByLevel[9] = { checkMs: 300, goodMs: 1000, wrongMs: 2000 };
-  try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
 
-  /* timer video timing */
+  /* timer video */
   timerSeqByLevel[8] = { playMs: 2000, gapMs: 700 };
   timerSeqByLevel[9] = { playMs: 2000, gapMs: 700 };
-  try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
 
-  /* uitleg timing */
+  /* uitleg bij fout */
   helpSeqByLevel[8] = { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 27, countStepMs: 500, beforeStrikeMs: 500, strikeMs: 480, fadeMs: 1200, afterFadeMs: 400 };
   helpSeqByLevel[9] = { circleWaitMs: 220, amountWaitMs: 320, amountSizePct: 27, countStepMs: 500, beforeStrikeMs: 500, strikeMs: 480, fadeMs: 1200, afterFadeMs: 400 };
+
+  try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+  try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+  try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
+  try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
   try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(helpSeqByLevel)); }catch(e){}
 
-  try{ localStorage.setItem(PRESET_L89_KEY, PRESET_L89_VERSION); }catch(e){}
+  try{ localStorage.setItem(PRESET_89_KEY, String(PRESET_89_VERSION)); }catch(e){}
 }
-applyPresetLevel89Once();
+applyPresetLevel8and9();
 
 function getHelpSeq(level){
   const base = helpSeqByLevel[level] || DEFAULT_HELP_SEQ_BY_LEVEL[level] || DEFAULT_HELP_SEQ_BY_LEVEL[8];
   return {
     circleWaitMs: clamp(Number(base.circleWaitMs ?? 220), 0, 2000),
     amountWaitMs: clamp(Number(base.amountWaitMs ?? 320), 0, 3000),
-    amountSizePct: clamp(Number(base.amountSizePct ?? 27), 10, 30),
-    countStepMs: clamp(Number(base.countStepMs ?? 500), 80, 2000),
+    amountSizePct: clamp(Number(base.amountSizePct ?? 16), 10, 30),
+    countStepMs: clamp(Number(base.countStepMs ?? 320), 80, 2000),
     beforeStrikeMs: clamp(Number(base.beforeStrikeMs ?? 500), 0, 3000),
-    strikeMs: clamp(Number(base.strikeMs ?? 480), 200, 3000),
-    fadeMs: clamp(Number(base.fadeMs ?? 1200), 80, 2000),
+    strikeMs: clamp(Number(base.strikeMs ?? 650), 200, 3000),
+    fadeMs: clamp(Number(base.fadeMs ?? 320), 80, 2000),
     afterFadeMs: clamp(Number(base.afterFadeMs ?? 400), 0, 3000)
   };
 }
@@ -1480,6 +1730,15 @@ function pickQuestionLayoutDistinct(level, n){
   return (filtered.length ? pick(filtered) : pick(allowed));
 }
 
+/* level 5: zorg dat het antwoordplaatje nooit exact dezelfde layout is als de vraag */
+function pickAnswerLayoutDistinct(level, n, avoidLayoutId){
+  const allowed = allowedQuestionLayoutsSingle(level, n);
+  if(!allowed || !allowed.length) return standardLayoutId(n);
+  if(!avoidLayoutId) return pick(allowed);
+  const filtered = allowed.filter(x => x !== avoidLayoutId);
+  return filtered.length ? pick(filtered) : pick(allowed);
+}
+
 /* html builders */
 function boardHtmlForLayout(layoutId){
   return `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
@@ -1528,6 +1787,13 @@ function waitForImgLoad(imgEl){
 }
 
 const pipSvgCacheSK = new Map();
+/* png gebaseerde label posities voor level 8 en 9 bij fout: afgeleid uit 2a.png, 2b.png, 2c.png, 2d.png, 3a.png, 3c.png en 4a.png */
+const PIP_LABEL_PNG_MAP_SK = {"2a":{"imgW":400,"imgH":400,"entries":[{"n":7,"pip":{"x":0.262897,"y":0.290357},"label":{"x":0.43275,"y":0.210234},"fontH":0.14,"dotDia":0.1875},{"n":8,"pip":{"x":0.737082,"y":0.720117},"label":{"x":0.913671,"y":0.625467},"fontH":0.145,"dotDia":0.1875}]},"2b":{"imgW":400,"imgH":400,"entries":[{"n":7,"pip":{"x":0.247068,"y":0.472331},"label":{"x":0.402418,"y":0.380097},"fontH":0.14,"dotDia":0.1875},{"n":8,"pip":{"x":0.750386,"y":0.472327},"label":{"x":0.912746,"y":0.400669},"fontH":0.145,"dotDia":0.1875}]},"2c":{"imgW":400,"imgH":400,"entries":[{"n":7,"pip":{"x":0.482679,"y":0.265408},"label":{"x":0.649002,"y":0.166437},"fontH":0.1425,"dotDia":0.1875},{"n":8,"pip":{"x":0.49437,"y":0.732327},"label":{"x":0.658312,"y":0.636737},"fontH":0.1475,"dotDia":0.1875}]},"2d":{"imgW":400,"imgH":400,"entries":[{"n":7,"pip":{"x":0.285684,"y":0.733505},"label":{"x":0.44775,"y":0.645234},"fontH":0.14,"dotDia":0.18875},{"n":8,"pip":{"x":0.713976,"y":0.264351},"label":{"x":0.863697,"y":0.186712},"fontH":0.1475,"dotDia":0.18875}]},"3a":{"imgW":400,"imgH":400,"entries":[{"n":7,"pip":{"x":0.238718,"y":0.264302},"label":{"x":0.40948,"y":0.146556},"fontH":0.1425,"dotDia":0.18875},{"n":8,"pip":{"x":0.49875,"y":0.498735},"label":{"x":0.689679,"y":0.403164},"fontH":0.145,"dotDia":0.19},{"n":9,"pip":{"x":0.745732,"y":0.758172},"label":{"x":0.944288,"y":0.648057},"fontH":0.145,"dotDia":0.19}]},"3c":{"imgW":400,"imgH":400,"entries":[{"n":7,"pip":{"x":0.48837,"y":0.197996},"label":{"x":0.658294,"y":0.104187},"fontH":0.1425,"dotDia":0.18875},{"n":8,"pip":{"x":0.488387,"y":0.484502},"label":{"x":0.653376,"y":0.42548},"fontH":0.145,"dotDia":0.18875},{"n":9,"pip":{"x":0.488393,"y":0.770652},"label":{"x":0.655063,"y":0.720553},"fontH":0.145,"dotDia":0.19}]},"4a":{"imgW":400,"imgH":400,"entries":[{"n":6,"pip":{"x":0.245184,"y":0.255619},"label":{"x":0.393898,"y":0.151912},"fontH":0.145,"dotDia":0.1875},{"n":7,"pip":{"x":0.752316,"y":0.255619},"label":{"x":0.920061,"y":0.120099},"fontH":0.14,"dotDia":0.1875},{"n":8,"pip":{"x":0.245179,"y":0.741799},"label":{"x":0.394901,"y":0.6268},"fontH":0.1475,"dotDia":0.1875},{"n":9,"pip":{"x":0.752321,"y":0.741799},"label":{"x":0.916546,"y":0.611552},"fontH":0.1475,"dotDia":0.1875}]}};
+function getPngLabelMapSK(layoutId){
+  const key = String(layoutId || "");
+  return (key && PIP_LABEL_PNG_MAP_SK[key]) ? PIP_LABEL_PNG_MAP_SK[key] : null;
+}
+
 function parseSvgPipsSK(svgText){
   try{
     const dp = new DOMParser();
@@ -1602,6 +1868,40 @@ function clampToRectSK(x, y, rect, pad){
   return { x: xx, y: yy };
 }
 
+
+function containRectInRectSK(rect, contentAspect){
+  try{
+    const W = Number(rect && rect.width) || 0;
+    const H = Number(rect && rect.height) || 0;
+    const a = Number(contentAspect);
+    if(!W || !H || !Number.isFinite(a) || a <= 0){
+      const left = Number(rect && rect.left) || 0;
+      const top = Number(rect && rect.top) || 0;
+      return { left, top, width: W, height: H, right: left + W, bottom: top + H };
+    }
+    const boxA = W / H;
+    let w = W, h = H, ox = 0, oy = 0;
+    if(boxA > a){
+      h = H;
+      w = H * a;
+      ox = (W - w) / 2;
+    }else{
+      w = W;
+      h = W / a;
+      oy = (H - h) / 2;
+    }
+    const left = (Number(rect.left) || 0) + ox;
+    const top = (Number(rect.top) || 0) + oy;
+    return { left, top, width: w, height: h, right: left + w, bottom: top + h };
+  }catch(e){
+    const left = Number(rect && rect.left) || 0;
+    const top = Number(rect && rect.top) || 0;
+    const W = Number(rect && rect.width) || 0;
+    const H = Number(rect && rect.height) || 0;
+    return { left, top, width: W, height: H, right: left + W, bottom: top + H };
+  }
+}
+
 /* ========================= AANGEPAST: volgorde en plaatsing volgens beschrijving =========================
    1) vraag opnieuw in beeld gebeurt in onScanValue
    2) na wachttijd cirkel: cirkel om grootste groep
@@ -1610,8 +1910,8 @@ function clampToRectSK(x, y, rect, pad){
 */
 async function showWrongCountHelpSK(){
   if(!countHelpOverlay) return { lastLabelAtMs: 0, labelsCount: 0 };
-  if(!usesMarboticScan()) return { lastLabelAtMs: 0, labelsCount: 0 };
-  if(LEVEL < 8) return { lastLabelAtMs: 0, labelsCount: 0 };
+  /* gebruikt bij fout in level 6 t/m 9 (pair vraag): cirkel, hoeveelheid en doortellen */
+  if(LEVEL < 6) return { lastLabelAtMs: 0, labelsCount: 0 };
   if(!questionState || questionState.kind !== "pair") return { lastLabelAtMs: 0, labelsCount: 0 };
 
   const localToken = ++countHelpTokenSK;
@@ -1627,17 +1927,27 @@ async function showWrongCountHelpSK(){
   if(localToken !== countHelpTokenSK) return { lastLabelAtMs: 0, labelsCount: 0 };
 
   const overlayRect = countHelpOverlay.getBoundingClientRect();
-  const bigRect = bigImg.getBoundingClientRect();
-  const smallRect = smallImg.getBoundingClientRect();
+  let bigRect = bigImg.getBoundingClientRect();
+  let smallRect = smallImg.getBoundingClientRect();
 
   const bigAmount = Number(questionState.bigAmount) || 0;
   const smallAmount = Number(questionState.smallAmount) || 0;
 
-  let dotDiaPx = Math.min(bigRect.width, bigRect.height) * 0.13;
+  let dotDiaPx = 0;
 
   /* pip data big: voor ellips om de stippen */
   const bigLayoutId = String(questionState.bigLayoutId || "");
   const bigPipData = await getPipDataForLayoutSK(bigLayoutId);
+
+  /* fix: positioneer binnen het echte afbeeldingsvlak (object-fit: contain) */
+  {
+    const a = (bigPipData && bigPipData.vbW && bigPipData.vbH) ? (bigPipData.vbW / bigPipData.vbH)
+      : ((bigImg.naturalWidth && bigImg.naturalHeight) ? (bigImg.naturalWidth / bigImg.naturalHeight)
+        : ((bigRect.width && bigRect.height) ? (bigRect.width / bigRect.height) : 1));
+    bigRect = containRectInRectSK(bigRect, a);
+  }
+  dotDiaPx = Math.min(bigRect.width, bigRect.height) * 0.13;
+
 
   let bigPips = [];
   let bigDotRadiusPx = dotDiaPx * 0.5;
@@ -1656,8 +1966,27 @@ async function showWrongCountHelpSK(){
   const smallLayoutId = String(questionState.smallLayoutId || "");
   const smallPipData = await getPipDataForLayoutSK(smallLayoutId);
 
+  /* fix: positioneer binnen het echte afbeeldingsvlak (object-fit: contain) */
+  {
+    const a = (smallPipData && smallPipData.vbW && smallPipData.vbH) ? (smallPipData.vbW / smallPipData.vbH)
+      : ((smallImg.naturalWidth && smallImg.naturalHeight) ? (smallImg.naturalWidth / smallImg.naturalHeight)
+        : ((smallRect.width && smallRect.height) ? (smallRect.width / smallRect.height) : 1));
+    smallRect = containRectInRectSK(smallRect, a);
+  }
+
+
+    const pngPlacements = getPngLabelMapSK(smallLayoutId);
+
   let smallPips = [];
-  if(smallPipData && smallPipData.pips && smallPipData.pips.length){
+  let smallLabelItems = null;
+
+  if(pngPlacements && Array.isArray(pngPlacements.entries) && pngPlacements.entries.length){
+    smallLabelItems = pngPlacements.entries.slice().sort((a,b) => (Number(a.n) - Number(b.n)));
+    smallPips = smallLabelItems.map(e => e.pip);
+
+    const avgDotDiaRel = smallLabelItems.reduce((s,e) => s + (Number(e.dotDia) || 0), 0) / Math.max(1, smallLabelItems.length);
+    dotDiaPx = clamp(avgDotDiaRel * smallRect.height, 10, 64);
+  }else if(smallPipData && smallPipData.pips && smallPipData.pips.length){
     const scale = Math.min(smallRect.width / Math.max(1, smallPipData.vbW), smallRect.height / Math.max(1, smallPipData.vbH));
     const rAvg = smallPipData.pips.reduce((a,p) => a + (Number(p.r) || 0), 0) / Math.max(1, smallPipData.pips.length);
     dotDiaPx = clamp(2 * rAvg * scale, 10, 64);
@@ -1747,8 +2076,7 @@ async function showWrongCountHelpSK(){
     label.style.borderWidth = `${borderW}px`;
     label.style.fontWeight = "950";
 
-    const xFrac = (smallRect.left > bigRect.left) ? 0.28 : 0.72;
-    const lx = (bigRect.left + bigRect.width * xFrac) - overlayRect.left;
+    const lx = (bigRect.left + bigRect.width * 0.72) - overlayRect.left;
     const ly = (bigRect.top + bigRect.height * 0.22) - overlayRect.top;
 
     const clamped = clampToRectSK(lx, ly, { left:0, top:0, right: overlayRect.width, bottom: overlayRect.height }, dia * 0.60);
@@ -1761,18 +2089,23 @@ async function showWrongCountHelpSK(){
   scheduleCountHelpTimerSK(addEllipseAroundBig, tCircle);
   scheduleCountHelpTimerSK(addBigNumber, tBigNumber);
 
-  /* doortellen labels naast stippen van kleine groep, aan buitenkant van de dobbelsteen */
-  const fontPx = clamp(Math.floor(dotDiaPx * 0.74), 12, Math.floor(dotDiaPx * 0.92));
-  const isSmallRight = (smallRect.left > bigRect.left);
-  const sideSign = isSmallRight ? 1 : -1;
-  const offsetX = clamp(dotDiaPx * 1.05, 12, 86) * sideSign;
+  /* doortellen labels bij kleine groep
+     default: plaatsing rechts en iets omhoog
+     extra layouts (2a,2b,2c,2d,3a,3c,4a): plaatsing, afstand en fontgrootte volgen de bijbehorende png */
+  const fallbackFontPx = clamp(Math.floor(dotDiaPx * 0.74), 12, Math.floor(dotDiaPx * 0.92));
+  const offsetX = clamp(dotDiaPx * 1.05, 12, 86);
   const offsetY = clamp(-dotDiaPx * 0.58, -86, -12);
   const padLabel = Math.max(6, dotDiaPx * 0.45);
 
   const startNum = bigAmount + 1;
-  for(let i=0;i<smallPips.length;i++){
+  const labelCount = (smallLabelItems && smallLabelItems.length) ? smallLabelItems.length : smallPips.length;
+
+  for(let i=0;i<labelCount;i++){
+    /* n altijd dynamisch op basis van bigAmount, png map bevat alleen posities */
     const n = startNum + i;
-    const pip = smallPips[i];
+    const item = (smallLabelItems && smallLabelItems.length)
+      ? smallLabelItems[i]
+      : { pip: smallPips[i] };
 
     scheduleCountHelpTimerSK(() => {
       if(localToken !== countHelpTokenSK) return;
@@ -1780,13 +2113,25 @@ async function showWrongCountHelpSK(){
       const label = document.createElement("div");
       label.className = "pipLabelSK";
       label.textContent = String(n);
-      label.style.fontSize = `${fontPx}px`;
 
-      const px = smallRect.left + pip.x * smallRect.width;
-      const py = smallRect.top + pip.y * smallRect.height;
+      const fp = (smallLabelItems && smallLabelItems.length && Number.isFinite(Number(item.fontH)) && Number(item.fontH) > 0)
+        ? clamp(Math.round(smallRect.height * Number(item.fontH)), 12, 96)
+        : fallbackFontPx;
+      label.style.fontSize = `${fp}px`;
 
-      let lx = (px - overlayRect.left) + offsetX;
-      let ly = (py - overlayRect.top) + offsetY;
+      let lx = 0, ly = 0;
+
+      if(smallLabelItems && smallLabelItems.length && item.label){
+        const px = smallRect.left + Number(item.label.x) * smallRect.width;
+        const py = smallRect.top + Number(item.label.y) * smallRect.height;
+        lx = (px - overlayRect.left);
+        ly = (py - overlayRect.top);
+      }else{
+        const px = smallRect.left + Number(item.pip.x) * smallRect.width;
+        const py = smallRect.top + Number(item.pip.y) * smallRect.height;
+        lx = (px - overlayRect.left) + offsetX;
+        ly = (py - overlayRect.top) + offsetY;
+      }
 
       const clamped = clampToRectSK(
         lx, ly,
@@ -1800,27 +2145,98 @@ async function showWrongCountHelpSK(){
     }, tFirstSmall + i * tStep);
   }
 
-  const lastLabelAtMs = smallPips.length ? (tFirstSmall + (smallPips.length - 1) * tStep) : tBigNumber;
-  return { lastLabelAtMs, labelsCount: smallPips.length };
+  const lastLabelAtMs = labelCount ? (tFirstSmall + (labelCount - 1) * tStep) : tBigNumber;
+  return { lastLabelAtMs, labelsCount: labelCount };
 }
 
 /* html helpers */
 function setBoard(html){ flashSvg.innerHTML = html; }
 function clearBoard(){ flashSvg.innerHTML = ""; clearCountHelpOverlaySK(); }
+
+function pauseCssAnimationsDeep(root){
+  try{
+    const els = root.querySelectorAll("*");
+    els.forEach(el => {
+      const cs = getComputedStyle(el);
+      if(cs && cs.animationName && cs.animationName !== "none"){
+        el.style.animationPlayState = "paused";
+      }
+    });
+  }catch(e){}
+}
+
+function showQuestionHeart(){
+  if(!qHeart) return;
+  qHeart.classList.remove("show");
+  void qHeart.offsetWidth;
+  qHeart.classList.add("show");
+  setTimeout(() => { try{ qHeart.classList.remove("show"); }catch(e){} }, 520);
+}
+function hideQuestionHeart(){
+  if(!qHeart) return;
+  qHeart.classList.remove("show");
+}
+
 function dissolveBoard(ms){
-  const has = (flashSvg.innerHTML || "").trim().length > 0;
+  const hasFlash = (flashSvg.innerHTML || "").trim().length > 0;
+
+  const hasHelp = (LEVEL >= 6) && !!countHelpOverlay && ((countHelpOverlay.innerHTML || "").trim().length > 0);
+  const hasTimer = (LEVEL >= 6) && !!timerVid && (timerVid.style.display && timerVid.style.display !== "none");
+
+  const has = hasFlash || hasHelp || hasTimer;
   if(!has){
     clearBoard();
+
     flashSvg.style.transition = "";
     flashSvg.style.opacity = "1";
+
+    if(LEVEL >= 6){
+      if(countHelpOverlay){
+        countHelpOverlay.style.transition = "";
+        countHelpOverlay.style.opacity = "1";
+      }
+      if(timerVid){
+        timerVid.style.transition = "";
+        timerVid.style.opacity = "1";
+      }
+    }
     return;
   }
+
+  /* zorg dat niets binnenin nog eigen opacity animaties doet tijdens het faden */
+  if(hasFlash) pauseCssAnimationsDeep(flashSvg);
+  if(hasHelp && countHelpOverlay) pauseCssAnimationsDeep(countHelpOverlay);
+
   flashSvg.style.transition = `opacity ${ms}ms ease`;
   flashSvg.style.opacity = "0";
+
+  if(LEVEL >= 6){
+    if(countHelpOverlay){
+      countHelpOverlay.style.transition = `opacity ${ms}ms ease`;
+      countHelpOverlay.style.opacity = "0";
+    }
+    if(timerVid){
+      timerVid.style.transition = `opacity ${ms}ms ease`;
+      timerVid.style.opacity = "0";
+    }
+  }
+
   setTimeout(() => {
     clearBoard();
+
     flashSvg.style.transition = "";
     flashSvg.style.opacity = "1";
+
+    if(LEVEL >= 6){
+      if(countHelpOverlay){
+        countHelpOverlay.style.transition = "";
+        countHelpOverlay.style.opacity = "1";
+      }
+      if(timerVid){
+        timerVid.style.transition = "";
+        timerVid.style.opacity = "1";
+      }
+    }
   }, ms + 40);
 }
 
@@ -1968,7 +2384,10 @@ function renderAnswers(correct, onPick){
     }
 
     /* level 1 tot en met 5, dobbelsteen svg als antwoord */
-    const layoutId = standardLayoutId(v);
+    let layoutId = standardLayoutId(v);
+    if(LEVEL === 5 && questionState && typeof questionState.layoutId === "string" && v === questionState.correct){
+      layoutId = pickAnswerLayoutDistinct(5, v, questionState.layoutId);
+    }
     const face = `<div class="qWrap"><img class="layoutImg" src="${diceSrc(layoutId)}" alt="" draggable="false"></div>`;
     if(usesAnswerCards()){
       btn.innerHTML = `<div class="cardWrap">
@@ -2027,8 +2446,14 @@ async function previewCardsNonBlocking(){
 }
 
 /* ========================= LEVEL 8 + 9: scan UI helpers ========================= */
+function setScanTwoTilesModeSK(on){
+  if(!scanArea) return;
+  scanArea.classList.toggle("twoTiles", !!on);
+}
 function showScanPlaceSK(pop){
   if(!scanPlaceWrapSK) return;
+  if(scanPlaceExitTimerSK){ clearTimeout(scanPlaceExitTimerSK); scanPlaceExitTimerSK = null; }
+  scanPlaceWrapSK.classList.remove("slideOutLeft");
   scanPlaceWrapSK.classList.remove("hidden");
   if(pop){
     scanPlaceWrapSK.classList.remove("pop");
@@ -2038,8 +2463,31 @@ function showScanPlaceSK(pop){
 }
 function hideScanPlaceSK(){
   if(!scanPlaceWrapSK) return;
-  scanPlaceWrapSK.classList.add("hidden");
   scanPlaceWrapSK.classList.remove("pop");
+
+  if(scanPlaceExitTimerSK){ clearTimeout(scanPlaceExitTimerSK); scanPlaceExitTimerSK = null; }
+
+  if(scanPlaceWrapSK.classList.contains("hidden")){
+    scanPlaceWrapSK.classList.remove("slideOutLeft");
+    return;
+  }
+
+  if(isPortrait()){
+    scanPlaceWrapSK.classList.remove("slideOutLeft");
+    void scanPlaceWrapSK.offsetWidth;
+    scanPlaceWrapSK.classList.add("slideOutLeft");
+
+    scanPlaceExitTimerSK = setTimeout(() => {
+      if(!scanPlaceWrapSK) return;
+      scanPlaceWrapSK.classList.add("hidden");
+      scanPlaceWrapSK.classList.remove("slideOutLeft");
+      scanPlaceExitTimerSK = null;
+    }, 540);
+    return;
+  }
+
+  scanPlaceWrapSK.classList.add("hidden");
+  scanPlaceWrapSK.classList.remove("slideOutLeft");
 }
 
 const HEART_SVG_SK = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -2080,6 +2528,7 @@ function disableScanUI(){
   hideCorrectPreviewSK(true);
 }
 
+let scanPlaceExitTimerSK = null;
 let scanDigitTimerSK = null;
 function hideScannedDigitSK(hard){
   if(scanDigitTimerSK){ clearTimeout(scanDigitTimerSK); scanDigitTimerSK = null; }
@@ -2109,6 +2558,87 @@ function hideCorrectPreviewSK(hard){
     scanCorrectImgSK.style.opacity = "0";
   }
 }
+
+function hideBtnCorrectPreviewSK(hard){
+  if(btnCorrectWrapSK){
+    btnCorrectWrapSK.classList.remove("show","slideOutLeft","fadeOut");
+    btnCorrectWrapSK.style.left = "-9999px";
+    btnCorrectWrapSK.style.top = "0px";
+  }
+  if(btnCorrectImgSK){
+    if(hard) btnCorrectImgSK.removeAttribute("src");
+    btnCorrectImgSK.alt = "";
+    btnCorrectImgSK.style.transition = "";
+    btnCorrectImgSK.style.opacity = "0";
+  }
+}
+
+function clearStrikeOnButtonsSK(){
+  const btns = [...answersEl.querySelectorAll(".ansBtn")];
+  btns.forEach(b => {
+    b.classList.remove("strikeBtnSK");
+    b.style.removeProperty("--strikeDur");
+  });
+}
+
+function positionBtnCorrectWrapSK(btn){
+  if(!btnCorrectWrapSK) return;
+  const r = btn.getBoundingClientRect();
+  const gap = 18;
+  const tileW = 86;
+  const pad = 12;
+
+  let left = r.right + gap;
+  if(left + tileW + pad > window.innerWidth){
+    left = Math.max(pad, window.innerWidth - tileW - pad);
+  }
+  const top = r.top + (r.height * 0.5);
+
+  btnCorrectWrapSK.style.left = `${Math.round(left)}px`;
+  btnCorrectWrapSK.style.top = `${Math.round(top)}px`;
+}
+
+async function showWrongStrikeAndCorrectForButtonSK(btn, correctDigit){
+  if(!btn || !btnCorrectWrapSK || !btnCorrectImgSK) return;
+
+  hideBtnCorrectPreviewSK(true);
+
+  /* pauze voor streep */
+  const strikeDelayMs = clamp(Number(helpBeforeStrikeMs) || 500, 0, 3000);
+  if(strikeDelayMs > 0) await wait(strikeDelayMs);
+
+  /* streep duur via slider */
+  const strikeDurMs = clamp(Number(helpStrikeMs) || 650, 200, 3000);
+  btn.style.setProperty("--strikeDur", `${strikeDurMs}ms`);
+  btn.classList.remove("strikeBtnSK");
+  void btn.offsetHeight;
+  btn.classList.add("strikeBtnSK");
+
+  await wait(strikeDurMs + 30);
+
+  /* daarna goed antwoord infaden naast de knop */
+  const fadeMs = clamp(Number(helpFadeMs) || 320, 80, 2000);
+
+  positionBtnCorrectWrapSK(btn);
+  btnCorrectWrapSK.classList.remove("slideOutLeft","fadeOut");
+  void btnCorrectWrapSK.offsetHeight;
+
+  btnCorrectWrapSK.classList.add("show");
+  btnCorrectImgSK.style.transition = "";
+  btnCorrectImgSK.style.opacity = "0";
+  btnCorrectImgSK.src = marboticSrc(correctDigit);
+  btnCorrectImgSK.alt = String(correctDigit);
+
+  await raf();
+  btnCorrectImgSK.style.transition = `opacity ${fadeMs}ms ease`;
+  btnCorrectImgSK.style.opacity = "1";
+  await wait(fadeMs + 20);
+
+  const afterFadeMs = clamp(Number(helpAfterFadeMs) || 400, 0, 3000);
+  if(afterFadeMs > 0) await wait(afterFadeMs);
+}
+
+
 
 async function showScannedDigitFeedbackAndExitSK(digit, isCorrect){
   if(!scanDigitWrapSK || !scanDigitImgSK) return;
@@ -2733,8 +3263,10 @@ async function flashAndAsk(){
   answersEl.classList.add("answersHidden");
   answersEl.innerHTML = "";
   clearBoard();
+  hideQuestionHeart();
   hideScannedDigitSK(true);
   hideCorrectPreviewSK(true);
+  hideBtnCorrectPreviewSK(true);
   hideScanMarkSK(true);
   if(usesMarboticScan()) hideScanPlaceSK();
 
@@ -2828,12 +3360,59 @@ async function onPick(btn, value){
   chosen.classList.add("wrongHold");
   await animateOutButtons(sortedButtonsForExit(notChosen), 120);
 
-  await wait(900);
+  /* level 6 en 7: bij fout ook uitleg zoals level 8 en 9 */
+  if(LEVEL === 6 || LEVEL === 7){
+    clearCountHelpOverlaySK();
+    hideScannedDigitSK(true);
+    hideCorrectPreviewSK(true);
+    hideBtnCorrectPreviewSK(true);
+    clearStrikeOnButtonsSK();
+
+    const helpInfo = await showWrongCountHelpSK();
+
+    /* gekozen antwoordknop blijft staan, geen extra tegel met het gegeven antwoord */
+    clearStrikeOnButtonsSK();
+    hideBtnCorrectPreviewSK(true);
+
+    /* wacht tot laatste doortel label klaar is, dan streep op de knop en goed antwoord ernaast */
+    const waitUntil = Math.max(0, Number(helpInfo.lastLabelAtMs) || 0);
+    if(waitUntil > 0) await wait(waitUntil);
+
+    await showWrongStrikeAndCorrectForButtonSK(chosen, questionState.correct);
+
+    /* fade goed antwoord weg, tegelijk kaart dicht en streep terug */
+    const fadeOutMs = 360;
+    const flipMs = 420;
+    const eraseMs = fadeOutMs;
+
+    if(btnCorrectWrapSK){
+      btnCorrectWrapSK.style.setProperty("--fadeOutMs", `${fadeOutMs}ms`);
+      btnCorrectWrapSK.classList.remove("fadeOut");
+      void btnCorrectWrapSK.offsetHeight;
+      btnCorrectWrapSK.classList.add("fadeOut");
+    }
+
+    chosen.style.setProperty("--strikeEraseDur", `${eraseMs}ms`);
+    chosen.classList.add("unstrikeBtnSK");
+
+    if(usesAnswerCards()) chosen.classList.remove("cardOpen");
+
+    await wait(Math.max(fadeOutMs, eraseMs, flipMs) + 40);
+    hideBtnCorrectPreviewSK(true);
+    chosen.classList.remove("unstrikeBtnSK");
+    chosen.classList.remove("strikeBtnSK");
+    chosen.style.removeProperty("--strikeDur");
+    chosen.style.removeProperty("--strikeEraseDur");
+
+    await wait(120);
+  }else{
+    await wait(900);
+  }
 
   dissolveBoard(220);
   await wait(260);
 
-  if(usesAnswerCards()){
+  if(usesAnswerCards() && chosen.classList.contains("cardOpen")){
     chosen.classList.remove("cardOpen");
     await wait(220);
   }
@@ -2859,9 +3438,11 @@ async function onScanValue(value){
   cancelAutoFlip();
 
   hideScanPlaceSK();
+  setScanTwoTilesModeSK(false);
 
   if(value === questionState.correct){
     beep("ok");
+    showQuestionHeart();
     showScanMarkSK(true);
     await showScannedDigitFeedbackAndExitSK(value, true);
     await wait(120);
@@ -2885,6 +3466,8 @@ async function onScanValue(value){
   /* uitleg: cirkel, hoeveelheid, doortellen */
   clearCountHelpOverlaySK();
   const helpInfo = await showWrongCountHelpSK();
+
+  setScanTwoTilesModeSK(true);
 
   /* gescand cijfer links tonen */
   hideScannedDigitSK(true);
@@ -2914,6 +3497,7 @@ async function onScanValue(value){
   await wait(560);
   hideScannedDigitSK(true);
   hideCorrectPreviewSK(true);
+  setScanTwoTilesModeSK(false);
 
   await wait(120);
   dissolveBoard(220);
@@ -3153,6 +3737,17 @@ levelDownBtn.addEventListener("click", async () => {
   if(LEVEL !== before) await animateTimeline(before, LEVEL);
 });
 
+if(jumpTo9Btn){
+  jumpTo9Btn.addEventListener("click", async () => {
+    beep("tap");
+    if(locked) return;
+    const before = LEVEL;
+    setLevel(9);
+    syncUI();
+    if(LEVEL !== before) await animateTimeline(before, LEVEL);
+  });
+}
+
 toggleLevelsBtn.addEventListener("click", () => {
   beep("tap");
   levelsVisible = !levelsVisible;
@@ -3202,6 +3797,7 @@ function onReflow(){
     hideScanMarkSK(true);
     if(usesMarboticScan()) hideScanPlaceSK();
     clearBoard();
+    hideQuestionHeart();
 
     await wait(80);
     setQuestionFromState();
