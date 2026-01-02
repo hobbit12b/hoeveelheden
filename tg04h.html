@@ -341,7 +341,7 @@ body{
   inset:0;
   background: rgba(253,238,234,0.55);
   backdrop-filter: blur(2px);
-  display:none;
+  display:flex;
   align-items:center;
   justify-content:center;
   z-index: 999;
@@ -710,12 +710,12 @@ body{
 
 
 @media (orientation: portrait){
-  /* scanplek (marbotic_scanplek.png): zelfde formaat als liggend, iets lager */
+  /* scanplek (marbotic_scanplek.png): 50% kleiner, iets lager */
   .scanPlaceWrapSK{
-    width: 33%;
-    max-width: 260px;
-    min-width: 140px;
-    bottom: calc(4px + env(safe-area-inset-bottom));
+    width: 16.5%;
+    max-width: 130px;
+    min-width: 70px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
   }
 
   /* gescand cijfer: standaard gecentreerd (goed antwoord) */
@@ -834,12 +834,6 @@ body{
   0%{ transform: translateX(-50%) scale(1); opacity: 1; }
   100%{ transform: translateX(-50%) translateX(-190%) scale(0.96); opacity: 1; }
 }
-
-@keyframes scanPlaceSlideOutDownSK{
-  0%{ transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
-  100%{ transform: translateX(-50%) translateY(220%) scale(0.98); opacity: 1; }
-}
-
   70%{ transform: translateX(-50%) translateX(-110%) scale(0.98); opacity: 0.72; }
   100%{ transform: translateX(-50%) translateX(-180%) scale(0.96); opacity: 0; }
 }
@@ -883,7 +877,7 @@ body{
 @media (orientation: portrait){
   .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
   .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
-  .scanPlaceWrapSK.slideOutLeft{ animation: scanPlaceSlideOutDownSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanPlaceWrapSK.slideOutLeft{ animation: scanPlaceSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
   .btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 }
 </style>
@@ -2176,7 +2170,7 @@ function showQuestionHeart(){
   qHeart.classList.remove("show");
   void qHeart.offsetWidth;
   qHeart.classList.add("show");
-  setTimeout(() => { try{ qHeart.classList.remove("show"); }catch(e){} }, 900);
+  setTimeout(() => { try{ qHeart.classList.remove("show"); }catch(e){} }, 520);
 }
 function hideQuestionHeart(){
   if(!qHeart) return;
@@ -2391,10 +2385,6 @@ function renderAnswers(correct, onPick){
 
     /* level 1 tot en met 5, dobbelsteen svg als antwoord */
     let layoutId = standardLayoutId(v);
-    if(LEVEL >= 3 && LEVEL <= 5){
-      const opts = allowedQuestionLayoutsSingle(LEVEL, v);
-      if(opts && opts.length) layoutId = pick(opts);
-    }
     if(LEVEL === 5 && questionState && typeof questionState.layoutId === "string" && v === questionState.correct){
       layoutId = pickAnswerLayoutDistinct(5, v, questionState.layoutId);
     }
@@ -2516,20 +2506,13 @@ function hideScanMarkSK(hard){
 function showScanMarkSK(isCorrect){
   if(!scanMarkWrapSK || !scanMarkSK) return;
   hideScanMarkSK(true);
-
-  /* level 8 en 9: geen goed hartje in het scanvenster */
-  if(isCorrect){
-    softBeep("ok");
-    return;
-  }
-
-  scanMarkWrapSK.classList.add("bad");
-  scanMarkSK.innerHTML = CROSS_SVG_SK;
+  scanMarkWrapSK.classList.add(isCorrect ? "good" : "bad");
+  scanMarkSK.innerHTML = isCorrect ? HEART_SVG_SK : CROSS_SVG_SK;
   scanMarkWrapSK.classList.add("show");
-  softBeep("no");
+  softBeep(isCorrect ? "ok" : "no");
   scanMarkTimerSK = setTimeout(() => {
     if(scanMarkWrapSK) scanMarkWrapSK.classList.remove("show","good","bad");
-  }, 620);
+  }, isCorrect ? 520 : 620);
 }
 
 function enableScanUI(){
@@ -3197,8 +3180,7 @@ function setQuestionFromState(){
 function buildQuestionState(){
   if(LEVEL <= 5){
     const cap = maxForLevel();
-    let n = pickNumberWeighted(cap);
-    if(LEVEL === 5){ while(n === 1){ n = pickNumberWeighted(cap); } }
+    const n = pickNumberWeighted(cap);
     const layoutId = pickQuestionLayoutDistinct(LEVEL, n);
     return { kind: "single", correct: n, layoutId };
   }
@@ -3352,8 +3334,6 @@ async function onPick(btn, value){
   if(value === questionState.correct){
     beep("ok");
     btn.classList.add("correctHold");
-    /* level 7: stop animaties direct, zodat alle punten tegelijk verdwijnen */
-    try{ pauseCssAnimationsDeep(flashSvg); }catch(e){}
     await wait(520);
     dissolveBoard(260);
     const exitOrder = sortedButtonsForExit(all);
@@ -3790,9 +3770,6 @@ function startGame(){
 }
 startBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); beep("tap"); startGame(); });
 startOverlay.addEventListener("click", (e) => { if(e.target === startOverlay){ beep("tap"); startGame(); } });
-
-/* auto start, geen startscherm */
-startGame();
 
 homeBtn.addEventListener("click", () => {
   beep("tap");
