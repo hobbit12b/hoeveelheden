@@ -1691,6 +1691,8 @@ function setLevel(n){
 
   if(usesMarboticScan()){ enableScanUI(); }
   else{ disableScanUI(); }
+
+  resetStreaks();
 }
 
 function maxForLevel(){
@@ -3300,6 +3302,12 @@ let questionState = { kind: "single", correct: 1, layoutId: "1a", bigAmount: 2, 
 
 function resetStreaks(){ streakGood = 0; streakBad = 0; }
 
+
+let tuneDirty = false;
+function markTuneDirty(){
+  tuneDirty = true;
+  resetStreaks();
+}
 /* pair layout keuze sets */
 const PAIR_BIG_BY_AMOUNT = { 1: ["1a"], 2: ["2a","2b","2c","2d"], 3: ["3a","3b","3c","3d"], 4: ["4a","4d"], 5: ["5a"], 6: ["6a","6b"] };
 const PAIR_SMALL_BY_LEVEL = {
@@ -3709,7 +3717,16 @@ function syncUI(){
 }
 
 function openTune(){ tunePanel.classList.remove("hidden"); syncUI(); }
-function closeTune(){ tunePanel.classList.add("hidden"); }
+function closeTune(){
+  tunePanel.classList.add("hidden");
+  if(started && tuneDirty){
+    tuneDirty = false;
+    /* na level of timing wijziging: weer 2 fouten marge en meteen een nieuwe opdracht */
+    resetStreaks();
+    nextRound();
+  }
+}
+
 
 /* instellingen openen via lang indrukken op titel */
 let titleHoldTimer = null;
@@ -3738,6 +3755,7 @@ if(tuneCloseBottom) tuneCloseBottom.addEventListener("click", () => { beep("tap"
 flashMsRange.addEventListener("input", () => {
   flashMs = Number(flashMsRange.value);
   saveFlashMs(LEVEL, flashMs);
+  markTuneDirty();
   syncUI();
 });
 cardMsRange.addEventListener("input", () => {
@@ -3752,12 +3770,14 @@ if(scanCheckSecRange){
     const sec = clamp(Number(scanCheckSecRange.value), 0.1, 2.0);
     const ms = clamp(Math.round(sec * 1000), 100, 2000);
     scanCheckDelayMs = ms;
+    markTuneDirty();
     if(LEVEL >= 8) saveScanTiming(LEVEL, { checkMs: scanCheckDelayMs });
     syncUI();
   });
 }
 if(scanGoodSecRange){
   scanGoodSecRange.addEventListener("input", () => {
+    markTuneDirty();
     const sec = clamp(Number(scanGoodSecRange.value), 0.1, 5.0);
     const ms = clamp(Math.round(sec * 1000), 100, 5000);
     scanGoodHoldMs = ms;
@@ -3767,6 +3787,7 @@ if(scanGoodSecRange){
 }
 if(scanWrongSecRange){
   scanWrongSecRange.addEventListener("input", () => {
+    markTuneDirty();
     const sec = clamp(Number(scanWrongSecRange.value), 0.1, 5.0);
     const ms = clamp(Math.round(sec * 1000), 100, 5000);
     scanWrongHoldMs = ms;
@@ -3777,6 +3798,7 @@ if(scanWrongSecRange){
 
 if(timerPlaySecRange){
   timerPlaySecRange.addEventListener("input", () => {
+    markTuneDirty();
     const sec = clamp(Number(timerPlaySecRange.value), 0.1, 5.0);
     const ms = clamp(Math.round(sec * 1000), 100, 5000);
     timerPlayMs = ms;
@@ -3786,6 +3808,7 @@ if(timerPlaySecRange){
 }
 if(timerGapSecRange){
   timerGapSecRange.addEventListener("input", () => {
+    markTuneDirty();
     const sec = clamp(Number(timerGapSecRange.value), 0.0, 5.0);
     const ms = clamp(Math.round(sec * 1000), 0, 5000);
     timerGapMs = ms;
@@ -3804,6 +3827,7 @@ if(helpCountStartMsRange){
 }
 if(helpAmountWaitMsRange){
   helpAmountWaitMsRange.addEventListener("input", () => {
+    markTuneDirty();
     helpAmountWaitMs = clamp(Number(helpAmountWaitMsRange.value), 0, 3000);
     if(LEVEL >= 8) saveHelpSeq(LEVEL, { amountWaitMs: helpAmountWaitMs });
     syncUI();
@@ -3811,6 +3835,7 @@ if(helpAmountWaitMsRange){
 }
 if(helpAmountSizePctRange){
   helpAmountSizePctRange.addEventListener("input", () => {
+    markTuneDirty();
     helpAmountSizePct = clamp(Number(helpAmountSizePctRange.value), 10, 30);
     if(LEVEL >= 8) saveHelpSeq(LEVEL, { amountSizePct: helpAmountSizePct });
     syncUI();
@@ -3818,6 +3843,7 @@ if(helpAmountSizePctRange){
 }
 if(helpCountStepMsRange){
   helpCountStepMsRange.addEventListener("input", () => {
+    markTuneDirty();
     helpCountStepMs = clamp(Number(helpCountStepMsRange.value), 80, 2000);
     if(LEVEL >= 8) saveHelpSeq(LEVEL, { countStepMs: helpCountStepMs });
     syncUI();
@@ -3832,6 +3858,7 @@ if(helpAfterCountMsRange){
 }
 if(helpStrikeMsRange){
   helpStrikeMsRange.addEventListener("input", () => {
+    markTuneDirty();
     helpStrikeMs = clamp(Number(helpStrikeMsRange.value), 200, 3000);
     if(LEVEL >= 8) saveHelpSeq(LEVEL, { strikeMs: helpStrikeMs });
     syncUI();
@@ -3839,6 +3866,7 @@ if(helpStrikeMsRange){
 }
 if(helpFadeMsRange){
   helpFadeMsRange.addEventListener("input", () => {
+    markTuneDirty();
     helpFadeMs = clamp(Number(helpFadeMsRange.value), 80, 2000);
     if(LEVEL >= 8) saveHelpSeq(LEVEL, { fadeMs: helpFadeMs });
     syncUI();
@@ -3846,6 +3874,7 @@ if(helpFadeMsRange){
 }
 if(helpAfterFadeMsRange){
   helpAfterFadeMsRange.addEventListener("input", () => {
+    markTuneDirty();
     helpAfterFadeMs = clamp(Number(helpAfterFadeMsRange.value), 0, 3000);
     if(LEVEL >= 8) saveHelpSeq(LEVEL, { afterFadeMs: helpAfterFadeMs });
     syncUI();
@@ -3877,6 +3906,7 @@ levelUpBtn.addEventListener("click", async () => {
   const before = LEVEL;
   setLevel(LEVEL + 1);
   syncUI();
+  if(LEVEL !== before) markTuneDirty();
   if(LEVEL !== before) await animateTimeline(before, LEVEL);
 });
 levelDownBtn.addEventListener("click", async () => {
@@ -3885,6 +3915,7 @@ levelDownBtn.addEventListener("click", async () => {
   const before = LEVEL;
   setLevel(LEVEL - 1);
   syncUI();
+  if(LEVEL !== before) markTuneDirty();
   if(LEVEL !== before) await animateTimeline(before, LEVEL);
 });
 
@@ -3895,6 +3926,7 @@ if(jumpTo9Btn){
     const before = LEVEL;
     setLevel(6);
     syncUI();
+    if(LEVEL !== before) markTuneDirty();
     if(LEVEL !== before) await animateTimeline(before, LEVEL);
   });
 }
