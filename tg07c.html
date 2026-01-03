@@ -546,26 +546,27 @@
       transform: translateY(0);
     }
 
-    .startBtn{
+        .startBtn{
       position:absolute;
-      right: 12%;
-      top: 10%;
-      z-index: 50;
+      right: 10%;
+      top: 32%;
+      z-index: 60;
       border: none;
       background: transparent;
       padding: 0;
       cursor: pointer;
-      width: 150px;
+      width: min(280px, 34vw);
       height: auto;
       transform: scale(1);
       transition: transform 120ms ease, opacity 220ms ease, filter 160ms ease;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
-    .startBtn img{
+    .startBtn video{
       width: 100%;
       height: auto;
       display:block;
+      border-radius: 20px;
       pointer-events:none;
       user-select:none;
     }
@@ -579,8 +580,7 @@
       pointer-events:none;
     }
 
-
-  </style>
+</style>
 </head>
 
 <body>
@@ -594,7 +594,7 @@
       </button>
 
       <button class="speakTopBtn iconBtn" id="speakBtn" aria-label="Nog een keer luisteren">
-        <img id="speakImg" src="geluiduit.png" alt="Praat" />
+        <img id="speakImg" src="praatknopuit.png" alt="Praat" />
       </button>
 <div class="titlePill" id="titlePill" role="button" aria-label="Titel (houd langer vast voor instellingen)">tovergetallen</div>
     </div>
@@ -611,7 +611,7 @@
             <img id="digitImg" alt="" />
           
             <button id="startBtn" class="startBtn" aria-label="Start">
-              <img src="start.gif" alt="Start" />
+              <video id="startVid" src="startknop.mp4" autoplay loop muted playsinline preload="auto"></video>
             </button>
 </div>
         </div>
@@ -912,8 +912,8 @@ const scanArea = document.getElementById('scan-area');
 
     let currentVoice = null;
 
-    const SPEAK_IMG_ON = 'geluidaan.png';
-    const SPEAK_IMG_OFF = 'geluiduit.png';
+    const SPEAK_IMG_ON = 'praatknopaan.png';
+    const SPEAK_IMG_OFF = 'praatknopuit.png';
 
     function isVoicePlaying(){
       return !!(currentVoice && !currentVoice.paused && currentVoice.currentTime > 0);
@@ -924,7 +924,7 @@ const scanArea = document.getElementById('scan-area');
 
       const playing = isVoicePlaying();
 
-      // jij vroeg: als stem hoorbaar is, praatknopaan. Als hij klaar is, praatknopuit (grijs)
+      // Tijdens spreken: aan, daarna: uit (grijs)
       speakImg.src = playing ? SPEAK_IMG_ON : SPEAK_IMG_OFF;
 
       if (playing){
@@ -932,8 +932,9 @@ const scanArea = document.getElementById('scan-area');
         speakBtn.setAttribute('aria-pressed','false');
       } else {
         speakBtn.classList.add('is-disabled');
-        speakBtn.setAttribute('aria-pressed','true');  // hergebruikt je grijs stijl, net als muziekknop
+        speakBtn.setAttribute('aria-pressed','true');
       }
+    }
     }
 
 
