@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Pak het juiste cijfer</title>
+  <title>tovergetallen</title>
 
   <style>
     :root{
@@ -163,6 +163,26 @@
     }
     .tuneBtn:active{ transform: scale(0.98); }
 
+    
+    .uiBtn{
+      transition: transform 90ms ease, filter 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+    }
+    .uiBtn:active{
+      transform: scale(0.97);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.10) inset, 0 6px 14px rgba(0,0,0,0.10);
+    }
+    .uiBtn img{
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      display:block;
+    }
+
+    .musicBtn.muted{
+      opacity: 0.55;
+      filter: grayscale(1);
+    }
+
     .titlePill{
       padding: 18px 44px;
       border-radius: 22px;
@@ -193,7 +213,7 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border: 2px solid rgba(245,180,152,0.55);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -610,7 +630,8 @@
       line-height: 1.35;
     }
 
-    .badge{
+    .badge{ display:none;
+
       position:absolute;
       left: 14px;
       top: 14px;
@@ -638,19 +659,15 @@
 <body>
   <section class="left" aria-label="Spel">
     <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
-        <img src="home.png" alt="Home" />
-      </button>
+      <button class="homeBtn uiBtn" id="homeBtn" aria-label="Naar het menu"><img src="homeknop.png" alt="Home"></button>
 
-      <button class="musicBtn" id="musicBtn" aria-label="Muziek uit">🔊</button>
-      <div class="titlePill" id="titlePill" role="button" aria-label="Titel (houd langer vast voor instellingen)">pak het juiste cijfer</div>
+      <button class="musicBtn uiBtn" id="musicBtn" aria-label="Muziek uit"><img src="muziekknop.png" alt=""></button>
+      <div class="titlePill" id="titlePill" role="button" aria-label="Titel (houd langer vast voor instellingen)">tovergetallen</div>
     </div>
 
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Toverkaart">
-        <button class="speakBtn" id="speakBtn" aria-label="Nog een keer luisteren">
-          <img src="spreekknop.png" alt="Spreek" />
-        </button>
+        <button class="speakBtn uiBtn" id="speakBtn" aria-label="Nog een keer luisteren"><img src="praatknop.png" alt=""></button>
 
         <div class="badge" id="stateBadge" aria-hidden="true">still</div>
 
@@ -670,7 +687,7 @@
 
   <section class="scan-surface" id="scan-area" aria-label="Scanvak">
     <div class="scanOverlay">
-      <img src="marbotic_scan.png" class="scanImage" alt="" aria-hidden="true">
+      <img src="marbotic.scanplek.png" class="scanImage" alt="" aria-hidden="true">
       <div class="scanHidden" aria-hidden="true">
         <div class="scanTitle" id="scan-title"></div>
         <div class="scanSub" id="scan-sub"></div>
@@ -679,13 +696,7 @@
     </div>
   </section>
 
-  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <h1>Tik om te starten</h1>
-      <p>Je hoort een vraag, leg het juiste cijfer in het scanvak. Met de spreekknop hoor je het nog eens.</p>
-      <button class="startBtn" id="startBtn">Start</button>
-    </div>
-  </div>
+</div>
 
   <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="false" aria-label="Instellingen">
     <div class="tuneHeader">
@@ -772,9 +783,6 @@
     const scanTitle = document.getElementById('scan-title');
     const scanSub = document.getElementById('scan-sub');
     const scanHint = document.getElementById('scan-hint');
-
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
 
     const stateBadge = document.getElementById('stateBadge');
 
@@ -882,12 +890,7 @@
 
 
     
-    function badge(text, show){
-      if (!stateBadge) return;
-      stateBadge.textContent = text;
-      if (show) stateBadge.classList.add('show');
-      else stateBadge.classList.remove('show');
-    }
+    function badge(){ return; }
 
     function setAutoScale(){
       if (!gameCard) return;
@@ -1001,7 +1004,7 @@
 
     function updateMusicBtn(){
       if (!musicBtn) return;
-      musicBtn.textContent = bgMusicMuted ? '🔇' : '🔊';
+      musicBtn.classList.toggle('muted', bgMusicMuted);
       musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
     }
 
@@ -1701,7 +1704,7 @@
     function startGame(){
       if (started) return;
       started = true;
-      startOverlay.style.display = 'none';
+
 
       startBackgroundMusic();
 
@@ -1721,13 +1724,8 @@
     }
 
     speakBtn.addEventListener('click', () => {
-      if (!started) startGame();
-      else askDigit(targetDigit);
+      askDigit(targetDigit);
     });
-
-    startBtn.addEventListener('click', startGame);
-    startOverlay.addEventListener('click', (e) => {
-      if (e.target === startOverlay) startGame();
     });
 
     homeBtn.addEventListener('click', () => {
@@ -1750,6 +1748,10 @@
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
+
+      // Start direct zonder startscherm
+      startGame();
+
     });
   </script>
 </body>
