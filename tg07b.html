@@ -1674,6 +1674,7 @@ if (typeof onDone === 'function') onDone();
 
     let speakPressTimer = null;
     const SPEAK_LONGPRESS_MS = 650;
+    let speakIgnoreClick = false;
 
     function toggleVoiceMute(){
       voiceMuted = !voiceMuted;
@@ -1684,6 +1685,7 @@ if (typeof onDone === 'function') onDone();
     function speakShortAction(){
       if (!started) startGame();
 
+      // als hij uit staat en je tikt, dan zet je hem aan en speel je meteen
       if (voiceMuted) voiceMuted = false;
 
       askDigit(targetDigit);
@@ -1691,9 +1693,11 @@ if (typeof onDone === 'function') onDone();
     }
 
     speakBtn.addEventListener('pointerdown', () => {
+      speakIgnoreClick = false;
       clearTimeout(speakPressTimer);
       speakPressTimer = setTimeout(() => {
         speakPressTimer = null;
+        speakIgnoreClick = true;   // voorkom click-na-longpress
         toggleVoiceMute();
       }, SPEAK_LONGPRESS_MS);
     }, { passive:true });
@@ -1707,6 +1711,7 @@ if (typeof onDone === 'function') onDone();
     speakBtn.addEventListener('pointerup', () => {
       if (speakPressTimer){
         clearSpeakTimer();
+        speakIgnoreClick = true;   // pointerup heeft al afgehandeld, click negeren
         speakShortAction();
       }
     }, { passive:true });
@@ -1715,6 +1720,11 @@ if (typeof onDone === 'function') onDone();
     speakBtn.addEventListener('pointerleave', clearSpeakTimer, { passive:true });
 
     speakBtn.addEventListener('click', (e) => {
+      if (speakIgnoreClick){
+        speakIgnoreClick = false;
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       speakShortAction();
     });
