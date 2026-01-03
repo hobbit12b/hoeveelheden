@@ -23,6 +23,12 @@
   --correctFill: rgba(210, 244, 214, 0.92);
   --correctBorder: rgba(144, 204, 152, 0.70);
   --activeFill: rgba(229, 140, 116, 0.18);
+
+
+  --scanTileSize: 86px;
+  --scanTileGap: 18px;
+  --scanTileRadius: 16px;
+  --scanTileBorder: 6px;
 }
 
 *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -199,21 +205,25 @@ body{
 /* nieuw: hartje feedback in vraagvenster (level 8 en 9 bij goed antwoord) */
 .qHeart{
   position:absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.72);
+  inset: 0;
+  display: grid;
+  place-items: center;
   opacity: 0;
   pointer-events:none;
   z-index: 16;
   color: #e85c7a;
   filter: drop-shadow(0 14px 26px rgba(0,0,0,0.12));
+  will-change: opacity;
 }
-.qHeart svg{ width: clamp(52px, 7vw, 76px); height: clamp(52px, 7vw, 76px); display:block; }
-.qHeart.show{ opacity: 1; animation: qHeartPopSK 420ms cubic-bezier(.22,.61,.35,1) 1; }
+.qHeartIcon{ will-change: transform, opacity; transform-origin: 50% 50%; backface-visibility: hidden; }
+.qHeart img{ width: clamp(52px, 7vw, 76px); height: clamp(52px, 7vw, 76px); display:block; }
+.qHeart.show{ opacity: 1; }
+.qHeart.show .qHeartIcon{ animation: qHeartPopSK 520ms cubic-bezier(.16,1,.3,1) 1 both; }
 @keyframes qHeartPopSK{
-  0%{ opacity: 0; transform: translate(-50%, -50%) scale(0.58); }
-  60%{ opacity: 1; transform: translate(-50%, -50%) scale(1.10); }
-  100%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  0%{ opacity: 0; transform: scale3d(0.58,0.58,1); }
+  62%{ opacity: 1; transform: scale3d(1.12,1.12,1); }
+  82%{ opacity: 1; transform: scale3d(0.98,0.98,1); }
+  100%{ opacity: 1; transform: scale3d(1,1,1); }
 }
 
 /* ========================= NIEUW: uitleg overlay (level 8 en 9 bij fout) ========================= */
@@ -541,6 +551,14 @@ body{
 .scanOverlaySK.show{ opacity: 1; }
 .scanUISK{ position: relative; width: 100%; height: 100%; }
 
+/* nieuw: grotere scan tegels in level 8 en 9 */
+.scan-surface.bigScanTilesSK{
+  --scanTileSize: 140px;
+  --scanTileRadius: 22px;
+  --scanTileBorder: 8px;
+}
+
+
 /* nieuw: scanplek afbeelding, onderin, 33% breedte */
 .scanPlaceWrapSK{
   position:absolute;
@@ -562,6 +580,56 @@ body{
   0%{ transform: translateX(-50%) scale(0.75); opacity: 0; }
   60%{ transform: translateX(-50%) scale(1.06); opacity: 1; }
   100%{ transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+
+/* nieuw: scanplek verdwijnt met fade (geen verschuiven) */
+.scanPlaceWrapSK.fadeOut{
+  transition: none !important;
+  animation: scanPlaceFadeOutCenterSK 360ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+.scanPlaceWrapSK.scanPlaceBottomRightSK.fadeOut{
+  animation: scanPlaceFadeOutRightSK 360ms cubic-bezier(.22,.61,.35,1) forwards;
+}
+@keyframes scanPlaceFadeOutCenterSK{
+  0%{ transform: translateX(-50%) scale(1); opacity: 1; }
+  100%{ transform: translateX(-50%) scale(0.98); opacity: 0; }
+}
+@keyframes scanPlaceFadeOutRightSK{
+  0%{ transform: translateX(0) scale(1); opacity: 1; }
+  100%{ transform: translateX(0) scale(0.98); opacity: 0; }
+}
+
+
+
+/* scanplek rechtsonder in portrait voor marbotic (level 8 en hoger), voorkomt verspringen door andere keyframes */
+@keyframes scanPopRightSK{
+  0%{ transform: translateX(0) scale(0.75); opacity: 0; }
+  60%{ transform: translateX(0) scale(1.06); opacity: 1; }
+  100%{ transform: translateX(0) scale(1); opacity: 1; }
+}
+@keyframes scanPlaceSlideOutUpRightSK{
+  0%{ transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+  70%{ transform: translateX(0) translateY(-320%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translateX(0) translateY(-520%) scale(0.96); opacity: 0; }
+}
+
+@media (orientation: portrait){
+  .scanPlaceWrapSK.scanPlaceBottomRightSK{
+    left: auto;
+    right: calc(14px + env(safe-area-inset-right));
+    transform: translateX(0) scale(1);
+  }
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.hidden{
+    transform: translateX(0) scale(0.94);
+  }
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.pop{
+    animation: scanPopRightSK 320ms cubic-bezier(.22,.61,.35,1) 1;
+  }
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.slideOutLeft{
+    transition: none !important;
+    animation: scanPlaceSlideOutUpRightSK 520ms cubic-bezier(.22,.61,.35,1) forwards;
+  }
 }
 .scanPlaceImgSK{
   width: 100%;
@@ -609,9 +677,9 @@ body{
   position:absolute;
   left: 14px;
   top: 50%;
-  width: 86px;
-  height: 86px;
-  border-radius: 16px;
+  width: var(--scanTileSize);
+  height: var(--scanTileSize);
+  border-radius: var(--scanTileRadius);
   background: rgba(255,255,255,0.95);
   box-shadow: 0 12px 26px rgba(0,0,0,0.12);
   display:grid;
@@ -622,7 +690,7 @@ body{
   transition: opacity 140ms ease;
   will-change: transform, opacity;
   z-index: 25;
-  border: 6px solid rgba(245,180,152,0.20);
+  border: var(--scanTileBorder) solid rgba(245,180,152,0.20);
 }
 .scanDigitWrapSK.show{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
 .scanDigitWrapSK.goodBorder{ border-color: rgba(144, 204, 152, 0.92); }
@@ -660,11 +728,11 @@ body{
 /* nieuw: goed antwoord rechts van de tegel */
 .scanCorrectWrapSK{
   position:absolute;
-  left: calc(14px + 86px + 18px);
+  left: calc(14px + var(--scanTileSize) + var(--scanTileGap));
   top: 50%;
-  width: 86px;
-  height: 86px;
-  border-radius: 16px;
+  width: var(--scanTileSize);
+  height: var(--scanTileSize);
+  border-radius: var(--scanTileRadius);
   background: rgba(255,255,255,0.95);
   box-shadow: 0 12px 26px rgba(0,0,0,0.12);
   display:grid;
@@ -675,7 +743,7 @@ body{
   transition: opacity 140ms ease;
   will-change: transform, opacity;
   z-index: 25;
-  border: 6px solid rgba(144, 204, 152, 0.55);
+  border: var(--scanTileBorder) solid rgba(144, 204, 152, 0.55);
 }
 .scanCorrectWrapSK.show{ opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
 .scanCorrectWrapSK img{
@@ -694,7 +762,7 @@ body{
 /* ========================= AANGEPAST: portrait iPad scan layout (level 8 en 9) ========================= */
 @keyframes scanSlideOutUpSK{
   0%{ transform: translate(var(--baseTX, 0px), -50%) scale(1); opacity: 1; }
-  100%{ transform: translate(var(--baseTX, 0px), -50%) translateY(-180%) scale(0.96); opacity: 0; }
+  100%{ transform: translate(var(--baseTX, 0px), -50%) translateY(-360%) scale(0.96); opacity: 0; }
 }
 
 
@@ -711,10 +779,10 @@ body{
 @media (orientation: portrait){
   /* scanplek (marbotic_scanplek.png): zelfde formaat als liggend, iets lager */
   .scanPlaceWrapSK{
-    width: 33%;
+    width: 20%;
     max-width: 260px;
     min-width: 140px;
-    bottom: calc(4px + env(safe-area-inset-bottom));
+    bottom: calc(2px + env(safe-area-inset-bottom));
   }
 
   /* gescand cijfer: standaard gecentreerd (goed antwoord) */
@@ -727,20 +795,20 @@ body{
 
   /* goed antwoord tegel (bij fout): rechts van het midden, samen gecentreerd met scan tegel */
   .scanCorrectWrapSK{
-    left: calc(50% + 9px);
+    left: calc(50% + (var(--scanTileGap) / 2));
     --baseTX: 0px;
     transform: translate(var(--baseTX), -50%) scale(0.98);
   }
   .scanCorrectWrapSK.show{ transform: translate(var(--baseTX), -50%) scale(1); }
 
   .scan-surface.twoTiles .scanDigitWrapSK{
-    left: calc(50% - 95px);
+    left: calc(50% - var(--scanTileSize) - (var(--scanTileGap) / 2));
     --baseTX: 0px;
   }
 
   /* uit beeld: niet naar links, maar omhoog achter de middenlijn */
-  .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
-  .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
 
   /* geen kruisje bij fout in portrait */
   .scanMarkWrapSK.bad{ display:none !important; }
@@ -866,7 +934,7 @@ body{
 @keyframes btnSlideOutUpSK{
   0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
   70%{ transform: translateY(-50%) translateX(0) translateY(-110%) scale(0.98); opacity: 0.72; }
-  100%{ transform: translateY(-50%) translateX(0) translateY(-180%) scale(0.96); opacity: 0; }
+  100%{ transform: translateY(-50%) translateX(0) translateY(-360%) scale(0.96); opacity: 0; }
 }
 
 @media (orientation: portrait){
@@ -898,9 +966,9 @@ body{
       <div class="flashBoard" id="flashBoard">
         <video class="timerVid" id="timerVid" src="timer.mp4" muted playsinline preload="auto"></video>
         <div class="qHeart" id="qHeart" aria-hidden="true">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 21s-7.2-4.2-9.6-8.3C.3 9.2 2.1 5.8 5.6 5.3c1.7-.2 3.3.6 4.4 1.9 1.1-1.3 2.7-2.1 4.4-1.9 3.5.5 5.3 3.9 3.2 7.4C19.2 16.8 12 21 12 21z" fill="currentColor"/>
-          </svg>
+          <div class="qHeartIcon" aria-hidden="true">
+            <img src="hartje.png" alt="" draggable="false" />
+          </div>
         </div>
         <div class="flashSvg" id="flashSvg"></div>
 
@@ -1521,6 +1589,12 @@ function scheduleBoardHide(ms, token){
 
 function isPortrait(){ return window.matchMedia && window.matchMedia("(orientation: portrait)").matches; }
 
+
+function updateScanPlacePositionSK(){
+  if(!scanPlaceWrapSK) return;
+  const on = usesMarboticScan() && isPortrait();
+  scanPlaceWrapSK.classList.toggle("scanPlaceBottomRightSK", on);
+}
 /* level 2 tot en met 7 draaien om, level 8 en 9 draaien ook om (met marbotic) */
 function usesAnswerCards(){ return (LEVEL >= 2); }
 function timedAutoFlipLevels(){ return (LEVEL >= 3 && LEVEL <= 7); }
@@ -1608,6 +1682,9 @@ function setLevel(n){
   }
 
   setAnchorToLevel(LEVEL, { noTransition: true });
+
+  if(scanArea) scanArea.classList.toggle("bigScanTilesSK", usesMarboticScan());
+  updateScanPlacePositionSK();
 
   if(usesMarboticScan()){ enableScanUI(); }
   else{ disableScanUI(); }
@@ -2205,22 +2282,55 @@ function dissolveBoard(ms){
   }
 
   /* zorg dat niets binnenin nog eigen opacity animaties doet tijdens het faden */
+  if(hasFlash){
+    const pairItems = flashSvg.querySelectorAll(".pairItem");
+    if(pairItems && pairItems.length){
+      pairItems.forEach(el => {
+        el.style.animation = "none";
+        el.style.transition = "none";
+        el.style.opacity = "1";
+        el.style.transform = "none";
+      });
+    }
+  }
+
   if(hasFlash) pauseCssAnimationsDeep(flashSvg);
   if(hasHelp && countHelpOverlay) pauseCssAnimationsDeep(countHelpOverlay);
 
-  flashSvg.style.transition = `opacity ${ms}ms ease`;
-  flashSvg.style.opacity = "0";
+  /* begin altijd vanuit een nette startstate, dan pas faden
+     dit voorkomt dat de kleine hoeveelheid nog op 0 opacity staat op het moment dat de fade begint */
+  flashSvg.style.transition = "none";
+  flashSvg.style.opacity = "1";
 
   if(LEVEL >= 6){
     if(countHelpOverlay){
-      countHelpOverlay.style.transition = `opacity ${ms}ms ease`;
-      countHelpOverlay.style.opacity = "0";
+      countHelpOverlay.style.transition = "none";
+      countHelpOverlay.style.opacity = "1";
     }
     if(timerVid){
-      timerVid.style.transition = `opacity ${ms}ms ease`;
-      timerVid.style.opacity = "0";
+      timerVid.style.transition = "none";
+      timerVid.style.opacity = "1";
     }
   }
+
+  /* force reflow zodat alle bovenstaande styles echt staan voordat de fade start */
+  void flashSvg.offsetWidth;
+
+  requestAnimationFrame(() => {
+    flashSvg.style.transition = `opacity ${ms}ms ease`;
+    flashSvg.style.opacity = "0";
+
+    if(LEVEL >= 6){
+      if(countHelpOverlay){
+        countHelpOverlay.style.transition = `opacity ${ms}ms ease`;
+        countHelpOverlay.style.opacity = "0";
+      }
+      if(timerVid){
+        timerVid.style.transition = `opacity ${ms}ms ease`;
+        timerVid.style.opacity = "0";
+      }
+    }
+  });
 
   setTimeout(() => {
     clearBoard();
@@ -2238,7 +2348,7 @@ function dissolveBoard(ms){
         timerVid.style.opacity = "1";
       }
     }
-  }, ms + 40);
+  }, ms + 60);
 }
 
 /* timer afspelen in vraagvenster */
@@ -2457,42 +2567,63 @@ function setScanTwoTilesModeSK(on){
 }
 function showScanPlaceSK(pop){
   if(!scanPlaceWrapSK) return;
+  updateScanPlacePositionSK();
+
   if(scanPlaceExitTimerSK){ clearTimeout(scanPlaceExitTimerSK); scanPlaceExitTimerSK = null; }
+  if(scanPlaceEnterTimerSK){ clearTimeout(scanPlaceEnterTimerSK); scanPlaceEnterTimerSK = null; }
+
+  scanPlaceWrapSK.classList.remove("fadeOut");
   scanPlaceWrapSK.classList.remove("slideOutLeft");
-  scanPlaceWrapSK.classList.remove("hidden");
-  if(pop){
-    scanPlaceWrapSK.classList.remove("pop");
-    void scanPlaceWrapSK.offsetWidth;
-    scanPlaceWrapSK.classList.add("pop");
+
+  const isHidden = scanPlaceWrapSK.classList.contains("hidden");
+  const enterDelayMs = 220;
+
+  if(!isHidden){
+    if(pop){
+      scanPlaceWrapSK.classList.remove("pop");
+      void scanPlaceWrapSK.offsetWidth;
+      scanPlaceWrapSK.classList.add("pop");
+    }
+    return;
   }
+
+  scanPlaceEnterTimerSK = setTimeout(() => {
+    if(!scanPlaceWrapSK) return;
+    scanPlaceWrapSK.classList.remove("hidden");
+    if(pop){
+      scanPlaceWrapSK.classList.remove("pop");
+      void scanPlaceWrapSK.offsetWidth;
+      scanPlaceWrapSK.classList.add("pop");
+    }
+    scanPlaceEnterTimerSK = null;
+  }, enterDelayMs);
 }
+
 function hideScanPlaceSK(){
   if(!scanPlaceWrapSK) return;
+
   scanPlaceWrapSK.classList.remove("pop");
 
+  if(scanPlaceEnterTimerSK){ clearTimeout(scanPlaceEnterTimerSK); scanPlaceEnterTimerSK = null; }
   if(scanPlaceExitTimerSK){ clearTimeout(scanPlaceExitTimerSK); scanPlaceExitTimerSK = null; }
 
   if(scanPlaceWrapSK.classList.contains("hidden")){
+    scanPlaceWrapSK.classList.remove("fadeOut");
     scanPlaceWrapSK.classList.remove("slideOutLeft");
     return;
   }
 
-  if(isPortrait()){
-    scanPlaceWrapSK.classList.remove("slideOutLeft");
-    void scanPlaceWrapSK.offsetWidth;
-    scanPlaceWrapSK.classList.add("slideOutLeft");
-
-    scanPlaceExitTimerSK = setTimeout(() => {
-      if(!scanPlaceWrapSK) return;
-      scanPlaceWrapSK.classList.add("hidden");
-      scanPlaceWrapSK.classList.remove("slideOutLeft");
-      scanPlaceExitTimerSK = null;
-    }, 540);
-    return;
-  }
-
-  scanPlaceWrapSK.classList.add("hidden");
   scanPlaceWrapSK.classList.remove("slideOutLeft");
+  scanPlaceWrapSK.classList.remove("fadeOut");
+  void scanPlaceWrapSK.offsetWidth;
+  scanPlaceWrapSK.classList.add("fadeOut");
+
+  scanPlaceExitTimerSK = setTimeout(() => {
+    if(!scanPlaceWrapSK) return;
+    scanPlaceWrapSK.classList.add("hidden");
+    scanPlaceWrapSK.classList.remove("fadeOut");
+    scanPlaceExitTimerSK = null;
+  }, 380);
 }
 
 const HEART_SVG_SK = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -2540,6 +2671,7 @@ function disableScanUI(){
   hideCorrectPreviewSK(true);
 }
 
+let scanPlaceEnterTimerSK = null;
 let scanPlaceExitTimerSK = null;
 let scanDigitTimerSK = null;
 function hideScannedDigitSK(hard){
@@ -2907,6 +3039,7 @@ let fitQueued = false;
 function scheduleFit(){
   if(fitQueued) return;
   fitQueued = true;
+  updateScanPlacePositionSK();
   requestAnimationFrame(() => { fitQueued = false; fitTimelineToQuestion(); });
 }
 function fitTimelineToQuestion(){
@@ -3193,7 +3326,7 @@ function buildQuestionState(){
   if(LEVEL <= 5){
     const cap = maxForLevel();
     let n = pickNumberWeighted(cap);
-    if(LEVEL === 5){ while(n === 1){ n = pickNumberWeighted(cap); } }
+    if(LEVEL === 4 || LEVEL === 5){ while(n === 1){ n = pickNumberWeighted(cap); } }
     const layoutId = pickQuestionLayoutDistinct(LEVEL, n);
     return { kind: "single", correct: n, layoutId };
   }
