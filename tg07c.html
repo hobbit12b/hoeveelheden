@@ -754,6 +754,7 @@ const scanArea = document.getElementById('scan-area');
           .map(n => Number(n))
           .filter(n => Number.isFinite(n) && n >= 0 && n <= 9)
         );
+
         if (s.size === 0) return new Set([0,1,2,3,4,5,6,7,8,9]);
         return s;
       } catch(e){
@@ -936,7 +937,6 @@ const scanArea = document.getElementById('scan-area');
         speakBtn.classList.add('is-disabled');
         speakBtn.setAttribute('aria-pressed','true');
       }
-    }
     }
 
 
@@ -1789,8 +1789,6 @@ if (startBtn){
       // iOS fallback
       startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); pressOn(); }, { passive:false });
       startBtn.addEventListener('touchend', (e) => { e.preventDefault(); pressOff(); startFromUserGesture(); }, { passive:false });
-    }
-);
     }
 
     homeBtn.addEventListener('click', () => {
