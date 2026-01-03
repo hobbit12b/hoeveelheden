@@ -126,9 +126,12 @@
       place-items:center;
       cursor:pointer;
       flex: 0 0 auto;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
       transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
     }
-    .iconBtn:active{ transform: scale(0.97); }
+    .iconBtn:active{ transform: scale(0.95); filter: brightness(0.92); }
+    .iconBtn.is-pressed{ transform: scale(0.95); filter: brightness(0.92); }
     .iconBtn img{
       width: 72px;
       height: 72px;
@@ -137,9 +140,9 @@
       pointer-events:none;
       user-select:none;
     }
-    .iconBtn[aria-pressed="true"]{ filter: grayscale(1); opacity: 0.55; }
+    .iconBtn[aria-pressed="true"], .iconBtn.is-disabled{ filter: grayscale(1); opacity: 0.55; }
 
-    .homeBtn{ box-shadow: none; }
+.homeBtn{ box-shadow: none; }
 
 .titlePill{
       padding: 18px 44px;
@@ -552,7 +555,7 @@
       </button>
 
       <button class="speakTopBtn iconBtn" id="speakBtn" aria-label="Nog een keer luisteren">
-        <img src="praatknop.png" alt="Praat" />
+        <img id="speakImg" src="praatknopuit.png" alt="Praat" />
       </button>
 <div class="titlePill" id="titlePill" role="button" aria-label="Titel (houd langer vast voor instellingen)">tovergetallen</div>
     </div>
@@ -663,9 +666,30 @@
     const explosionVid = document.getElementById('explosionVid');
 
     const speakBtn = document.getElementById('speakBtn');
-    const homeBtn = document.getElementById('homeBtn');
+    
+    const speakImg = document.getElementById('speakImg');
+const homeBtn = document.getElementById('homeBtn');
 
-    const scanArea = document.getElementById('scan-area');
+    
+
+    function wirePressFeedback(btn){
+      if (!btn) return;
+
+      const down = () => btn.classList.add('is-pressed');
+      const up = () => btn.classList.remove('is-pressed');
+
+      btn.addEventListener('pointerdown', down, { passive:true });
+      btn.addEventListener('pointerup', up, { passive:true });
+      btn.addEventListener('pointercancel', up, { passive:true });
+      btn.addEventListener('pointerleave', up, { passive:true });
+
+      btn.addEventListener('touchstart', down, { passive:true });
+      btn.addEventListener('touchend', up, { passive:true });
+      btn.addEventListener('touchcancel', up, { passive:true });
+    }
+
+    document.querySelectorAll('.iconBtn').forEach(wirePressFeedback);
+const scanArea = document.getElementById('scan-area');
     const scanTitle = document.getElementById('scan-title');
     const scanSub = document.getElementById('scan-sub');
     const scanHint = document.getElementById('scan-hint');
@@ -845,20 +869,66 @@
 
     let currentVoice = null;
 
+    let voiceMuted = false;
+
+    const SPEAK_IMG_ON = 'praatknopaan.png';
+    const SPEAK_IMG_OFF = 'praatknopuit.png';
+
+    function isVoicePlaying(){
+      return !!(currentVoice && !currentVoice.paused && currentVoice.currentTime > 0);
+    }
+
+    function updateSpeakBtn(){
+      if (!speakBtn || !speakImg) return;
+
+      const playing = isVoicePlaying();
+
+      if (voiceMuted){
+        speakBtn.setAttribute('aria-pressed','true');
+        speakBtn.classList.add('is-disabled');
+        speakImg.src = SPEAK_IMG_OFF;
+        return;
+      }
+
+      speakBtn.setAttribute('aria-pressed','false');
+      speakBtn.classList.remove('is-disabled');
+      speakImg.src = playing ? SPEAK_IMG_ON : SPEAK_IMG_OFF;
+    }
+
+
     function stopVoice(){
       if (!currentVoice) return;
       try { currentVoice.pause(); } catch(e) {}
       try { currentVoice.currentTime = 0; } catch(e) {}
       currentVoice = null;
+      updateSpeakBtn();
     }
 
     function playVoice(a){
       if (!a) return;
+      if (voiceMuted) { updateSpeakBtn(); return; }
+
       try{
         if (currentVoice && currentVoice !== a){
           currentVoice.pause();
           currentVoice.currentTime = 0;
         }
+      } catch(e){}
+
+      currentVoice = a;
+
+      a.onended = () => { updateSpeakBtn(); };
+      a.onpause = () => { updateSpeakBtn(); };
+
+      try{
+        a.currentTime = 0;
+        const p = a.play();
+        updateSpeakBtn();
+        if (p && typeof p.catch === 'function') p.catch(() => { updateSpeakBtn(); });
+      } catch(e){
+        updateSpeakBtn();
+      }
+    }
       } catch(e){}
 
       currentVoice = a;
@@ -920,6 +990,7 @@
 
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
     updateMusicBtn();
+    updateSpeakBtn();
 
     /* Toverfee timing */
     const TIMING_KEY = 'fairyTimingV3';
@@ -1601,12 +1672,53 @@ if (typeof onDone === 'function') onDone();
       nextRound();
     }
 
-    speakBtn.addEventListener('click', () => {
-      if (!started) startGame();
-      else askDigit(targetDigit);
-    });
+    let speakPressTimer = null;
+    const SPEAK_LONGPRESS_MS = 650;
 
-    homeBtn.addEventListener('click', () => {
+    function toggleVoiceMute(){
+      voiceMuted = !voiceMuted;
+      if (voiceMuted) stopVoice();
+      updateSpeakBtn();
+    }
+
+    function speakShortAction(){
+      if (!started) startGame();
+
+      if (voiceMuted) voiceMuted = false;
+
+      askDigit(targetDigit);
+      updateSpeakBtn();
+    }
+
+    speakBtn.addEventListener('pointerdown', () => {
+      clearTimeout(speakPressTimer);
+      speakPressTimer = setTimeout(() => {
+        speakPressTimer = null;
+        toggleVoiceMute();
+      }, SPEAK_LONGPRESS_MS);
+    }, { passive:true });
+
+    const clearSpeakTimer = () => {
+      if (!speakPressTimer) return;
+      clearTimeout(speakPressTimer);
+      speakPressTimer = null;
+    };
+
+    speakBtn.addEventListener('pointerup', () => {
+      if (speakPressTimer){
+        clearSpeakTimer();
+        speakShortAction();
+      }
+    }, { passive:true });
+
+    speakBtn.addEventListener('pointercancel', clearSpeakTimer, { passive:true });
+    speakBtn.addEventListener('pointerleave', clearSpeakTimer, { passive:true });
+
+    speakBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      speakShortAction();
+    });
+homeBtn.addEventListener('click', () => {
       try { window.location.href = 'index.html'; } catch (e) {}
     });
 
