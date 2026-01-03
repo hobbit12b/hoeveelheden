@@ -550,7 +550,7 @@
       position:absolute;
       right: 10%;
       top: 32%;
-      z-index: 60;
+      z-index: 999;
       border: none;
       background: transparent;
       padding: 0;
@@ -573,7 +573,7 @@
       user-select:none;
     }
     .startBtn.is-pressed{
-      transform: scale(var(--start-pressed-scale, 1.06));
+      transform: scale(var(--start-pressed-scale, 1.08));
       filter: brightness(1.02);
     }
     .startBtn.is-hidden{
@@ -581,6 +581,26 @@
       transform: scale(0.92);
       pointer-events:none;
     }
+
+
+    .settingsSection{
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0,0,0,0.12);
+    }
+    .settingsTitle{
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .settingRow{
+      display:grid;
+      grid-template-columns: 120px 1fr 56px;
+      gap: 10px;
+      align-items:center;
+      margin: 8px 0;
+    }
+    .settingRow label{ font-weight: 700; }
+    .settingVal{ text-align:right; font-variant-numeric: tabular-nums; }
 
 </style>
 </head>
@@ -632,19 +652,7 @@
     </div>
   </section>
 
-  <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="false" aria-label="Instellingen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="settingsClose" aria-label="Sluiten">Sluit</button>
-    </div>
-
-    <div class="settingsIntro">Kies welke cijfers gevraagd mogen worden.</div>
-    <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
-  </div>
-
-  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
-
-  <script>
+  <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="fa
     /*
       Bestanden in dezelfde map:
       calibration.json
@@ -745,7 +753,44 @@ const scanArea = document.getElementById('scan-area');
     const settingsClose = document.getElementById('settingsClose');
     const digitGrid = document.getElementById('digitGrid');
 
-    function loadEnabledDigits(){
+    
+    const startScaleSlider = document.getElementById('startScaleSlider');
+    const startXSlider = document.getElementById('startXSlider');
+    const startYSlider = document.getElementById('startYSlider');
+    const startScaleVal = document.getElementById('startScaleVal');
+    const startXVal = document.getElementById('startXVal');
+    const startYVal = document.getElementById('startYVal');
+
+    function syncStartSlidersFromSettings(){
+      if (!startScaleSlider) return;
+      startScaleSlider.value = String(startBtnSettings.scale.toFixed(2));
+      startXSlider.value = String(Math.round(startBtnSettings.x));
+      startYSlider.value = String(Math.round(startBtnSettings.y));
+      if (startScaleVal) startScaleVal.textContent = startBtnSettings.scale.toFixed(2);
+      if (startXVal) startXVal.textContent = Math.round(startBtnSettings.x) + '%';
+      if (startYVal) startYVal.textContent = Math.round(startBtnSettings.y) + '%';
+    }
+
+    function onStartSliderChange(){
+      if (!startScaleSlider) return;
+      startBtnSettings.scale = Number(startScaleSlider.value);
+      startBtnSettings.x = Number(startXSlider.value);
+      startBtnSettings.y = Number(startYSlider.value);
+      // pressed blijft relatief een tikje groter
+      startBtnSettings.pressed = Math.max(startBtnSettings.scale + 0.06, startBtnSettings.scale * 1.06);
+
+      saveStartBtnSettings(startBtnSettings);
+      applyStartBtnSettings();
+      syncStartSlidersFromSettings();
+    }
+
+    if (startScaleSlider){
+      syncStartSlidersFromSettings();
+      startScaleSlider.addEventListener('input', onStartSliderChange);
+      startXSlider.addEventListener('input', onStartSliderChange);
+      startYSlider.addEventListener('input', onStartSliderChange);
+    }
+function loadEnabledDigits(){
       try{
         const raw = localStorage.getItem(SETTINGS_KEY);
         if (!raw) return new Set([0,1,2,3,4,5,6,7,8,9]);
@@ -1797,6 +1842,22 @@ if (startBtn){
 
     window.addEventListener('load', () => {
       setAutoScale();
+
+      showFirstFrame();
+      prepareExplosion();
+      clearDigitAndExplosion();
+      backToIdleFairy();
+
+      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+      scanSub.textContent = 'Alle puntjes in het vak.';
+      scanHint.textContent = '📱 Blokje stil laten liggen';
+
+      fetch('calibration.json', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => initCalibration(data))
+        .catch(() => { });
+});
+ setAutoScale();
 
       showFirstFrame();
       prepareExplosion();
