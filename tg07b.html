@@ -873,8 +873,6 @@ const scanArea = document.getElementById('scan-area');
 
     let currentVoice = null;
 
-    let voiceMuted = false;
-
     const SPEAK_IMG_ON = 'praatknopaan.png';
     const SPEAK_IMG_OFF = 'praatknopuit.png';
 
@@ -887,12 +885,17 @@ const scanArea = document.getElementById('scan-area');
 
       const playing = isVoicePlaying();
 
-      if (voiceMuted){
-        speakBtn.setAttribute('aria-pressed','true');
+      // jij vroeg: als stem hoorbaar is, praatknopaan. Als hij klaar is, praatknopuit (grijs)
+      speakImg.src = playing ? SPEAK_IMG_ON : SPEAK_IMG_OFF;
+
+      if (playing){
+        speakBtn.classList.remove('is-disabled');
+        speakBtn.setAttribute('aria-pressed','false');
+      } else {
         speakBtn.classList.add('is-disabled');
-        speakImg.src = SPEAK_IMG_OFF;
-        return;
+        speakBtn.setAttribute('aria-pressed','true');  // hergebruikt je grijs stijl, net als muziekknop
       }
+    }
 
       speakBtn.setAttribute('aria-pressed','false');
       speakBtn.classList.remove('is-disabled');
@@ -910,8 +913,6 @@ const scanArea = document.getElementById('scan-area');
 
     function playVoice(a){
       if (!a) return;
-      if (voiceMuted) { updateSpeakBtn(); return; }
-
       try{
         if (currentVoice && currentVoice !== a){
           currentVoice.pause();
@@ -1667,60 +1668,14 @@ if (typeof onDone === 'function') onDone();
       nextRound();
     }
 
-    let speakPressTimer = null;
-    const SPEAK_LONGPRESS_MS = 650;
-    let speakTouchActive = false;
-    let speakIgnoreClick = false;
-
-    function toggleVoiceMute(){
-      voiceMuted = !voiceMuted;
-      if (voiceMuted) stopVoice();
-      updateSpeakBtn();
-    }
-
-    function speakShortAction(){
+    // Spreekknop: korte tik speelt opnieuw af (status wisselt automatisch via updateSpeakBtn)
+    speakBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       if (!started) startGame();
-      if (voiceMuted) voiceMuted = false;
       askDigit(targetDigit);
       updateSpeakBtn();
-    }
-
-    // Touch: voorkomt dubbel afvuren op iPad (touch gevolgd door click)
-    speakBtn.addEventListener('touchstart', (e) => {
-      speakTouchActive = true;
-      speakIgnoreClick = true;
-      clearTimeout(speakPressTimer);
-      speakPressTimer = setTimeout(() => {
-        speakPressTimer = null;
-        toggleVoiceMute();
-      }, SPEAK_LONGPRESS_MS);
-    }, { passive:true });
-
-    speakBtn.addEventListener('touchend', (e) => {
-      if (speakPressTimer){
-        clearTimeout(speakPressTimer);
-        speakPressTimer = null;
-        speakShortAction();
-      }
-      // kleine vertraging zodat de click daarna genegeerd wordt
-      setTimeout(() => { speakIgnoreClick = false; }, 350);
-      speakTouchActive = false;
-    }, { passive:true });
-
-    speakBtn.addEventListener('touchcancel', () => {
-      if (speakPressTimer){
-        clearTimeout(speakPressTimer);
-        speakPressTimer = null;
-      }
-      setTimeout(() => { speakIgnoreClick = false; }, 350);
-      speakTouchActive = false;
-    }, { passive:true });
-
-    // Desktop en als touch niet actief is
-    speakBtn.addEventListener('click', (e) => {
-      if (speakIgnoreClick) return;
-      speakShortAction();
     });
+});
 
     homeBtn.addEventListener('click', () => {
       try { window.location.href = 'index.html'; } catch (e) {}
@@ -1746,6 +1701,18 @@ if (typeof onDone === 'function') onDone();
       // Start meteen
       startGame();
     });
-  </script>
+  
+    // iOS/iPadOS: audio moet gestart worden na een user gesture
+    function primeAudioForIOS(){
+      try{
+        if (musicOn && bgm && bgm.paused){
+          const p = bgm.play();
+          if (p && typeof p.catch === 'function') p.catch(()=>{});
+        }
+      }catch(e){}
+    }
+    document.addEventListener('pointerdown', primeAudioForIOS, { passive:true, once:true });
+
+</script>
 </body>
 </html>
