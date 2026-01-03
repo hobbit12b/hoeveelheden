@@ -748,6 +748,8 @@ body{
     left: auto;
     right: calc(14px + env(safe-area-inset-right));
     transform: translateX(0) scale(1);
+    /* geen schuifanimatie als de class net iets later gezet wordt */
+    transition: opacity 140ms ease, transform 0ms linear;
   }
   .scanPlaceWrapSK.scanPlaceBottomRightSK.hidden{
     transform: translateX(0) scale(0.94);
@@ -2519,6 +2521,8 @@ function setScanTwoTilesModeSK(on){
 }
 function showScanPlaceSK(pop){
   if(!scanPlaceWrapSK) return;
+  /* voorkom verspringen: zet positie altijd eerst goed voordat we hem tonen */
+  updateScanPlacePositionSK();
   if(scanPlaceExitTimerSK){ clearTimeout(scanPlaceExitTimerSK); scanPlaceExitTimerSK = null; }
   scanPlaceWrapSK.classList.remove("slideOutLeft");
   scanPlaceWrapSK.classList.remove("hidden");
@@ -2591,6 +2595,7 @@ function showScanMarkSK(isCorrect){
 
 function enableScanUI(){
   if(scanOverlaySK) scanOverlaySK.classList.add("show");
+  updateScanPlacePositionSK();
   hideScanPlaceSK();
   hideScanMarkSK(true);
 }
@@ -3377,6 +3382,7 @@ async function flashAndAsk(){
   if(usesMarboticScan()){
     answersEl.innerHTML = "";
     answersEl.classList.add("answersHidden");
+    updateScanPlacePositionSK();
     showScanPlaceSK(true);
     locked = false;
     return;
