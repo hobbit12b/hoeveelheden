@@ -1,0 +1,1771 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Tovergetallen</title>
+
+  <style>
+    :root{
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --text:#6f6b68;
+
+      --dash-w:4px;
+      --card-radius:28px;
+
+      --scale: 1;
+
+      --fairy-left: 33%;
+      --fairy-top: 51%;
+
+      --digit-left: 68.5%;
+      --digit-top: 58%;
+
+      --explosion-left: 71%;
+      --explosion-top: 43%;
+
+      --fairy-size-base: 439px;
+      --digit-size-base: 260px;
+
+      --digit-size: clamp(140px, calc(var(--digit-size-base) * var(--scale)), 340px);
+      --fairy-size: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
+
+      --fade-duration: 1.45s;
+      --cijfertoon-delay: 1.05s;
+
+      --explosion-start-delay: 0s;
+      --explosion-scale: 1.5;
+      --explosion-fade-in: 0.55s;
+      --explosion-fadeout: 200ms;
+
+      --explosion-offset-y-base: 0px;
+      --explosion-offset-mult: 0.65;
+      --explosion-offset-y: calc(var(--explosion-offset-y-base) * var(--scale) * var(--explosion-offset-mult));
+
+      --explosion-offset-x-base: 200px;
+      --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
+
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overflow:hidden;
+    }
+
+    body{
+      display:grid;
+      grid-template-columns: 58fr 42fr;
+      height: 100%;
+    }
+
+    @media (orientation: portrait){
+      body{
+        grid-template-columns: 1fr;
+        grid-template-rows: 54fr 46fr;
+      }
+    }
+
+    .left{
+      background: var(--bg-left);
+      padding: 28px 26px 22px 26px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+    }
+
+    .scan-surface{
+      background:#ffffff;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+      transition: background 120ms ease;
+    }
+
+    @media (orientation: landscape){
+      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
+    }
+    @media (orientation: portrait){
+      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
+      .left{ padding: 22px; gap: 16px; }
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap: 18px;
+      flex: 0 0 auto;
+    }
+
+    
+
+    .iconBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: transparent;
+      border: none;
+      padding: 0;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      flex: 0 0 auto;
+      transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
+    
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
+}
+    .iconBtn:active{ transform: scale(0.97); }
+    
+    .iconBtn.is-pressed{ transform: scale(0.95); filter: brightness(0.92); }
+    .iconBtn.is-disabled{ filter: grayscale(1); opacity: 0.55; }
+.iconBtn img{
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      display:block;
+      pointer-events:none;
+      user-select:none;
+    }
+    .iconBtn[aria-pressed="true"]{ filter: grayscale(1); opacity: 0.55; }
+
+    .homeBtn{ box-shadow: none; }
+
+.titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.1vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 64px;
+      width: min(660px, 100%);
+    }
+
+    .content{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+      min-height: 0;
+    }
+
+    .gameCard{
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
+      border: 2px solid rgba(245,180,152,0.85);
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      position:relative;
+      overflow: visible;
+    }
+
+    @media (orientation: portrait){
+      .gameCard{ height: min(420px, 34vh); }
+    }
+
+    .cardInner{
+      position:absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+    }
+
+    .stage{
+      position:absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .stage img,
+    .stage video{
+      position:absolute;
+      height:auto;
+      display:block;
+      pointer-events:none;
+      transform: translate(-50%, -50%);
+    }
+
+    #explosionWrap{ z-index: 0; }
+    #fairyVid{ z-index: 1; }
+    #digitImg{ z-index: 2; }
+
+    #fairyVid{
+      left: var(--fairy-left);
+      top: var(--fairy-top);
+      width: var(--fairy-size);
+      opacity: 1;
+    }
+
+    #explosionWrap{
+      position:absolute;
+      left: var(--explosion-left);
+      top: var(--explosion-top);
+      width: calc(var(--digit-size) * var(--explosion-scale));
+      opacity: 0;
+      pointer-events:none;
+      transform: translate(-50%, -50%) translate(var(--explosion-offset-x), var(--explosion-offset-y));
+    }
+
+    #explosionVid{
+      width: 100%;
+      height: auto;
+      display:block;
+      background: transparent;
+    }
+
+    #digitImg{
+      left: var(--digit-left);
+      top: var(--digit-top);
+      width: var(--digit-size);
+      opacity: 0;
+    }
+
+    .stage.play #digitImg{
+      animation: appear var(--fade-duration) ease forwards;
+      animation-delay: var(--cijfertoon-delay);
+    }
+
+    @keyframes appear{
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(0.96); }
+      100%{ opacity:1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @media (orientation: portrait){
+      #fairyVid{
+        top: auto;
+        bottom: 0;
+        left: var(--fairy-left);
+        width: clamp(180px, calc(var(--fairy-size-base) * var(--scale)), 460px);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+      }
+    }
+
+    @media (orientation: landscape){
+      :root{
+        --fairy-left: 26%;
+        --explosion-offset-mult: 0.75;
+        --explosion-offset-x-base: 200px;
+        --explosion-offset-y-base: 150px;
+      }
+
+      #fairyVid{
+        top: auto;
+        bottom: 0;
+        left: var(--fairy-left);
+        width: clamp(240px, calc(var(--fairy-size-base) * var(--scale) * 1.22), 620px);
+        transform: translateX(-50%) translateY(calc(6px * var(--scale)));
+      }
+
+      #digitImg{
+        width: clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px);
+      }
+
+      #explosionWrap{
+        width: calc(clamp(160px, calc(var(--digit-size-base) * var(--scale) * 1.10), 420px) * var(--explosion-scale));
+      }
+    }
+
+    .scanOverlay{
+      position:absolute;
+      inset: 0;
+      padding: 0;
+      pointer-events:none;
+    }
+
+    .scanImage{
+      position:absolute;
+      width: 140px;
+      height: auto;
+      pointer-events:none;
+    }
+
+    @media (orientation: landscape){
+      .scanImage{
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+      }
+    }
+
+    @media (orientation: portrait){
+      .scanImage{
+        right: 18px;
+        bottom: 18px;
+        transform: none;
+      }
+    }
+
+    .scanHidden{ display:none; }
+
+    .settingsIntro{
+      font-weight: 800;
+      font-size: 14px;
+      color: rgba(77,74,72,0.86);
+      margin: 4px 0 10px 0;
+      line-height: 1.3;
+    }
+
+    .digitGrid{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      padding-top: 6px;
+    }
+
+    .digitGrid label{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      background: rgba(253,238,234,0.55);
+      border: 2px solid rgba(245,180,152,0.65);
+      border-radius: 14px;
+      padding: 12px 10px;
+      font-weight: 900;
+      font-size: 20px;
+      color:#4d4a48;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+    }
+
+    .digitGrid input{
+      width: 22px;
+      height: 22px;
+      accent-color: var(--brand);
+    }
+
+    .scanUI{
+      width: min(520px, 92%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 14px;
+      text-align:center;
+      transform: translateY(-8px);
+    }
+
+    .miniTile{
+      width: 66px;
+      height: 66px;
+      border-radius: 10px;
+      background: #78abff;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      color:#fff;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      place-items:center;
+    }
+
+    .scanTitle{
+      font-size: clamp(22px, 2vw, 34px);
+      font-weight: 800;
+      color: #7b7876;
+      margin-top: 6px;
+    }
+
+    .scanSub{
+      font-size: clamp(16px, 1.3vw, 20px);
+      color: rgba(123,120,118,0.75);
+      margin-top: -4px;
+    }
+
+    .scanHint{
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 10px;
+    }
+
+    .scan-surface.wrong{ animation: wiggle 220ms ease; }
+
+    .scan-surface.flashWrong{
+      animation: flashWrong 260ms ease;
+    }
+    @keyframes flashWrong{
+      0%{ background:#ffffff; }
+      40%{ background:#fde1e1; }
+      100%{ background:#ffffff; }
+    }
+
+    @keyframes wiggle{
+      0%{ transform: translateX(0); }
+      28%{ transform: translateX(-6px); }
+      58%{ transform: translateX(5px); }
+      100%{ transform: translateX(0); }
+    }
+
+    /* Timing paneel */
+    .tunePanel{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(520px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 1200;
+      color: #4d4a48;
+    }
+
+    .tunePanel.hidden{ display:none; }
+
+    .tuneHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tuneTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+
+    .tuneClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .tuneClose:active{ transform: scale(0.99); }
+
+    .tuneRow{
+      display:grid;
+      grid-template-columns: 140px 1fr 84px;
+      gap: 10px;
+      align-items:center;
+      margin: 8px 0;
+    }
+
+    .tuneLabel{
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+    }
+
+    .tuneValue{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 13px;
+      text-align:right;
+      color: rgba(77,74,72,0.86);
+    }
+
+    .tuneRow input[type="range"]{
+      width: 100%;
+    }
+
+    .tuneButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tuneBtnSmall{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      font-size: 14px;
+    }
+    .tuneBtnSmall.secondary{
+      background:#f8c3b0;
+      color:#4d4a48;
+    }
+    .tuneBtnSmall:active{ transform: scale(0.99); }
+
+    .tuneHint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(77,74,72,0.68);
+      line-height: 1.35;
+    }
+
+    .badge{
+      position:absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 80;
+      background: rgba(255,255,255,0.92);
+      border: 2px solid rgba(245,180,152,0.85);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 900;
+      font-size: 13px;
+      color:#4d4a48;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity 120ms ease, transform 120ms ease;
+      pointer-events:none;
+    }
+    .badge.show{
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .startBtn{
+      position:absolute;
+      right: 12%;
+      top: 10%;
+      z-index: 50;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      width: 150px;
+      height: auto;
+      transform: scale(1);
+      transition: transform 120ms ease, opacity 220ms ease, filter 160ms ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .startBtn img{
+      width: 100%;
+      height: auto;
+      display:block;
+      pointer-events:none;
+      user-select:none;
+    }
+    .startBtn.is-pressed{
+      transform: scale(0.95);
+      filter: brightness(0.92);
+    }
+    .startBtn.is-hidden{
+      opacity: 0;
+      transform: scale(0.92);
+      pointer-events:none;
+    }
+
+
+  </style>
+</head>
+
+<body>
+  <section class="left" aria-label="Spel">
+    <div class="topbar">
+      <button class="homeBtn iconBtn" id="homeBtn" aria-label="Naar het menu">
+        <img src="homeknop.png" alt="Home" />
+      </button>
+      <button class="musicBtn iconBtn" id="musicBtn" aria-label="Muziek">
+        <img src="muziekknop.png" alt="Muziek" />
+      </button>
+
+      <button class="speakTopBtn iconBtn" id="speakBtn" aria-label="Nog een keer luisteren">
+        <img id="speakImg" src="geluiduit.png" alt="Praat" />
+      </button>
+<div class="titlePill" id="titlePill" role="button" aria-label="Titel (houd langer vast voor instellingen)">tovergetallen</div>
+    </div>
+
+    <div class="content">
+      <div class="gameCard" id="gameCard" aria-label="Toverkaart">
+<div class="cardInner">
+          <div class="stage" id="stage">
+            <div id="explosionWrap" aria-hidden="true">
+              <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
+            </div>
+
+            <video id="fairyVid" muted playsinline preload="auto" aria-label="Toverfee video"></video>
+            <img id="digitImg" alt="" />
+          
+            <button id="startBtn" class="startBtn" aria-label="Start">
+              <img src="start.gif" alt="Start" />
+            </button>
+</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+    <div class="scanOverlay">
+      <img src="marbotic_scanplek.png" class="scanImage" alt="" aria-hidden="true">
+      <div class="scanHidden" aria-hidden="true">
+        <div class="scanTitle" id="scan-title"></div>
+        <div class="scanSub" id="scan-sub"></div>
+        <div class="scanHint" id="scan-hint"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">instellingen</div>
+      <button class="tuneClose" id="settingsClose" aria-label="Sluiten">Sluit</button>
+    </div>
+
+    <div class="settingsIntro">Kies welke cijfers gevraagd mogen worden.</div>
+    <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
+  </div>
+
+  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
+
+  <script>
+    /*
+      Bestanden in dezelfde map:
+      calibration.json
+      marbotic0.png tot en met marbotic9.png
+      toverfee.mp4 (samengestelde mp4 met still, nee, ja)
+      explosie.mp4
+      goed.mp3
+      fout.mp3
+      home.png
+      spreekknop.png
+
+      Audio map:
+      audio/backgroundmuziek.mp3
+      audio/hocuspocus00.mp3 t/m audio/hocuspocus09.mp3
+      audio/zozieteruitde00.mp3 t/m audio/zozieteruitde09.mp3
+    */
+
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+    const ASSET_DIGIT = (d) => `marbotic${d}.png`;
+
+    const FAIRY_SRC = 'toverfee.mp4';
+    const EXPLOSION_SRC = 'explosie.mp4';
+
+    const GOOD_SOUND_SRC = 'goed.mp3';
+    const WRONG_SOUND_SRC = 'fout.mp3';
+
+    const VOICE_DIR = 'audio/'; // zet op '' als jouw mp3 stem bestanden in dezelfde map staan
+
+    const QUESTION_SRC = (d) => `${VOICE_DIR}hocuspocus${String(d).padStart(2,'0')}.mp3`;
+    const REVEAL_SRC   = (d) => `${VOICE_DIR}zozieteruitde${String(d).padStart(2,'0')}.mp3`;
+
+    const FAIRY_SPEED = 1.00;
+    const FAIRY_NO_SPEED = 1.00;
+    const EXPLOSION_SPEED = 2.65;
+
+    // Jouw juiste instellingen, in seconden
+    const DEFAULT_TIMING = {
+      idle: 0.00,
+      noStart: 0.03,
+      noEnd: 1.25,
+      yesStart: 1.38,
+      yesEnd: 5.83
+    };
+
+    const MARBOTIC_PRESETS = {
+      0: { xPct: 72,   yPct: 54, start: 1.05, fadeIn: 1.45, speed: 1 },
+      1: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      2: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      3: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      4: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      5: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      6: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      7: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      8: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 },
+      9: { xPct: 68.5, yPct: 58, start: 1.05, fadeIn: 1.45, speed: 1 }
+    };
+
+    const gameCard = document.getElementById('gameCard');
+    const stage = document.getElementById('stage');
+    const digitImg = document.getElementById('digitImg');
+    const fairyVid = document.getElementById('fairyVid');
+
+    const explosionWrap = document.getElementById('explosionWrap');
+    const explosionVid = document.getElementById('explosionVid');
+
+    const speakBtn = document.getElementById('speakBtn');
+    
+    const speakImg = document.getElementById('speakImg');
+const homeBtn = document.getElementById('homeBtn');
+
+    
+
+    function wirePressFeedback(btn){
+      if (!btn) return;
+      const down = () => btn.classList.add('is-pressed');
+      const up = () => btn.classList.remove('is-pressed');
+
+      btn.addEventListener('pointerdown', down, { passive:true });
+      btn.addEventListener('pointerup', up, { passive:true });
+      btn.addEventListener('pointercancel', up, { passive:true });
+      btn.addEventListener('pointerleave', up, { passive:true });
+
+      // iOS fallback
+      btn.addEventListener('touchstart', down, { passive:true });
+      btn.addEventListener('touchend', up, { passive:true });
+      btn.addEventListener('touchcancel', up, { passive:true });
+    }
+
+    document.querySelectorAll('.iconBtn').forEach(wirePressFeedback);
+const scanArea = document.getElementById('scan-area');
+    const scanTitle = document.getElementById('scan-title');
+    const scanSub = document.getElementById('scan-sub');
+    const scanHint = document.getElementById('scan-hint');
+/* Instellingen: cijfers kiezen */
+    const SETTINGS_KEY = 'enabledDigitsV1';
+    const titlePill = document.getElementById('titlePill');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const settingsClose = document.getElementById('settingsClose');
+    const digitGrid = document.getElementById('digitGrid');
+
+    function loadEnabledDigits(){
+      try{
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return new Set([0,1,2,3,4,5,6,7,8,9]);
+        const arr = JSON.parse(raw);
+        const s = new Set((Array.isArray(arr) ? arr : [])
+          .map(n => Number(n))
+          .filter(n => Number.isFinite(n) && n >= 0 && n <= 9)
+        );
+        if (s.size === 0) return new Set([0,1,2,3,4,5,6,7,8,9]);
+        return s;
+      } catch(e){
+        return new Set([0,1,2,3,4,5,6,7,8,9]);
+      }
+    }
+
+    function saveEnabledDigits(set){
+      try{
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(Array.from(set).sort((a,b)=>a-b)));
+      } catch(e){}
+    }
+
+    let enabledDigits = loadEnabledDigits();
+
+    function buildDigitGrid(){
+      if (!digitGrid) return;
+      digitGrid.innerHTML = '';
+      for (let d = 0; d <= 9; d++){
+        const label = document.createElement('label');
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = String(d);
+        cb.checked = enabledDigits.has(d);
+
+        cb.addEventListener('change', () => {
+          if (cb.checked) enabledDigits.add(d);
+          else enabledDigits.delete(d);
+
+          if (enabledDigits.size === 0){
+            cb.checked = true;
+            enabledDigits.add(d);
+          }
+          saveEnabledDigits(enabledDigits);
+        });
+
+        const span = document.createElement('span');
+        span.textContent = String(d);
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        digitGrid.appendChild(label);
+      }
+    }
+
+    function openSettings(){
+      if (!settingsPanel) return;
+      buildDigitGrid();
+      settingsPanel.classList.remove('hidden');
+    }
+
+    function closeSettings(){
+      if (!settingsPanel) return;
+      settingsPanel.classList.add('hidden');
+    }
+
+    if (settingsClose) settingsClose.addEventListener('click', closeSettings);
+
+    // Lang indrukken op de titel om instellingen te openen
+    let pressTimer = null;
+    const PRESS_MS = 900;
+
+    function startPressTimer(){
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => {
+        openSettings();
+      }, PRESS_MS);
+    }
+
+    function clearPressTimer(){
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+
+    if (titlePill){
+      titlePill.addEventListener('touchstart', () => startPressTimer(), { passive:true });
+      titlePill.addEventListener('touchend', () => clearPressTimer(), { passive:true });
+      titlePill.addEventListener('touchcancel', () => clearPressTimer(), { passive:true });
+
+      // ook handig voor desktop testen
+      titlePill.addEventListener('mousedown', () => startPressTimer());
+      window.addEventListener('mouseup', () => clearPressTimer());
+      window.addEventListener('blur', () => clearPressTimer());
+    }
+
+
+    
+    function badge(){ /* badge verwijderd */ }
+
+    function setAutoScale(){
+      if (!gameCard) return;
+      const r = gameCard.getBoundingClientRect();
+
+      const baseW = 980;
+      const baseH = 520;
+      const pad = 18;
+
+      const sW = Math.max(0.1, (r.width  - pad) / baseW);
+      const sH = Math.max(0.1, (r.height - pad) / baseH);
+
+      let s = Math.min(sW, sH);
+      s = Math.max(0.55, Math.min(1.05, s));
+      document.documentElement.style.setProperty('--scale', String(s));
+    }
+
+    window.addEventListener('resize', setAutoScale);
+    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
+
+    function getVarMillis(name, fallbackMs){
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (!raw) return fallbackMs;
+      if (raw.endsWith('ms')) return parseFloat(raw);
+      if (raw.endsWith('s')) return parseFloat(raw) * 1000;
+      const n = parseFloat(raw);
+      return Number.isFinite(n) ? n : fallbackMs;
+    }
+
+    function clamp(n, a, b){
+      n = Number(n);
+      if (!Number.isFinite(n)) return a;
+      return Math.max(a, Math.min(b, n));
+    }
+
+    function fmtSec(s){
+      const v = Number(s);
+      if (!Number.isFinite(v)) return '0.00s';
+      return v.toFixed(2) + 's';
+    }
+
+    /* Audio SFX */
+    const goodAudio = new Audio(GOOD_SOUND_SRC);
+    const wrongAudio = new Audio(WRONG_SOUND_SRC);
+    goodAudio.preload = 'auto';
+    wrongAudio.preload = 'auto';
+
+    function playSfx(audio){
+      if (!audio) return;
+      try{
+        audio.currentTime = 0;
+        const p = audio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    /* Mp3 stemmen */
+    const questionVoices = DIGIT_ORDER.map(d => {
+      const a = new Audio(QUESTION_SRC(d));
+      a.preload = 'auto';
+      return a;
+    });
+
+    const revealVoices = DIGIT_ORDER.map(d => {
+      const a = new Audio(REVEAL_SRC(d));
+      a.preload = 'auto';
+      return a;
+    });
+
+    let currentVoice = null;
+
+    const SPEAK_IMG_ON = 'geluidaan.png';
+    const SPEAK_IMG_OFF = 'geluiduit.png';
+
+    function isVoicePlaying(){
+      return !!(currentVoice && !currentVoice.paused && currentVoice.currentTime > 0);
+    }
+
+    function updateSpeakBtn(){
+      if (!speakBtn || !speakImg) return;
+
+      const playing = isVoicePlaying();
+
+      // jij vroeg: als stem hoorbaar is, praatknopaan. Als hij klaar is, praatknopuit (grijs)
+      speakImg.src = playing ? SPEAK_IMG_ON : SPEAK_IMG_OFF;
+
+      if (playing){
+        speakBtn.classList.remove('is-disabled');
+        speakBtn.setAttribute('aria-pressed','false');
+      } else {
+        speakBtn.classList.add('is-disabled');
+        speakBtn.setAttribute('aria-pressed','true');  // hergebruikt je grijs stijl, net als muziekknop
+      }
+    }
+
+
+
+    function stopVoice(){
+      if (!currentVoice) return;
+      try { currentVoice.pause(); } catch(e) {}
+      try { currentVoice.currentTime = 0; } catch(e) {}
+      currentVoice = null;
+          updateSpeakBtn();
+    }
+
+    function playVoice(a){
+      if (!a) return;
+      try{
+        if (currentVoice && currentVoice !== a){
+          currentVoice.pause();
+          currentVoice.currentTime = 0;
+        }
+      } catch(e){}
+
+      currentVoice = a;
+
+      a.onended = () => { updateSpeakBtn(); };
+      a.onpause = () => { updateSpeakBtn(); };
+
+      try{
+        a.currentTime = 0;
+        const p = a.play();
+        updateSpeakBtn();
+        if (p && typeof p.catch === 'function') p.catch(() => { updateSpeakBtn(); });
+      } catch(e){
+        updateSpeakBtn();
+      }
+    }
+
+
+function askDigit(digit){
+      const a = questionVoices[digit];
+      playVoice(a);
+    }
+
+    function sayReveal(digit){
+      const a = revealVoices[digit];
+      playVoice(a);
+    }
+
+    /* Achtergrondmuziek */
+    const bgMusic = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicBtn');
+    let bgMusicMuted = false;
+
+    function updateMusicBtn(){
+      if (!musicBtn) return;
+      musicBtn.setAttribute('aria-pressed', bgMusicMuted ? 'true' : 'false');
+      musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+    }
+
+    function startBackgroundMusic(){
+      if (!bgMusic) return;
+
+      bgMusic.loop = true;
+      bgMusic.volume = 0.25;
+
+      if (bgMusicMuted){
+        try { bgMusic.pause(); } catch(e) {}
+        return;
+      }
+
+      try{
+        const p = bgMusic.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function toggleBackgroundMusic(){
+      bgMusicMuted = !bgMusicMuted;
+      if (bgMusicMuted){
+        try { bgMusic.pause(); } catch(e) {}
+      } else {
+        startBackgroundMusic();
+      }
+      updateMusicBtn();
+    updateSpeakBtn();
+      updateSpeakBtn();
+    }
+
+    if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
+    updateMusicBtn();
+
+    /* Toverfee timing */
+    const TIMING_KEY = 'fairyTimingV3';
+
+    function loadTiming(){
+      try{
+        const raw = localStorage.getItem(TIMING_KEY);
+        if (!raw) return { ...DEFAULT_TIMING };
+        const obj = JSON.parse(raw);
+        return {
+          idle: Number(obj.idle ?? DEFAULT_TIMING.idle),
+          noStart: Number(obj.noStart ?? DEFAULT_TIMING.noStart),
+          noEnd: Number(obj.noEnd ?? DEFAULT_TIMING.noEnd),
+          yesStart: Number(obj.yesStart ?? DEFAULT_TIMING.yesStart),
+          yesEnd: Number(obj.yesEnd ?? DEFAULT_TIMING.yesEnd)
+        };
+      } catch(e){
+        return { ...DEFAULT_TIMING };
+      }
+    }
+
+    function saveTiming(t){
+      try { localStorage.setItem(TIMING_KEY, JSON.stringify(t)); } catch(e) {}
+    }
+
+    let fairyTiming = loadTiming();
+
+    function setFairySourceOnce(){
+      try{
+        if (fairyVid.src && fairyVid.src.includes(FAIRY_SRC)) return;
+      } catch(e){}
+      fairyVid.src = FAIRY_SRC;
+      try { fairyVid.load(); } catch(e) {}
+    }
+
+    function snapToIdle(){
+      setFairySourceOnce();
+      const snap = () => {
+        try { fairyVid.pause(); } catch(e) {}
+        try { fairyVid.currentTime = Math.max(0, fairyTiming.idle || 0); } catch(e) {}
+        try { fairyVid.pause(); } catch(e) {}
+        badge('still', false);
+      };
+      if (fairyVid.readyState >= 2) snap();
+      else fairyVid.addEventListener('canplay', snap, { once:true });
+    }
+
+    let segRAF = null;
+    function stopSegmentWatcher(){
+      if (segRAF){ cancelAnimationFrame(segRAF); segRAF = null; }
+    }
+
+    // Segment speler met callback, hierdoor stopt "goed" nooit meer te vroeg door nextRound timing
+    function playSegment(startSec, endSec, speed, labelText, onDone){
+      setFairySourceOnce();
+      stopSegmentWatcher();
+
+      const dur = Number.isFinite(fairyVid.duration) ? fairyVid.duration : null;
+
+      let start = Math.max(0, Number(startSec) || 0);
+      let end = Math.max(start, Number(endSec) || start);
+
+      if (dur !== null){
+        start = Math.min(start, dur);
+        end = Math.min(end, dur);
+      }
+
+      fairyVid.loop = false;
+      fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
+const finish = () => {
+        stopSegmentWatcher();
+        fairyVid.removeEventListener('ended', finish);
+        try { fairyVid.pause(); } catch(e) {}
+        snapToIdle();
+if (typeof onDone === 'function') onDone();
+      };
+
+      const beginPlay = () => {
+        fairyVid.addEventListener('ended', finish, { once:true });
+
+        const p = fairyVid.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+
+        const watch = () => {
+          if (fairyVid.currentTime >= end){
+            finish();
+            return;
+          }
+          segRAF = requestAnimationFrame(watch);
+        };
+        watch();
+      };
+
+      const seekAndPlay = () => {
+        try { fairyVid.pause(); } catch(e) {}
+
+        const onSeeked = () => {
+          fairyVid.removeEventListener('seeked', onSeeked);
+          beginPlay();
+        };
+
+        fairyVid.addEventListener('seeked', onSeeked, { once:true });
+        try { fairyVid.currentTime = start; } catch(e) { beginPlay(); }
+      };
+
+      if (fairyVid.readyState >= 2) seekAndPlay();
+      else fairyVid.addEventListener('canplay', seekAndPlay, { once:true });
+    }
+
+    function showFirstFrame(){
+      fairyVid.muted = true;
+      fairyVid.playsInline = true;
+      fairyVid.setAttribute('playsinline','');
+      fairyVid.setAttribute('webkit-playsinline','');
+      fairyVid.loop = false;
+      fairyVid.controls = false;
+      fairyVid.preload = "auto";
+
+      setFairySourceOnce();
+      snapToIdle();
+    }
+
+    function backToIdleFairy(){
+      snapToIdle();
+    }
+
+    function warmUpVideo(video){
+      return new Promise((resolve) => {
+        if (!video) return resolve();
+
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline','');
+        video.setAttribute('webkit-playsinline','');
+
+        const doWarm = () => {
+          try{
+            video.playbackRate = 1;
+            const p = video.play();
+            if (p && typeof p.then === "function"){
+              p.then(() => {
+                setTimeout(() => {
+                  try { video.pause(); } catch(e) {}
+                  try { video.currentTime = 0; } catch(e) {}
+                  resolve();
+                }, 120);
+              }).catch(() => resolve());
+            } else {
+              setTimeout(() => {
+                try { video.pause(); } catch(e) {}
+                try { video.currentTime = 0; } catch(e) {}
+                resolve();
+              }, 160);
+            }
+          } catch(e){
+            resolve();
+          }
+        };
+
+        if (video.readyState >= 2) doWarm();
+        else video.addEventListener('canplay', doWarm, { once:true });
+      });
+    }
+
+    /* Explosie */
+    function prepareExplosion(){
+      explosionVid.muted = true;
+      explosionVid.playsInline = true;
+      explosionVid.loop = false;
+      explosionVid.controls = false;
+      explosionVid.preload = 'auto';
+      explosionVid.src = EXPLOSION_SRC;
+
+      explosionWrap.style.opacity = '0';
+
+      try { explosionVid.load(); } catch(e) {}
+
+      explosionVid.addEventListener('error', () => {
+        explosionWrap.style.opacity = '0';
+      });
+    }
+
+    function resetExplosion(){
+      try { explosionVid.pause(); } catch(e) {}
+      try { explosionVid.currentTime = 0; } catch(e) {}
+      explosionVid.onended = null;
+      explosionWrap.style.transition = '';
+      explosionWrap.style.opacity = '0';
+    }
+
+    function playExplosionNow(){
+      const fadeInMs = getVarMillis('--explosion-fade-in', 550);
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
+
+      resetExplosion();
+      explosionVid.playbackRate = EXPLOSION_SPEED;
+
+      const start = () => {
+        explosionWrap.style.transition = `opacity ${Math.max(0, fadeInMs)}ms ease`;
+        requestAnimationFrame(() => { explosionWrap.style.opacity = '1'; });
+
+        explosionVid.onended = () => {
+          explosionWrap.style.transition = `opacity ${Math.max(0, fadeOutMs)}ms ease`;
+          explosionWrap.style.opacity = '0';
+        };
+
+        try { explosionVid.currentTime = 0; } catch(e) {}
+        const p = explosionVid.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      };
+
+      if (explosionVid.readyState >= 2) start();
+      else explosionVid.addEventListener('canplay', start, { once: true });
+    }
+
+    let explosionTimerPlay = null;
+
+    function clearExplosionTimers(){
+      if (explosionTimerPlay) { clearTimeout(explosionTimerPlay); explosionTimerPlay = null; }
+    }
+
+    function scheduleExplosionFlow(){
+      clearExplosionTimers();
+
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      explosionTimerPlay = setTimeout(() => {
+        playExplosionNow();
+      }, startMs);
+    }
+
+    function estimateExplosionTotalMs(){
+      const digitDelayMs = getVarMillis('--cijfertoon-delay', 1050);
+      const startDelayMs = getVarMillis('--explosion-start-delay', 0);
+      const startMs = Math.max(0, digitDelayMs + startDelayMs);
+
+      const fadeOutMs = getVarMillis('--explosion-fadeout', 200);
+
+      const dur = Number.isFinite(explosionVid.duration) ? explosionVid.duration : NaN;
+      const playMs = Number.isFinite(dur) ? (dur * 1000 / Math.max(0.05, EXPLOSION_SPEED)) : 1800;
+
+      return startMs + playMs + fadeOutMs + 200;
+    }
+
+    /* Marbotic herkenning */
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
+        return;
+      }
+
+      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
+        ? calibrationData.expectedTouchPoints
+        : 3;
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
+    }
+
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = data[String(d)];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+          const features = computeFeatures(pts);
+          obj[String(d)].samples.push({ points: pts, features });
+        });
+      });
+
+      return obj;
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return { vector: [0,0,0] };
+
+      const p0 = points[0], p1 = points[1], p2 = points[2];
+      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+
+      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+      let maxDist = 0;
+      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+      if (maxDist < 1e-6) maxDist = 1;
+
+      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      const orientationVal = (a,b,c) => {
+        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+        return v > 0 ? 1 : v < 0 ? -1 : 0;
+      };
+      const orientation = orientationVal(A,B,C);
+
+      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+      const denom = 2 * AC * BC;
+      let cosAngle = 0;
+      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+      let width = maxX-minX, height = maxY-minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+      const aspect = height / (width + height);
+
+      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+      return { vector };
+    }
+
+    function buildFeatureVector(f) {
+      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+      return [
+        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
+        f.cosAngle*wCos, f.orientation*wOrient,
+        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
+        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
+        f.aspect*wAspect
+      ];
+    }
+
+    function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeClassificationStats() {
+      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+      const allSamples = [];
+      DIGIT_ORDER.forEach(d => {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+      });
+
+      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+      const sameMin = [];
+      const betweenMin = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        let minSame = Infinity, minOther = Infinity;
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const dist = vectorDistance(a.vector, b.vector);
+          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+          else minOther = Math.min(minOther, dist);
+        }
+        if (minSame < Infinity) sameMin.push(minSame);
+        if (minOther < Infinity) betweenMin.push(minOther);
+      }
+
+      const maxSame = Math.max.apply(null, sameMin);
+      const minBetween = Math.min.apply(null, betweenMin);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const vec = computeFeatures(points).vector;
+      if (!vec) return null;
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const dist = vectorDistance(vec, samples[i].features.vector);
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+        }
+      });
+
+      if (bestDigit === null) return null;
+      if (bestDist > classificationStats.thresholdUnknown) return null;
+      if (bestDist > classificationStats.thresholdBase) return null;
+      return bestDigit;
+    }
+
+    /* Spel */
+    let started = false;
+    let locked = false;
+    let targetDigit = 0;
+
+    let wrongTries = 0;
+
+    let currentPoints = [];
+    let hasResultForCurrentTouches = false;
+
+    let roundToken = 0;
+
+    function wrongFeedback(){
+      scanArea.classList.remove('wrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('wrong');
+      setTimeout(() => scanArea.classList.remove('wrong'), 260);
+
+      scanArea.classList.remove('flashWrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('flashWrong');
+      setTimeout(() => scanArea.classList.remove('flashWrong'), 320);
+    }
+
+    function chooseNextDigit(){
+      const list = Array.from(enabledDigits);
+      if (list.length === 0){
+        targetDigit = 0;
+        return;
+      }
+
+      const prev = targetDigit;
+      let next = list[Math.floor(Math.random() * list.length)];
+      if (next === prev && list.length > 1){
+        next = list.find(d => d !== prev);
+      }
+      targetDigit = next;
+    }
+
+    function clearDigitAndExplosion(){
+      clearExplosionTimers();
+      stage.classList.remove('play');
+
+      digitImg.style.opacity = '0';
+      digitImg.removeAttribute('src');
+      digitImg.alt = '';
+
+      resetExplosion();
+
+      stopSegmentWatcher();
+      backToIdleFairy();
+    }
+
+    function applyPresetForDigit(digit){
+      const p = MARBOTIC_PRESETS[digit] || MARBOTIC_PRESETS[0];
+
+      document.documentElement.style.setProperty('--digit-left', p.xPct + '%');
+      document.documentElement.style.setProperty('--digit-top', p.yPct + '%');
+      document.documentElement.style.setProperty('--cijfertoon-delay', p.start + 's');
+      document.documentElement.style.setProperty('--fade-duration', p.fadeIn + 's');
+    }
+
+    function showDigit(digit){
+      applyPresetForDigit(digit);
+      digitImg.src = ASSET_DIGIT(digit);
+      digitImg.alt = String(digit);
+      void stage.offsetHeight;
+      stage.classList.add('play');
+    }
+
+    function playSuccessAnimation(digit, onFairyDone){
+      clearDigitAndExplosion();
+      showDigit(digit);
+      scheduleExplosionFlow();
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, '', onFairyDone);
+      return estimateExplosionTotalMs();
+    }
+
+    function playWrongAnimation(onDone){
+      clearDigitAndExplosion();
+      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, '', onDone);
+    }
+
+    function playRevealAnimation(digit, onDone){
+      clearDigitAndExplosion();
+      showDigit(digit);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, '', onDone);
+    }
+
+    function nextRound(){
+      const myToken = ++roundToken;
+
+      locked = false;
+      wrongTries = 0;
+      clearDigitAndExplosion();
+
+      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+      scanSub.textContent = 'Alle puntjes in het vak.';
+      scanHint.textContent = '📱 Blokje stil laten liggen';
+
+      chooseNextDigit();
+
+      setTimeout(() => {
+        if (myToken !== roundToken) return;
+        askDigit(targetDigit);
+      }, 80);
+    }
+
+    function revealCorrectAfterThreeWrong(){
+      const myToken = ++roundToken;
+
+      locked = true;
+
+      scanTitle.textContent = '';
+      scanSub.textContent = 'Zo ziet het juiste cijfer eruit.';
+      scanHint.textContent = '';
+
+      stopVoice();
+      sayReveal(targetDigit);
+
+      playRevealAnimation(targetDigit, () => {
+        if (myToken !== roundToken) return;
+        nextRound();
+      });
+    }
+
+    function handleRecognitionResult(recognizedDigit){
+      if (recognizedDigit == null) return;
+      if (!started || locked) return;
+
+      if (recognizedDigit === targetDigit){
+        const myToken = ++roundToken;
+        locked = true;
+
+        scanTitle.textContent = '';
+        scanSub.textContent = '';
+        scanHint.textContent = '';
+
+        wrongTries = 0;
+
+        stopVoice();
+        playSfx(goodAudio);
+
+        let fairyDone = false;
+        let explosionDone = false;
+
+        const explosionMs = playSuccessAnimation(recognizedDigit, () => {
+          fairyDone = true;
+          if (myToken === roundToken && fairyDone && explosionDone) nextRound();
+        });
+
+        setTimeout(() => {
+          explosionDone = true;
+          if (myToken === roundToken && fairyDone && explosionDone) nextRound();
+        }, Math.max(0, explosionMs));
+
+      } else {
+        wrongTries += 1;
+
+        if (wrongTries >= 3){
+          wrongFeedback();
+          playSfx(wrongAudio);
+          revealCorrectAfterThreeWrong();
+          return;
+        }
+
+        wrongFeedback();
+        playSfx(wrongAudio);
+
+        playWrongAnimation(() => {
+          if (!started || locked) return;
+          setTimeout(() => askDigit(targetDigit), 250);
+        });
+      }
+    }
+
+    function getPointsFromTouches(touchList) {
+      const rect = scanArea.getBoundingClientRect();
+      const points = [];
+      for (let i = 0; i < touchList.length; i++) {
+        const t = touchList[i];
+        const x = t.clientX;
+        const y = t.clientY;
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          points.push({ x, y });
+        }
+      }
+      return points;
+    }
+
+    function handleTouchEvent(e){
+      if (!calibration || !classificationStats) return;
+
+      const touches = e.touches || [];
+      currentPoints = getPointsFromTouches(touches);
+
+      if (currentPoints.length === 0){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+        scanSub.textContent = 'Alle puntjes in het vak.';
+        scanHint.textContent = '📱 Blokje stil laten liggen';
+        return;
+      }
+
+      if (currentPoints.length !== expectedTouchPoints){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Even stil houden.';
+        scanSub.textContent = 'We lezen de puntjes.';
+        scanHint.textContent = '';
+        return;
+      }
+
+      scanTitle.textContent = 'Even stil houden.';
+      scanSub.textContent = 'We lezen de puntjes.';
+      scanHint.textContent = '';
+
+      if (!hasResultForCurrentTouches && !locked){
+        const digit = recognizeDigit(currentPoints);
+        if (digit !== null && typeof digit === "number"){
+          hasResultForCurrentTouches = true;
+          handleRecognitionResult(digit);
+        }
+      }
+    }
+
+    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
+      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
+    });
+
+    /* Instellingen */
+
+    function startGame(){
+      if (started) return;
+      started = true;
+
+      startBackgroundMusic();
+
+      warmUpVideo(explosionVid);
+
+      setFairySourceOnce();
+      warmUpVideo(fairyVid).then(() => backToIdleFairy());
+
+      try{
+        goodAudio.load();
+        wrongAudio.load();
+        questionVoices.forEach(a => { try { a.load(); } catch(e){} });
+        revealVoices.forEach(a => { try { a.load(); } catch(e){} });
+      } catch(e){}
+
+      nextRound();
+    }
+
+    // Spreekknop: korte tik speelt opnieuw af (status wisselt automatisch via updateSpeakBtn)
+    speakBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!started) startGame();
+      askDigit(targetDigit);
+      updateSpeakBtn();
+    });
+
+    const startBtn = document.getElementById('startBtn');
+
+    function hideStartBtn(){
+      if (!startBtn) return;
+      startBtn.classList.add('is-hidden');
+      setTimeout(() => {
+        try{ startBtn.style.display = 'none'; }catch(e){}
+      }, 260);
+    }
+
+    function startFromUserGesture(){
+      hideStartBtn();
+      startGame();
+
+      // extra zekerheid op iPad: probeer muziek direct na deze gesture
+      try{
+        if (!bgMusicMuted) startBackgroundMusic();
+      } catch(e){}
+    }
+
+    if (startBtn){
+      startBtn.addEventListener('pointerdown', () => startBtn.classList.add('is-pressed'), { passive:true });
+      const up = () => startBtn.classList.remove('is-pressed');
+      startBtn.addEventListener('pointerup', up, { passive:true });
+      startBtn.addEventListener('pointercancel', up, { passive:true });
+      startBtn.addEventListener('pointerleave', up, { passive:true });
+
+      startBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        startFromUserGesture();
+      });
+    }
+
+    homeBtn.addEventListener('click', () => {
+      try { window.location.href = 'index.html'; } catch (e) {}
+    });
+
+    window.addEventListener('load', () => {
+      setAutoScale();
+
+      showFirstFrame();
+      prepareExplosion();
+      clearDigitAndExplosion();
+      backToIdleFairy();
+
+      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+      scanSub.textContent = 'Alle puntjes in het vak.';
+      scanHint.textContent = '📱 Blokje stil laten liggen';
+
+      fetch('calibration.json', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => initCalibration(data))
+        .catch(() => { });
+});
+</script>
+</body>
+</html>
