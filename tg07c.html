@@ -561,7 +561,9 @@
       transition: transform 120ms ease, opacity 220ms ease, filter 160ms ease;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
-    }
+    
+      pointer-events: auto;
+}
     .startBtn video{
       width: 100%;
       height: auto;
@@ -571,8 +573,8 @@
       user-select:none;
     }
     .startBtn.is-pressed{
-      transform: scale(0.95);
-      filter: brightness(0.92);
+      transform: scale(1.06);
+      filter: brightness(1.02);
     }
     .startBtn.is-hidden{
       opacity: 0;
@@ -1714,6 +1716,7 @@ if (typeof onDone === 'function') onDone();
     });
 
     const startBtn = document.getElementById('startBtn');
+    const startVid = document.getElementById('startVid');
 
     function hideStartBtn(){
       if (!startBtn) return;
@@ -1724,6 +1727,11 @@ if (typeof onDone === 'function') onDone();
     }
 
     function startFromUserGesture(){
+      if (!startBtn) return;
+      // voorkom dubbel starten
+      if (startBtn.dataset.started === '1') return;
+      startBtn.dataset.started = '1';
+
       hideStartBtn();
       startGame();
 
@@ -1734,16 +1742,37 @@ if (typeof onDone === 'function') onDone();
     }
 
     if (startBtn){
-      startBtn.addEventListener('pointerdown', () => startBtn.classList.add('is-pressed'), { passive:true });
-      const up = () => startBtn.classList.remove('is-pressed');
-      startBtn.addEventListener('pointerup', up, { passive:true });
-      startBtn.addEventListener('pointercancel', up, { passive:true });
-      startBtn.addEventListener('pointerleave', up, { passive:true });
+      // zorg dat de video altijd inline blijft op iPad
+      try{
+        if (startVid){
+          startVid.muted = true;
+          startVid.playsInline = true;
+          startVid.setAttribute('playsinline','');
+        }
+      }catch(e){}
 
-      startBtn.addEventListener('click', (e) => {
+      const pressOn = () => startBtn.classList.add('is-pressed');
+      const pressOff = () => startBtn.classList.remove('is-pressed');
+
+      startBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
+        pressOn();
+      }, { passive:false });
+
+      startBtn.addEventListener('pointerup', (e) => {
+        e.preventDefault();
+        pressOff();
         startFromUserGesture();
-      });
+      }, { passive:false });
+
+      startBtn.addEventListener('pointercancel', pressOff, { passive:true });
+      startBtn.addEventListener('pointerleave', pressOff, { passive:true });
+
+      // iOS fallback
+      startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); pressOn(); }, { passive:false });
+      startBtn.addEventListener('touchend', (e) => { e.preventDefault(); pressOff(); startFromUserGesture(); }, { passive:false });
+    }
+);
     }
 
     homeBtn.addEventListener('click', () => {
