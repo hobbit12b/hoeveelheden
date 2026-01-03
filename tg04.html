@@ -1079,14 +1079,14 @@ body{
       <input type="range" id="cardMsRange" min="300" max="4000" step="50" value="1700" />
       <div class="tuneValue" id="cardMsValue">1700</div>
     
+    </div>
+  </div>
+
   <div class="tuneSection">
     <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">reset</div>
     <div class="tuneButtons">
       <button class="tuneBtnSmall secondary" id="resetTuneBtn" type="button">reset instellingen</button>
     </div>
-  </div>
-
-</div>
   </div>
 
   <!-- scan timing instellingen -->
@@ -3726,23 +3726,42 @@ function syncUI(){
 }
 
 
-function resetTuneToHtmlDefaults(){
-  /* laad weer de waarden die in deze html staan */
-  flashMsByLevel = { ...DEFAULT_FLASH_BY_LEVEL };
-  cardMsByLevel = { ...DEFAULT_CARD_BY_LEVEL };
-  scanTimingByLevel = { ...DEFAULT_SCAN_BY_LEVEL };
-  timerSeqByLevel = { ...DEFAULT_TIMER_SEQ_BY_LEVEL };
-  helpSeqByLevel = { ...DEFAULT_HELP_SEQ_BY_LEVEL };
+function resetTuneToLevelDefaults(level){
+  const lvl = clamp(Number(level) || LEVEL, 1, 9);
 
-  try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
-  try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
-  try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
-  try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
-  try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(helpSeqByLevel)); }catch(e){}
-  try{ localStorage.setItem(PRESET_89_KEY, String(PRESET_89_VERSION)); }catch(e){}
+  /* reset = officiële level defaults (zoals in deze html) */
+  if(DEFAULT_FLASH_BY_LEVEL && (lvl in DEFAULT_FLASH_BY_LEVEL)){
+    flashMsByLevel[lvl] = DEFAULT_FLASH_BY_LEVEL[lvl];
+    try{ localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel)); }catch(e){}
+  }
 
-  /* herlaad variabelen voor huidig level */
-  setLevel(LEVEL);
+  if(DEFAULT_CARD_BY_LEVEL && (lvl in DEFAULT_CARD_BY_LEVEL)){
+    cardMsByLevel[lvl] = DEFAULT_CARD_BY_LEVEL[lvl];
+    try{ localStorage.setItem(CARD_KEY, JSON.stringify(cardMsByLevel)); }catch(e){}
+  }
+
+  if(DEFAULT_SCAN_BY_LEVEL && (lvl in DEFAULT_SCAN_BY_LEVEL)){
+    scanTimingByLevel[lvl] = { ...DEFAULT_SCAN_BY_LEVEL[lvl] };
+    try{ localStorage.setItem(SCAN_KEY, JSON.stringify(scanTimingByLevel)); }catch(e){}
+  }
+
+  if(DEFAULT_TIMER_SEQ_BY_LEVEL && (lvl in DEFAULT_TIMER_SEQ_BY_LEVEL)){
+    timerSeqByLevel[lvl] = { ...DEFAULT_TIMER_SEQ_BY_LEVEL[lvl] };
+    try{ localStorage.setItem(TIMER_SEQ_KEY, JSON.stringify(timerSeqByLevel)); }catch(e){}
+  }
+
+  if(DEFAULT_HELP_SEQ_BY_LEVEL && (lvl in DEFAULT_HELP_SEQ_BY_LEVEL)){
+    helpSeqByLevel[lvl] = { ...DEFAULT_HELP_SEQ_BY_LEVEL[lvl] };
+    try{ localStorage.setItem(HELP_SEQ_KEY, JSON.stringify(helpSeqByLevel)); }catch(e){}
+  }
+
+  /* preset vlag bijwerken zodat 8 en 9 niet onverwacht terugmigreren bij een reload */
+  if(lvl === 8 || lvl === 9){
+    try{ localStorage.setItem(PRESET_89_KEY, String(PRESET_89_VERSION)); }catch(e){}
+  }
+
+  /* herlaad variabelen en ui voor huidig level */
+  setLevel(lvl);
   syncUI();
   markTuneDirty();
 }
@@ -3750,7 +3769,7 @@ function resetTuneToHtmlDefaults(){
 if(resetTuneBtn){
   resetTuneBtn.addEventListener("click", () => {
     beep("tap");
-    resetTuneToHtmlDefaults();
+    resetTuneToLevelDefaults(LEVEL);
   });
 }
 
