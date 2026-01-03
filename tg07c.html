@@ -652,25 +652,49 @@
     </div>
   </section>
 
-  <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="fa
-    /*
-      Bestanden in dezelfde map:
-      calibration.json
-      marbotic0.png tot en met marbotic9.png
-      toverfee.mp4 (samengestelde mp4 met still, nee, ja)
-      explosie.mp4
-      goed.mp3
-      fout.mp3
-      home.png
-      spreekknop.png
+  
+  <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">Instellingen</div>
+      <button class="tuneClose" id="settingsClose" type="button">Sluiten</button>
+    </div>
 
-      Audio map:
-      audio/backgroundmuziek.mp3
-      audio/hocuspocus00.mp3 t/m audio/hocuspocus09.mp3
-      audio/zozieteruitde00.mp3 t/m audio/zozieteruitde09.mp3
-    */
+    <div class="settingsIntro">Kies welke cijfers meedoen. (Optioneel) stel de startknop af.</div>
 
-    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+    <div class="settingsSection">
+      <div class="settingsTitle">Cijfers</div>
+      <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
+    </div>
+
+    <div class="settingsSection">
+      <div class="settingsTitle">Startknop</div>
+
+      <div class="settingRow">
+        <label for="startScaleSlider">Grootte</label>
+        <input id="startScaleSlider" type="range" min="0.60" max="1.80" step="0.01" value="1.00" />
+        <div class="settingVal" id="startScaleVal">1.00</div>
+      </div>
+
+      <div class="settingRow">
+        <label for="startXSlider">Positie X</label>
+        <input id="startXSlider" type="range" min="0" max="100" step="1" value="10" />
+        <div class="settingVal" id="startXVal">10%</div>
+      </div>
+
+      <div class="settingRow">
+        <label for="startYSlider">Positie Y</label>
+        <input id="startYSlider" type="range" min="0" max="100" step="1" value="32" />
+        <div class="settingVal" id="startYVal">32%</div>
+      </div>
+
+      <div class="tuneHint">X is afstand van rechts, Y is afstand van boven. Deze waarden worden bewaard op dit apparaat.</div>
+    </div>
+  </div>
+
+  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto"></audio>
+
+  <script>
+const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
     const FAIRY_SRC = 'toverfee.mp4';
@@ -760,6 +784,41 @@ const scanArea = document.getElementById('scan-area');
     const startScaleVal = document.getElementById('startScaleVal');
     const startXVal = document.getElementById('startXVal');
     const startYVal = document.getElementById('startYVal');
+    // === Startknop instellingen (code) ===
+    // Dit zijn de waarden die je kunt aanpassen:
+    // scale: grootte, x en y: positie in procent (x = afstand van rechts, y = afstand van boven)
+    const STARTBTN_STORAGE_KEY = 'startBtnSettingsV1';
+    const STARTBTN_DEFAULTS = { scale: 1.00, x: 10, y: 32, pressed: 1.06 };
+    const USE_SAVED_STARTBTN_SETTINGS = true; // zet op false als je altijd alleen de defaults uit de code wil gebruiken
+
+    function loadStartBtnSettings(){
+      try{
+        const raw = localStorage.getItem(STARTBTN_STORAGE_KEY);
+        if (!raw) return { ...STARTBTN_DEFAULTS };
+        const obj = JSON.parse(raw) || {};
+        const s = {
+          scale: clamp(obj.scale ?? STARTBTN_DEFAULTS.scale, 0.60, 1.80),
+          x: clamp(obj.x ?? STARTBTN_DEFAULTS.x, 0, 100),
+          y: clamp(obj.y ?? STARTBTN_DEFAULTS.y, 0, 100),
+          pressed: clamp(obj.pressed ?? STARTBTN_DEFAULTS.pressed, 0.60, 2.20),
+        };
+        // als pressed per ongeluk te klein is, maak hem minimaal iets groter dan scale
+        s.pressed = Math.max(s.pressed, s.scale + 0.04, s.scale * 1.04);
+        return s;
+      } catch(e){
+        return { ...STARTBTN_DEFAULTS };
+      }
+    }
+
+    function saveStartBtnSettings(s){
+      if (!USE_SAVED_STARTBTN_SETTINGS) return;
+      try{
+        localStorage.setItem(STARTBTN_STORAGE_KEY, JSON.stringify(s));
+      } catch(e){}
+    }
+
+    let startBtnSettings = USE_SAVED_STARTBTN_SETTINGS ? loadStartBtnSettings() : { ...STARTBTN_DEFAULTS };
+
 
     function syncStartSlidersFromSettings(){
       if (!startScaleSlider) return;
@@ -1066,7 +1125,6 @@ function askDigit(digit){
       }
       updateMusicBtn();
     updateSpeakBtn();
-      updateSpeakBtn();
     }
 
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
@@ -1761,14 +1819,6 @@ if (typeof onDone === 'function') onDone();
     });
 
     const startBtn = document.getElementById('startBtn');
-    // === Instellingen startknop ===
-    const STARTBTN_SETTINGS = {
-      scale: 1.0,        // basis grootte (1.0 = 100%)
-      scalePressed: 1.06,// grootte bij indrukken
-      xPercent: 10,      // afstand van rechts in %
-      yPercent: 32       // afstand van boven in %
-    };
-
     const startVid = document.getElementById('startVid');
 
     function hideStartBtn(){
@@ -1797,10 +1847,10 @@ if (typeof onDone === 'function') onDone();
     
     function applyStartBtnSettings(){
       if (!startBtn) return;
-      startBtn.style.right = STARTBTN_SETTINGS.xPercent + '%';
-      startBtn.style.top = STARTBTN_SETTINGS.yPercent + '%';
-      startBtn.style.transform = 'scale(' + STARTBTN_SETTINGS.scale + ')';
-      startBtn.style.setProperty('--start-pressed-scale', STARTBTN_SETTINGS.scalePressed);
+      startBtn.style.right = startBtnSettings.x + '%';
+      startBtn.style.top = startBtnSettings.y + '%';
+      startBtn.style.transform = 'scale(' + startBtnSettings.scale + ')';
+      startBtn.style.setProperty('--start-pressed-scale', String(startBtnSettings.pressed));
     }
     applyStartBtnSettings();
 
@@ -1834,6 +1884,12 @@ if (startBtn){
       // iOS fallback
       startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); pressOn(); }, { passive:false });
       startBtn.addEventListener('touchend', (e) => { e.preventDefault(); pressOff(); startFromUserGesture(); }, { passive:false });
+
+      // extra fallback (desktop / browsers zonder pointer events)
+      startBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        startFromUserGesture();
+      });
     }
 
     homeBtn.addEventListener('click', () => {
@@ -1856,23 +1912,8 @@ if (startBtn){
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-});
- setAutoScale();
+    });
 
-      showFirstFrame();
-      prepareExplosion();
-      clearDigitAndExplosion();
-      backToIdleFairy();
-
-      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
-      scanSub.textContent = 'Alle puntjes in het vak.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-
-      fetch('calibration.json', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => initCalibration(data))
-        .catch(() => { });
-});
-</script>
+  </script>
 </body>
 </html>
