@@ -51,9 +51,13 @@
             --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
       /* Startknop positie, wordt ook opgeslagen op dit apparaat */
-      --start-left: 54%;
-      --start-top: 18%;
-      --start-scale: 0.47;
+      --start-left: 29.5%;
+      --start-top: 57%;
+      --start-scale: 0.36;
+
+      --scanplek-left: 50%;
+      --scanplek-top: 50%;
+      --scanplek-scale: 0.95;
 
     }
 
@@ -342,10 +346,6 @@ display:flex;
     .scanOverlay{
       position:absolute;
       inset: 0;
-      display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
-      padding: 28px;
       pointer-events:none;
     }
 
@@ -415,7 +415,7 @@ display:flex;
     .startOverlay{
       position:fixed;
       inset:0;
-      background: rgba(253,238,234,0.18);
+      background: transparent;
       z-index: 900;
       overflow:hidden;
     }
@@ -432,8 +432,7 @@ position:absolute;
       width: min(520px, 78vw);
       border-radius: 22px;
       overflow:hidden;
-      box-shadow: 0 18px 40px rgba(0,0,0,0.14);
-          pointer-events: auto;
+pointer-events: auto;
     }
     .startBtn:active{
       transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
@@ -443,6 +442,35 @@ position:absolute;
       height: auto;
       display:block;
     }
+
+    .startOverlay.leaving{
+      animation: overlayFade 520ms ease forwards;
+      pointer-events:none;
+    }
+    .startBtn.leaving{
+      animation: startPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+    }
+    @keyframes overlayFade{
+      from{ opacity:1; }
+      to{ opacity:0; }
+    }
+    @keyframes startPop{
+      0%{ opacity:1; transform: translate(-50%, -50%) scale(var(--start-scale, 0.83)); }
+      45%{ opacity:1; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 1.06)) rotate(-1deg); }
+      100%{ opacity:0; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.45)) rotate(4deg); }
+    }
+
+    #scanPlaceImg{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1));
+      width: min(720px, 86%);
+      height: auto;
+      object-fit: contain;
+      pointer-events:none;
+    }
+    .scanUI.hiddenAssist{ display:none; }
 /* Timing paneel */
     .tunePanel{
       position: fixed;
@@ -586,8 +614,7 @@ position:absolute;
       position: fixed;
       inset: 0;
       background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      z-index: 2000;
+z-index: 2000;
       display:flex;
       align-items:flex-end;
       justify-content:flex-end;
@@ -712,9 +739,7 @@ position:absolute;
 
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Toverkaart">
-<div class="badge" id="stateBadge" aria-hidden="true">still</div>
-
-        <div class="cardInner">
+<div class="cardInner">
           <div class="stage" id="stage">
             <div id="explosionWrap" aria-hidden="true">
               <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
@@ -729,8 +754,10 @@ position:absolute;
   </section>
 
   <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+    
     <div class="scanOverlay">
-      <div class="scanUI">
+      <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" />
+      <div class="scanUI hiddenAssist">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
         </div>
@@ -740,6 +767,7 @@ position:absolute;
         <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
       </div>
     </div>
+
   </section>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
@@ -768,20 +796,20 @@ position:absolute;
 
         <div class="tuneRow">
           <div class="tuneLabel">Grootte</div>
-          <input type="range" id="startLandScaleRange" min="0.30" max="1.30" step="0.01" value="0.47" />
-          <div class="tuneValue" id="startLandScaleValue">0.47</div>
+          <input type="range" id="startLandScaleRange" min="0.30" max="1.30" step="0.01" value="0.36" />
+          <div class="tuneValue" id="startLandScaleValue">0.36</div>
         </div>
 
         <div class="tuneRow">
           <div class="tuneLabel">Positie x</div>
-          <input type="range" id="startLandXRange" min="-50" max="250" step="0.5" value="54" />
-          <div class="tuneValue" id="startLandXValue">54%</div>
+          <input type="range" id="startLandXRange" min="-50" max="250" step="0.5" value="29.5" />
+          <div class="tuneValue" id="startLandXValue">29.5%</div>
         </div>
 
         <div class="tuneRow">
           <div class="tuneLabel">Positie y</div>
-          <input type="range" id="startLandYRange" min="-20" max="120" step="0.5" value="18" />
-          <div class="tuneValue" id="startLandYValue">18%</div>
+          <input type="range" id="startLandYRange" min="-20" max="120" step="0.5" value="57" />
+          <div class="tuneValue" id="startLandYValue">57%</div>
         </div>
 
         <div class="settingsSubTitle">iPad verticaal</div>
@@ -803,7 +831,52 @@ position:absolute;
           <input type="range" id="startPortYRange" min="-20" max="120" step="0.5" value="38" />
           <div class="tuneValue" id="startPortYValue">38%</div>
         </div>
+      
+
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">scanplek</div>
+
+        <div class="settingsSubTitle">iPad horizontaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="scanLandScaleRange" min="0.20" max="1.80" step="0.01" value="0.95" />
+          <div class="tuneValue" id="scanLandScaleValue">0.95</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="scanLandXRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanLandXValue">50%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="scanLandYRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanLandYValue">50%</div>
+        </div>
+
+        <div class="settingsSubTitle">iPad verticaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="scanPortScaleRange" min="0.20" max="1.80" step="0.01" value="0.95" />
+          <div class="tuneValue" id="scanPortScaleValue">0.95</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="scanPortXRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanPortXValue">50%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="scanPortYRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanPortYValue">50%</div>
+        </div>
       </div>
+</div>
 </div>
   </div>
 
@@ -921,17 +994,13 @@ position:absolute;
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
+    const startVid = document.getElementById('startVid');
 
     const titlePill = document.getElementById('titlePill');
     const settingsOverlay = document.getElementById('settingsOverlay');
     const settingsClose = document.getElementById('settingsClose');
     const digitGrid = document.getElementById('digitGrid');
-
-
-
-    const stateBadge = document.getElementById('stateBadge');
-
-    /* Timing paneel UI */
+/* Timing paneel UI */
     const tuneBtn = document.getElementById('tuneBtn');
     const tunePanel = document.getElementById('tunePanel');
     const tuneClose = document.getElementById('tuneClose');
@@ -975,15 +1044,7 @@ position:absolute;
     const startPortScaleValue = document.getElementById('startPortScaleValue');
     const startPortXValue = document.getElementById('startPortXValue');
     const startPortYValue = document.getElementById('startPortYValue');
-
-    function badge(text, show){
-      if (!stateBadge) return;
-      stateBadge.textContent = text;
-      if (show) stateBadge.classList.add('show');
-      else stateBadge.classList.remove('show');
-    }
-
-    function setAutoScale(){
+function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
 
@@ -1000,7 +1061,7 @@ position:absolute;
     }
 
     window.addEventListener('resize', setAutoScale);
-    window.addEventListener('orientationchange', () => setTimeout(() => { setAutoScale(); applyStartLayoutToCSS(); }, 90));
+    window.addEventListener('orientationchange', () => setTimeout(() => { setAutoScale(); applyStartLayoutToCSS(); applyScanLayoutToCSS(); }, 90));
 
     function getVarMillis(name, fallbackMs){
       const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -1251,6 +1312,54 @@ let currentVoice = null;
 
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
 
+    // Pauzeer muziek automatisch als iPad naar pauzestand gaat, en hervat als het spel weer actief is
+    let musicWasPlayingBeforeHide = false;
+    let pendingMusicResume = false;
+
+    function pauseMusicForSleep(){
+      if (!bgMusic) return;
+      musicWasPlayingBeforeHide = !!started && musicAvailable && !bgMusicMuted && !bgMusic.paused;
+      try { bgMusic.pause(); } catch(e) {}
+      updateMusicBtn();
+    }
+
+    function resumeMusicAfterSleep(){
+      if (!bgMusic) return;
+      if (!started) return;
+      if (!musicWasPlayingBeforeHide) return;
+      if (!musicAvailable || bgMusicMuted) return;
+
+      musicWasPlayingBeforeHide = false;
+
+      try{
+        const p = bgMusic.play();
+        if (p && typeof p.catch === 'function'){
+          p.catch(() => { pendingMusicResume = true; updateMusicBtn(); });
+        }
+      } catch(e){
+        pendingMusicResume = true;
+      }
+      updateMusicBtn();
+    }
+
+    function tryPendingMusicResume(){
+      if (!pendingMusicResume) return;
+      pendingMusicResume = false;
+      resumeMusicAfterSleep();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) pauseMusicForSleep();
+      else setTimeout(resumeMusicAfterSleep, 90);
+    });
+
+    window.addEventListener('pagehide', pauseMusicForSleep);
+    window.addEventListener('pageshow', () => setTimeout(resumeMusicAfterSleep, 120));
+
+    document.addEventListener('pointerdown', tryPendingMusicResume, { passive:true });
+    document.addEventListener('touchstart', tryPendingMusicResume, { passive:true });
+
+
     /* Toverfee timing */
     const TIMING_KEY = 'fairyTimingV3';
 
@@ -1277,12 +1386,12 @@ let currentVoice = null;
 
     let fairyTiming = loadTiming();
     /* Startknop layout */
-    const START_LAYOUT_KEY = 'startBtnLayoutV2';
+    const START_LAYOUT_KEY = 'startBtnLayoutV3';
 
     const DEFAULT_START_LAYOUT = {
-      landScale: 0.47,
-      landX: 54,
-      landY: 18,
+      landScale: 0.36,
+      landX: 29.5,
+      landY: 57,
       portScale: 0.45,
       portX: 70,
       portY: 38
@@ -1365,6 +1474,7 @@ let currentVoice = null;
 
       saveStartLayout(startLayout);
       syncStartLayoutUI();
+      syncScanLayoutUI();
       applyStartLayoutToCSS();
     }
 
@@ -1376,12 +1486,115 @@ let currentVoice = null;
 
     
 
-    /* Instellingen openen door lang op de titel te drukken */
+    
+
+    /* Scanplek layout (afbeelding in het scanvak) */
+    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV1';
+
+    const DEFAULT_SCAN_LAYOUT = {
+      landScale: 0.95,
+      landX: 50,
+      landY: 50,
+      portScale: 0.95,
+      portX: 50,
+      portY: 50
+    };
+
+    function loadScanLayout(){
+      try{
+        const raw = localStorage.getItem(SCAN_LAYOUT_KEY);
+        if (!raw) return { ...DEFAULT_SCAN_LAYOUT };
+        const obj = JSON.parse(raw);
+        return {
+          landScale: Number(obj.landScale ?? DEFAULT_SCAN_LAYOUT.landScale),
+          landX: Number(obj.landX ?? DEFAULT_SCAN_LAYOUT.landX),
+          landY: Number(obj.landY ?? DEFAULT_SCAN_LAYOUT.landY),
+          portScale: Number(obj.portScale ?? DEFAULT_SCAN_LAYOUT.portScale),
+          portX: Number(obj.portX ?? DEFAULT_SCAN_LAYOUT.portX),
+          portY: Number(obj.portY ?? DEFAULT_SCAN_LAYOUT.portY)
+        };
+      } catch(e){
+        return { ...DEFAULT_SCAN_LAYOUT };
+      }
+    }
+
+    function saveScanLayout(l){
+      try { localStorage.setItem(SCAN_LAYOUT_KEY, JSON.stringify(l)); } catch(e) {}
+    }
+
+    let scanLayout = loadScanLayout();
+
+    const scanLandScaleRange = document.getElementById('scanLandScaleRange');
+    const scanLandXRange = document.getElementById('scanLandXRange');
+    const scanLandYRange = document.getElementById('scanLandYRange');
+
+    const scanPortScaleRange = document.getElementById('scanPortScaleRange');
+    const scanPortXRange = document.getElementById('scanPortXRange');
+    const scanPortYRange = document.getElementById('scanPortYRange');
+
+    const scanLandScaleValue = document.getElementById('scanLandScaleValue');
+    const scanLandXValue = document.getElementById('scanLandXValue');
+    const scanLandYValue = document.getElementById('scanLandYValue');
+
+    const scanPortScaleValue = document.getElementById('scanPortScaleValue');
+    const scanPortXValue = document.getElementById('scanPortXValue');
+    const scanPortYValue = document.getElementById('scanPortYValue');
+
+    function applyScanLayoutToCSS(){
+      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+      const scale = isPortrait ? scanLayout.portScale : scanLayout.landScale;
+      const x = isPortrait ? scanLayout.portX : scanLayout.landX;
+      const y = isPortrait ? scanLayout.portY : scanLayout.landY;
+
+      document.documentElement.style.setProperty('--scanplek-scale', String(clamp(scale, 0.15, 2.2)));
+      document.documentElement.style.setProperty('--scanplek-left', String(clamp(x, -50, 150)) + '%');
+      document.documentElement.style.setProperty('--scanplek-top', String(clamp(y, -50, 150)) + '%');
+    }
+
+    function syncScanLayoutUI(){
+      if (scanLandScaleRange) scanLandScaleRange.value = String(scanLayout.landScale);
+      if (scanLandXRange) scanLandXRange.value = String(scanLayout.landX);
+      if (scanLandYRange) scanLandYRange.value = String(scanLayout.landY);
+
+      if (scanPortScaleRange) scanPortScaleRange.value = String(scanLayout.portScale);
+      if (scanPortXRange) scanPortXRange.value = String(scanLayout.portX);
+      if (scanPortYRange) scanPortYRange.value = String(scanLayout.portY);
+
+      if (scanLandScaleValue) scanLandScaleValue.textContent = fmtScale(scanLayout.landScale);
+      if (scanLandXValue) scanLandXValue.textContent = fmtPct(scanLayout.landX);
+      if (scanLandYValue) scanLandYValue.textContent = fmtPct(scanLayout.landY);
+
+      if (scanPortScaleValue) scanPortScaleValue.textContent = fmtScale(scanLayout.portScale);
+      if (scanPortXValue) scanPortXValue.textContent = fmtPct(scanLayout.portX);
+      if (scanPortYValue) scanPortYValue.textContent = fmtPct(scanLayout.portY);
+    }
+
+    function applyScanLayoutChange(){
+      if (scanLandScaleRange) scanLayout.landScale = clamp(scanLandScaleRange.value, 0.20, 1.80);
+      if (scanLandXRange) scanLayout.landX = clamp(scanLandXRange.value, -50, 150);
+      if (scanLandYRange) scanLayout.landY = clamp(scanLandYRange.value, -50, 150);
+
+      if (scanPortScaleRange) scanLayout.portScale = clamp(scanPortScaleRange.value, 0.20, 1.80);
+      if (scanPortXRange) scanLayout.portX = clamp(scanPortXRange.value, -50, 150);
+      if (scanPortYRange) scanLayout.portY = clamp(scanPortYRange.value, -50, 150);
+
+      saveScanLayout(scanLayout);
+      syncScanLayoutUI();
+      applyScanLayoutToCSS();
+    }
+
+    [scanLandScaleRange, scanLandXRange, scanLandYRange, scanPortScaleRange, scanPortXRange, scanPortYRange].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', applyScanLayoutChange);
+    });
+/* Instellingen openen door lang op de titel te drukken */
     function openSettings(){
       if (!settingsOverlay) return;
       settingsOverlay.classList.remove('hidden');
       syncDigitGrid();
       syncStartLayoutUI();
+      syncScanLayoutUI();
     }
 
     function closeSettings(){
@@ -1512,8 +1725,7 @@ function setFairySourceOnce(){
         try { fairyVid.pause(); } catch(e) {}
         try { fairyVid.currentTime = Math.max(0, fairyTiming.idle || 0); } catch(e) {}
         try { fairyVid.pause(); } catch(e) {}
-        badge('still', false);
-      };
+};
       if (fairyVid.readyState >= 2) snap();
       else fairyVid.addEventListener('canplay', snap, { once:true });
     }
@@ -1524,7 +1736,7 @@ function setFairySourceOnce(){
     }
 
     // Segment speler met callback, hierdoor stopt "goed" nooit meer te vroeg door nextRound timing
-    function playSegment(startSec, endSec, speed, labelText, onDone){
+    function playSegment(startSec, endSec, speed, onDone){
       setFairySourceOnce();
       stopSegmentWatcher();
 
@@ -1541,15 +1753,13 @@ function setFairySourceOnce(){
       fairyVid.loop = false;
       fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
 
-      if (labelText) badge(labelText, true);
-
-      const finish = () => {
+      if (labelText)
+const finish = () => {
         stopSegmentWatcher();
         fairyVid.removeEventListener('ended', finish);
         try { fairyVid.pause(); } catch(e) {}
         snapToIdle();
-        badge('', false);
-        if (typeof onDone === 'function') onDone();
+if (typeof onDone === 'function') onDone();
       };
 
       const beginPlay = () => {
@@ -1639,7 +1849,35 @@ function setFairySourceOnce(){
       });
     }
 
-    /* Explosie */
+    
+
+    function primeStartVideo(){
+      if (!startVid) return;
+
+      try{
+        startVid.muted = true;
+        startVid.playsInline = true;
+        startVid.setAttribute('playsinline','');
+        startVid.setAttribute('webkit-playsinline','');
+        startVid.preload = 'auto';
+        try { startVid.load(); } catch(e){}
+      } catch(e){}
+
+      const tryPlay = () => {
+        try{
+          const p = startVid.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){}
+      };
+
+      if (startVid.readyState >= 2) tryPlay();
+      else startVid.addEventListener('canplay', tryPlay, { once:true });
+
+      // iOS kan soms pas starten na een tik, ook al is het geluid uit
+      document.addEventListener('pointerdown', tryPlay, { once:true, passive:true });
+      document.addEventListener('touchstart', tryPlay, { once:true, passive:true });
+    }
+/* Explosie */
     function prepareExplosion(){
       explosionVid.muted = true;
       explosionVid.playsInline = true;
@@ -1986,19 +2224,19 @@ function setFairySourceOnce(){
       clearDigitAndExplosion();
       showDigit(digit);
       scheduleExplosionFlow();
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed', onFairyDone);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, onFairyDone);
       return estimateExplosionTotalMs();
     }
 
     function playWrongAnimation(onDone){
       clearDigitAndExplosion();
-      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, 'fout', onDone);
+      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, onDone);
     }
 
     function playRevealAnimation(digit, onDone){
       clearDigitAndExplosion();
       showDigit(digit);
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'kijk', onDone);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, onDone);
     }
 
     function nextRound(){
@@ -2172,6 +2410,7 @@ function setFairySourceOnce(){
       tunePanel.classList.remove('hidden');
       syncTimingUI();
       syncStartLayoutUI();
+      syncScanLayoutUI();
 
       const loop = () => {
         const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
@@ -2202,6 +2441,7 @@ function setFairySourceOnce(){
       saveTiming(fairyTiming);
       syncTimingUI();
       syncStartLayoutUI();
+      syncScanLayoutUI();
     }
 
     if (tuneBtn) tuneBtn.addEventListener('click', () => {
@@ -2234,7 +2474,7 @@ function setFairySourceOnce(){
     if (setYesEndHereBtn) setYesEndHereBtn.addEventListener('click', () => setFieldToCurrent('yesEnd'));
 
     if (testWrongBtn) testWrongBtn.addEventListener('click', () => playWrongAnimation());
-    if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed'));
+    if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, () => {}));
     if (toIdleBtn) toIdleBtn.addEventListener('click', () => { stopSegmentWatcher(); backToIdleFairy(); });
 
     function resetAllSettings(){
@@ -2245,6 +2485,7 @@ function setFairySourceOnce(){
       startLayout = { ...DEFAULT_START_LAYOUT };
       saveStartLayout(startLayout);
       syncStartLayoutUI();
+      syncScanLayoutUI();
       applyStartLayoutToCSS();
 
       stopSegmentWatcher();
@@ -2268,13 +2509,28 @@ function setFairySourceOnce(){
       saveTiming(fairyTiming);
       syncTimingUI();
       syncStartLayoutUI();
+      syncScanLayoutUI();
     });
 
     /* Start */
     function startGame(){
       if (started) return;
       started = true;
-      startOverlay.style.display = 'none';
+
+      // leuke verdwijnanimatie voor de startknop
+      if (startOverlay && startBtn){
+        startOverlay.classList.add('leaving');
+        startBtn.classList.add('leaving');
+        try { startBtn.disabled = true; } catch(e){}
+        setTimeout(() => {
+          try { startOverlay.style.display = 'none'; } catch(e){}
+          try { startOverlay.classList.remove('leaving'); } catch(e){}
+          try { startBtn.classList.remove('leaving'); } catch(e){}
+          try { if (startVid){ startVid.pause(); startVid.currentTime = 0; } } catch(e){}
+        }, 520);
+      } else {
+        startOverlay.style.display = 'none';
+      }
 
       startBackgroundMusic();
 
@@ -2308,7 +2564,10 @@ startBtn.addEventListener('click', startGame);
     window.addEventListener('load', () => {
       setAutoScale();
       applyStartLayoutToCSS();
+      applyScanLayoutToCSS();
       syncStartLayoutUI();
+      syncScanLayoutUI();
+      primeStartVideo();
       initSettingsUI();
       updateMusicBtn();
       setSpeakVisual(false);
