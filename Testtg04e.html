@@ -744,18 +744,18 @@ body{
   }
 
   /* level 8 en 9, portrait: scanplek rechtsonder */
-  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK{
+  .scanPlaceWrapSK.scanPlaceBottomRightSK{
     left: auto;
     right: calc(14px + env(safe-area-inset-right));
     transform: translateX(0) scale(1);
   }
-  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK.hidden{
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.hidden{
     transform: translateX(0) scale(0.94);
   }
-  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK.pop{
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.pop{
     animation: scanPopRightSK 320ms cubic-bezier(.22,61,35,1) 1;
   }
-  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK.slideOutLeft{
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.slideOutLeft{
     animation: scanPlaceSlideOutUpRightSK 520ms cubic-bezier(.22,61,35,1) forwards;
   }
 
@@ -1653,7 +1653,7 @@ function setLevel(n){
   setAnchorToLevel(LEVEL, { noTransition: true });
 
   if(scanArea) scanArea.classList.toggle("bigScanTilesSK", usesMarboticScan());
-  scanArea.classList.toggle("scanPlaceBottomRightSK", usesMarboticScan());
+  updateScanPlacePositionSK();
 
   if(usesMarboticScan()){ enableScanUI(); }
   else{ disableScanUI(); }
@@ -2507,6 +2507,12 @@ async function previewCardsNonBlocking(){
 }
 
 /* ========================= LEVEL 8 + 9: scan UI helpers ========================= */
+function updateScanPlacePositionSK(){
+  if(!scanPlaceWrapSK) return;
+  const on = (LEVEL >= 8) && isPortrait();
+  scanPlaceWrapSK.classList.toggle("scanPlaceBottomRightSK", on);
+}
+
 function setScanTwoTilesModeSK(on){
   if(!scanArea) return;
   scanArea.classList.toggle("twoTiles", !!on);
@@ -3869,6 +3875,7 @@ function onReflow(){
     hideScannedDigitSK(true);
     hideCorrectPreviewSK(true);
     hideScanMarkSK(true);
+    updateScanPlacePositionSK();
     if(usesMarboticScan()) hideScanPlaceSK();
     clearBoard();
     hideQuestionHeart();
