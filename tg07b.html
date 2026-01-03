@@ -418,6 +418,7 @@ display:flex;
       background: transparent;
       z-index: 900;
       overflow:hidden;
+      pointer-events:none;
     }
 
     .startBtn{
@@ -1737,6 +1738,7 @@ function setFairySourceOnce(){
 
     // Segment speler met callback, hierdoor stopt "goed" nooit meer te vroeg door nextRound timing
     function playSegment(startSec, endSec, speed, onDone){
+      // Speel een segment van de fee af en ga daarna altijd terug naar idle
       setFairySourceOnce();
       stopSegmentWatcher();
 
@@ -1753,13 +1755,12 @@ function setFairySourceOnce(){
       fairyVid.loop = false;
       fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
 
-      if (labelText)
-const finish = () => {
+      const finish = () => {
         stopSegmentWatcher();
         fairyVid.removeEventListener('ended', finish);
         try { fairyVid.pause(); } catch(e) {}
         snapToIdle();
-if (typeof onDone === 'function') onDone();
+        if (typeof onDone === 'function') onDone();
       };
 
       const beginPlay = () => {
@@ -2395,22 +2396,31 @@ if (typeof onDone === 'function') onDone();
     }
 
     function syncTimingUI(){
+      // Timing sliders bestaan niet in deze versie, dus alleen syncen als ze wel aanwezig zijn
+      if (!noStartRange || !noEndRange || !yesStartRange || !yesEndRange) return;
+
       noStartRange.value = String(fairyTiming.noStart);
       noEndRange.value = String(fairyTiming.noEnd);
       yesStartRange.value = String(fairyTiming.yesStart);
       yesEndRange.value = String(fairyTiming.yesEnd);
 
-      noStartValue.textContent = fmtSec(fairyTiming.noStart);
-      noEndValue.textContent = fmtSec(fairyTiming.noEnd);
-      yesStartValue.textContent = fmtSec(fairyTiming.yesStart);
-      yesEndValue.textContent = fmtSec(fairyTiming.yesEnd);
+      if (noStartValue) noStartValue.textContent = fmtSec(fairyTiming.noStart);
+      if (noEndValue) noEndValue.textContent = fmtSec(fairyTiming.noEnd);
+      if (yesStartValue) yesStartValue.textContent = fmtSec(fairyTiming.yesStart);
+      if (yesEndValue) yesEndValue.textContent = fmtSec(fairyTiming.yesEnd);
     }
 
     function openTunePanel(){
+      // Tune panel bestaat meestal niet meer, dus alleen openen als hij er wél is
+      if (!tunePanel) return;
+
       tunePanel.classList.remove('hidden');
-      syncTimingUI();
-      syncStartLayoutUI();
-      syncScanLayoutUI();
+
+      try { syncTimingUI(); } catch(e){}
+      try { syncStartLayoutUI(); } catch(e){}
+      try { syncScanLayoutUI(); } catch(e){}
+
+      if (!scrubRange || !scrubValue) return;
 
       const loop = () => {
         const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
@@ -2423,6 +2433,7 @@ if (typeof onDone === 'function') onDone();
     }
 
     function closeTunePanel(){
+      if (!tunePanel) return;
       tunePanel.classList.add('hidden');
       stopTuneLoop();
     }
