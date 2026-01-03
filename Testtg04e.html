@@ -578,10 +578,35 @@ body{
   100%{ transform: translateX(-50%) scale(1); opacity: 1; }
 }
 
+
+/* scanplek rechtsonder in portrait voor marbotic (level 8 en hoger), voorkomt verspringen door andere keyframes */
 @keyframes scanPopRightSK{
   0%{ transform: translateX(0) scale(0.75); opacity: 0; }
   60%{ transform: translateX(0) scale(1.06); opacity: 1; }
   100%{ transform: translateX(0) scale(1); opacity: 1; }
+}
+@keyframes scanPlaceSlideOutUpRightSK{
+  0%{ transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+  70%{ transform: translateX(0) translateY(-320%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translateX(0) translateY(-520%) scale(0.96); opacity: 0; }
+}
+
+@media (orientation: portrait){
+  .scanPlaceWrapSK.scanPlaceBottomRightSK{
+    left: auto;
+    right: calc(14px + env(safe-area-inset-right));
+    transform: translateX(0) scale(1);
+  }
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.hidden{
+    transform: translateX(0) scale(0.94);
+  }
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.pop{
+    animation: scanPopRightSK 320ms cubic-bezier(.22,.61,.35,1) 1;
+  }
+  .scanPlaceWrapSK.scanPlaceBottomRightSK.slideOutLeft{
+    transition: none !important;
+    animation: scanPlaceSlideOutUpRightSK 520ms cubic-bezier(.22,.61,.35,1) forwards;
+  }
 }
 .scanPlaceImgSK{
   width: 100%;
@@ -726,12 +751,6 @@ body{
   100%{ transform: translateX(-50%) translateY(-520%) scale(0.96); opacity: 0; }
 }
 
-@keyframes scanPlaceSlideOutUpRightSK{
-  0%{ transform: translateX(0) translateY(0) scale(1); opacity: 1; }
-  70%{ transform: translateX(0) translateY(-320%) scale(0.98); opacity: 0.72; }
-  100%{ transform: translateX(0) translateY(-520%) scale(0.96); opacity: 0; }
-}
-
 
 
 @media (orientation: portrait){
@@ -742,25 +761,6 @@ body{
     min-width: 140px;
     bottom: calc(2px + env(safe-area-inset-bottom));
   }
-
-  /* level 8 en 9, portrait: scanplek rechtsonder */
-  .scanPlaceWrapSK.scanPlaceBottomRightSK{
-    left: auto;
-    right: calc(14px + env(safe-area-inset-right));
-    transform: translateX(0) scale(1);
-    /* geen schuifanimatie als de class net iets later gezet wordt */
-    transition: opacity 140ms ease, transform 0ms linear;
-  }
-  .scanPlaceWrapSK.scanPlaceBottomRightSK.hidden{
-    transform: translateX(0) scale(0.94);
-  }
-  .scanPlaceWrapSK.scanPlaceBottomRightSK.pop{
-    animation: scanPopRightSK 320ms cubic-bezier(.22,61,35,1) 1;
-  }
-  .scanPlaceWrapSK.scanPlaceBottomRightSK.slideOutLeft{
-    animation: scanPlaceSlideOutUpRightSK 520ms cubic-bezier(.22,61,35,1) forwards;
-  }
-
 
   /* gescand cijfer: standaard gecentreerd (goed antwoord) */
   .scanDigitWrapSK{
@@ -1566,6 +1566,12 @@ function scheduleBoardHide(ms, token){
 
 function isPortrait(){ return window.matchMedia && window.matchMedia("(orientation: portrait)").matches; }
 
+
+function updateScanPlacePositionSK(){
+  if(!scanPlaceWrapSK) return;
+  const on = usesMarboticScan() && isPortrait();
+  scanPlaceWrapSK.classList.toggle("scanPlaceBottomRightSK", on);
+}
 /* level 2 tot en met 7 draaien om, level 8 en 9 draaien ook om (met marbotic) */
 function usesAnswerCards(){ return (LEVEL >= 2); }
 function timedAutoFlipLevels(){ return (LEVEL >= 3 && LEVEL <= 7); }
@@ -2509,19 +2515,12 @@ async function previewCardsNonBlocking(){
 }
 
 /* ========================= LEVEL 8 + 9: scan UI helpers ========================= */
-function updateScanPlacePositionSK(){
-  if(!scanPlaceWrapSK) return;
-  const on = (LEVEL >= 8) && isPortrait();
-  scanPlaceWrapSK.classList.toggle("scanPlaceBottomRightSK", on);
-}
-
 function setScanTwoTilesModeSK(on){
   if(!scanArea) return;
   scanArea.classList.toggle("twoTiles", !!on);
 }
 function showScanPlaceSK(pop){
   if(!scanPlaceWrapSK) return;
-  /* voorkom verspringen: zet positie altijd eerst goed voordat we hem tonen */
   updateScanPlacePositionSK();
   if(scanPlaceExitTimerSK){ clearTimeout(scanPlaceExitTimerSK); scanPlaceExitTimerSK = null; }
   scanPlaceWrapSK.classList.remove("slideOutLeft");
@@ -2595,7 +2594,6 @@ function showScanMarkSK(isCorrect){
 
 function enableScanUI(){
   if(scanOverlaySK) scanOverlaySK.classList.add("show");
-  updateScanPlacePositionSK();
   hideScanPlaceSK();
   hideScanMarkSK(true);
 }
@@ -2974,6 +2972,7 @@ let fitQueued = false;
 function scheduleFit(){
   if(fitQueued) return;
   fitQueued = true;
+  updateScanPlacePositionSK();
   requestAnimationFrame(() => { fitQueued = false; fitTimelineToQuestion(); });
 }
 function fitTimelineToQuestion(){
@@ -3382,7 +3381,6 @@ async function flashAndAsk(){
   if(usesMarboticScan()){
     answersEl.innerHTML = "";
     answersEl.classList.add("answersHidden");
-    updateScanPlacePositionSK();
     showScanPlaceSK(true);
     locked = false;
     return;
@@ -3881,7 +3879,6 @@ function onReflow(){
     hideScannedDigitSK(true);
     hideCorrectPreviewSK(true);
     hideScanMarkSK(true);
-    updateScanPlacePositionSK();
     if(usesMarboticScan()) hideScanPlaceSK();
     clearBoard();
     hideQuestionHeart();
