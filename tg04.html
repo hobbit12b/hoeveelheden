@@ -1331,7 +1331,7 @@ let streakBad = 0;
 
 /* flitstijd per level */
 const FLASH_KEY = "slim_kijken_flash_ms_by_level_v1";
-const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 300, 3: 300, 4: 350, 5: 300, 6: 400, 7: 950, 8: 800, 9: 600 };
+const DEFAULT_FLASH_BY_LEVEL = { 1: 900, 2: 850, 3: 400, 4: 350, 5: 300, 6: 950, 7: 900, 8: 800, 9: 600 };
 let flashMsByLevel = (() => {
   try{
     const raw = localStorage.getItem(FLASH_KEY);
@@ -1346,11 +1346,11 @@ let flashMsByLevel = (() => {
 /* migratie: alleen oude standaardwaarden bijwerken (laat eigen instellingen staan) */
 (function migrateLegacyFlash(){
   try{
-    const oldToNewFlash = { 4: { old: 300, neu: 350 }, 7: { old: 450, neu: 950 }, 8: { old: 500, neu: 800 }, 9: { old: 500, neu: 600 } };
+    const oldToNewFlash = { 2: { old: 300, neu: 850 }, 3: { old: 300, neu: 400 }, 4: { old: 300, neu: 350 }, 6: { old: 400, neu: 950 }, 7: { old: 450, neu: 900 }, 8: { old: 500, neu: 800 }, 9: { old: 500, neu: 600 } };
     for(const k in oldToNewFlash){
       const lvl = Number(k);
       const cur = Number(flashMsByLevel[lvl]);
-      if(Number.isFinite(cur) && cur === oldToNewFlash[k].old){ flashMsByLevel[lvl] = oldToNewFlash[k].neu; }
+      if(Number.isFinite(cur) && (cur === oldToNewFlash[k].old || (lvl===7 && cur===950))){ flashMsByLevel[lvl] = oldToNewFlash[k].neu; }
     }
     localStorage.setItem(FLASH_KEY, JSON.stringify(flashMsByLevel));
   }catch(e){}
