@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pak het juiste cijfer</title>
+
+<style>
+:root{
+  --bg-left:#fdeeea;
+  --brand:#e58c74;
+  --text:#6f6b68;
+  --card-radius:28px;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html,body{
+  height:100%;
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:#fff;
+  color:var(--text);
+  user-select:none;
+  overflow:hidden;
+}
+
+body{
+  display:grid;
+  grid-template-columns:58fr 42fr;
+}
+
+@media (orientation:portrait){
+  body{
+    grid-template-columns:1fr;
+    grid-template-rows:54fr 46fr;
+  }
+}
+
+.left{
+  background:var(--bg-left);
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.topbar{
+  display:flex;
+  gap:16px;
+  align-items:center;
+}
+
+.titlePill{
+  padding:18px 44px;
+  border-radius:22px;
+  background:var(--brand);
+  color:#fff;
+  font-weight:800;
+  font-size:28px;
+  flex:1;
+  text-align:center;
+}
+
+.content{
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.gameCard{
+  width:100%;
+  max-width:900px;
+  height:520px;
+  background:#fff;
+  border-radius:var(--card-radius);
+  border:4px dashed rgba(245,180,152,.85);
+}
+
+.scan-surface{
+  position:relative;
+  background:#fff;
+  border-left:6px dashed rgba(245,180,152,.85);
+}
+
+@media (orientation:portrait){
+  .scan-surface{
+    border-left:none;
+    border-top:6px dashed rgba(245,180,152,.85);
+  }
+}
+
+.scanOverlay{
+  position:absolute;
+  inset:0;
+}
+
+.scanImage{
+  width:140px;
+  position:absolute;
+}
+
+@media (orientation:landscape){
+  .scanImage{
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%);
+  }
+}
+
+@media (orientation:portrait){
+  .scanImage{
+    bottom:18px;
+    right:18px;
+  }
+}
+
+/* instellingen */
+.settingsPanel{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.3);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+}
+
+.settingsPanel.hidden{display:none}
+
+.settingsCard{
+  background:#fff;
+  border-radius:24px;
+  padding:24px;
+  width:min(520px,90vw);
+}
+
+.digitGrid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-top:20px;
+}
+
+.digitGrid label{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font-size:22px;
+  font-weight:800;
+}
+</style>
+</head>
+
+<body>
+
+<section class="left">
+  <div class="topbar">
+    <div class="titlePill">pak het juiste cijfer</div>
+  </div>
+  <div class="content">
+    <div class="gameCard"></div>
+  </div>
+</section>
+
+<section class="scan-surface">
+  <div class="scanOverlay">
+    <img src="marbotic_scan.png" class="scanImage" alt="">
+  </div>
+</section>
+
+<div class="settingsPanel hidden" id="settingsPanel">
+  <div class="settingsCard">
+    <h2>Instellingen</h2>
+    <p>Kies welke cijfers gebruikt mogen worden.</p>
+    <div class="digitGrid" id="digitGrid"></div>
+    <button onclick="closeSettings()">Sluit</button>
+  </div>
+</div>
+
+<script>
+const titlePill=document.querySelector('.titlePill');
+const settingsPanel=document.getElementById('settingsPanel');
+const digitGrid=document.getElementById('digitGrid');
+
+let pressTimer=null;
+let enabledDigits=new Set([0,1,2,3,4,5,6,7,8,9]);
+
+titlePill.addEventListener('touchstart',()=>{
+  pressTimer=setTimeout(openSettings,900);
+});
+titlePill.addEventListener('touchend',()=>clearTimeout(pressTimer));
+titlePill.addEventListener('touchcancel',()=>clearTimeout(pressTimer));
+
+function openSettings(){
+  settingsPanel.classList.remove('hidden');
+}
+function closeSettings(){
+  settingsPanel.classList.add('hidden');
+}
+
+function buildDigitGrid(){
+  for(let i=0;i<=9;i++){
+    const label=document.createElement('label');
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.checked=true;
+    cb.value=i;
+    cb.addEventListener('change',()=>{
+      if(cb.checked) enabledDigits.add(i);
+      else{
+        enabledDigits.delete(i);
+        if(enabledDigits.size===0){
+          cb.checked=true;
+          enabledDigits.add(i);
+        }
+      }
+    });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(i));
+    digitGrid.appendChild(label);
+  }
+}
+buildDigitGrid();
+</script>
+
+</body>
+</html>
