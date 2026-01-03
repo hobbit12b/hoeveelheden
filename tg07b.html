@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Tovergetallen</title>
+  <title>tovergetallen</title>
 
   <style>
     :root{
@@ -48,7 +48,13 @@
       --explosion-offset-x-base: 200px;
       --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+            --shadow: 0 16px 40px rgba(0,0,0,0.08);
+
+      /* Startknop positie, wordt ook opgeslagen op dit apparaat */
+      --start-left: 54%;
+      --start-top: 18%;
+      --start-scale: 0.47;
+
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -107,48 +113,61 @@
     }
 
     .topbar{
-      display:flex;
+display:flex;
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
+          position: relative;
+      z-index: 1300;
     }
 
-    
+    .topIconBtn{
+      appearance:none;
+      border:none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      cursor:pointer;
+      display:inline-block;
+      line-height: 0;
+      flex: 0 0 auto;
+    }
+    .topIconBtn:active{ transform: scale(0.99); }
+    .topIconBtn img{
+      height: 72px;
+      width: auto;
+      object-fit: contain;
+      display:block;
+    }
+    .topIconBtn:disabled img{
+      filter: grayscale(100%);
+      opacity: 0.25;
+    }
 
-    .iconBtn{
+.topIconBtn.isOff img{
+      filter: grayscale(100%);
+      opacity: 0.34;
+    }
+.tuneBtn{
       width:72px;
       height:72px;
       border-radius:18px;
-      background: transparent;
+      background: #f8c3b0;
       border: none;
-      padding: 0;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
       display:grid;
       place-items:center;
       cursor:pointer;
+      padding: 0;
       flex: 0 0 auto;
-      transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
-    
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
-}
-    .iconBtn:active{ transform: scale(0.97); }
-    
-    .iconBtn.is-pressed{ transform: scale(0.95); filter: brightness(0.92); }
-    .iconBtn.is-disabled{ filter: grayscale(1); opacity: 0.55; }
-.iconBtn img{
-      width: 72px;
-      height: 72px;
-      object-fit: contain;
-      display:block;
-      pointer-events:none;
-      user-select:none;
+      font-size: 30px;
+      line-height: 1;
     }
-    .iconBtn[aria-pressed="true"]{ filter: grayscale(1); opacity: 0.55; }
+    .tuneBtn:active{ transform: scale(0.98); }
 
-    .homeBtn{ box-shadow: none; }
-
-.titlePill{
+    .titlePill{
       padding: 18px 44px;
       border-radius: 22px;
       background: var(--brand);
@@ -159,8 +178,8 @@
       box-shadow: var(--shadow);
       line-height: 1;
       display:flex;
-      align-items:center;
-      justify-content:center;
+      align-items:flex-end;
+      justify-content:flex-end;
       min-height: 64px;
       width: min(660px, 100%);
     }
@@ -168,10 +187,15 @@
     .content{
       flex:1 1 auto;
       display:flex;
-      align-items:center;
-      justify-content:center;
+      align-items:flex-end;
+      justify-content:flex-end;
       padding: 10px 6px;
       min-height: 0;
+    }
+
+    /* content-landscape-raise */
+    @media (orientation: landscape){
+      .content{ padding: 10px 6px calc(70px * var(--scale)) 6px; }
     }
 
     .gameCard{
@@ -194,6 +218,30 @@
       inset: 0;
       border-radius: var(--card-radius);
       overflow: hidden;
+    }
+
+    .speakBtn{
+      position:absolute;
+      right: 14px;
+      top: 14px;
+      width: calc(108px * var(--scale));
+      height: calc(108px * var(--scale));
+      border-radius: 999px;
+      border: 4px solid rgba(245,180,152,0.95);
+      background: var(--bg-left);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      z-index: 60;
+      padding: 0;
+    }
+    .speakBtn:active{ transform: scale(0.98); }
+    .speakBtn img{
+      width: calc(62px * var(--scale));
+      height: calc(62px * var(--scale));
+      object-fit: contain;
+      display:block;
     }
 
     .stage{
@@ -294,69 +342,11 @@
     .scanOverlay{
       position:absolute;
       inset: 0;
-      padding: 0;
-      pointer-events:none;
-    }
-
-    .scanImage{
-      position:absolute;
-      width: 140px;
-      height: auto;
-      pointer-events:none;
-    }
-
-    @media (orientation: landscape){
-      .scanImage{
-        left: 50%;
-        bottom: 18px;
-        transform: translateX(-50%);
-      }
-    }
-
-    @media (orientation: portrait){
-      .scanImage{
-        right: 18px;
-        bottom: 18px;
-        transform: none;
-      }
-    }
-
-    .scanHidden{ display:none; }
-
-    .settingsIntro{
-      font-weight: 800;
-      font-size: 14px;
-      color: rgba(77,74,72,0.86);
-      margin: 4px 0 10px 0;
-      line-height: 1.3;
-    }
-
-    .digitGrid{
-      display:grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-      padding-top: 6px;
-    }
-
-    .digitGrid label{
       display:flex;
-      align-items:center;
-      justify-content:center;
-      gap: 10px;
-      background: rgba(253,238,234,0.55);
-      border: 2px solid rgba(245,180,152,0.65);
-      border-radius: 14px;
-      padding: 12px 10px;
-      font-weight: 900;
-      font-size: 20px;
-      color:#4d4a48;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-    }
-
-    .digitGrid input{
-      width: 22px;
-      height: 22px;
-      accent-color: var(--brand);
+      align-items:flex-end;
+      justify-content:flex-end;
+      padding: 28px;
+      pointer-events:none;
     }
 
     .scanUI{
@@ -422,7 +412,38 @@
       100%{ transform: translateX(0); }
     }
 
-    /* Timing paneel */
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.18);
+      z-index: 900;
+      overflow:hidden;
+    }
+
+    .startBtn{
+position:absolute;
+      left: var(--start-left, 50%);
+      top: var(--start-top, 60%);
+      transform: translate(-50%, -50%) scale(var(--start-scale, 0.83));
+      border:none;
+      background: transparent;
+      padding: 0;
+      cursor:pointer;
+      width: min(520px, 78vw);
+      border-radius: 22px;
+      overflow:hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+          pointer-events: auto;
+    }
+    .startBtn:active{
+      transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
+    }
+    .startBtn video{
+      width: 100%;
+      height: auto;
+      display:block;
+    }
+/* Timing paneel */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -491,6 +512,21 @@
       width: 100%;
     }
 
+    .tuneDivider{
+      height: 1px;
+      background: rgba(245,180,152,0.55);
+      margin: 12px 2px 10px 2px;
+    }
+
+    .tuneSection{
+      font-weight: 900;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      margin-top: 2px;
+      margin-bottom: 2px;
+      letter-spacing: 0.2px;
+    }
+
     .tuneButtons{
       display:flex;
       gap: 10px;
@@ -545,28 +581,140 @@
       opacity: 1;
       transform: translateY(0);
     }
+    /* Instellingen via lang indrukken op de titel */
+    .settingsOverlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(253,238,234,0.55);
+      backdrop-filter: blur(2px);
+      z-index: 2000;
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      padding: 18px;
+    }
+    .settingsOverlay.hidden{ display:none; }
+
+    .settingsPanel{
+      width: min(640px, 100%);
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      color: #4d4a48;
+    }
+
+    .settingsHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .settingsTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .settingsClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .settingsClose:active{ transform: scale(0.99); }
+
+    .settingsSection{
+      margin-top: 10px;
+    }
+    .settingsSectionTitle{
+      font-weight: 900;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      margin-bottom: 6px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .settingsSubTitle{
+      margin-top: 10px;
+      margin-bottom: 6px;
+      font-weight: 900;
+      font-size: 12px;
+      color: rgba(77,74,72,0.72);
+      text-transform: lowercase;
+    }
+    .settingsHint{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(77,74,72,0.68);
+      line-height: 1.35;
+    }
+
+    .digitGrid{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .digitToggle{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      border-radius: 14px;
+      border: 2px solid rgba(245,180,152,0.70);
+      background: rgba(253,238,234,0.55);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.08);
+      cursor:pointer;
+      padding: 10px 0;
+      user-select:none;
+    }
+    .digitToggle input{ display:none; }
+    .digitToggle span{
+      font-weight: 950;
+      font-size: 22px;
+      color: #4d4a48;
+      letter-spacing: 0.3px;
+    }
+    .digitToggle.isOff{
+      background: rgba(255,255,255,0.45);
+      border-color: rgba(0,0,0,0.10);
+      box-shadow: none;
+    }
+    .digitToggle.isOff span{
+      opacity: 0.35;
+    }
+    
   </style>
 </head>
 
 <body>
   <section class="left" aria-label="Spel">
     <div class="topbar">
-      <button class="homeBtn iconBtn" id="homeBtn" aria-label="Naar het menu">
+      <button class="topIconBtn homeBtn" id="homeBtn" aria-label="Naar het menu">
         <img src="homeknop.png" alt="Home" />
       </button>
-      <button class="musicBtn iconBtn" id="musicBtn" aria-label="Muziek">
-        <img src="muziekknop.png" alt="Muziek" />
+
+      <button class="topIconBtn musicBtn isOff" id="musicBtn" aria-label="Muziek">
+        <img id="musicIcon" src="muziekknop.png" alt="Muziek" />
       </button>
 
-      <button class="speakTopBtn iconBtn" id="speakBtn" aria-label="Nog een keer luisteren">
-        <img id="speakImg" src="praatknopuit.png" alt="Praat" />
+      <button class="topIconBtn speakTopBtn isOff" id="speakBtn" aria-label="Luister nog eens">
+        <img id="speakIcon" src="praatknopuit.png" alt="Praat" />
       </button>
-<div class="titlePill" id="titlePill" role="button" aria-label="Titel (houd langer vast voor instellingen)">tovergetallen</div>
-    </div>
+
+      <div class="titlePill" id="titlePill">tovergetallen</div>
+</div>
 
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Toverkaart">
-<div class="cardInner">
+<div class="badge" id="stateBadge" aria-hidden="true">still</div>
+
+        <div class="cardInner">
           <div class="stage" id="stage">
             <div id="explosionWrap" aria-hidden="true">
               <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
@@ -582,24 +730,83 @@
 
   <section class="scan-surface" id="scan-area" aria-label="Scanvak">
     <div class="scanOverlay">
-      <img src="marbotic_scanplek.png" class="scanImage" alt="" aria-hidden="true">
-      <div class="scanHidden" aria-hidden="true">
-        <div class="scanTitle" id="scan-title"></div>
-        <div class="scanSub" id="scan-sub"></div>
-        <div class="scanHint" id="scan-hint"></div>
+      <div class="scanUI">
+        <div class="miniTile" aria-hidden="true">
+          <div>1</div><div>2</div><div>3</div><div>4</div>
+        </div>
+
+        <div class="scanTitle" id="scan-title">Leg het houten cijfer in het vak.</div>
+        <div class="scanSub" id="scan-sub">Alle puntjes in het vak.</div>
+        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
       </div>
     </div>
   </section>
 
-  <div class="tunePanel hidden" id="settingsPanel" role="dialog" aria-modal="false" aria-label="Instellingen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="settingsClose" aria-label="Sluiten">Sluit</button>
-    </div>
-
-    <div class="settingsIntro">Kies welke cijfers gevraagd mogen worden.</div>
-    <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <button class="startBtn" id="startBtn" aria-label="Start">
+      <video id="startVid" src="startknop.mp4" muted autoplay loop playsinline preload="auto"></video>
+    </button>
   </div>
+
+  
+  <div class="settingsOverlay hidden" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Instellingen">
+    <div class="settingsPanel" role="document">
+      <div class="settingsHeader">
+        <div class="settingsTitle">instellingen</div>
+        <button class="settingsClose" id="settingsClose" aria-label="Sluiten">Sluit</button>
+      </div>
+
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">cijfers</div>
+        <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
+      </div>
+
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">startknop</div>
+
+        <div class="settingsSubTitle">iPad horizontaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="startLandScaleRange" min="0.30" max="1.30" step="0.01" value="0.47" />
+          <div class="tuneValue" id="startLandScaleValue">0.47</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="startLandXRange" min="-50" max="250" step="0.5" value="54" />
+          <div class="tuneValue" id="startLandXValue">54%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="startLandYRange" min="-20" max="120" step="0.5" value="18" />
+          <div class="tuneValue" id="startLandYValue">18%</div>
+        </div>
+
+        <div class="settingsSubTitle">iPad verticaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="startPortScaleRange" min="0.30" max="1.30" step="0.01" value="0.45" />
+          <div class="tuneValue" id="startPortScaleValue">0.45</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="startPortXRange" min="-50" max="250" step="0.5" value="70" />
+          <div class="tuneValue" id="startPortXValue">70%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="startPortYRange" min="-20" max="120" step="0.5" value="38" />
+          <div class="tuneValue" id="startPortYValue">38%</div>
+        </div>
+      </div>
+</div>
+  </div>
+
 
   <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
 
@@ -623,6 +830,40 @@
 
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
+
+    /* Instellingen: welke cijfers oefenen */
+    const DIGITS_KEY = 'tovergetallenDigitsV1';
+
+    function normalizeDigitList(list){
+      if (!Array.isArray(list)) return null;
+      const clean = Array.from(new Set(list.map(n => Number(n)).filter(n => Number.isFinite(n) && n >= 0 && n <= 9)))
+        .map(n => Math.round(n))
+        .filter(n => n >= 0 && n <= 9)
+        .sort((a,b) => a-b);
+      return clean.length ? clean : null;
+    }
+
+    function loadEnabledDigits(){
+      try{
+        const raw = localStorage.getItem(DIGITS_KEY);
+        if (!raw) return [...DIGIT_ORDER];
+        const obj = JSON.parse(raw);
+        const clean = normalizeDigitList(obj);
+        return clean ? clean : [...DIGIT_ORDER];
+      } catch(e){
+        return [...DIGIT_ORDER];
+      }
+    }
+
+    function saveEnabledDigits(list){
+      const clean = normalizeDigitList(list) || [...DIGIT_ORDER];
+      try{ localStorage.setItem(DIGITS_KEY, JSON.stringify(clean)); } catch(e){}
+      return clean;
+    }
+
+    let enabledDigits = loadEnabledDigits();
+
+
 
     const FAIRY_SRC = 'toverfee.mp4';
     const EXPLOSION_SRC = 'explosie.mp4';
@@ -670,138 +911,77 @@
     const explosionVid = document.getElementById('explosionVid');
 
     const speakBtn = document.getElementById('speakBtn');
-    
-    const speakImg = document.getElementById('speakImg');
-const homeBtn = document.getElementById('homeBtn');
+    const speakIcon = document.getElementById('speakIcon');
+    const homeBtn = document.getElementById('homeBtn');
 
-    
-
-    function wirePressFeedback(btn){
-      if (!btn) return;
-      const down = () => btn.classList.add('is-pressed');
-      const up = () => btn.classList.remove('is-pressed');
-
-      btn.addEventListener('pointerdown', down, { passive:true });
-      btn.addEventListener('pointerup', up, { passive:true });
-      btn.addEventListener('pointercancel', up, { passive:true });
-      btn.addEventListener('pointerleave', up, { passive:true });
-
-      // iOS fallback
-      btn.addEventListener('touchstart', down, { passive:true });
-      btn.addEventListener('touchend', up, { passive:true });
-      btn.addEventListener('touchcancel', up, { passive:true });
-    }
-
-    document.querySelectorAll('.iconBtn').forEach(wirePressFeedback);
-const scanArea = document.getElementById('scan-area');
+    const scanArea = document.getElementById('scan-area');
     const scanTitle = document.getElementById('scan-title');
     const scanSub = document.getElementById('scan-sub');
     const scanHint = document.getElementById('scan-hint');
-/* Instellingen: cijfers kiezen */
-    const SETTINGS_KEY = 'enabledDigitsV1';
+
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
+
     const titlePill = document.getElementById('titlePill');
-    const settingsPanel = document.getElementById('settingsPanel');
+    const settingsOverlay = document.getElementById('settingsOverlay');
     const settingsClose = document.getElementById('settingsClose');
     const digitGrid = document.getElementById('digitGrid');
 
-    function loadEnabledDigits(){
-      try{
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return new Set([0,1,2,3,4,5,6,7,8,9]);
-        const arr = JSON.parse(raw);
-        const s = new Set((Array.isArray(arr) ? arr : [])
-          .map(n => Number(n))
-          .filter(n => Number.isFinite(n) && n >= 0 && n <= 9)
-        );
-        if (s.size === 0) return new Set([0,1,2,3,4,5,6,7,8,9]);
-        return s;
-      } catch(e){
-        return new Set([0,1,2,3,4,5,6,7,8,9]);
-      }
+
+
+    const stateBadge = document.getElementById('stateBadge');
+
+    /* Timing paneel UI */
+    const tuneBtn = document.getElementById('tuneBtn');
+    const tunePanel = document.getElementById('tunePanel');
+    const tuneClose = document.getElementById('tuneClose');
+
+    const scrubRange = document.getElementById('scrubRange');
+    const scrubValue = document.getElementById('scrubValue');
+
+    const noStartRange = document.getElementById('noStartRange');
+    const noEndRange = document.getElementById('noEndRange');
+    const yesStartRange = document.getElementById('yesStartRange');
+    const yesEndRange = document.getElementById('yesEndRange');
+
+    const noStartValue = document.getElementById('noStartValue');
+    const noEndValue = document.getElementById('noEndValue');
+    const yesStartValue = document.getElementById('yesStartValue');
+    const yesEndValue = document.getElementById('yesEndValue');
+
+    const setNoStartHereBtn = document.getElementById('setNoStartHereBtn');
+    const setNoEndHereBtn = document.getElementById('setNoEndHereBtn');
+    const setYesStartHereBtn = document.getElementById('setYesStartHereBtn');
+    const setYesEndHereBtn = document.getElementById('setYesEndHereBtn');
+
+    const testWrongBtn = document.getElementById('testWrongBtn');
+    const testGoodBtn = document.getElementById('testGoodBtn');
+    const toIdleBtn = document.getElementById('toIdleBtn');
+
+    const resetAllBtn = document.getElementById('resetAllBtn');
+
+    const startLandScaleRange = document.getElementById('startLandScaleRange');
+    const startLandXRange = document.getElementById('startLandXRange');
+    const startLandYRange = document.getElementById('startLandYRange');
+
+    const startPortScaleRange = document.getElementById('startPortScaleRange');
+    const startPortXRange = document.getElementById('startPortXRange');
+    const startPortYRange = document.getElementById('startPortYRange');
+
+    const startLandScaleValue = document.getElementById('startLandScaleValue');
+    const startLandXValue = document.getElementById('startLandXValue');
+    const startLandYValue = document.getElementById('startLandYValue');
+
+    const startPortScaleValue = document.getElementById('startPortScaleValue');
+    const startPortXValue = document.getElementById('startPortXValue');
+    const startPortYValue = document.getElementById('startPortYValue');
+
+    function badge(text, show){
+      if (!stateBadge) return;
+      stateBadge.textContent = text;
+      if (show) stateBadge.classList.add('show');
+      else stateBadge.classList.remove('show');
     }
-
-    function saveEnabledDigits(set){
-      try{
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(Array.from(set).sort((a,b)=>a-b)));
-      } catch(e){}
-    }
-
-    let enabledDigits = loadEnabledDigits();
-
-    function buildDigitGrid(){
-      if (!digitGrid) return;
-      digitGrid.innerHTML = '';
-      for (let d = 0; d <= 9; d++){
-        const label = document.createElement('label');
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.value = String(d);
-        cb.checked = enabledDigits.has(d);
-
-        cb.addEventListener('change', () => {
-          if (cb.checked) enabledDigits.add(d);
-          else enabledDigits.delete(d);
-
-          if (enabledDigits.size === 0){
-            cb.checked = true;
-            enabledDigits.add(d);
-          }
-          saveEnabledDigits(enabledDigits);
-        });
-
-        const span = document.createElement('span');
-        span.textContent = String(d);
-
-        label.appendChild(cb);
-        label.appendChild(span);
-        digitGrid.appendChild(label);
-      }
-    }
-
-    function openSettings(){
-      if (!settingsPanel) return;
-      buildDigitGrid();
-      settingsPanel.classList.remove('hidden');
-    }
-
-    function closeSettings(){
-      if (!settingsPanel) return;
-      settingsPanel.classList.add('hidden');
-    }
-
-    if (settingsClose) settingsClose.addEventListener('click', closeSettings);
-
-    // Lang indrukken op de titel om instellingen te openen
-    let pressTimer = null;
-    const PRESS_MS = 900;
-
-    function startPressTimer(){
-      clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => {
-        openSettings();
-      }, PRESS_MS);
-    }
-
-    function clearPressTimer(){
-      clearTimeout(pressTimer);
-      pressTimer = null;
-    }
-
-    if (titlePill){
-      titlePill.addEventListener('touchstart', () => startPressTimer(), { passive:true });
-      titlePill.addEventListener('touchend', () => clearPressTimer(), { passive:true });
-      titlePill.addEventListener('touchcancel', () => clearPressTimer(), { passive:true });
-
-      // ook handig voor desktop testen
-      titlePill.addEventListener('mousedown', () => startPressTimer());
-      window.addEventListener('mouseup', () => clearPressTimer());
-      window.addEventListener('blur', () => clearPressTimer());
-    }
-
-
-    
-    function badge(){ /* badge verwijderd */ }
 
     function setAutoScale(){
       if (!gameCard) return;
@@ -820,7 +1000,7 @@ const scanArea = document.getElementById('scan-area');
     }
 
     window.addEventListener('resize', setAutoScale);
-    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
+    window.addEventListener('orientationchange', () => setTimeout(() => { setAutoScale(); applyStartLayoutToCSS(); }, 90));
 
     function getVarMillis(name, fallbackMs){
       const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -871,44 +1051,70 @@ const scanArea = document.getElementById('scan-area');
       return a;
     });
 
-    let currentVoice = null;
+    
 
-    const SPEAK_IMG_ON = 'praatknopaan.png';
-    const SPEAK_IMG_OFF = 'praatknopuit.png';
+    const voiceOkQuestion = Array(10).fill(true);
+    const voiceOkReveal = Array(10).fill(true);
 
-    function isVoicePlaying(){
-      return !!(currentVoice && !currentVoice.paused && currentVoice.currentTime > 0);
-    }
+    questionVoices.forEach((a, i) => {
+      a.addEventListener('error', () => { voiceOkQuestion[i] = false; });
+    });
+    revealVoices.forEach((a, i) => {
+      a.addEventListener('error', () => { voiceOkReveal[i] = false; });
+    });
 
-    function updateSpeakBtn(){
-      if (!speakBtn || !speakImg) return;
-
-      const playing = isVoicePlaying();
-
-      // jij vroeg: als stem hoorbaar is, praatknopaan. Als hij klaar is, praatknopuit (grijs)
-      speakImg.src = playing ? SPEAK_IMG_ON : SPEAK_IMG_OFF;
-
-      if (playing){
-        speakBtn.classList.remove('is-disabled');
-        speakBtn.setAttribute('aria-pressed','false');
-      } else {
-        speakBtn.classList.add('is-disabled');
-        speakBtn.setAttribute('aria-pressed','true');  // hergebruikt je grijs stijl, net als muziekknop
+    function setSpeakAvailability(canPlay){
+      if (!speakBtn) return;
+      speakBtn.disabled = !canPlay;
+      if (!canPlay){
+        if (speakIcon) speakIcon.src = 'praatknopuit.png';
+        speakBtn.classList.add('isOff');
       }
     }
 
+let currentVoice = null;
+    let voiceCleanup = null;
 
+    function setSpeakVisual(isPlaying){
+      if (!speakBtn || !speakIcon) return;
+      speakIcon.src = isPlaying ? 'praatknopaan.png' : 'praatknopuit.png';
+      speakBtn.classList.toggle('isOff', !isPlaying);
+    }
+
+    function attachVoiceUI(a){
+      if (!a) return () => {};
+
+      const onPlay = () => setSpeakVisual(true);
+      const onEnded = () => { if (a === currentVoice) setSpeakVisual(false);
+      setSpeakAvailability(false); };
+      const onPause = () => { if (a === currentVoice) setSpeakVisual(false); };
+      const onError = () => { if (a === currentVoice) setSpeakVisual(false); };
+
+      a.addEventListener('playing', onPlay);
+      a.addEventListener('ended', onEnded);
+      a.addEventListener('pause', onPause);
+      a.addEventListener('error', onError);
+
+      return () => {
+        a.removeEventListener('playing', onPlay);
+        a.removeEventListener('ended', onEnded);
+        a.removeEventListener('pause', onPause);
+        a.removeEventListener('error', onError);
+      };
+    }
 
     function stopVoice(){
       if (!currentVoice) return;
       try { currentVoice.pause(); } catch(e) {}
       try { currentVoice.currentTime = 0; } catch(e) {}
+      if (voiceCleanup){ voiceCleanup(); voiceCleanup = null; }
       currentVoice = null;
-          updateSpeakBtn();
+      setSpeakVisual(false);
     }
 
     function playVoice(a){
-      if (!a) return;
+      if (!a) { setSpeakVisual(false); return; }
+
       try{
         if (currentVoice && currentVoice !== a){
           currentVoice.pause();
@@ -916,41 +1122,77 @@ const scanArea = document.getElementById('scan-area');
         }
       } catch(e){}
 
+      if (voiceCleanup){ voiceCleanup(); voiceCleanup = null; }
       currentVoice = a;
+      voiceCleanup = attachVoiceUI(a);
 
-      a.onended = () => { updateSpeakBtn(); };
-      a.onpause = () => { updateSpeakBtn(); };
+      setSpeakVisual(false);
 
       try{
         a.currentTime = 0;
         const p = a.play();
-        updateSpeakBtn();
-        if (p && typeof p.catch === 'function') p.catch(() => { updateSpeakBtn(); });
+        if (p && typeof p.catch === 'function') p.catch(() => { setSpeakVisual(false); });
       } catch(e){
-        updateSpeakBtn();
+        setSpeakVisual(false);
       }
     }
 
-
-function askDigit(digit){
+    function askDigit(digit){
       const a = questionVoices[digit];
+
+      const ok = !!a && (voiceOkQuestion[digit] !== false);
+      setSpeakAvailability(ok);
+
+      if (!ok){
+        stopVoice();
+        setSpeakVisual(false);
+        return;
+      }
       playVoice(a);
     }
+
 
     function sayReveal(digit){
       const a = revealVoices[digit];
+
+      const ok = !!a && (voiceOkReveal[digit] !== false);
+      setSpeakAvailability(ok);
+
+      if (!ok){
+        stopVoice();
+        setSpeakVisual(false);
+        return;
+      }
       playVoice(a);
     }
+
 
     /* Achtergrondmuziek */
     const bgMusic = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicBtn');
+    const musicIcon = document.getElementById('musicIcon');
+
     let bgMusicMuted = false;
+    let musicAvailable = true;
+
+    function musicIsAudible(){
+      if (!bgMusic) return false;
+      if (!started) return false;
+      if (!musicAvailable) return false;
+      if (bgMusicMuted) return false;
+      return !bgMusic.paused;
+    }
 
     function updateMusicBtn(){
       if (!musicBtn) return;
-      musicBtn.setAttribute('aria-pressed', bgMusicMuted ? 'true' : 'false');
-      musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+      const audible = musicIsAudible();
+      musicBtn.classList.toggle('isOff', !audible);
+
+      if (!musicAvailable) {
+        musicBtn.setAttribute('aria-label', 'Geen muziek');
+      } else {
+        musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+      }
     }
 
     function startBackgroundMusic(){
@@ -959,30 +1201,55 @@ function askDigit(digit){
       bgMusic.loop = true;
       bgMusic.volume = 0.25;
 
-      if (bgMusicMuted){
+      if (!musicAvailable || bgMusicMuted){
         try { bgMusic.pause(); } catch(e) {}
+        updateMusicBtn();
         return;
       }
 
       try{
         const p = bgMusic.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
+        if (p && typeof p.then === 'function'){
+          p.then(() => updateMusicBtn()).catch(() => updateMusicBtn());
+        } else {
+          updateMusicBtn();
+        }
+      } catch(e){
+        updateMusicBtn();
+      }
     }
 
     function toggleBackgroundMusic(){
+      if (!musicAvailable) return;
+
       bgMusicMuted = !bgMusicMuted;
+
       if (bgMusicMuted){
         try { bgMusic.pause(); } catch(e) {}
       } else {
         startBackgroundMusic();
       }
+
       updateMusicBtn();
-      updateSpeakBtn();
+    }
+
+    if (bgMusic){
+      bgMusic.addEventListener('error', () => {
+        musicAvailable = false;
+        bgMusicMuted = true;
+        updateMusicBtn();
+      });
+
+      bgMusic.addEventListener('canplay', () => {
+        musicAvailable = true;
+        updateMusicBtn();
+      });
+
+      bgMusic.addEventListener('play', updateMusicBtn);
+      bgMusic.addEventListener('pause', updateMusicBtn);
     }
 
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
-    updateMusicBtn();
 
     /* Toverfee timing */
     const TIMING_KEY = 'fairyTimingV3';
@@ -1009,8 +1276,229 @@ function askDigit(digit){
     }
 
     let fairyTiming = loadTiming();
+    /* Startknop layout */
+    const START_LAYOUT_KEY = 'startBtnLayoutV2';
 
-    function setFairySourceOnce(){
+    const DEFAULT_START_LAYOUT = {
+      landScale: 0.47,
+      landX: 54,
+      landY: 18,
+      portScale: 0.45,
+      portX: 70,
+      portY: 38
+    };
+
+    function loadStartLayout(){
+      try{
+        const raw = localStorage.getItem(START_LAYOUT_KEY);
+        if (!raw) return { ...DEFAULT_START_LAYOUT };
+        const obj = JSON.parse(raw);
+        return {
+          landScale: Number(obj.landScale ?? DEFAULT_START_LAYOUT.landScale),
+          landX: Number(obj.landX ?? DEFAULT_START_LAYOUT.landX),
+          landY: Number(obj.landY ?? DEFAULT_START_LAYOUT.landY),
+          portScale: Number(obj.portScale ?? DEFAULT_START_LAYOUT.portScale),
+          portX: Number(obj.portX ?? DEFAULT_START_LAYOUT.portX),
+          portY: Number(obj.portY ?? DEFAULT_START_LAYOUT.portY)
+        };
+      } catch(e){
+        return { ...DEFAULT_START_LAYOUT };
+      }
+    }
+
+    function saveStartLayout(l){
+      try { localStorage.setItem(START_LAYOUT_KEY, JSON.stringify(l)); } catch(e) {}
+    }
+
+    let startLayout = loadStartLayout();
+
+    function fmtPct(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return '0%';
+      return v.toFixed(1).replace('.0','') + '%';
+    }
+
+    function fmtScale(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return '0.80';
+      return v.toFixed(2);
+    }
+
+    function applyStartLayoutToCSS(){
+      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+      const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
+      const x = isPortrait ? startLayout.portX : startLayout.landX;
+      const y = isPortrait ? startLayout.portY : startLayout.landY;
+
+      document.documentElement.style.setProperty('--start-scale', String(clamp(scale, 0.25, 2)));
+      document.documentElement.style.setProperty('--start-left', String(clamp(x, -50, 250)) + '%');
+      document.documentElement.style.setProperty('--start-top', String(clamp(y, -50, 250)) + '%');
+    }
+
+    function syncStartLayoutUI(){
+      if (startLandScaleRange) startLandScaleRange.value = String(startLayout.landScale);
+      if (startLandXRange) startLandXRange.value = String(startLayout.landX);
+      if (startLandYRange) startLandYRange.value = String(startLayout.landY);
+
+      if (startPortScaleRange) startPortScaleRange.value = String(startLayout.portScale);
+      if (startPortXRange) startPortXRange.value = String(startLayout.portX);
+      if (startPortYRange) startPortYRange.value = String(startLayout.portY);
+
+      if (startLandScaleValue) startLandScaleValue.textContent = fmtScale(startLayout.landScale);
+      if (startLandXValue) startLandXValue.textContent = fmtPct(startLayout.landX);
+      if (startLandYValue) startLandYValue.textContent = fmtPct(startLayout.landY);
+
+      if (startPortScaleValue) startPortScaleValue.textContent = fmtScale(startLayout.portScale);
+      if (startPortXValue) startPortXValue.textContent = fmtPct(startLayout.portX);
+      if (startPortYValue) startPortYValue.textContent = fmtPct(startLayout.portY);
+    }
+
+    function applyStartLayoutChange(){
+      if (startLandScaleRange) startLayout.landScale = clamp(startLandScaleRange.value, 0.30, 1.30);
+      if (startLandXRange) startLayout.landX = clamp(startLandXRange.value, -50, 250);
+      if (startLandYRange) startLayout.landY = clamp(startLandYRange.value, -20, 120);
+
+      if (startPortScaleRange) startLayout.portScale = clamp(startPortScaleRange.value, 0.30, 1.30);
+      if (startPortXRange) startLayout.portX = clamp(startPortXRange.value, -50, 250);
+      if (startPortYRange) startLayout.portY = clamp(startPortYRange.value, -20, 120);
+
+      saveStartLayout(startLayout);
+      syncStartLayoutUI();
+      applyStartLayoutToCSS();
+    }
+
+    [startLandScaleRange, startLandXRange, startLandYRange, startPortScaleRange, startPortXRange, startPortYRange].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', applyStartLayoutChange);
+    });
+
+
+    
+
+    /* Instellingen openen door lang op de titel te drukken */
+    function openSettings(){
+      if (!settingsOverlay) return;
+      settingsOverlay.classList.remove('hidden');
+      syncDigitGrid();
+      syncStartLayoutUI();
+    }
+
+    function closeSettings(){
+      if (!settingsOverlay) return;
+      settingsOverlay.classList.add('hidden');
+
+      // als je tijdens het spel een cijfer uitzet dat nu aan de beurt is, dan pakken we meteen een nieuw cijfer
+      if (started && Array.isArray(enabledDigits) && enabledDigits.length && !enabledDigits.includes(targetDigit)){
+        chooseNextDigit();
+        askDigit(targetDigit);
+      }
+    }
+
+    function syncDigitGrid(){
+      if (!digitGrid) return;
+      digitGrid.querySelectorAll('.digitToggle').forEach(label => {
+        const input = label.querySelector('input');
+        if (!input) return;
+        label.classList.toggle('isOff', !input.checked);
+      });
+    }
+
+    function buildDigitGrid(){
+      if (!digitGrid) return;
+      digitGrid.innerHTML = '';
+
+      for (let d = 0; d <= 9; d++){
+        const label = document.createElement('label');
+        label.className = 'digitToggle';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.dataset.digit = String(d);
+        input.checked = enabledDigits.includes(d);
+
+        const span = document.createElement('span');
+        span.textContent = String(d);
+
+        input.addEventListener('change', () => {
+          const digit = Number(input.dataset.digit);
+          let next = Array.isArray(enabledDigits) ? enabledDigits.slice() : [];
+
+          if (input.checked){
+            if (!next.includes(digit)) next.push(digit);
+          } else {
+            next = next.filter(x => x !== digit);
+          }
+
+          // altijd minimaal één cijfer
+          if (!next.length){
+            input.checked = true;
+            next = [digit];
+          }
+
+          enabledDigits = saveEnabledDigits(next);
+          syncDigitGrid();
+        });
+
+        label.appendChild(input);
+        label.appendChild(span);
+        digitGrid.appendChild(label);
+      }
+
+      syncDigitGrid();
+    }
+
+    function initSettingsUI(){
+      if (!settingsOverlay || !digitGrid) return;
+
+      if (settingsClose){
+        settingsClose.addEventListener('click', closeSettings);
+      }
+
+      settingsOverlay.addEventListener('pointerdown', (e) => {
+        if (e.target === settingsOverlay) closeSettings();
+      });
+
+      buildDigitGrid();
+
+      if (!titlePill) return;
+
+      let pressTimer = null;
+      let startX = 0;
+      let startY = 0;
+
+      const cancel = () => {
+        if (pressTimer){
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      };
+
+      titlePill.addEventListener('pointerdown', (e) => {
+        cancel();
+        startX = e.clientX;
+        startY = e.clientY;
+
+        pressTimer = setTimeout(() => {
+          pressTimer = null;
+          openSettings();
+          try { if (navigator.vibrate) navigator.vibrate(12); } catch(e){}
+        }, 650);
+      });
+
+      titlePill.addEventListener('pointermove', (e) => {
+        if (!pressTimer) return;
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
+        if (dx > 10 || dy > 10) cancel();
+      });
+
+      ['pointerup','pointercancel','pointerleave'].forEach(type => {
+        titlePill.addEventListener(type, cancel);
+      });
+    }
+
+function setFairySourceOnce(){
       try{
         if (fairyVid.src && fairyVid.src.includes(FAIRY_SRC)) return;
       } catch(e){}
@@ -1052,12 +1540,16 @@ function askDigit(digit){
 
       fairyVid.loop = false;
       fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
-const finish = () => {
+
+      if (labelText) badge(labelText, true);
+
+      const finish = () => {
         stopSegmentWatcher();
         fairyVid.removeEventListener('ended', finish);
         try { fairyVid.pause(); } catch(e) {}
         snapToIdle();
-if (typeof onDone === 'function') onDone();
+        badge('', false);
+        if (typeof onDone === 'function') onDone();
       };
 
       const beginPlay = () => {
@@ -1437,19 +1929,27 @@ if (typeof onDone === 'function') onDone();
     }
 
     function chooseNextDigit(){
-      const list = Array.from(enabledDigits);
-      if (list.length === 0){
-        targetDigit = 0;
+      const prev = targetDigit;
+
+      const pool = (Array.isArray(enabledDigits) && enabledDigits.length) ? enabledDigits : DIGIT_ORDER;
+
+      if (pool.length === 1){
+        targetDigit = pool[0];
         return;
       }
 
-      const prev = targetDigit;
-      let next = list[Math.floor(Math.random() * list.length)];
-      if (next === prev && list.length > 1){
-        next = list.find(d => d !== prev);
+      let next = pool[Math.floor(Math.random() * pool.length)];
+      if (next === prev){
+        // probeer nog één keer, daarna pakken we de volgende in de lijst
+        next = pool[Math.floor(Math.random() * pool.length)];
+        if (next === prev){
+          const i = pool.indexOf(prev);
+          next = pool[(i >= 0 ? i + 1 : 0) % pool.length];
+        }
       }
       targetDigit = next;
     }
+
 
     function clearDigitAndExplosion(){
       clearExplosionTimers();
@@ -1486,19 +1986,19 @@ if (typeof onDone === 'function') onDone();
       clearDigitAndExplosion();
       showDigit(digit);
       scheduleExplosionFlow();
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, '', onFairyDone);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed', onFairyDone);
       return estimateExplosionTotalMs();
     }
 
     function playWrongAnimation(onDone){
       clearDigitAndExplosion();
-      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, '', onDone);
+      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, 'fout', onDone);
     }
 
     function playRevealAnimation(digit, onDone){
       clearDigitAndExplosion();
       showDigit(digit);
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, '', onDone);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'kijk', onDone);
     }
 
     function nextRound(){
@@ -1525,7 +2025,7 @@ if (typeof onDone === 'function') onDone();
 
       locked = true;
 
-      scanTitle.textContent = '';
+      scanTitle.textContent = 'Kijk goed.';
       scanSub.textContent = 'Zo ziet het juiste cijfer eruit.';
       scanHint.textContent = '';
 
@@ -1546,7 +2046,7 @@ if (typeof onDone === 'function') onDone();
         const myToken = ++roundToken;
         locked = true;
 
-        scanTitle.textContent = '';
+        scanTitle.textContent = 'Goed gedaan.';
         scanSub.textContent = '';
         scanHint.textContent = '';
 
@@ -1641,11 +2141,140 @@ if (typeof onDone === 'function') onDone();
       scanArea.addEventListener(type, handleTouchEvent, { passive: true });
     });
 
-    /* Instellingen */
+    /* Timing paneel logica */
+    let tuneRAF = null;
 
+    function stopTuneLoop(){
+      if (tuneRAF){ cancelAnimationFrame(tuneRAF); tuneRAF = null; }
+    }
+
+    function setTuneRangesMax(maxSec){
+      const maxV = Math.max(1, Number(maxSec) || 10);
+      [scrubRange, noStartRange, noEndRange, yesStartRange, yesEndRange].forEach(el => {
+        if (!el) return;
+        el.max = String(maxV);
+      });
+    }
+
+    function syncTimingUI(){
+      noStartRange.value = String(fairyTiming.noStart);
+      noEndRange.value = String(fairyTiming.noEnd);
+      yesStartRange.value = String(fairyTiming.yesStart);
+      yesEndRange.value = String(fairyTiming.yesEnd);
+
+      noStartValue.textContent = fmtSec(fairyTiming.noStart);
+      noEndValue.textContent = fmtSec(fairyTiming.noEnd);
+      yesStartValue.textContent = fmtSec(fairyTiming.yesStart);
+      yesEndValue.textContent = fmtSec(fairyTiming.yesEnd);
+    }
+
+    function openTunePanel(){
+      tunePanel.classList.remove('hidden');
+      syncTimingUI();
+      syncStartLayoutUI();
+
+      const loop = () => {
+        const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
+        scrubRange.value = String(t);
+        scrubValue.textContent = fmtSec(t);
+        tuneRAF = requestAnimationFrame(loop);
+      };
+      stopTuneLoop();
+      loop();
+    }
+
+    function closeTunePanel(){
+      tunePanel.classList.add('hidden');
+      stopTuneLoop();
+    }
+
+    function applyTimingChange(){
+      const dur = Number.isFinite(fairyVid.duration) ? fairyVid.duration : 9999;
+
+      fairyTiming.noStart = clamp(noStartRange.value, 0, dur);
+      fairyTiming.noEnd = clamp(noEndRange.value, 0, dur);
+      fairyTiming.yesStart = clamp(yesStartRange.value, 0, dur);
+      fairyTiming.yesEnd = clamp(yesEndRange.value, 0, dur);
+
+      if (fairyTiming.noEnd < fairyTiming.noStart) fairyTiming.noEnd = fairyTiming.noStart;
+      if (fairyTiming.yesEnd < fairyTiming.yesStart) fairyTiming.yesEnd = fairyTiming.yesStart;
+
+      saveTiming(fairyTiming);
+      syncTimingUI();
+      syncStartLayoutUI();
+    }
+
+    if (tuneBtn) tuneBtn.addEventListener('click', () => {
+      if (tunePanel.classList.contains('hidden')) openTunePanel();
+      else closeTunePanel();
+    });
+    if (tuneClose) tuneClose.addEventListener('click', closeTunePanel);
+
+    if (scrubRange) scrubRange.addEventListener('input', () => {
+      try { fairyVid.currentTime = Number(scrubRange.value) || 0; } catch(e) {}
+    });
+
+    [noStartRange, noEndRange, yesStartRange, yesEndRange].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', applyTimingChange);
+    });
+
+    function setFieldToCurrent(which){
+      const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
+      if (which === 'noStart') noStartRange.value = String(t);
+      if (which === 'noEnd') noEndRange.value = String(t);
+      if (which === 'yesStart') yesStartRange.value = String(t);
+      if (which === 'yesEnd') yesEndRange.value = String(t);
+      applyTimingChange();
+    }
+
+    if (setNoStartHereBtn) setNoStartHereBtn.addEventListener('click', () => setFieldToCurrent('noStart'));
+    if (setNoEndHereBtn) setNoEndHereBtn.addEventListener('click', () => setFieldToCurrent('noEnd'));
+    if (setYesStartHereBtn) setYesStartHereBtn.addEventListener('click', () => setFieldToCurrent('yesStart'));
+    if (setYesEndHereBtn) setYesEndHereBtn.addEventListener('click', () => setFieldToCurrent('yesEnd'));
+
+    if (testWrongBtn) testWrongBtn.addEventListener('click', () => playWrongAnimation());
+    if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed'));
+    if (toIdleBtn) toIdleBtn.addEventListener('click', () => { stopSegmentWatcher(); backToIdleFairy(); });
+
+    function resetAllSettings(){
+      fairyTiming = { ...DEFAULT_TIMING };
+      saveTiming(fairyTiming);
+      syncTimingUI();
+
+      startLayout = { ...DEFAULT_START_LAYOUT };
+      saveStartLayout(startLayout);
+      syncStartLayoutUI();
+      applyStartLayoutToCSS();
+
+      stopSegmentWatcher();
+      backToIdleFairy();
+    }
+
+    if (resetAllBtn) resetAllBtn.addEventListener('click', resetAllSettings);
+
+    fairyVid.addEventListener('loadedmetadata', () => {
+      const dur = Number.isFinite(fairyVid.duration) ? fairyVid.duration : 10;
+      setTuneRangesMax(dur);
+
+      fairyTiming.noStart = clamp(fairyTiming.noStart, 0, dur);
+      fairyTiming.noEnd = clamp(fairyTiming.noEnd, 0, dur);
+      fairyTiming.yesStart = clamp(fairyTiming.yesStart, 0, dur);
+      fairyTiming.yesEnd = clamp(fairyTiming.yesEnd, 0, dur);
+
+      if (fairyTiming.noEnd < fairyTiming.noStart) fairyTiming.noEnd = fairyTiming.noStart;
+      if (fairyTiming.yesEnd < fairyTiming.yesStart) fairyTiming.yesEnd = fairyTiming.yesStart;
+
+      saveTiming(fairyTiming);
+      syncTimingUI();
+      syncStartLayoutUI();
+    });
+
+    /* Start */
     function startGame(){
       if (started) return;
       started = true;
+      startOverlay.style.display = 'none';
 
       startBackgroundMusic();
 
@@ -1664,13 +2293,13 @@ if (typeof onDone === 'function') onDone();
       nextRound();
     }
 
-    // Spreekknop: korte tik speelt opnieuw af (status wisselt automatisch via updateSpeakBtn)
-    speakBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (!started) startGame();
+    speakBtn.addEventListener('click', () => {
+      if (!started) return;
+      if (speakBtn.disabled) return;
       askDigit(targetDigit);
-      updateSpeakBtn();
     });
+
+startBtn.addEventListener('click', startGame);
 
     homeBtn.addEventListener('click', () => {
       try { window.location.href = 'index.html'; } catch (e) {}
@@ -1678,6 +2307,11 @@ if (typeof onDone === 'function') onDone();
 
     window.addEventListener('load', () => {
       setAutoScale();
+      applyStartLayoutToCSS();
+      syncStartLayoutUI();
+      initSettingsUI();
+      updateMusicBtn();
+      setSpeakVisual(false);
 
       showFirstFrame();
       prepareExplosion();
@@ -1692,22 +2326,7 @@ if (typeof onDone === 'function') onDone();
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-
-      // Start meteen
-      startGame();
     });
-  
-    // iOS/iPadOS: audio moet gestart worden na een user gesture
-    function primeAudioForIOS(){
-      try{
-        if (musicOn && bgm && bgm.paused){
-          const p = bgm.play();
-          if (p && typeof p.catch === 'function') p.catch(()=>{});
-        }
-      }catch(e){}
-    }
-    document.addEventListener('pointerdown', primeAudioForIOS, { passive:true, once:true });
-
-</script>
+  </script>
 </body>
 </html>
