@@ -577,6 +577,12 @@ body{
   60%{ transform: translateX(-50%) scale(1.06); opacity: 1; }
   100%{ transform: translateX(-50%) scale(1); opacity: 1; }
 }
+
+@keyframes scanPopRightSK{
+  0%{ transform: translateX(0) scale(0.75); opacity: 0; }
+  60%{ transform: translateX(0) scale(1.06); opacity: 1; }
+  100%{ transform: translateX(0) scale(1); opacity: 1; }
+}
 .scanPlaceImgSK{
   width: 100%;
   height: auto;
@@ -720,16 +726,39 @@ body{
   100%{ transform: translateX(-50%) translateY(-520%) scale(0.96); opacity: 0; }
 }
 
+@keyframes scanPlaceSlideOutUpRightSK{
+  0%{ transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+  70%{ transform: translateX(0) translateY(-320%) scale(0.98); opacity: 0.72; }
+  100%{ transform: translateX(0) translateY(-520%) scale(0.96); opacity: 0; }
+}
+
 
 
 @media (orientation: portrait){
   /* scanplek (marbotic_scanplek.png): zelfde formaat als liggend, iets lager */
   .scanPlaceWrapSK{
-    width: 33%;
+    width: 20%;
     max-width: 260px;
     min-width: 140px;
-    bottom: calc(4px + env(safe-area-inset-bottom));
+    bottom: calc(2px + env(safe-area-inset-bottom));
   }
+
+  /* level 8 en 9, portrait: scanplek rechtsonder */
+  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK{
+    left: auto;
+    right: calc(14px + env(safe-area-inset-right));
+    transform: translateX(0) scale(1);
+  }
+  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK.hidden{
+    transform: translateX(0) scale(0.94);
+  }
+  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK.pop{
+    animation: scanPopRightSK 320ms cubic-bezier(.22,61,35,1) 1;
+  }
+  .scan-surface.scanPlaceBottomRightSK .scanPlaceWrapSK.slideOutLeft{
+    animation: scanPlaceSlideOutUpRightSK 520ms cubic-bezier(.22,61,35,1) forwards;
+  }
+
 
   /* gescand cijfer: standaard gecentreerd (goed antwoord) */
   .scanDigitWrapSK{
@@ -818,7 +847,7 @@ body{
   will-change: opacity;
   opacity: 0;
 }
-.btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutLeftSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
+.btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutLeftSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes btnSlideOutLeftSK{
   0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
   70%{ transform: translateY(-50%) translateX(-110%) scale(0.98); opacity: 0.65; }
@@ -837,7 +866,7 @@ body{
 
 
 /* scanplek verdwijnt zoals de antwoordknoppen */
-.scanPlaceWrapSK.slideOutLeft{ transition: none !important; animation: scanPlaceSlideOutLeftSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
+.scanPlaceWrapSK.slideOutLeft{ transition: none !important; animation: scanPlaceSlideOutLeftSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes scanPlaceSlideOutLeftSK{
   0%{ transform: translateX(-50%) scale(1); opacity: 1; }
   100%{ transform: translateX(-50%) translateX(-190%) scale(0.96); opacity: 1; }
@@ -851,7 +880,7 @@ body{
 
 
 /* schuif links, voorbij de stippellijn middellijn, verdwijnt */
-.scanDigitWrapSK.slideOutLeft{ transition: none !important; animation: scanSlideOutLeft 750ms cubic-bezier(.22,.61,.35,1) forwards; }
+.scanDigitWrapSK.slideOutLeft{ transition: none !important; animation: scanSlideOutLeft 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes scanSlideOutLeft{
   0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
   100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
@@ -860,7 +889,7 @@ body{
 
 
 /* nieuw: correct tile schuift mee */
-.scanCorrectWrapSK.slideOutLeft{ transition: none !important; animation: scanSlideOutLeftCorrect 750ms cubic-bezier(.22,.61,.35,1) forwards; }
+.scanCorrectWrapSK.slideOutLeft{ transition: none !important; animation: scanSlideOutLeftCorrect 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 @keyframes scanSlideOutLeftCorrect{
   0%{ transform: translateY(-50%) translateX(0) scale(1); opacity: 1; }
   100%{ transform: translateY(-50%) translateX(-180%) scale(0.96); opacity: 0; }
@@ -884,10 +913,10 @@ body{
 }
 
 @media (orientation: portrait){
-  .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
-  .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
-  .scanPlaceWrapSK.slideOutLeft{ animation: scanPlaceSlideOutUpSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
-  .btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutUpSK 750ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanDigitWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanCorrectWrapSK.slideOutLeft{ animation: scanSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .scanPlaceWrapSK.slideOutLeft{ animation: scanPlaceSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
+  .btnCorrectWrapSK.slideOutLeft{ animation: btnSlideOutUpSK 520ms cubic-bezier(.22,.61,.35,1) forwards; }
 }
 </style>
 </head>
@@ -1624,6 +1653,7 @@ function setLevel(n){
   setAnchorToLevel(LEVEL, { noTransition: true });
 
   if(scanArea) scanArea.classList.toggle("bigScanTilesSK", usesMarboticScan());
+  scanArea.classList.toggle("scanPlaceBottomRightSK", usesMarboticScan());
 
   if(usesMarboticScan()){ enableScanUI(); }
   else{ disableScanUI(); }
@@ -2369,18 +2399,17 @@ async function animateInButtons(){
   await wait(IN_DUR_MS + 95*(btns.length-1) + 60);
   btns.forEach(btn => { btn.style.transform = "translate(0px, 0px)"; btn.style.opacity = "1"; });
 }
-async async function animateOutButtons(btns, staggerMs, durMs){
+async function animateOutButtons(btns, staggerMs){
   if(!btns.length) return;
   const easing = "cubic-bezier(.22,.61,.35,1)";
-  const dur = (durMs ?? OUT_DUR_MS);
   btns.forEach((btn, i) => {
     const v = slideVectorForButton(btn);
     btn.animate(
       [ { transform: "translate(0px, 0px)", opacity: 1 }, { transform: `translate(${v.x}px, ${v.y}px)`, opacity: 0.02 } ],
-      { duration: dur, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
+      { duration: OUT_DUR_MS, easing, fill: "forwards", delay: i * (staggerMs ?? 140) }
     );
   });
-  await wait(dur + (staggerMs ?? 140)*(btns.length-1) + 80);
+  await wait(OUT_DUR_MS + (staggerMs ?? 140)*(btns.length-1) + 80);
   btns.forEach(btn => { btn.style.opacity = "0"; });
 }
 
@@ -3379,7 +3408,7 @@ async function onPick(btn, value){
     await wait(520);
     dissolveBoard(260);
     const exitOrder = sortedButtonsForExit(all);
-    await animateOutButtons(exitOrder, 140, (LEVEL === 7 ? 520 : undefined));
+    await animateOutButtons(exitOrder, 140);
     btn.classList.remove("correctHold");
     if(usesAnswerCards()) btn.classList.remove("cardOpen");
     answersEl.classList.add("answersHidden");
@@ -3458,7 +3487,7 @@ async function onPick(btn, value){
     chosen.classList.remove("cardOpen");
     await wait(220);
   }
-  await animateOutButtons([chosen], 0, (LEVEL === 7 ? 520 : undefined));
+  await animateOutButtons([chosen], 0);
 
   chosen.classList.remove("wrongHold");
   answersEl.classList.add("answersHidden");
