@@ -573,7 +573,7 @@
       user-select:none;
     }
     .startBtn.is-pressed{
-      transform: scale(1.06);
+      transform: scale(var(--start-pressed-scale, 1.06));
       filter: brightness(1.02);
     }
     .startBtn.is-hidden{
@@ -1716,6 +1716,14 @@ if (typeof onDone === 'function') onDone();
     });
 
     const startBtn = document.getElementById('startBtn');
+    // === Instellingen startknop ===
+    const STARTBTN_SETTINGS = {
+      scale: 1.0,        // basis grootte (1.0 = 100%)
+      scalePressed: 1.06,// grootte bij indrukken
+      xPercent: 10,      // afstand van rechts in %
+      yPercent: 32       // afstand van boven in %
+    };
+
     const startVid = document.getElementById('startVid');
 
     function hideStartBtn(){
@@ -1741,7 +1749,17 @@ if (typeof onDone === 'function') onDone();
       } catch(e){}
     }
 
-    if (startBtn){
+    
+    function applyStartBtnSettings(){
+      if (!startBtn) return;
+      startBtn.style.right = STARTBTN_SETTINGS.xPercent + '%';
+      startBtn.style.top = STARTBTN_SETTINGS.yPercent + '%';
+      startBtn.style.transform = 'scale(' + STARTBTN_SETTINGS.scale + ')';
+      startBtn.style.setProperty('--start-pressed-scale', STARTBTN_SETTINGS.scalePressed);
+    }
+    applyStartBtnSettings();
+
+if (startBtn){
       // zorg dat de video altijd inline blijft op iPad
       try{
         if (startVid){
