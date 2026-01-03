@@ -126,13 +126,17 @@
       place-items:center;
       cursor:pointer;
       flex: 0 0 auto;
+      transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
+    
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       transition: transform 80ms ease, filter 120ms ease, opacity 120ms ease;
-    }
-    .iconBtn:active{ transform: scale(0.95); filter: brightness(0.92); }
+}
+    .iconBtn:active{ transform: scale(0.97); }
+    
     .iconBtn.is-pressed{ transform: scale(0.95); filter: brightness(0.92); }
-    .iconBtn img{
+    .iconBtn.is-disabled{ filter: grayscale(1); opacity: 0.55; }
+.iconBtn img{
       width: 72px;
       height: 72px;
       object-fit: contain;
@@ -140,9 +144,9 @@
       pointer-events:none;
       user-select:none;
     }
-    .iconBtn[aria-pressed="true"], .iconBtn.is-disabled{ filter: grayscale(1); opacity: 0.55; }
+    .iconBtn[aria-pressed="true"]{ filter: grayscale(1); opacity: 0.55; }
 
-.homeBtn{ box-shadow: none; }
+    .homeBtn{ box-shadow: none; }
 
 .titlePill{
       padding: 18px 44px;
@@ -674,7 +678,6 @@ const homeBtn = document.getElementById('homeBtn');
 
     function wirePressFeedback(btn){
       if (!btn) return;
-
       const down = () => btn.classList.add('is-pressed');
       const up = () => btn.classList.remove('is-pressed');
 
@@ -683,6 +686,7 @@ const homeBtn = document.getElementById('homeBtn');
       btn.addEventListener('pointercancel', up, { passive:true });
       btn.addEventListener('pointerleave', up, { passive:true });
 
+      // iOS fallback
       btn.addEventListener('touchstart', down, { passive:true });
       btn.addEventListener('touchend', up, { passive:true });
       btn.addEventListener('touchcancel', up, { passive:true });
@@ -901,7 +905,7 @@ const scanArea = document.getElementById('scan-area');
       try { currentVoice.pause(); } catch(e) {}
       try { currentVoice.currentTime = 0; } catch(e) {}
       currentVoice = null;
-      updateSpeakBtn();
+          updateSpeakBtn();
     }
 
     function playVoice(a){
@@ -929,18 +933,9 @@ const scanArea = document.getElementById('scan-area');
         updateSpeakBtn();
       }
     }
-      } catch(e){}
 
-      currentVoice = a;
 
-      try{
-        a.currentTime = 0;
-        const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    function askDigit(digit){
+function askDigit(digit){
       const a = questionVoices[digit];
       playVoice(a);
     }
@@ -986,11 +981,11 @@ const scanArea = document.getElementById('scan-area');
         startBackgroundMusic();
       }
       updateMusicBtn();
+      updateSpeakBtn();
     }
 
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
     updateMusicBtn();
-    updateSpeakBtn();
 
     /* Toverfee timing */
     const TIMING_KEY = 'fairyTimingV3';
@@ -1674,6 +1669,7 @@ if (typeof onDone === 'function') onDone();
 
     let speakPressTimer = null;
     const SPEAK_LONGPRESS_MS = 650;
+    let speakTouchActive = false;
     let speakIgnoreClick = false;
 
     function toggleVoiceMute(){
@@ -1684,51 +1680,49 @@ if (typeof onDone === 'function') onDone();
 
     function speakShortAction(){
       if (!started) startGame();
-
-      // als hij uit staat en je tikt, dan zet je hem aan en speel je meteen
       if (voiceMuted) voiceMuted = false;
-
       askDigit(targetDigit);
       updateSpeakBtn();
     }
 
-    speakBtn.addEventListener('pointerdown', () => {
-      speakIgnoreClick = false;
+    // Touch: voorkomt dubbel afvuren op iPad (touch gevolgd door click)
+    speakBtn.addEventListener('touchstart', (e) => {
+      speakTouchActive = true;
+      speakIgnoreClick = true;
       clearTimeout(speakPressTimer);
       speakPressTimer = setTimeout(() => {
         speakPressTimer = null;
-        speakIgnoreClick = true;   // voorkom click-na-longpress
         toggleVoiceMute();
       }, SPEAK_LONGPRESS_MS);
     }, { passive:true });
 
-    const clearSpeakTimer = () => {
-      if (!speakPressTimer) return;
-      clearTimeout(speakPressTimer);
-      speakPressTimer = null;
-    };
-
-    speakBtn.addEventListener('pointerup', () => {
+    speakBtn.addEventListener('touchend', (e) => {
       if (speakPressTimer){
-        clearSpeakTimer();
-        speakIgnoreClick = true;   // pointerup heeft al afgehandeld, click negeren
+        clearTimeout(speakPressTimer);
+        speakPressTimer = null;
         speakShortAction();
       }
+      // kleine vertraging zodat de click daarna genegeerd wordt
+      setTimeout(() => { speakIgnoreClick = false; }, 350);
+      speakTouchActive = false;
     }, { passive:true });
 
-    speakBtn.addEventListener('pointercancel', clearSpeakTimer, { passive:true });
-    speakBtn.addEventListener('pointerleave', clearSpeakTimer, { passive:true });
-
-    speakBtn.addEventListener('click', (e) => {
-      if (speakIgnoreClick){
-        speakIgnoreClick = false;
-        e.preventDefault();
-        return;
+    speakBtn.addEventListener('touchcancel', () => {
+      if (speakPressTimer){
+        clearTimeout(speakPressTimer);
+        speakPressTimer = null;
       }
-      e.preventDefault();
+      setTimeout(() => { speakIgnoreClick = false; }, 350);
+      speakTouchActive = false;
+    }, { passive:true });
+
+    // Desktop en als touch niet actief is
+    speakBtn.addEventListener('click', (e) => {
+      if (speakIgnoreClick) return;
       speakShortAction();
     });
-homeBtn.addEventListener('click', () => {
+
+    homeBtn.addEventListener('click', () => {
       try { window.location.href = 'index.html'; } catch (e) {}
     });
 
