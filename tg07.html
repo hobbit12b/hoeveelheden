@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Pak het juiste cijfer</title>
+  <title>tovergetallen</title>
 
   <style>
     :root{
@@ -48,7 +48,17 @@
       --explosion-offset-x-base: 200px;
       --explosion-offset-x: calc(var(--explosion-offset-x-base) * var(--scale));
 
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+            --shadow: 0 16px 40px rgba(0,0,0,0.08);
+
+      /* Startknop positie, wordt ook opgeslagen op dit apparaat */
+      --start-left: 29.5%;
+      --start-top: 57%;
+      --start-scale: 0.36;
+
+      --scanplek-left: 50%;
+      --scanplek-top: 50%;
+      --scanplek-scale: 0.95;
+
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -107,46 +117,44 @@
     }
 
     .topbar{
-      display:flex;
+display:flex;
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
+          position: relative;
+      z-index: 1300;
     }
 
-    .homeBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
+    .topIconBtn{
+      appearance:none;
+      border:none;
+      background: transparent;
       padding: 0;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      cursor:pointer;
+      display:inline-block;
+      line-height: 0;
       flex: 0 0 auto;
     }
-    .homeBtn:active{ transform: scale(0.98); }
-    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
-
-    .musicBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-      font-size: 34px;
-      line-height: 1;
+    .topIconBtn:active{ transform: scale(0.99); }
+    .topIconBtn img{
+      height: 72px;
+      width: auto;
+      object-fit: contain;
+      display:block;
     }
-    .musicBtn:active{ transform: scale(0.98); }
+    .topIconBtn:disabled img{
+      filter: grayscale(100%);
+      opacity: 0.25;
+    }
 
-    .tuneBtn{
+.topIconBtn.isOff img{
+      filter: grayscale(100%);
+      opacity: 0.34;
+    }
+.tuneBtn{
       width:72px;
       height:72px;
       border-radius:18px;
@@ -174,8 +182,8 @@
       box-shadow: var(--shadow);
       line-height: 1;
       display:flex;
-      align-items:center;
-      justify-content:center;
+      align-items:flex-end;
+      justify-content:flex-end;
       min-height: 64px;
       width: min(660px, 100%);
     }
@@ -183,17 +191,22 @@
     .content{
       flex:1 1 auto;
       display:flex;
-      align-items:center;
-      justify-content:center;
+      align-items:flex-end;
+      justify-content:flex-end;
       padding: 10px 6px;
       min-height: 0;
+    }
+
+    /* content-landscape-raise */
+    @media (orientation: landscape){
+      .content{ padding: 10px 6px calc(70px * var(--scale)) 6px; }
     }
 
     .gameCard{
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border: 2px solid rgba(245,180,152,0.85);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -333,10 +346,6 @@
     .scanOverlay{
       position:absolute;
       inset: 0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 28px;
       pointer-events:none;
     }
 
@@ -406,52 +415,64 @@
     .startOverlay{
       position:fixed;
       inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
-
-    .startCard{
-      width: min(560px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
-
-    .startCard h1{
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      color: #4d4a48;
-    }
-
-    .startCard p{
-      margin: 0 0 16px 0;
-      color: rgba(77,74,72,0.82);
-      font-size: 18px;
-      line-height: 1.35;
+      background: transparent;
+      z-index: 900;
+      overflow:hidden;
+      pointer-events:none;
     }
 
     .startBtn{
-      appearance:none;
+position:absolute;
+      left: var(--start-left, 50%);
+      top: var(--start-top, 60%);
+      transform: translate(-50%, -50%) scale(var(--start-scale, 0.83));
       border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 800;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 18px;
+      background: transparent;
+      padding: 0;
       cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      width: min(520px, 78vw);
+      border-radius: 22px;
+      overflow:hidden;
+pointer-events: auto;
     }
-    .startBtn:active{ transform: scale(0.99); }
+    .startBtn:active{
+      transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
+    }
+    .startBtn video{
+      width: 100%;
+      height: auto;
+      display:block;
+    }
 
-    /* Timing paneel */
+    .startOverlay.leaving{
+      animation: overlayFade 520ms ease forwards;
+      pointer-events:none;
+    }
+    .startBtn.leaving{
+      animation: startPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+    }
+    @keyframes overlayFade{
+      from{ opacity:1; }
+      to{ opacity:0; }
+    }
+    @keyframes startPop{
+      0%{ opacity:1; transform: translate(-50%, -50%) scale(var(--start-scale, 0.83)); }
+      45%{ opacity:1; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 1.06)) rotate(-1deg); }
+      100%{ opacity:0; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.45)) rotate(4deg); }
+    }
+
+    #scanPlaceImg{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1));
+      width: min(720px, 86%);
+      height: auto;
+      object-fit: contain;
+      pointer-events:none;
+    }
+    .scanUI.hiddenAssist{ display:none; }
+/* Timing paneel */
     .tunePanel{
       position: fixed;
       right: 18px;
@@ -520,6 +541,21 @@
       width: 100%;
     }
 
+    .tuneDivider{
+      height: 1px;
+      background: rgba(245,180,152,0.55);
+      margin: 12px 2px 10px 2px;
+    }
+
+    .tuneSection{
+      font-weight: 900;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      margin-top: 2px;
+      margin-bottom: 2px;
+      letter-spacing: 0.2px;
+    }
+
     .tuneButtons{
       display:flex;
       gap: 10px;
@@ -574,31 +610,137 @@
       opacity: 1;
       transform: translateY(0);
     }
+    /* Instellingen via lang indrukken op de titel */
+    .settingsOverlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(253,238,234,0.55);
+z-index: 2000;
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      padding: 18px;
+    }
+    .settingsOverlay.hidden{ display:none; }
+
+    .settingsPanel{
+      width: min(640px, 100%);
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      color: #4d4a48;
+    }
+
+    .settingsHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .settingsTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .settingsClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .settingsClose:active{ transform: scale(0.99); }
+
+    .settingsSection{
+      margin-top: 10px;
+    }
+    .settingsSectionTitle{
+      font-weight: 900;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      margin-bottom: 6px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+    .settingsSubTitle{
+      margin-top: 10px;
+      margin-bottom: 6px;
+      font-weight: 900;
+      font-size: 12px;
+      color: rgba(77,74,72,0.72);
+      text-transform: lowercase;
+    }
+    .settingsHint{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(77,74,72,0.68);
+      line-height: 1.35;
+    }
+
+    .digitGrid{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .digitToggle{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      border-radius: 14px;
+      border: 2px solid rgba(245,180,152,0.70);
+      background: rgba(253,238,234,0.55);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.08);
+      cursor:pointer;
+      padding: 10px 0;
+      user-select:none;
+    }
+    .digitToggle input{ display:none; }
+    .digitToggle span{
+      font-weight: 950;
+      font-size: 22px;
+      color: #4d4a48;
+      letter-spacing: 0.3px;
+    }
+    .digitToggle.isOff{
+      background: rgba(255,255,255,0.45);
+      border-color: rgba(0,0,0,0.10);
+      box-shadow: none;
+    }
+    .digitToggle.isOff span{
+      opacity: 0.35;
+    }
+    
   </style>
 </head>
 
 <body>
   <section class="left" aria-label="Spel">
     <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu">
-        <img src="home.png" alt="Home" />
+      <button class="topIconBtn homeBtn" id="homeBtn" aria-label="Naar het menu">
+        <img src="homeknop.png" alt="Home" />
       </button>
 
-      <button class="musicBtn" id="musicBtn" aria-label="Muziek uit">🔊</button>
-      <button class="tuneBtn" id="tuneBtn" aria-label="Timing instellen">⚙️</button>
+      <button class="topIconBtn musicBtn isOff" id="musicBtn" aria-label="Muziek">
+        <img id="musicIcon" src="muziekknop.png" alt="Muziek" />
+      </button>
 
-      <div class="titlePill">pak het juiste cijfer</div>
-    </div>
+      <button class="topIconBtn speakTopBtn isOff" id="speakBtn" aria-label="Luister nog eens">
+        <img id="speakIcon" src="praatknopuit.png" alt="Praat" />
+      </button>
+
+      <div class="titlePill" id="titlePill">tovergetallen</div>
+</div>
 
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Toverkaart">
-        <button class="speakBtn" id="speakBtn" aria-label="Nog een keer luisteren">
-          <img src="spreekknop.png" alt="Spreek" />
-        </button>
-
-        <div class="badge" id="stateBadge" aria-hidden="true">still</div>
-
-        <div class="cardInner">
+<div class="cardInner">
           <div class="stage" id="stage">
             <div id="explosionWrap" aria-hidden="true">
               <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
@@ -613,8 +755,10 @@
   </section>
 
   <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+    
     <div class="scanOverlay">
-      <div class="scanUI">
+      <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" />
+      <div class="scanUI hiddenAssist">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
         </div>
@@ -624,67 +768,119 @@
         <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
       </div>
     </div>
+
   </section>
 
   <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <h1>Tik om te starten</h1>
-      <p>Je hoort een vraag, leg het juiste cijfer in het scanvak. Met de spreekknop hoor je het nog eens.</p>
-      <button class="startBtn" id="startBtn">Start</button>
-    </div>
+    <button class="startBtn" id="startBtn" aria-label="Start">
+      <video id="startVid" src="startknop.mp4" muted autoplay loop playsinline preload="auto"></video>
+    </button>
   </div>
 
-  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Timing instellen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">toverfee timing</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten">Sluit</button>
-    </div>
+  
+  <div class="settingsOverlay hidden" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Instellingen">
+    <div class="settingsPanel" role="document">
+      <div class="settingsHeader">
+        <div class="settingsTitle">instellingen</div>
+        <button class="settingsClose" id="settingsClose" aria-label="Sluiten">Sluit</button>
+      </div>
 
-    <div class="tuneRow">
-      <div class="tuneLabel">Video tijd</div>
-      <input type="range" id="scrubRange" min="0" max="10" step="0.01" value="0" />
-      <div class="tuneValue" id="scrubValue">0.00s</div>
-    </div>
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">cijfers</div>
+        <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
+      </div>
 
-    <div class="tuneRow">
-      <div class="tuneLabel">Fout start</div>
-      <input type="range" id="noStartRange" min="0" max="10" step="0.01" value="0.03" />
-      <div class="tuneValue" id="noStartValue">0.03s</div>
-    </div>
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">startknop</div>
 
-    <div class="tuneRow">
-      <div class="tuneLabel">Fout einde</div>
-      <input type="range" id="noEndRange" min="0" max="10" step="0.01" value="1.25" />
-      <div class="tuneValue" id="noEndValue">1.25s</div>
-    </div>
+        <div class="settingsSubTitle">iPad horizontaal</div>
 
-    <div class="tuneRow">
-      <div class="tuneLabel">Goed start</div>
-      <input type="range" id="yesStartRange" min="0" max="10" step="0.01" value="1.38" />
-      <div class="tuneValue" id="yesStartValue">1.38s</div>
-    </div>
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="startLandScaleRange" min="0.30" max="1.30" step="0.01" value="0.36" />
+          <div class="tuneValue" id="startLandScaleValue">0.36</div>
+        </div>
 
-    <div class="tuneRow">
-      <div class="tuneLabel">Goed einde</div>
-      <input type="range" id="yesEndRange" min="0" max="10" step="0.01" value="5.83" />
-      <div class="tuneValue" id="yesEndValue">5.83s</div>
-    </div>
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="startLandXRange" min="-50" max="250" step="0.5" value="29.5" />
+          <div class="tuneValue" id="startLandXValue">29.5%</div>
+        </div>
 
-    <div class="tuneButtons">
-      <button class="tuneBtnSmall secondary" id="setNoStartHereBtn">Zet fout start op huidige tijd</button>
-      <button class="tuneBtnSmall secondary" id="setNoEndHereBtn">Zet fout einde op huidige tijd</button>
-      <button class="tuneBtnSmall secondary" id="setYesStartHereBtn">Zet goed start op huidige tijd</button>
-      <button class="tuneBtnSmall secondary" id="setYesEndHereBtn">Zet goed einde op huidige tijd</button>
-      <button class="tuneBtnSmall" id="testWrongBtn">Test fout</button>
-      <button class="tuneBtnSmall" id="testGoodBtn">Test goed</button>
-      <button class="tuneBtnSmall secondary" id="toIdleBtn">Still</button>
-    </div>
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="startLandYRange" min="-20" max="120" step="0.5" value="57" />
+          <div class="tuneValue" id="startLandYValue">57%</div>
+        </div>
 
-    <div class="tuneHint">
-      Tip, schuif video tijd naar het frame dat je zoekt, tik dan op zet start of zet einde.
-      Waarden worden bewaard op dit apparaat.
-    </div>
+        <div class="settingsSubTitle">iPad verticaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="startPortScaleRange" min="0.30" max="1.30" step="0.01" value="0.45" />
+          <div class="tuneValue" id="startPortScaleValue">0.45</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="startPortXRange" min="-50" max="250" step="0.5" value="70" />
+          <div class="tuneValue" id="startPortXValue">70%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="startPortYRange" min="-20" max="120" step="0.5" value="38" />
+          <div class="tuneValue" id="startPortYValue">38%</div>
+        </div>
+      
+
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">scanplek</div>
+
+        <div class="settingsSubTitle">iPad horizontaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="scanLandScaleRange" min="0.20" max="1.80" step="0.01" value="0.95" />
+          <div class="tuneValue" id="scanLandScaleValue">0.95</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="scanLandXRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanLandXValue">50%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="scanLandYRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanLandYValue">50%</div>
+        </div>
+
+        <div class="settingsSubTitle">iPad verticaal</div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Grootte</div>
+          <input type="range" id="scanPortScaleRange" min="0.20" max="1.80" step="0.01" value="0.95" />
+          <div class="tuneValue" id="scanPortScaleValue">0.95</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie x</div>
+          <input type="range" id="scanPortXRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanPortXValue">50%</div>
+        </div>
+
+        <div class="tuneRow">
+          <div class="tuneLabel">Positie y</div>
+          <input type="range" id="scanPortYRange" min="-50" max="150" step="0.5" value="50" />
+          <div class="tuneValue" id="scanPortYValue">50%</div>
+        </div>
+      </div>
+</div>
+</div>
   </div>
+
 
   <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
 
@@ -708,6 +904,40 @@
 
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
+
+    /* Instellingen: welke cijfers oefenen */
+    const DIGITS_KEY = 'tovergetallenDigitsV1';
+
+    function normalizeDigitList(list){
+      if (!Array.isArray(list)) return null;
+      const clean = Array.from(new Set(list.map(n => Number(n)).filter(n => Number.isFinite(n) && n >= 0 && n <= 9)))
+        .map(n => Math.round(n))
+        .filter(n => n >= 0 && n <= 9)
+        .sort((a,b) => a-b);
+      return clean.length ? clean : null;
+    }
+
+    function loadEnabledDigits(){
+      try{
+        const raw = localStorage.getItem(DIGITS_KEY);
+        if (!raw) return [...DIGIT_ORDER];
+        const obj = JSON.parse(raw);
+        const clean = normalizeDigitList(obj);
+        return clean ? clean : [...DIGIT_ORDER];
+      } catch(e){
+        return [...DIGIT_ORDER];
+      }
+    }
+
+    function saveEnabledDigits(list){
+      const clean = normalizeDigitList(list) || [...DIGIT_ORDER];
+      try{ localStorage.setItem(DIGITS_KEY, JSON.stringify(clean)); } catch(e){}
+      return clean;
+    }
+
+    let enabledDigits = loadEnabledDigits();
+
+
 
     const FAIRY_SRC = 'toverfee.mp4';
     const EXPLOSION_SRC = 'explosie.mp4';
@@ -755,6 +985,7 @@
     const explosionVid = document.getElementById('explosionVid');
 
     const speakBtn = document.getElementById('speakBtn');
+    const speakIcon = document.getElementById('speakIcon');
     const homeBtn = document.getElementById('homeBtn');
 
     const scanArea = document.getElementById('scan-area');
@@ -764,10 +995,13 @@
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
+    const startVid = document.getElementById('startVid');
 
-    const stateBadge = document.getElementById('stateBadge');
-
-    /* Timing paneel UI */
+    const titlePill = document.getElementById('titlePill');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const settingsClose = document.getElementById('settingsClose');
+    const digitGrid = document.getElementById('digitGrid');
+/* Timing paneel UI */
     const tuneBtn = document.getElementById('tuneBtn');
     const tunePanel = document.getElementById('tunePanel');
     const tuneClose = document.getElementById('tuneClose');
@@ -794,14 +1028,24 @@
     const testGoodBtn = document.getElementById('testGoodBtn');
     const toIdleBtn = document.getElementById('toIdleBtn');
 
-    function badge(text, show){
-      if (!stateBadge) return;
-      stateBadge.textContent = text;
-      if (show) stateBadge.classList.add('show');
-      else stateBadge.classList.remove('show');
-    }
+    const resetAllBtn = document.getElementById('resetAllBtn');
 
-    function setAutoScale(){
+    const startLandScaleRange = document.getElementById('startLandScaleRange');
+    const startLandXRange = document.getElementById('startLandXRange');
+    const startLandYRange = document.getElementById('startLandYRange');
+
+    const startPortScaleRange = document.getElementById('startPortScaleRange');
+    const startPortXRange = document.getElementById('startPortXRange');
+    const startPortYRange = document.getElementById('startPortYRange');
+
+    const startLandScaleValue = document.getElementById('startLandScaleValue');
+    const startLandXValue = document.getElementById('startLandXValue');
+    const startLandYValue = document.getElementById('startLandYValue');
+
+    const startPortScaleValue = document.getElementById('startPortScaleValue');
+    const startPortXValue = document.getElementById('startPortXValue');
+    const startPortYValue = document.getElementById('startPortYValue');
+function setAutoScale(){
       if (!gameCard) return;
       const r = gameCard.getBoundingClientRect();
 
@@ -818,7 +1062,7 @@
     }
 
     window.addEventListener('resize', setAutoScale);
-    window.addEventListener('orientationchange', () => setTimeout(setAutoScale, 90));
+    window.addEventListener('orientationchange', () => setTimeout(() => { setAutoScale(); applyStartLayoutToCSS(); applyScanLayoutToCSS(); }, 90));
 
     function getVarMillis(name, fallbackMs){
       const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -869,17 +1113,70 @@
       return a;
     });
 
-    let currentVoice = null;
+    
+
+    const voiceOkQuestion = Array(10).fill(true);
+    const voiceOkReveal = Array(10).fill(true);
+
+    questionVoices.forEach((a, i) => {
+      a.addEventListener('error', () => { voiceOkQuestion[i] = false; });
+    });
+    revealVoices.forEach((a, i) => {
+      a.addEventListener('error', () => { voiceOkReveal[i] = false; });
+    });
+
+    function setSpeakAvailability(canPlay){
+      if (!speakBtn) return;
+      speakBtn.disabled = !canPlay;
+      if (!canPlay){
+        if (speakIcon) speakIcon.src = 'praatknopuit.png';
+        speakBtn.classList.add('isOff');
+      }
+    }
+
+let currentVoice = null;
+    let voiceCleanup = null;
+
+    function setSpeakVisual(isPlaying){
+      if (!speakBtn || !speakIcon) return;
+      speakIcon.src = isPlaying ? 'praatknopaan.png' : 'praatknopuit.png';
+      speakBtn.classList.toggle('isOff', !isPlaying);
+    }
+
+    function attachVoiceUI(a){
+      if (!a) return () => {};
+
+      const onPlay = () => setSpeakVisual(true);
+      const onEnded = () => { if (a === currentVoice) setSpeakVisual(false);
+      setSpeakAvailability(false); };
+      const onPause = () => { if (a === currentVoice) setSpeakVisual(false); };
+      const onError = () => { if (a === currentVoice) setSpeakVisual(false); };
+
+      a.addEventListener('playing', onPlay);
+      a.addEventListener('ended', onEnded);
+      a.addEventListener('pause', onPause);
+      a.addEventListener('error', onError);
+
+      return () => {
+        a.removeEventListener('playing', onPlay);
+        a.removeEventListener('ended', onEnded);
+        a.removeEventListener('pause', onPause);
+        a.removeEventListener('error', onError);
+      };
+    }
 
     function stopVoice(){
       if (!currentVoice) return;
       try { currentVoice.pause(); } catch(e) {}
       try { currentVoice.currentTime = 0; } catch(e) {}
+      if (voiceCleanup){ voiceCleanup(); voiceCleanup = null; }
       currentVoice = null;
+      setSpeakVisual(false);
     }
 
     function playVoice(a){
-      if (!a) return;
+      if (!a) { setSpeakVisual(false); return; }
+
       try{
         if (currentVoice && currentVoice !== a){
           currentVoice.pause();
@@ -887,34 +1184,77 @@
         }
       } catch(e){}
 
+      if (voiceCleanup){ voiceCleanup(); voiceCleanup = null; }
       currentVoice = a;
+      voiceCleanup = attachVoiceUI(a);
+
+      setSpeakVisual(false);
 
       try{
         a.currentTime = 0;
         const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
+        if (p && typeof p.catch === 'function') p.catch(() => { setSpeakVisual(false); });
+      } catch(e){
+        setSpeakVisual(false);
+      }
     }
 
     function askDigit(digit){
       const a = questionVoices[digit];
+
+      const ok = !!a && (voiceOkQuestion[digit] !== false);
+      setSpeakAvailability(ok);
+
+      if (!ok){
+        stopVoice();
+        setSpeakVisual(false);
+        return;
+      }
       playVoice(a);
     }
 
+
     function sayReveal(digit){
       const a = revealVoices[digit];
+
+      const ok = !!a && (voiceOkReveal[digit] !== false);
+      setSpeakAvailability(ok);
+
+      if (!ok){
+        stopVoice();
+        setSpeakVisual(false);
+        return;
+      }
       playVoice(a);
     }
+
 
     /* Achtergrondmuziek */
     const bgMusic = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicBtn');
+    const musicIcon = document.getElementById('musicIcon');
+
     let bgMusicMuted = false;
+    let musicAvailable = true;
+
+    function musicIsAudible(){
+      if (!bgMusic) return false;
+      if (!started) return false;
+      if (!musicAvailable) return false;
+      if (bgMusicMuted) return false;
+      return !bgMusic.paused;
+    }
 
     function updateMusicBtn(){
       if (!musicBtn) return;
-      musicBtn.textContent = bgMusicMuted ? '🔇' : '🔊';
-      musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+      const audible = musicIsAudible();
+      musicBtn.classList.toggle('isOff', !audible);
+
+      if (!musicAvailable) {
+        musicBtn.setAttribute('aria-label', 'Geen muziek');
+      } else {
+        musicBtn.setAttribute('aria-label', bgMusicMuted ? 'Muziek aan' : 'Muziek uit');
+      }
     }
 
     function startBackgroundMusic(){
@@ -923,29 +1263,103 @@
       bgMusic.loop = true;
       bgMusic.volume = 0.25;
 
-      if (bgMusicMuted){
+      if (!musicAvailable || bgMusicMuted){
         try { bgMusic.pause(); } catch(e) {}
+        updateMusicBtn();
         return;
       }
 
       try{
         const p = bgMusic.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
+        if (p && typeof p.then === 'function'){
+          p.then(() => updateMusicBtn()).catch(() => updateMusicBtn());
+        } else {
+          updateMusicBtn();
+        }
+      } catch(e){
+        updateMusicBtn();
+      }
     }
 
     function toggleBackgroundMusic(){
+      if (!musicAvailable) return;
+
       bgMusicMuted = !bgMusicMuted;
+
       if (bgMusicMuted){
         try { bgMusic.pause(); } catch(e) {}
       } else {
         startBackgroundMusic();
       }
+
       updateMusicBtn();
     }
 
+    if (bgMusic){
+      bgMusic.addEventListener('error', () => {
+        musicAvailable = false;
+        bgMusicMuted = true;
+        updateMusicBtn();
+      });
+
+      bgMusic.addEventListener('canplay', () => {
+        musicAvailable = true;
+        updateMusicBtn();
+      });
+
+      bgMusic.addEventListener('play', updateMusicBtn);
+      bgMusic.addEventListener('pause', updateMusicBtn);
+    }
+
     if (musicBtn) musicBtn.addEventListener('click', toggleBackgroundMusic);
-    updateMusicBtn();
+
+    // Pauzeer muziek automatisch als iPad naar pauzestand gaat, en hervat als het spel weer actief is
+    let musicWasPlayingBeforeHide = false;
+    let pendingMusicResume = false;
+
+    function pauseMusicForSleep(){
+      if (!bgMusic) return;
+      musicWasPlayingBeforeHide = !!started && musicAvailable && !bgMusicMuted && !bgMusic.paused;
+      try { bgMusic.pause(); } catch(e) {}
+      updateMusicBtn();
+    }
+
+    function resumeMusicAfterSleep(){
+      if (!bgMusic) return;
+      if (!started) return;
+      if (!musicWasPlayingBeforeHide) return;
+      if (!musicAvailable || bgMusicMuted) return;
+
+      musicWasPlayingBeforeHide = false;
+
+      try{
+        const p = bgMusic.play();
+        if (p && typeof p.catch === 'function'){
+          p.catch(() => { pendingMusicResume = true; updateMusicBtn(); });
+        }
+      } catch(e){
+        pendingMusicResume = true;
+      }
+      updateMusicBtn();
+    }
+
+    function tryPendingMusicResume(){
+      if (!pendingMusicResume) return;
+      pendingMusicResume = false;
+      resumeMusicAfterSleep();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) pauseMusicForSleep();
+      else setTimeout(resumeMusicAfterSleep, 90);
+    });
+
+    window.addEventListener('pagehide', pauseMusicForSleep);
+    window.addEventListener('pageshow', () => setTimeout(resumeMusicAfterSleep, 120));
+
+    document.addEventListener('pointerdown', tryPendingMusicResume, { passive:true });
+    document.addEventListener('touchstart', tryPendingMusicResume, { passive:true });
+
 
     /* Toverfee timing */
     const TIMING_KEY = 'fairyTimingV3';
@@ -972,8 +1386,333 @@
     }
 
     let fairyTiming = loadTiming();
+    /* Startknop layout */
+    const START_LAYOUT_KEY = 'startBtnLayoutV3';
 
-    function setFairySourceOnce(){
+    const DEFAULT_START_LAYOUT = {
+      landScale: 0.36,
+      landX: 29.5,
+      landY: 57,
+      portScale: 0.45,
+      portX: 70,
+      portY: 38
+    };
+
+    function loadStartLayout(){
+      try{
+        const raw = localStorage.getItem(START_LAYOUT_KEY);
+        if (!raw) return { ...DEFAULT_START_LAYOUT };
+        const obj = JSON.parse(raw);
+        return {
+          landScale: Number(obj.landScale ?? DEFAULT_START_LAYOUT.landScale),
+          landX: Number(obj.landX ?? DEFAULT_START_LAYOUT.landX),
+          landY: Number(obj.landY ?? DEFAULT_START_LAYOUT.landY),
+          portScale: Number(obj.portScale ?? DEFAULT_START_LAYOUT.portScale),
+          portX: Number(obj.portX ?? DEFAULT_START_LAYOUT.portX),
+          portY: Number(obj.portY ?? DEFAULT_START_LAYOUT.portY)
+        };
+      } catch(e){
+        return { ...DEFAULT_START_LAYOUT };
+      }
+    }
+
+    function saveStartLayout(l){
+      try { localStorage.setItem(START_LAYOUT_KEY, JSON.stringify(l)); } catch(e) {}
+    }
+
+    let startLayout = loadStartLayout();
+
+    function fmtPct(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return '0%';
+      return v.toFixed(1).replace('.0','') + '%';
+    }
+
+    function fmtScale(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return '0.80';
+      return v.toFixed(2);
+    }
+
+    function applyStartLayoutToCSS(){
+      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+      const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
+      const x = isPortrait ? startLayout.portX : startLayout.landX;
+      const y = isPortrait ? startLayout.portY : startLayout.landY;
+
+      document.documentElement.style.setProperty('--start-scale', String(clamp(scale, 0.25, 2)));
+      document.documentElement.style.setProperty('--start-left', String(clamp(x, -50, 250)) + '%');
+      document.documentElement.style.setProperty('--start-top', String(clamp(y, -50, 250)) + '%');
+    }
+
+    function syncStartLayoutUI(){
+      if (startLandScaleRange) startLandScaleRange.value = String(startLayout.landScale);
+      if (startLandXRange) startLandXRange.value = String(startLayout.landX);
+      if (startLandYRange) startLandYRange.value = String(startLayout.landY);
+
+      if (startPortScaleRange) startPortScaleRange.value = String(startLayout.portScale);
+      if (startPortXRange) startPortXRange.value = String(startLayout.portX);
+      if (startPortYRange) startPortYRange.value = String(startLayout.portY);
+
+      if (startLandScaleValue) startLandScaleValue.textContent = fmtScale(startLayout.landScale);
+      if (startLandXValue) startLandXValue.textContent = fmtPct(startLayout.landX);
+      if (startLandYValue) startLandYValue.textContent = fmtPct(startLayout.landY);
+
+      if (startPortScaleValue) startPortScaleValue.textContent = fmtScale(startLayout.portScale);
+      if (startPortXValue) startPortXValue.textContent = fmtPct(startLayout.portX);
+      if (startPortYValue) startPortYValue.textContent = fmtPct(startLayout.portY);
+    }
+
+    function applyStartLayoutChange(){
+      if (startLandScaleRange) startLayout.landScale = clamp(startLandScaleRange.value, 0.30, 1.30);
+      if (startLandXRange) startLayout.landX = clamp(startLandXRange.value, -50, 250);
+      if (startLandYRange) startLayout.landY = clamp(startLandYRange.value, -20, 120);
+
+      if (startPortScaleRange) startLayout.portScale = clamp(startPortScaleRange.value, 0.30, 1.30);
+      if (startPortXRange) startLayout.portX = clamp(startPortXRange.value, -50, 250);
+      if (startPortYRange) startLayout.portY = clamp(startPortYRange.value, -20, 120);
+
+      saveStartLayout(startLayout);
+      syncStartLayoutUI();
+      syncScanLayoutUI();
+      applyStartLayoutToCSS();
+    }
+
+    [startLandScaleRange, startLandXRange, startLandYRange, startPortScaleRange, startPortXRange, startPortYRange].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', applyStartLayoutChange);
+    });
+
+
+    
+
+    
+
+    /* Scanplek layout (afbeelding in het scanvak) */
+    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV1';
+
+    const DEFAULT_SCAN_LAYOUT = {
+      landScale: 0.95,
+      landX: 50,
+      landY: 50,
+      portScale: 0.95,
+      portX: 50,
+      portY: 50
+    };
+
+    function loadScanLayout(){
+      try{
+        const raw = localStorage.getItem(SCAN_LAYOUT_KEY);
+        if (!raw) return { ...DEFAULT_SCAN_LAYOUT };
+        const obj = JSON.parse(raw);
+        return {
+          landScale: Number(obj.landScale ?? DEFAULT_SCAN_LAYOUT.landScale),
+          landX: Number(obj.landX ?? DEFAULT_SCAN_LAYOUT.landX),
+          landY: Number(obj.landY ?? DEFAULT_SCAN_LAYOUT.landY),
+          portScale: Number(obj.portScale ?? DEFAULT_SCAN_LAYOUT.portScale),
+          portX: Number(obj.portX ?? DEFAULT_SCAN_LAYOUT.portX),
+          portY: Number(obj.portY ?? DEFAULT_SCAN_LAYOUT.portY)
+        };
+      } catch(e){
+        return { ...DEFAULT_SCAN_LAYOUT };
+      }
+    }
+
+    function saveScanLayout(l){
+      try { localStorage.setItem(SCAN_LAYOUT_KEY, JSON.stringify(l)); } catch(e) {}
+    }
+
+    let scanLayout = loadScanLayout();
+
+    const scanLandScaleRange = document.getElementById('scanLandScaleRange');
+    const scanLandXRange = document.getElementById('scanLandXRange');
+    const scanLandYRange = document.getElementById('scanLandYRange');
+
+    const scanPortScaleRange = document.getElementById('scanPortScaleRange');
+    const scanPortXRange = document.getElementById('scanPortXRange');
+    const scanPortYRange = document.getElementById('scanPortYRange');
+
+    const scanLandScaleValue = document.getElementById('scanLandScaleValue');
+    const scanLandXValue = document.getElementById('scanLandXValue');
+    const scanLandYValue = document.getElementById('scanLandYValue');
+
+    const scanPortScaleValue = document.getElementById('scanPortScaleValue');
+    const scanPortXValue = document.getElementById('scanPortXValue');
+    const scanPortYValue = document.getElementById('scanPortYValue');
+
+    function applyScanLayoutToCSS(){
+      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+      const scale = isPortrait ? scanLayout.portScale : scanLayout.landScale;
+      const x = isPortrait ? scanLayout.portX : scanLayout.landX;
+      const y = isPortrait ? scanLayout.portY : scanLayout.landY;
+
+      document.documentElement.style.setProperty('--scanplek-scale', String(clamp(scale, 0.15, 2.2)));
+      document.documentElement.style.setProperty('--scanplek-left', String(clamp(x, -50, 150)) + '%');
+      document.documentElement.style.setProperty('--scanplek-top', String(clamp(y, -50, 150)) + '%');
+    }
+
+    function syncScanLayoutUI(){
+      if (scanLandScaleRange) scanLandScaleRange.value = String(scanLayout.landScale);
+      if (scanLandXRange) scanLandXRange.value = String(scanLayout.landX);
+      if (scanLandYRange) scanLandYRange.value = String(scanLayout.landY);
+
+      if (scanPortScaleRange) scanPortScaleRange.value = String(scanLayout.portScale);
+      if (scanPortXRange) scanPortXRange.value = String(scanLayout.portX);
+      if (scanPortYRange) scanPortYRange.value = String(scanLayout.portY);
+
+      if (scanLandScaleValue) scanLandScaleValue.textContent = fmtScale(scanLayout.landScale);
+      if (scanLandXValue) scanLandXValue.textContent = fmtPct(scanLayout.landX);
+      if (scanLandYValue) scanLandYValue.textContent = fmtPct(scanLayout.landY);
+
+      if (scanPortScaleValue) scanPortScaleValue.textContent = fmtScale(scanLayout.portScale);
+      if (scanPortXValue) scanPortXValue.textContent = fmtPct(scanLayout.portX);
+      if (scanPortYValue) scanPortYValue.textContent = fmtPct(scanLayout.portY);
+    }
+
+    function applyScanLayoutChange(){
+      if (scanLandScaleRange) scanLayout.landScale = clamp(scanLandScaleRange.value, 0.20, 1.80);
+      if (scanLandXRange) scanLayout.landX = clamp(scanLandXRange.value, -50, 150);
+      if (scanLandYRange) scanLayout.landY = clamp(scanLandYRange.value, -50, 150);
+
+      if (scanPortScaleRange) scanLayout.portScale = clamp(scanPortScaleRange.value, 0.20, 1.80);
+      if (scanPortXRange) scanLayout.portX = clamp(scanPortXRange.value, -50, 150);
+      if (scanPortYRange) scanLayout.portY = clamp(scanPortYRange.value, -50, 150);
+
+      saveScanLayout(scanLayout);
+      syncScanLayoutUI();
+      applyScanLayoutToCSS();
+    }
+
+    [scanLandScaleRange, scanLandXRange, scanLandYRange, scanPortScaleRange, scanPortXRange, scanPortYRange].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', applyScanLayoutChange);
+    });
+/* Instellingen openen door lang op de titel te drukken */
+    function openSettings(){
+      if (!settingsOverlay) return;
+      settingsOverlay.classList.remove('hidden');
+      syncDigitGrid();
+      syncStartLayoutUI();
+      syncScanLayoutUI();
+    }
+
+    function closeSettings(){
+      if (!settingsOverlay) return;
+      settingsOverlay.classList.add('hidden');
+
+      // als je tijdens het spel een cijfer uitzet dat nu aan de beurt is, dan pakken we meteen een nieuw cijfer
+      if (started && Array.isArray(enabledDigits) && enabledDigits.length && !enabledDigits.includes(targetDigit)){
+        chooseNextDigit();
+        askDigit(targetDigit);
+      }
+    }
+
+    function syncDigitGrid(){
+      if (!digitGrid) return;
+      digitGrid.querySelectorAll('.digitToggle').forEach(label => {
+        const input = label.querySelector('input');
+        if (!input) return;
+        label.classList.toggle('isOff', !input.checked);
+      });
+    }
+
+    function buildDigitGrid(){
+      if (!digitGrid) return;
+      digitGrid.innerHTML = '';
+
+      for (let d = 0; d <= 9; d++){
+        const label = document.createElement('label');
+        label.className = 'digitToggle';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.dataset.digit = String(d);
+        input.checked = enabledDigits.includes(d);
+
+        const span = document.createElement('span');
+        span.textContent = String(d);
+
+        input.addEventListener('change', () => {
+          const digit = Number(input.dataset.digit);
+          let next = Array.isArray(enabledDigits) ? enabledDigits.slice() : [];
+
+          if (input.checked){
+            if (!next.includes(digit)) next.push(digit);
+          } else {
+            next = next.filter(x => x !== digit);
+          }
+
+          // altijd minimaal één cijfer
+          if (!next.length){
+            input.checked = true;
+            next = [digit];
+          }
+
+          enabledDigits = saveEnabledDigits(next);
+          syncDigitGrid();
+        });
+
+        label.appendChild(input);
+        label.appendChild(span);
+        digitGrid.appendChild(label);
+      }
+
+      syncDigitGrid();
+    }
+
+    function initSettingsUI(){
+      if (!settingsOverlay || !digitGrid) return;
+
+      if (settingsClose){
+        settingsClose.addEventListener('click', closeSettings);
+      }
+
+      settingsOverlay.addEventListener('pointerdown', (e) => {
+        if (e.target === settingsOverlay) closeSettings();
+      });
+
+      buildDigitGrid();
+
+      if (!titlePill) return;
+
+      let pressTimer = null;
+      let startX = 0;
+      let startY = 0;
+
+      const cancel = () => {
+        if (pressTimer){
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      };
+
+      titlePill.addEventListener('pointerdown', (e) => {
+        cancel();
+        startX = e.clientX;
+        startY = e.clientY;
+
+        pressTimer = setTimeout(() => {
+          pressTimer = null;
+          openSettings();
+          try { if (navigator.vibrate) navigator.vibrate(12); } catch(e){}
+        }, 650);
+      });
+
+      titlePill.addEventListener('pointermove', (e) => {
+        if (!pressTimer) return;
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
+        if (dx > 10 || dy > 10) cancel();
+      });
+
+      ['pointerup','pointercancel','pointerleave'].forEach(type => {
+        titlePill.addEventListener(type, cancel);
+      });
+    }
+
+function setFairySourceOnce(){
       try{
         if (fairyVid.src && fairyVid.src.includes(FAIRY_SRC)) return;
       } catch(e){}
@@ -987,8 +1726,7 @@
         try { fairyVid.pause(); } catch(e) {}
         try { fairyVid.currentTime = Math.max(0, fairyTiming.idle || 0); } catch(e) {}
         try { fairyVid.pause(); } catch(e) {}
-        badge('still', false);
-      };
+};
       if (fairyVid.readyState >= 2) snap();
       else fairyVid.addEventListener('canplay', snap, { once:true });
     }
@@ -999,7 +1737,8 @@
     }
 
     // Segment speler met callback, hierdoor stopt "goed" nooit meer te vroeg door nextRound timing
-    function playSegment(startSec, endSec, speed, labelText, onDone){
+    function playSegment(startSec, endSec, speed, onDone){
+      // Speel een segment van de fee af en ga daarna altijd terug naar idle
       setFairySourceOnce();
       stopSegmentWatcher();
 
@@ -1016,14 +1755,11 @@
       fairyVid.loop = false;
       fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
 
-      if (labelText) badge(labelText, true);
-
       const finish = () => {
         stopSegmentWatcher();
         fairyVid.removeEventListener('ended', finish);
         try { fairyVid.pause(); } catch(e) {}
         snapToIdle();
-        badge('', false);
         if (typeof onDone === 'function') onDone();
       };
 
@@ -1114,7 +1850,35 @@
       });
     }
 
-    /* Explosie */
+    
+
+    function primeStartVideo(){
+      if (!startVid) return;
+
+      try{
+        startVid.muted = true;
+        startVid.playsInline = true;
+        startVid.setAttribute('playsinline','');
+        startVid.setAttribute('webkit-playsinline','');
+        startVid.preload = 'auto';
+        try { startVid.load(); } catch(e){}
+      } catch(e){}
+
+      const tryPlay = () => {
+        try{
+          const p = startVid.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){}
+      };
+
+      if (startVid.readyState >= 2) tryPlay();
+      else startVid.addEventListener('canplay', tryPlay, { once:true });
+
+      // iOS kan soms pas starten na een tik, ook al is het geluid uit
+      document.addEventListener('pointerdown', tryPlay, { once:true, passive:true });
+      document.addEventListener('touchstart', tryPlay, { once:true, passive:true });
+    }
+/* Explosie */
     function prepareExplosion(){
       explosionVid.muted = true;
       explosionVid.playsInline = true;
@@ -1405,10 +2169,26 @@
 
     function chooseNextDigit(){
       const prev = targetDigit;
-      let next = Math.floor(Math.random() * 10);
-      if (next === prev) next = (next + 1) % 10;
+
+      const pool = (Array.isArray(enabledDigits) && enabledDigits.length) ? enabledDigits : DIGIT_ORDER;
+
+      if (pool.length === 1){
+        targetDigit = pool[0];
+        return;
+      }
+
+      let next = pool[Math.floor(Math.random() * pool.length)];
+      if (next === prev){
+        // probeer nog één keer, daarna pakken we de volgende in de lijst
+        next = pool[Math.floor(Math.random() * pool.length)];
+        if (next === prev){
+          const i = pool.indexOf(prev);
+          next = pool[(i >= 0 ? i + 1 : 0) % pool.length];
+        }
+      }
       targetDigit = next;
     }
+
 
     function clearDigitAndExplosion(){
       clearExplosionTimers();
@@ -1445,19 +2225,19 @@
       clearDigitAndExplosion();
       showDigit(digit);
       scheduleExplosionFlow();
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed', onFairyDone);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, onFairyDone);
       return estimateExplosionTotalMs();
     }
 
     function playWrongAnimation(onDone){
       clearDigitAndExplosion();
-      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, 'fout', onDone);
+      playSegment(fairyTiming.noStart, fairyTiming.noEnd, FAIRY_NO_SPEED, onDone);
     }
 
     function playRevealAnimation(digit, onDone){
       clearDigitAndExplosion();
       showDigit(digit);
-      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'kijk', onDone);
+      playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, onDone);
     }
 
     function nextRound(){
@@ -1616,20 +2396,31 @@
     }
 
     function syncTimingUI(){
+      // Timing sliders bestaan niet in deze versie, dus alleen syncen als ze wel aanwezig zijn
+      if (!noStartRange || !noEndRange || !yesStartRange || !yesEndRange) return;
+
       noStartRange.value = String(fairyTiming.noStart);
       noEndRange.value = String(fairyTiming.noEnd);
       yesStartRange.value = String(fairyTiming.yesStart);
       yesEndRange.value = String(fairyTiming.yesEnd);
 
-      noStartValue.textContent = fmtSec(fairyTiming.noStart);
-      noEndValue.textContent = fmtSec(fairyTiming.noEnd);
-      yesStartValue.textContent = fmtSec(fairyTiming.yesStart);
-      yesEndValue.textContent = fmtSec(fairyTiming.yesEnd);
+      if (noStartValue) noStartValue.textContent = fmtSec(fairyTiming.noStart);
+      if (noEndValue) noEndValue.textContent = fmtSec(fairyTiming.noEnd);
+      if (yesStartValue) yesStartValue.textContent = fmtSec(fairyTiming.yesStart);
+      if (yesEndValue) yesEndValue.textContent = fmtSec(fairyTiming.yesEnd);
     }
 
     function openTunePanel(){
+      // Tune panel bestaat meestal niet meer, dus alleen openen als hij er wél is
+      if (!tunePanel) return;
+
       tunePanel.classList.remove('hidden');
-      syncTimingUI();
+
+      try { syncTimingUI(); } catch(e){}
+      try { syncStartLayoutUI(); } catch(e){}
+      try { syncScanLayoutUI(); } catch(e){}
+
+      if (!scrubRange || !scrubValue) return;
 
       const loop = () => {
         const t = Number.isFinite(fairyVid.currentTime) ? fairyVid.currentTime : 0;
@@ -1642,6 +2433,7 @@
     }
 
     function closeTunePanel(){
+      if (!tunePanel) return;
       tunePanel.classList.add('hidden');
       stopTuneLoop();
     }
@@ -1659,6 +2451,8 @@
 
       saveTiming(fairyTiming);
       syncTimingUI();
+      syncStartLayoutUI();
+      syncScanLayoutUI();
     }
 
     if (tuneBtn) tuneBtn.addEventListener('click', () => {
@@ -1691,8 +2485,25 @@
     if (setYesEndHereBtn) setYesEndHereBtn.addEventListener('click', () => setFieldToCurrent('yesEnd'));
 
     if (testWrongBtn) testWrongBtn.addEventListener('click', () => playWrongAnimation());
-    if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, 'goed'));
+    if (testGoodBtn) testGoodBtn.addEventListener('click', () => playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, () => {}));
     if (toIdleBtn) toIdleBtn.addEventListener('click', () => { stopSegmentWatcher(); backToIdleFairy(); });
+
+    function resetAllSettings(){
+      fairyTiming = { ...DEFAULT_TIMING };
+      saveTiming(fairyTiming);
+      syncTimingUI();
+
+      startLayout = { ...DEFAULT_START_LAYOUT };
+      saveStartLayout(startLayout);
+      syncStartLayoutUI();
+      syncScanLayoutUI();
+      applyStartLayoutToCSS();
+
+      stopSegmentWatcher();
+      backToIdleFairy();
+    }
+
+    if (resetAllBtn) resetAllBtn.addEventListener('click', resetAllSettings);
 
     fairyVid.addEventListener('loadedmetadata', () => {
       const dur = Number.isFinite(fairyVid.duration) ? fairyVid.duration : 10;
@@ -1708,13 +2519,29 @@
 
       saveTiming(fairyTiming);
       syncTimingUI();
+      syncStartLayoutUI();
+      syncScanLayoutUI();
     });
 
     /* Start */
     function startGame(){
       if (started) return;
       started = true;
-      startOverlay.style.display = 'none';
+
+      // leuke verdwijnanimatie voor de startknop
+      if (startOverlay && startBtn){
+        startOverlay.classList.add('leaving');
+        startBtn.classList.add('leaving');
+        try { startBtn.disabled = true; } catch(e){}
+        setTimeout(() => {
+          try { startOverlay.style.display = 'none'; } catch(e){}
+          try { startOverlay.classList.remove('leaving'); } catch(e){}
+          try { startBtn.classList.remove('leaving'); } catch(e){}
+          try { if (startVid){ startVid.pause(); startVid.currentTime = 0; } } catch(e){}
+        }, 520);
+      } else {
+        startOverlay.style.display = 'none';
+      }
 
       startBackgroundMusic();
 
@@ -1734,14 +2561,12 @@
     }
 
     speakBtn.addEventListener('click', () => {
-      if (!started) startGame();
-      else askDigit(targetDigit);
+      if (!started) return;
+      if (speakBtn.disabled) return;
+      askDigit(targetDigit);
     });
 
-    startBtn.addEventListener('click', startGame);
-    startOverlay.addEventListener('click', (e) => {
-      if (e.target === startOverlay) startGame();
-    });
+startBtn.addEventListener('click', startGame);
 
     homeBtn.addEventListener('click', () => {
       try { window.location.href = 'index.html'; } catch (e) {}
@@ -1749,6 +2574,14 @@
 
     window.addEventListener('load', () => {
       setAutoScale();
+      applyStartLayoutToCSS();
+      applyScanLayoutToCSS();
+      syncStartLayoutUI();
+      syncScanLayoutUI();
+      primeStartVideo();
+      initSettingsUI();
+      updateMusicBtn();
+      setSpeakVisual(false);
 
       showFirstFrame();
       prepareExplosion();
