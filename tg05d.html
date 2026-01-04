@@ -217,7 +217,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       left:0;
       top:0;
       opacity: 0;
-      transform: translate(0px, 0px);
+      transform: translate(2400px, 2400px);
       transition: transform 420ms cubic-bezier(.22,.61,.35,1), opacity 160ms ease;
       filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
       will-change: transform, opacity;
@@ -242,7 +242,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     .scanOverlay{
       position:absolute;
       inset: 0;
-      display:flex;
+      display:none;
       align-items:center;
       justify-content:center;
       padding: 28px;
@@ -898,11 +898,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
     function showScanDigit(digit){
       showScanAsset(`marbotic${digit}.png`, String(digit));
-      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
-    }
-      scanDigitImg.src = `marbotic${digit}.png`;
-      scanDigitImg.alt = String(digit);
-      scanDigitWrap.classList.add('show');
       scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
     }
 
@@ -1933,10 +1928,13 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       }
       requestRender();
 
+      const cardRect = gameCard.getBoundingClientRect();
+      // Eerst hand buiten beeld zetten, pas daarna zichtbaar maken (geen flits bij laden)
+      moveHandTo(cardRect.width + 220, cardRect.height + 220);
+      await delayTutorial(520, token);
       showHand();
-      // Start buiten beeld, rechts onder
-      moveHandTo(ctx.canvas.width + 120, ctx.canvas.height + 120);
-      await delayTutorial(220, token);
+      await delayTutorial(140, token);
+
 
       // Tel alle items één voor één
       for (let i = 0; i < items.length; i++){
@@ -1966,31 +1964,49 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       scanHint.textContent = '';
 
       // Start de marbotic hand buiten beeld en laat hem naar het scanvak komen
-      if (tutMarboticImg) tutMarboticImg.src = 'marboticvoorbeelda.png';
+      const marboticASrc = await (async () => {
+        const cands = ['marboticvoorbeelda.png','marbotic_voorbeeld/marboticvoorbeelda.png'];
+        for (const src of cands){
+          const img = await loadImage(src);
+          if (img) return src;
+        }
+        return cands[0];
+      })();
+
+      const marboticBSrc = await (async () => {
+        const cands = ['marboticvoorbeeldb.png','marbotic_voorbeeld/marboticvoorbeeldb.png'];
+        for (const src of cands){
+          const img = await loadImage(src);
+          if (img) return src;
+        }
+        return cands[0];
+      })();
+if (tutMarboticImg) tutMarboticImg.src = marboticASrc;
       showMarbotic();
-      setMarboticState({ tx: 520, ty: 420, scale: 0.96 });
-      await delayTutorial(140, token);
+      const scanRect = scanArea.getBoundingClientRect();
+      const offX = Math.max(560, scanRect.width * 1.02);
+      const offY = Math.max(380, scanRect.height * 0.86);
+      const rightShift = Math.round(Math.min(190, Math.max(95, scanRect.width * 0.14)));
+      setMarboticState({ tx: offX, ty: offY, scale: 1.08 });
+      await delayTutorial(160, token);
 
       // Naar het midden van het scanvak
-      setMarboticState({ tx: 0, ty: 0, scale: 1.05 });
-      await delayTutorial(640, token);
+      setMarboticState({ tx: rightShift, ty: 0, scale: 1.70 });
+      await delayTutorial(680, token);
 
       // Alsof hij tegen het scherm drukt
       pressMarbotic(true);
-      setMarboticState({ tx: 0, ty: 0, scale: 1.13 });
-      await delayTutorial(260, token);
+      setMarboticState({ tx: rightShift, ty: 0, scale: 1.78 });
+      await delayTutorial(220, token);
 
-      // Het cijfer ligt nu op de scanplaat (asset uit de bijlage)
-      showScanAsset('marboticvoorbeeldb.png', '4');
+      // Cijfer 4 ligt op de scanplaat
+      showScanAsset(marboticBSrc, '4');
+      await delayTutorial(420, token);
 
-      scanTitle.textContent = 'Even stil houden.';
-      scanSub.textContent = 'We lezen de puntjes.';
-      scanHint.textContent = '';
-      await delayTutorial(520, token);
 
       // Nagekeken, marbotic hand uit beeld
       pressMarbotic(false);
-      setMarboticState({ tx: 520, ty: 420, scale: 0.96 });
+      setMarboticState({ tx: offX, ty: offY, scale: 1.08 });
       await delayTutorial(520, token);
       hideMarbotic();
 
