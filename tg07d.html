@@ -456,6 +456,11 @@ position:absolute;
       overflow:hidden;
 pointer-events: auto;
     }
+
+    @media (orientation: landscape){
+      .startBtn{ top: calc(var(--start-top, 60%) - 10px); }
+    }
+
     .startBtn:active{
       transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
     }
@@ -1169,6 +1174,7 @@ function setAutoScale(){
         const p = audio.play();
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
+    }
 
 
     // Start de succes jingle bewust nét later, zodat beeld eerst mag starten
