@@ -156,6 +156,12 @@
       opacity: 0.25;
     }
 
+    /* Praatknop blijft helder tijdens afspelen */
+    #speakBtn:disabled:not(.isOff) img{
+      filter: none;
+      opacity: 1;
+    }
+
 .topIconBtn.isOff img{
       filter: grayscale(100%);
       opacity: 0.34;
@@ -490,6 +496,21 @@ pointer-events: auto;
       transition: opacity 240ms ease;
       will-change: transform, opacity;
     }
+
+    /* Subtiele aandachtstrekker bij inactiviteit, alleen als scannen is toegestaan */
+    @keyframes scanIdleWiggle{
+      0%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)) rotate(0deg); }
+      18%{ transform: translate(-50%, -52%) scale(var(--scanplek-scale, 1)) rotate(-1deg); }
+      36%{ transform: translate(-50%, -49%) scale(var(--scanplek-scale, 1)) rotate(1.2deg); }
+      54%{ transform: translate(-50%, -52%) scale(var(--scanplek-scale, 1)) rotate(-0.8deg); }
+      72%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)) rotate(0.6deg); }
+      100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)) rotate(0deg); }
+    }
+
+    #scanPlaceImg.idleWiggle{
+      animation: scanIdleWiggle 1.5s ease-in-out 0s 1;
+    }
+
 
     .scanVeil{
       position:absolute;
@@ -880,101 +901,10 @@ z-index: 2000;
         <div class="settingsSectionTitle">cijfers</div>
         <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
       </div>
-
-      <div class="settingsSection">
-        <div class="settingsSectionTitle">startknop</div>
-
-        <div class="settingsSubTitle">iPad horizontaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="startLandScaleRange" min="0.30" max="1.30" step="0.01" value="0.36" />
-          <div class="tuneValue" id="startLandScaleValue">0.36</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="startLandXRange" min="-50" max="250" step="0.5" value="29.5" />
-          <div class="tuneValue" id="startLandXValue">29.5%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="startLandYRange" min="-20" max="120" step="0.5" value="57" />
-          <div class="tuneValue" id="startLandYValue">57%</div>
-        </div>
-
-        <div class="settingsSubTitle">iPad verticaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="startPortScaleRange" min="0.30" max="1.30" step="0.01" value="0.45" />
-          <div class="tuneValue" id="startPortScaleValue">0.45</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="startPortXRange" min="-50" max="250" step="0.5" value="70" />
-          <div class="tuneValue" id="startPortXValue">70%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="startPortYRange" min="-20" max="120" step="0.5" value="38" />
-          <div class="tuneValue" id="startPortYValue">38%</div>
-        </div>
-      
-
-            </div>
-
-      <div class="settingsSection">
-        <div class="settingsSectionTitle">scanplek</div>
-
-        <div class="settingsSubTitle">iPad horizontaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="scanLandScaleRange" min="0.20" max="1.80" step="0.01" value="0.36" />
-          <div class="tuneValue" id="scanLandScaleValue">0.36</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="scanLandXRange" min="-50" max="150" step="0.5" value="80.5" />
-          <div class="tuneValue" id="scanLandXValue">80.5%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="scanLandYRange" min="-50" max="150" step="0.5" value="87" />
-          <div class="tuneValue" id="scanLandYValue">87%</div>
-        </div>
-
-        <div class="settingsSubTitle">iPad verticaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="scanPortScaleRange" min="0.20" max="1.80" step="0.01" value="0.27" />
-          <div class="tuneValue" id="scanPortScaleValue">0.27</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="scanPortXRange" min="-50" max="150" step="0.5" value="88" />
-          <div class="tuneValue" id="scanPortXValue">88%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="scanPortYRange" min="-50" max="150" step="0.5" value="80" />
-          <div class="tuneValue" id="scanPortYValue">80%</div>
-        </div>
-      </div>
     </div>
   </div>
 
-
-  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
+<audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
 
   <script>
     /*
@@ -1093,12 +1023,21 @@ z-index: 2000;
     let scanPopTimer = null;
 
     function setScanPermission(allowed, opts = {}){
+      const wasAllowed = scanAllowed;
       scanAllowed = !!allowed;
+
       if (scanArea) scanArea.classList.toggle('scanAllowed', scanAllowed);
       if (scanArea && !scanAllowed) scanArea.classList.remove('scanPop');
 
       if (scanAllowed && opts && opts.pop){
         triggerScanPop();
+      }
+
+      // Zodra scannen weer mag, start een nieuwe idle teller voor herhalen en hint
+      if (scanAllowed && !wasAllowed){
+        resetIdleCountdown('scanAllowed');
+      } else {
+        updateIdleHints();
       }
     }
 
@@ -1323,6 +1262,7 @@ let currentVoice = null;
 
       const onPlay = () => {
         setSpeakVisual(true);
+        if (speakBtn) speakBtn.disabled = true;
 
         // Alleen bij een nieuwe opdracht, niet bij herhalen
         if (isQuestionNew()){
@@ -1332,6 +1272,7 @@ let currentVoice = null;
 
       const onEnded = () => {
         if (a === currentVoice) setSpeakVisual(false);
+        if (speakBtn) speakBtn.disabled = false;
 
         if (isQuestionNew()){
           currentVoicePurpose = null;
@@ -1349,10 +1290,12 @@ let currentVoice = null;
 
       const onPause = () => {
         if (a === currentVoice) setSpeakVisual(false);
+        if (speakBtn) speakBtn.disabled = false;
       };
 
       const onError = () => {
         if (a === currentVoice) setSpeakVisual(false);
+        if (speakBtn) speakBtn.disabled = false;
 
         // Als afspelen faalt op iPad, geef dan niet de scan vrij (tenzij het een nieuwe opdracht is)
         if (isQuestionNew()){
@@ -1446,6 +1389,20 @@ let currentVoice = null;
         if (!isRepeat){
           if (started && !locked) setScanPermission(true, { pop:true });
         }
+        return;
+      }
+
+      playVoice(a);
+    }
+
+    function sayReveal(digit){
+      const a = revealVoices[digit];
+      const ok = !!a && (voiceOkReveal[digit] !== false);
+
+      currentVoicePurpose = 'reveal';
+
+      if (!ok){
+        currentVoicePurpose = null;
         return;
       }
 
@@ -1593,12 +1550,17 @@ let currentVoice = null;
     }
 
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) pauseMusicForSleep();
-      else setTimeout(resumeMusicAfterSleep, 90);
+      if (document.hidden){
+        pauseMusicForSleep();
+        pauseIdleHintsForSleep();
+      } else {
+        setTimeout(resumeMusicAfterSleep, 90);
+        resumeIdleHintsAfterSleep();
+      }
     });
 
-    window.addEventListener('pagehide', pauseMusicForSleep);
-    window.addEventListener('pageshow', () => setTimeout(resumeMusicAfterSleep, 120));
+    window.addEventListener('pagehide', () => { pauseMusicForSleep(); pauseIdleHintsForSleep(); });
+    window.addEventListener('pageshow', () => { setTimeout(resumeMusicAfterSleep, 120); resumeIdleHintsAfterSleep(); });
 
     document.addEventListener('pointerdown', tryPendingMusicResume, { passive:true });
     document.addEventListener('touchstart', tryPendingMusicResume, { passive:true });
@@ -1630,7 +1592,7 @@ let currentVoice = null;
 
     let fairyTiming = loadTiming();
     /* Startknop layout */
-    const START_LAYOUT_KEY = 'startBtnLayoutV3';
+    const START_LAYOUT_KEY = 'startBtnLayoutV4';
 
     const DEFAULT_START_LAYOUT = {
       landScale: 0.36,
@@ -1733,7 +1695,7 @@ let currentVoice = null;
     
 
     /* Scanplek layout (afbeelding in het scanvak) */
-    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV2';
+    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV3';
 
     const DEFAULT_SCAN_LAYOUT = {
       landScale: 0.36,
@@ -2448,6 +2410,135 @@ if (fairyVid.readyState >= 2) seekAndPlay();
 
     let roundToken = 0;
 
+
+    /* Inactiviteit, herhaal opdracht en subtiele hint bij scanplek */
+    const IDLE_REPEAT_MS = 22000;
+    const IDLE_WIGGLE_MIN_MS = 15000;
+    const IDLE_WIGGLE_MAX_MS = 30000;
+
+    let lastInteractionTs = Date.now();
+    let idleRepeatTimer = null;
+    let idleWiggleTimer = null;
+
+    function pageIsVisible(){
+      return document.visibilityState === 'visible' && !document.hidden;
+    }
+
+    function clearIdleTimers(){
+      if (idleRepeatTimer) { clearTimeout(idleRepeatTimer); idleRepeatTimer = null; }
+      if (idleWiggleTimer) { clearTimeout(idleWiggleTimer); idleWiggleTimer = null; }
+    }
+
+    function stopIdleWiggle(){
+      if (scanPlaceImg) scanPlaceImg.classList.remove('idleWiggle');
+    }
+
+    function resetIdleCountdown(reason){
+      lastInteractionTs = Date.now();
+      updateIdleHints();
+    }
+
+    function idleRepeatAllowed(){
+      try{
+        if (!started) return false;
+        if (locked) return false;
+        if (!scanAllowed) return false;
+        if (!pageIsVisible()) return false;
+        return true;
+      } catch(e){
+        return false;
+      }
+    }
+
+    function updateIdleHints(){
+      clearIdleTimers();
+      stopIdleWiggle();
+
+      if (!idleRepeatAllowed()) return;
+
+      scheduleIdleRepeat();
+      scheduleIdleWiggle();
+    }
+
+    function scheduleIdleRepeat(){
+      if (!idleRepeatAllowed()) return;
+
+      if (idleRepeatTimer) { clearTimeout(idleRepeatTimer); idleRepeatTimer = null; }
+
+      const idleFor = Date.now() - lastInteractionTs;
+      const due = Math.max(200, IDLE_REPEAT_MS - idleFor);
+
+      const tick = () => {
+        idleRepeatTimer = null;
+        if (!idleRepeatAllowed()) return;
+
+        const nowIdleFor = Date.now() - lastInteractionTs;
+        if (nowIdleFor >= IDLE_REPEAT_MS){
+          const isSpeaking = !!currentVoice && !currentVoice.paused && !currentVoice.ended;
+          if (!isSpeaking){
+            askDigit(targetDigit, { repeat:true });
+          }
+        }
+
+        // Blijven herhalen elke 22 seconden zolang er geen interactie is
+        if (idleRepeatAllowed()){
+          idleRepeatTimer = setTimeout(tick, IDLE_REPEAT_MS);
+        }
+      };
+
+      idleRepeatTimer = setTimeout(tick, due);
+    }
+
+    function randInt(min, max){
+      const a = Math.ceil(min);
+      const b = Math.floor(max);
+      return Math.floor(a + Math.random() * (b - a + 1));
+    }
+
+    function triggerIdleWiggle(){
+      if (!scanPlaceImg) return;
+      scanPlaceImg.classList.remove('idleWiggle');
+      void scanPlaceImg.offsetWidth;
+      scanPlaceImg.classList.add('idleWiggle');
+    }
+
+    function scheduleIdleWiggle(){
+      if (!idleRepeatAllowed()) return;
+
+      const delay = randInt(IDLE_WIGGLE_MIN_MS, IDLE_WIGGLE_MAX_MS);
+      idleWiggleTimer = setTimeout(() => {
+        idleWiggleTimer = null;
+        if (!idleRepeatAllowed()) return;
+
+        const nowIdleFor = Date.now() - lastInteractionTs;
+        if (nowIdleFor < IDLE_WIGGLE_MIN_MS) { scheduleIdleWiggle(); return; }
+
+        triggerIdleWiggle();
+
+        // Af en toe opnieuw, zolang er geen interactie is
+        scheduleIdleWiggle();
+      }, delay);
+    }
+
+    function pauseIdleHintsForSleep(){
+      clearIdleTimers();
+      stopIdleWiggle();
+    }
+
+    function resumeIdleHintsAfterSleep(){
+      lastInteractionTs = Date.now();
+      updateIdleHints();
+    }
+
+    // Elke aanraking, klik of toets reset de inactiviteit
+    document.addEventListener('pointerdown', () => resetIdleCountdown('pointer'), { passive:true, capture:true });
+    document.addEventListener('touchstart', () => resetIdleCountdown('touch'), { passive:true, capture:true });
+    document.addEventListener('keydown', () => resetIdleCountdown('key'), { capture:true });
+
+    window.addEventListener('blur', pauseIdleHintsForSleep);
+    window.addEventListener('focus', resumeIdleHintsAfterSleep);
+
+
     function wrongFeedback(){
       scanArea.classList.remove('wrong');
       void scanArea.offsetHeight;
@@ -2573,6 +2664,13 @@ if (fairyVid.readyState >= 2) seekAndPlay();
         if (myToken !== roundToken) return;
         nextRound();
       });
+
+      // Failsafe, voorkomt vastlopen als de fee animatie geen callback geeft
+      const failSafeMs = 8000;
+      setTimeout(() => {
+        if (myToken !== roundToken) return;
+        nextRound();
+      }, failSafeMs);
     }
 
     function handleRecognitionResult(recognizedDigit){
@@ -2880,6 +2978,10 @@ if (fairyVid.readyState >= 2) seekAndPlay();
     speakBtn.addEventListener('click', () => {
       if (!started) return;
       if (speakBtn.disabled) return;
+
+      // Alleen klikken als de praatknop uit staat (dus er speelt nu geen uitleg of opdracht)
+      if (!speakBtn.classList.contains('isOff')) return;
+
       unlockAllAudioOnce();
       askDigit(targetDigit, { repeat:true });
     });
