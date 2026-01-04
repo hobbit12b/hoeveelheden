@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Cijferreeksen</title>
+  <title>Bellenblazen/title>
 
   <style>
     :root{
@@ -24,9 +24,10 @@
 
 
       /* Startknop */
-      --start-left: 50%;
-      --start-top: 60%;
-      --start-scale: 0.83;
+      --start-left: 29%;
+      --start-top: 57%;
+      --start-scale: 1.03;
+      --under-w: 320px;
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
@@ -56,6 +57,14 @@
       body{
         grid-template-columns: 1fr;
         grid-template-rows: 54fr 46fr;
+      }
+    }
+
+    @media (orientation: portrait){
+      :root{
+        --start-left: 50%;
+        --start-top: 31.5%;
+        --start-scale: 0.95;
       }
     }
 
@@ -258,6 +267,31 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       will-change: transform, opacity;
     }
 
+
+    /* onderlegger: laat hetzelfde marbotic-cijfer zien onder de scanplek */
+    #scanUnderImg{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform: translate(-50%, -50%);
+      width: var(--under-w, 320px);
+      height: auto;
+      object-fit: contain;
+      pointer-events:none;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 140ms ease;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.10));
+      will-change: opacity, transform;
+    }
+    #scanUnderImg.show{ opacity: 1; }
+
+    /* startscherm: nog geen marbotic scan UI zichtbaar */
+    body.startActive #scanPlaceImg{ opacity: 0 !important; }
+    body.startActive #scanUnderImg{ opacity: 0 !important; }
+    body.startActive .scanVeil{ opacity: 1 !important; }
+    body.startActive #scanDigitWrap{ opacity: 0 !important; }
+
     .scanVeil{
       position:absolute;
       inset: 0;
@@ -265,7 +299,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       opacity: 1;
       transition: opacity 240ms ease;
       pointer-events:none;
-      z-index: 2;
+      z-index: 4;
     }
 
     .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
@@ -287,7 +321,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       pointer-events:none;
       opacity: 0;
       transition: opacity 160ms ease;
-      z-index: 3;
+      z-index: 5;
     }
     .scanDigitWrap.show{ opacity: 1; }
     .scanDigitWrap img{
@@ -555,6 +589,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     <div class="scanOverlay">
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" draggable="false" aria-hidden="true" />
+      <img id="scanUnderImg" src="" alt="" draggable="false" aria-hidden="true" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
       
     </div>
@@ -606,20 +641,20 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
   <div class="tuneRow">
     <div class="tuneLabel">grootte</div>
-    <input type="range" id="startScaleRange" min="0.40" max="1.60" step="0.01" value="0.83" />
-    <div class="tuneValue" id="startScaleValue">0.83</div>
+    <input type="range" id="startScaleRange" min="0.40" max="1.60" step="0.01" value="1.03" />
+    <div class="tuneValue" id="startScaleValue">1.03</div>
   </div>
 
   <div class="tuneRow">
     <div class="tuneLabel">x</div>
-    <input type="range" id="startXRange" min="-20" max="120" step="0.5" value="50" />
-    <div class="tuneValue" id="startXValue">50</div>
+    <input type="range" id="startXRange" min="-20" max="120" step="0.5" value="29" />
+    <div class="tuneValue" id="startXValue">29</div>
   </div>
 
   <div class="tuneRow">
     <div class="tuneLabel">y</div>
-    <input type="range" id="startYRange" min="-20" max="120" step="0.5" value="60" />
-    <div class="tuneValue" id="startYValue">60</div>
+    <input type="range" id="startYRange" min="-20" max="120" step="0.5" value="57" />
+    <div class="tuneValue" id="startYValue">57</div>
   </div>
 
   <div class="tuneButtons">
@@ -682,15 +717,15 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
 
 /* Startknop layout */
-const START_LAYOUT_KEY = 'startBtnLayoutV1';
+const START_LAYOUT_KEY = 'startBtnLayoutV2';
 
 const DEFAULT_START_LAYOUT = {
-  landScale: 0.83,
-  landX: 50,
-  landY: 60,
-  portScale: 0.83,
+  landScale: 1.03,
+  landX: 29,
+  landY: 57,
+  portScale: 0.95,
   portX: 50,
-  portY: 60
+  portY: 31.5
 };
 
 function loadStartLayout(){
@@ -737,6 +772,9 @@ function applyStartLayoutToCSS(){
     const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
     const PLOP_SOUND_SRC = 'plop.mp3';
 
+    const AFTER_TUTOR_CUE_SRC = 'numagjij.mp3';
+
+
     const BLOW_GIF_SRC = 'bellen_blazen02.gif';
     const POP_GIF_SRC  = 'bel_barst.gif';
 
@@ -755,12 +793,46 @@ function applyStartLayoutToCSS(){
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
+
+    if (startOverlay){ document.body.classList.add('startActive'); }
+
     const titlePill = document.getElementById('titlePill');
 
     const scanArea = document.getElementById('scan-area');
 
     const scanDigitWrap = document.getElementById('scanDigitWrap');
     const scanDigitImg = document.getElementById('scanDigitImg');
+
+    const scanUnderImg = document.getElementById('scanUnderImg');
+
+    let underDigit = null;
+    let underDigitSrc = {};
+
+    function applyUnderSize(){
+      if (!scanArea) return;
+      const r = scanArea.getBoundingClientRect();
+      const w = Math.max(160, Math.min(r.width * 0.62, 560));
+      document.documentElement.style.setProperty('--under-w', `${w}px`);
+    }
+
+    function showUnderDigit(d){
+      if (!scanUnderImg) return;
+      if (underDigit === d && scanUnderImg.classList.contains('show')) return;
+      underDigit = d;
+      const src = underDigitSrc[d] || `marbotic${d}.png`;
+      scanUnderImg.src = src;
+      scanUnderImg.alt = String(d);
+      scanUnderImg.classList.add('show');
+    }
+
+    function hideUnderDigit(){
+      if (!scanUnderImg) return;
+      underDigit = null;
+      scanUnderImg.classList.remove('show');
+      scanUnderImg.removeAttribute('src');
+      scanUnderImg.alt = '';
+    }
+
     const tutorialHandWrap = document.getElementById('tutorialHandWrap');
     const tutorialHandImg = document.getElementById('tutorialHand');
 
@@ -834,6 +906,10 @@ const startResetBtn = document.getElementById('startResetBtn');
     promptAudio.preload = 'auto';
     promptAudio.volume = 1;
 
+    const afterTutorAudio = new Audio(AFTER_TUTOR_CUE_SRC);
+    afterTutorAudio.preload = 'auto';
+    afterTutorAudio.volume = 1;
+
     function stopPrompt(){
       try{ promptAudio.pause(); } catch(e){}
       try{ promptAudio.currentTime = 0; } catch(e){}
@@ -846,6 +922,35 @@ const startResetBtn = document.getElementById('startResetBtn');
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
     }
+
+    function playAfterTutorCueSafe(){
+      return new Promise((resolve) => {
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ afterTutorAudio.onended = null; } catch(e){}
+          try{ afterTutorAudio.onerror = null; } catch(e){}
+          resolve();
+        };
+
+        const HARD_MAX_MS = 3200;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          afterTutorAudio.pause();
+          afterTutorAudio.currentTime = 0;
+          afterTutorAudio.onended = () => { clearTimeout(hard); finish(); };
+          afterTutorAudio.onerror = () => { clearTimeout(hard); finish(); };
+          const p = afterTutorAudio.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
 
     function stopVoice(){
       try{ voicePlayer.pause(); } catch(e){}
@@ -1794,9 +1899,8 @@ let wrongTries = 0;
       setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
     }
 
-    function onCorrectAnswerTutorial(){
+    async function onCorrectAnswerTutorial(){
       locked = true;
-
 
       ensureAllHaveBubbles();
 
@@ -1808,7 +1912,11 @@ let wrongTries = 0;
         try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
       }, 260);
 
-      setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
+      // wacht tot het voorbeeld echt klaar is, dan: nu mag jij
+      await delaySafe(Math.max(1600, seqMs + 250));
+      await playAfterTutorCueSafe();
+
+      nextRound();
     }
 
     function onWrongAnswer(){
@@ -2079,6 +2187,7 @@ let wrongTries = 0;
 
       if (pts.length === 0){
         hasResultForCurrentTouches = false;
+        hideUnderDigit();
         // als alles geteld is en je wacht, geef een zachte reminder
         scheduleIdlePrompt();
         return;
@@ -2086,6 +2195,7 @@ let wrongTries = 0;
 
       if (pts.length !== expectedTouchPoints){
         hasResultForCurrentTouches = false;
+        hideUnderDigit();
         return;
       }
 
@@ -2094,6 +2204,7 @@ let wrongTries = 0;
         const digit = recognizeDigit(pts);
         if (digit !== null && typeof digit === "number"){
           hasResultForCurrentTouches = true;
+          showUnderDigit(digit);
           handleAnswer(digit);
         }
       }
@@ -2436,6 +2547,7 @@ if (startOverlay && startBtn){
 
     setTimeout(() => {
       if (startOverlay) startOverlay.style.display = 'none';
+      try{ document.body.classList.remove('startActive'); } catch(e){}
       startGame();
     }, 520);
   });
@@ -2464,6 +2576,14 @@ if (startOverlay && startBtn){
       } else {
         usePinguinSuccess = false;
       }
+      // marbotic onderleggers (onder het echte cijfer op de iPad)
+      underDigitSrc = {};
+      for (let d = 0; d <= 9; d++){
+        const src = `marbotic${d}.png`;
+        const img = await loadImage(src);
+        if (img) underDigitSrc[d] = src;
+      }
+
 
       requestRender();
     }
@@ -2472,6 +2592,7 @@ if (startOverlay && startBtn){
       setAutoScale();
       applyScanLayoutToCSS();
       applyStartLayoutToCSS();
+      applyUnderSize();
       resizeCountCanvas();
     }, 180));
 
@@ -2479,6 +2600,7 @@ if (startOverlay && startBtn){
       setAutoScale();
       applyScanLayoutToCSS();
       applyStartLayoutToCSS();
+      applyUnderSize();
       resizeCountCanvas();
     }, 280));
 
@@ -2487,6 +2609,7 @@ if (startOverlay && startBtn){
       applyScanLayoutToCSS();
 
       applyStartLayoutToCSS();
+      applyUnderSize();
       countRange = loadCountRange();
       syncCountUI();
 
