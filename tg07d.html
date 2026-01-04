@@ -1287,10 +1287,7 @@ function setAutoScale(){
       unlockOneAudio(questionVoices && questionVoices[0]);
       unlockOneAudio(revealVoices && revealVoices[0]);
 
-      // achtergrondmuziek ook primen, zonder dat het echt gaat spelen
-      unlockOneAudio(bgMusic);
     }
-
 
 
     function setSpeakAvailability(canPlay){
@@ -1488,7 +1485,6 @@ let currentVoice = null;
       if (!bgMusic) return;
 
       bgMusic.loop = true;
-      bgMusic.volume = 0.25;
 
       if (!musicAvailable || bgMusicMuted){
         try { bgMusic.pause(); } catch(e) {}
@@ -1496,14 +1492,28 @@ let currentVoice = null;
         return;
       }
 
+      // iPad vriendelijk: start eerst met volume 0, daarna zachtjes omhoog
       try{
+        bgMusic.muted = false;
+        bgMusic.volume = 0;
+
         const p = bgMusic.play();
-        if (p && typeof p.then === 'function'){
-          p.then(() => updateMusicBtn()).catch(() => updateMusicBtn());
-        } else {
+
+        const lift = () => {
+          try { bgMusic.volume = 0.25; } catch(e) {}
           updateMusicBtn();
+        };
+
+        if (p && typeof p.then === 'function'){
+          p.then(() => setTimeout(lift, 40)).catch(() => {
+            pendingMusicResume = true;
+            updateMusicBtn();
+          });
+        } else {
+          setTimeout(lift, 60);
         }
       } catch(e){
+        pendingMusicResume = true;
         updateMusicBtn();
       }
     }
@@ -1573,7 +1583,13 @@ let currentVoice = null;
     function tryPendingMusicResume(){
       if (!pendingMusicResume) return;
       pendingMusicResume = false;
-      resumeMusicAfterSleep();
+
+      // Soms blokkeert iOS het eerste play commando, dan proberen we het opnieuw bij de eerstvolgende tik
+      if (musicWasPlayingBeforeHide){
+        resumeMusicAfterSleep();
+      } else {
+        startBackgroundMusic();
+      }
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -2827,7 +2843,6 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       if (started) return;
       started = true;
 
-      unlockAllAudioOnce();
 
       // leuke verdwijnanimatie voor de startknop
       if (startOverlay && startBtn){
@@ -2845,6 +2860,7 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       }
 
       startBackgroundMusic();
+      unlockAllAudioOnce();
 
       warmUpVideo(explosionVid);
 
