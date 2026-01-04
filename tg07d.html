@@ -1245,6 +1245,53 @@ function setAutoScale(){
     revealVoices.forEach((a, i) => {
       a.addEventListener('error', () => { voiceOkReveal[i] = false; });
     });
+    /* iOS audio unlock, nodig omdat Safari pas geluid toestaat na een gebruikersactie */
+    let audioUnlocked = false;
+
+    function unlockOneAudio(el){
+      if (!el) return;
+      try{
+        const prevMuted = !!el.muted;
+        const prevVol = (typeof el.volume === 'number') ? el.volume : 1;
+
+        el.muted = true;
+        if (typeof el.volume === 'number') el.volume = 0;
+
+        const p = el.play();
+        const finish = () => {
+          try { el.pause(); } catch(e){}
+          try { el.currentTime = 0; } catch(e){}
+          el.muted = prevMuted;
+          if (typeof el.volume === 'number') el.volume = prevVol;
+        };
+
+        if (p && typeof p.then === 'function'){
+          p.then(() => setTimeout(finish, 40)).catch(() => {
+            el.muted = prevMuted;
+            if (typeof el.volume === 'number') el.volume = prevVol;
+          });
+        } else {
+          setTimeout(finish, 60);
+        }
+      } catch(e){}
+    }
+
+    function unlockAllAudioOnce(){
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+
+      unlockOneAudio(goodAudio);
+      unlockOneAudio(wrongAudio);
+
+      // 1 vraag en 1 antwoord is genoeg om de rest meestal los te trekken
+      unlockOneAudio(questionVoices && questionVoices[0]);
+      unlockOneAudio(revealVoices && revealVoices[0]);
+
+      // achtergrondmuziek ook primen, zonder dat het echt gaat spelen
+      unlockOneAudio(bgMusic);
+    }
+
+
 
     function setSpeakAvailability(canPlay){
       if (!speakBtn) return;
@@ -1268,9 +1315,20 @@ let currentVoice = null;
     function attachVoiceUI(a){
       if (!a) return () => {};
 
+      const isQuestionNew = () => (a === currentVoice) && (currentVoicePurpose === 'questionNew' || currentVoicePurpose === 'question');
+      const isQuestionRepeat = () => (a === currentVoice) && (currentVoicePurpose === 'questionRepeat');
+
+      const allowScanAfterQuestion = (popIt) => {
+        if (started && !locked){
+          setScanPermission(true, { pop: !!popIt });
+        }
+      };
+
       const onPlay = () => {
         setSpeakVisual(true);
-        if (a === currentVoice && currentVoicePurpose === 'question'){
+
+        // Alleen bij een nieuwe opdracht, niet bij herhalen
+        if (isQuestionNew()){
           setScanPermission(false);
         }
       };
@@ -1278,33 +1336,44 @@ let currentVoice = null;
       const onEnded = () => {
         if (a === currentVoice) setSpeakVisual(false);
 
-        if (a === currentVoice && currentVoicePurpose === 'question'){
+        if (isQuestionNew()){
           currentVoicePurpose = null;
-          if (started && !locked) setScanPermission(true, { pop:true });
-        } else {
-          currentVoicePurpose = null;
+          allowScanAfterQuestion(true);
+          return;
         }
+
+        if (isQuestionRepeat()){
+          currentVoicePurpose = null;
+          return;
+        }
+
+        currentVoicePurpose = null;
       };
 
-      const onPause = () => { if (a === currentVoice) setSpeakVisual(false); };
+      const onPause = () => {
+        if (a === currentVoice) setSpeakVisual(false);
+      };
 
       const onError = () => {
         if (a === currentVoice) setSpeakVisual(false);
-        if (a === currentVoice && currentVoicePurpose === 'question'){
+
+        // Als afspelen faalt op iPad, geef dan niet de scan vrij (tenzij het een nieuwe opdracht is)
+        if (isQuestionNew()){
           currentVoicePurpose = null;
-          if (started && !locked) setScanPermission(true, { pop:true });
-        } else {
-          currentVoicePurpose = null;
+          allowScanAfterQuestion(true);
+          return;
         }
+
+        currentVoicePurpose = null;
       };
 
-      a.addEventListener('playing', onPlay);
+      a.addEventListener('play', onPlay);
       a.addEventListener('ended', onEnded);
       a.addEventListener('pause', onPause);
       a.addEventListener('error', onError);
 
       return () => {
-        a.removeEventListener('playing', onPlay);
+        a.removeEventListener('play', onPlay);
         a.removeEventListener('ended', onEnded);
         a.removeEventListener('pause', onPause);
         a.removeEventListener('error', onError);
@@ -1337,52 +1406,52 @@ let currentVoice = null;
 
       setSpeakVisual(false);
 
+      const recoverAfterBlocked = () => {
+        // iOS kan play blokkeren als het niet (meer) als user gesture telt
+        if (a === currentVoice && (currentVoicePurpose === 'questionNew' || currentVoicePurpose === 'question')){
+          currentVoicePurpose = null;
+          if (started && !locked) setScanPermission(true, { pop:true });
+        } else {
+          currentVoicePurpose = null;
+        }
+        setSpeakVisual(false);
+      };
+
       try{
         a.currentTime = 0;
         const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => { setSpeakVisual(false); });
+        if (p && typeof p.catch === 'function') p.catch(recoverAfterBlocked);
       } catch(e){
-        setSpeakVisual(false);
+        recoverAfterBlocked();
       }
     }
 
-    function askDigit(digit){
+    function askDigit(digit, opts = {}){
+      const isRepeat = !!opts.repeat;
       const a = questionVoices[digit];
 
       const ok = !!a && (voiceOkQuestion[digit] !== false);
       setSpeakAvailability(ok);
 
-      // Je mag pas scannen nadat de opdracht is uitgesproken
-      setScanPermission(false);
-      currentVoicePurpose = 'question';
+      // Alleen bij een nieuwe opdracht blokkeren we scannen tot na het uitspreken
+      if (!isRepeat){
+        setScanPermission(false);
+        currentVoicePurpose = 'questionNew';
+      } else {
+        currentVoicePurpose = 'questionRepeat';
+      }
 
       if (!ok){
         stopVoice();
         setSpeakVisual(false);
         currentVoicePurpose = null;
 
-        if (started && !locked) setScanPermission(true, { pop:true });
+        if (!isRepeat){
+          if (started && !locked) setScanPermission(true, { pop:true });
+        }
         return;
       }
-      playVoice(a);
-    }
 
-
-    function sayReveal(digit){
-      const a = revealVoices[digit];
-
-      const ok = !!a && (voiceOkReveal[digit] !== false);
-      setSpeakAvailability(ok);
-
-      setScanPermission(false);
-      currentVoicePurpose = 'reveal';
-
-      if (!ok){
-        stopVoice();
-        setSpeakVisual(false);
-        currentVoicePurpose = null;
-        return;
-      }
       playVoice(a);
     }
 
@@ -1763,6 +1832,7 @@ let currentVoice = null;
       // als je tijdens het spel een cijfer uitzet dat nu aan de beurt is, dan pakken we meteen een nieuw cijfer
       if (started && Array.isArray(enabledDigits) && enabledDigits.length && !enabledDigits.includes(targetDigit)){
         chooseNextDigit();
+        unlockAllAudioOnce();
         askDigit(targetDigit);
       }
     }
@@ -2447,7 +2517,7 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, onDone);
     }
 
-    function nextRound(){
+    function nextRound(opts = {}){
       const myToken = ++roundToken;
 
       locked = false;
@@ -2455,16 +2525,20 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       clearDigitAndExplosion();
       setScanPermission(false);
 
-scanTitle.textContent = 'Leg het houten cijfer in het vak.';
+      scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
       scanHint.textContent = '📱 Blokje stil laten liggen';
 
       chooseNextDigit();
 
-      setTimeout(() => {
+      const run = () => {
         if (myToken !== roundToken) return;
         askDigit(targetDigit);
-      }, 80);
+      };
+
+      // Eerste vraag op iPad liever direct, dat helpt bij audio restricties
+      if (opts && opts.immediate) run();
+      else setTimeout(run, 80);
     }
 
     function revealCorrectAfterThreeWrong(){
@@ -2753,6 +2827,8 @@ scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       if (started) return;
       started = true;
 
+      unlockAllAudioOnce();
+
       // leuke verdwijnanimatie voor de startknop
       if (startOverlay && startBtn){
         startOverlay.classList.add('leaving');
@@ -2782,13 +2858,14 @@ scanTitle.textContent = 'Leg het houten cijfer in het vak.';
         revealVoices.forEach(a => { try { a.load(); } catch(e){} });
       } catch(e){}
 
-      nextRound();
+      nextRound({ immediate:true });
     }
 
     speakBtn.addEventListener('click', () => {
       if (!started) return;
       if (speakBtn.disabled) return;
-      askDigit(targetDigit);
+      unlockAllAudioOnce();
+      askDigit(targetDigit, { repeat:true });
     });
 
 startBtn.addEventListener('click', startGame);
@@ -2797,7 +2874,7 @@ startBtn.addEventListener('click', startGame);
       try { window.location.href = 'index.html'; } catch (e) {}
     });
 
-    window.addEventListener('load', () => {
+    function initApp(){
       setAutoScale();
       applyStartLayoutToCSS();
       applyScanLayoutToCSS();
@@ -2821,7 +2898,9 @@ startBtn.addEventListener('click', startGame);
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-    });
+    }
+
+    initApp();
   </script>
 </body>
 </html>
