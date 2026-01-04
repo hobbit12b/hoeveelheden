@@ -1169,79 +1169,22 @@ function setAutoScale(){
         const p = audio.play();
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
+
+
+    // Start de succes jingle bewust nét later, zodat beeld eerst mag starten
+    function playGoodSfxDelayed(token){
+      // als audio nog niet los is op iOS, dan liever direct spelen binnen de touch context
+      if (!audioUnlocked){
+        playSfx(goodAudio);
+        return;
+      }
+
+      const delayMs = getVarMillis('--good-sfx-delay', 450);
+      setTimeout(() => {
+        if (token != null && token !== roundToken) return;
+        playSfx(goodAudio);
+      }, Math.max(0, Number(delayMs) || 0));
     }
-
-    /* Mp3 stemmen */
-    const questionVoices = DIGIT_ORDER.map(d => {
-      const a = new Audio(QUESTION_SRC(d));
-      a.preload = 'auto';
-      return a;
-    });
-
-    const revealVoices = DIGIT_ORDER.map(d => {
-      const a = new Audio(REVEAL_SRC(d));
-      a.preload = 'auto';
-      return a;
-    });
-
-    
-
-    const voiceOkQuestion = Array(10).fill(true);
-    const voiceOkReveal = Array(10).fill(true);
-
-    const triedAltQuestion = Array(10).fill(false);
-    const triedAltReveal = Array(10).fill(false);
-
-    questionVoices.forEach((a, i) => {
-      a.addEventListener('error', () => {
-        // eerst een nette fallback proberen, zonder voorloopnul
-        if (!triedAltQuestion[i]){
-          triedAltQuestion[i] = true;
-          const alt = QUESTION_SRC_ALT(i);
-          const cur = a.currentSrc || a.src || '';
-          if (alt && !String(cur).endsWith(alt)){
-            try{
-              a.src = alt;
-              voiceOkQuestion[i] = true;
-              a.load();
-              return;
-            } catch(e){}
-          }
-        }
-        voiceOkQuestion[i] = false;
-      });
-    });
-
-    revealVoices.forEach((a, i) => {
-      a.addEventListener('error', () => {
-        if (!triedAltReveal[i]){
-          triedAltReveal[i] = true;
-          const alt = REVEAL_SRC_ALT(i);
-          const cur = a.currentSrc || a.src || '';
-          if (alt && !String(cur).endsWith(alt)){
-            try{
-              a.src = alt;
-              voiceOkReveal[i] = true;
-              a.load();
-              return;
-            } catch(e){}
-          }
-        }
-        voiceOkReveal[i] = false;
-      });
-    });
-/* Kleine mp3 check, zodat missende stemmen meteen zichtbaar worden */
-let badgeTimer = null;
-function showBadge(text, ms){
-  if (!audioBadge) return;
-  if (!text) return;
-  audioBadge.textContent = String(text);
-  audioBadge.classList.add('show');
-  if (badgeTimer) clearTimeout(badgeTimer);
-  badgeTimer = setTimeout(() => {
-    try { audioBadge.classList.remove('show'); } catch(e){}
-  }, Math.max(800, Number(ms) || 7000));
-}
 
 function probeAudioSrc(src, timeoutMs){
   return new Promise((resolve) => {
@@ -2904,7 +2847,7 @@ function revealCorrectAfterThreeWrong(){
         wrongTries = 0;
 
         stopVoice();
-        playSfx(goodAudio);
+        playGoodSfxDelayed(myToken);
 
         let fairyDone = false;
         let explosionDone = false;
