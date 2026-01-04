@@ -2,10 +2,10 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Tellen en scannen</title>
+  <title>bellenblazen</title>
 
   <style>
     :root{
@@ -16,6 +16,18 @@
       --dash-w:4px;
       --card-radius:28px;
       --scale: 1;
+
+      /* Marbotic scanplek, gelijk aan tg07 */
+      --scanplek-left: 88%;
+      --scanplek-top: 80%;
+      --scanplek-scale: 0.27;
+
+
+      /* Startknop */
+      --start-left: 29%;
+      --start-top: 57%;
+      --start-scale: 1.03;
+      --under-w: 320px;
 
       --shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
@@ -48,6 +60,14 @@
       }
     }
 
+    @media (orientation: portrait){
+      :root{
+        --start-left: 50%;
+        --start-top: 31.5%;
+        --start-scale: 0.95;
+      }
+    }
+
     .left{
       background: var(--bg-left);
       padding: 28px 26px 22px 26px;
@@ -60,7 +80,7 @@
     }
 
     .scan-surface{
-      background:#ffffff;
+background:#ffffff;
       position: relative;
       overflow:hidden;
       min-height: 0;
@@ -68,10 +88,12 @@
     }
 
     @media (orientation: landscape){
-      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
+      .scan-surface{
+border-left:  2px solid rgba(245,180,152,0.50); }
     }
     @media (orientation: portrait){
-      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
+      .scan-surface{
+border-top:  2px solid rgba(245,180,152,0.50); }
       .left{ padding: 22px; gap: 16px; }
     }
 
@@ -80,27 +102,39 @@
       align-items:center;
       gap: 18px;
       flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
-    .homeBtn,
-    .tuneBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+    .homeBtn{
+      appearance:none;
+      -webkit-appearance:none;
+      border:none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      cursor:pointer;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
       display:grid;
       place-items:center;
-      cursor:pointer;
-      padding: 0;
+      line-height: 0;
       flex: 0 0 auto;
-      font-size: 30px;
-      line-height: 1;
+      width:72px;
+      height:72px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
     }
-    .homeBtn:active,
-    .tuneBtn:active{ transform: scale(0.98); }
-    .homeBtn img{ width: 42px; height: 42px; object-fit: contain; display:block; }
+    .homeBtn:active{ transform: scale(0.99); }
+    .homeBtn img{
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+      display:block;
+      pointer-events:none;
+    }
 
     .titlePill{
       padding: 18px 44px;
@@ -118,6 +152,7 @@
       min-height: 64px;
       width: min(660px, 100%);
       text-transform: lowercase;
+      cursor: pointer;
     }
 
     .content{
@@ -133,7 +168,7 @@
       width: min(980px, 100%);
       height: min(520px, 58vh);
       background: #ffffff;
-      border: var(--dash-w) dashed rgba(245,180,152,0.85);
+      border: 2px solid rgba(245,180,152,0.60);
       border-radius: var(--card-radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       position:relative;
@@ -172,6 +207,40 @@
     }
     .successGif.show{ opacity: 1; }
 
+
+    .tutorialLayer{
+      position:absolute;
+      inset:0;
+      z-index: 95;
+      pointer-events:none;
+    }
+    .tutorialHandWrap{
+      position:absolute;
+      left:0;
+      top:0;
+      opacity: 0;
+      transform: translate(2400px, 2400px);
+      transition: transform 420ms cubic-bezier(.22,.61,.35,1), opacity 160ms ease;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
+      will-change: transform, opacity;
+    }
+    .tutorialHandWrap.show{ opacity: 1; }
+    .tutorialHand{
+      width: clamp(90px, calc(130px * var(--scale)), 170px);
+      height: auto;
+      transform: translate(-34%, -24%);
+      display:block;
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+    .tutorialHand.tap{ animation: handTap 320ms cubic-bezier(.22,.61,.35,1) 1; }
+    @keyframes handTap{
+      0%{ transform: translate(-34%, -24%) scale(1); }
+      40%{ transform: translate(-34%, -24%) scale(0.90); }
+      100%{ transform: translate(-34%, -24%) scale(1); }
+    }
+
     .scanOverlay{
       position:absolute;
       inset: 0;
@@ -180,53 +249,61 @@
       justify-content:center;
       padding: 28px;
       pointer-events:none;
-      z-index: 5;
+      z-index: 2;
     }
 
-    .scanUI{
-      width: min(520px, 92%);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 14px;
-      text-align:center;
-      transform: translateY(-8px);
+    #scanPlaceImg{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1));
+      width: min(720px, 86%);
+      height: auto;
+      object-fit: contain;
+      pointer-events:none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 240ms ease;
+      will-change: transform, opacity;
     }
 
-    .miniTile{
-      width: 66px;
-      height: 66px;
-      border-radius: 10px;
-      background: #78abff;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      color:#fff;
-      font-weight: 900;
-      font-size: 20px;
-      line-height: 1;
-      place-items:center;
+
+    /* onderlegger: laat hetzelfde marbotic-cijfer zien onder de scanplek */
+    #scanUnderImg{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform: translate(-50%, -50%) translate(var(--scanunder-dx, 0px), var(--scanunder-dy, 0px));
+      width: var(--under-w, 320px);
+      height: auto;
+      object-fit: contain;
+      pointer-events:none;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 140ms ease;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.10));
+      will-change: opacity, transform;
+    }
+    #scanUnderImg.show{ opacity: 1; }
+
+    /* startscherm: nog geen marbotic scan UI zichtbaar */
+    body.startActive #scanPlaceImg{ opacity: 0 !important; }
+    body.startActive #scanUnderImg{ opacity: 0 !important; }
+    body.startActive .scanVeil{ opacity: 1 !important; }
+    body.startActive #scanDigitWrap{ opacity: 0 !important; }
+
+    .scanVeil{
+      position:absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 1;
+      transition: opacity 240ms ease;
+      pointer-events:none;
+      z-index: 4;
     }
 
-    .scanTitle{
-      font-size: clamp(22px, 2vw, 34px);
-      font-weight: 800;
-      color: #7b7876;
-      margin-top: 6px;
-    }
-
-    .scanSub{
-      font-size: clamp(16px, 1.3vw, 20px);
-      color: rgba(123,120,118,0.75);
-      margin-top: -4px;
-    }
-
-    .scanHint{
-      font-size: 13px;
-      color: rgba(0,0,0,0.55);
-      margin-top: 10px;
-    }
+    .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
+    .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
 
     .scan-surface.wrong{ animation: wiggle 220ms ease; }
     @keyframes wiggle{
@@ -244,63 +321,135 @@
       pointer-events:none;
       opacity: 0;
       transition: opacity 160ms ease;
-      z-index: 3;
+      z-index: 5;
     }
     .scanDigitWrap.show{ opacity: 1; }
+    .scanDigitWrap.fadeOut{ opacity: 0; transition: opacity 900ms ease; }
     .scanDigitWrap img{
       width: min(62%, 360px);
       height: auto;
+      opacity: 0.5;
       filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
     }
 
+
+    @media (orientation: portrait){
+      .scanDigitWrap img{
+        width: min(49.6%, 288px);
+      }
+    }
+
+
+    /* tutorial: marbotic voorbeeld (cijfer op scanplaat drukken) */
+    .tutPlateDigit{
+      position:absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      pointer-events:none;
+      z-index: 20;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
+      will-change: opacity;
+    }
+    .tutPlateDigit.show{ opacity: 1; }
+
+    .tutMarboticWrap{
+      position:absolute;
+      left:50%;
+      top:50%;
+      --tx: 480px;
+      --ty: 360px;
+      transform: translate(-50%, -50%) translate(var(--tx), var(--ty));
+      opacity: 0;
+      transition: transform 560ms cubic-bezier(.22,.61,.35,1), opacity 180ms ease, filter 220ms ease;
+      filter: drop-shadow(0 16px 30px rgba(0,0,0,0.18));
+      pointer-events:none;
+      z-index: 25;
+      will-change: transform, opacity, filter;
+    }
+    .tutMarboticWrap.show{ opacity: 1; }
+    .tutMarboticWrap.pressed{
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.10));
+    }
+
+    .tutMarboticInner{
+      --ms: 1.0;
+      transform: scale(var(--ms));
+      transform-origin: 50% 50%;
+      transition: transform 560ms cubic-bezier(.22,.61,.35,1);
+      will-change: transform;
+    }
+
+    .tutMarboticImg{
+      width: min(72%, 340px);
+      height: auto;
+      display:block;
+      user-select:none;
+      -webkit-user-drag:none;
+      pointer-events:none;
+    }
+
+    @media (orientation: landscape){
+      .tutMarboticImg{
+        width: min(68%, 300px);
+      }
+    }
+
+
     .startOverlay{
-      position:fixed;
-      inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
+  position:fixed;
+  inset:0;
+  background: transparent;
+  z-index: 1500;
+  overflow:hidden;
+    touch-action: manipulation;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+}
 
-    .startCard{
-      width: min(560px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
+.startBtn{
+  position:absolute;
+  left: var(--start-left, 50%);
+  top: var(--start-top, 60%);
+  transform: translate(-50%, -50%) scale(var(--start-scale, 0.83));
+  border:none;
+  background: transparent;
+  padding: 0;
+  cursor:pointer;
+  width: min(520px, 78vw);
+  border-radius: 22px;
+  overflow:hidden;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
 
-    .startCard h1{
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      color: #4d4a48;
-      text-transform: lowercase;
-    }
+.startBtn:active{
+  transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
+}
+.startBtn video{
+  width: 100%;
+  height: auto;
+  display:block;
+}
 
-    .startCard p{
-      margin: 0 0 16px 0;
-      color: rgba(77,74,72,0.82);
-      font-size: 18px;
-      line-height: 1.35;
-    }
-
-    .startBtn{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 800;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 18px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-    }
-    .startBtn:active{ transform: scale(0.99); }
+.startOverlay.leaving{
+  animation: overlayFade 520ms ease forwards;
+  pointer-events:none;
+}
+.startBtn.leaving{
+  animation: startPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+@keyframes overlayFade{
+  from{ opacity:1; }
+  to{ opacity:0; }
+}
+@keyframes startPop{
+  0%{ opacity:1; transform: translate(-50%, -50%) scale(var(--start-scale, 0.83)); }
+  45%{ opacity:1; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 1.06)) rotate(-1deg); }
+  100%{ opacity:0; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.45)) rotate(4deg); }
+}
 
     .tunePanel{
       position: fixed;
@@ -312,7 +461,7 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1200;
+      z-index: 1700;
       color: #4d4a48;
     }
 
@@ -408,48 +557,54 @@
   <section class="left" aria-label="Spel">
     <div class="topbar">
       <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
-        <img src="home.png" alt="Home" />
+        <img src="homeknop.png" alt="Home" />
       </button>
-
-      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
-      <div class="titlePill">tellen en scannen</div>
+<div class="titlePill" id="titlePill">bellenblazen</div>
     </div>
 
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Telkaart">
         <canvas id="countCanvas" aria-label="Telveld"></canvas>
+
+        <div class="tutorialLayer" id="tutorialLayer" aria-hidden="true">
+          <div class="tutorialHandWrap" id="tutorialHandWrap" aria-hidden="true">
+            <img class="tutorialHand" id="tutorialHand" src="hand.png" alt="" draggable="false" />
+          </div>
+        </div>
         <img class="successGif" id="successGif" src="bellen_blazen02.gif" alt="" aria-hidden="true" />
       </div>
     </div>
   </section>
 
-  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+  <section class="scan-surface scanAllowed" id="scan-area" aria-label="Scanvak">
     <div class="scanDigitWrap" id="scanDigitWrap" aria-hidden="true">
       <img id="scanDigitImg" alt="" />
     </div>
 
-    <div class="scanOverlay">
-      <div class="scanUI">
-        <div class="miniTile" aria-hidden="true">
-          <div>1</div><div>2</div><div>3</div><div>4</div>
-        </div>
+    <img class="tutPlateDigit" id="tutPlateDigit" alt="" draggable="false" aria-hidden="true" />
 
-        <div class="scanTitle" id="scan-title">Tel de dingen in de kaart.</div>
-        <div class="scanSub" id="scan-sub">Scan het juiste cijfer.</div>
-        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
+    <div class="tutMarboticWrap" id="tutMarboticWrap" aria-hidden="true">
+      <div class="tutMarboticInner" id="tutMarboticInner" aria-hidden="true">
+        <img class="tutMarboticImg" id="tutMarboticImg" src="marboticvoorbeelda.png" alt="" draggable="false" />
       </div>
+    </div>
+
+    <div class="scanOverlay">
+      <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" draggable="false" aria-hidden="true" />
+      <img id="scanUnderImg" src="" alt="" draggable="false" aria-hidden="true" />
+      <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
+      
     </div>
   </section>
 
-  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-    <div class="startCard">
-      <h1>tik om te starten</h1>
-      <p>Tel de dingen, tik erop om een bel te zetten, scan daarna het juiste houten cijfer. Scannen mag ook zonder tikken.</p>
-      <button class="startBtn" id="startBtn" type="button">Start</button>
-    </div>
-  </div>
+  
+<div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+  <button class="startBtn" id="startBtn" aria-label="Start" type="button">
+    <video id="startVid" src="startknop.mp4" muted autoplay loop playsinline preload="auto"></video>
+  </button>
+</div>
 
-  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+<div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
     <div class="tuneHeader">
       <div class="tuneTitle">instellingen</div>
       <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
@@ -480,19 +635,203 @@
 
       <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
+
+<div style="margin-top:10px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
+  <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">startknop</div>
+
+  <div class="tuneHint" style="margin-top:-4px;">Je stelt de positie en grootte in voor de huidige stand van het scherm.</div>
+
+  <div class="tuneRow">
+    <div class="tuneLabel">grootte</div>
+    <input type="range" id="startScaleRange" min="0.40" max="1.60" step="0.01" value="1.03" />
+    <div class="tuneValue" id="startScaleValue">1.03</div>
   </div>
 
-  <script>
+  <div class="tuneRow">
+    <div class="tuneLabel">x</div>
+    <input type="range" id="startXRange" min="-20" max="120" step="0.5" value="29" />
+    <div class="tuneValue" id="startXValue">29</div>
+  </div>
+
+  <div class="tuneRow">
+    <div class="tuneLabel">y</div>
+    <input type="range" id="startYRange" min="-20" max="120" step="0.5" value="57" />
+    <div class="tuneValue" id="startYValue">57</div>
+  </div>
+
+  <div class="tuneButtons">
+    <button class="tuneBtnSmall secondary" id="startResetBtn" type="button">Reset</button>
+  </div>
+</div>
+
+
+  </div>
+
+  <script>    'use strict';
+
+    // voorkom iOS Safari zoom bij dubbel tik en pinch
+    (function blockZoom(){
+      try{
+        document.addEventListener('dblclick', function(e){ e.preventDefault(); }, { passive:false });
+      } catch(e){}
+      let lastTouchEnd = 0;
+      try{
+        document.addEventListener('touchend', function(e){
+          // alleen dubbel tik met één vinger blokkeren, niet multi touch voor het scannen
+          try{
+            if (e.changedTouches && e.changedTouches.length !== 1) { lastTouchEnd = Date.now(); return; }
+            if (e.touches && e.touches.length) { lastTouchEnd = Date.now(); return; }
+          } catch(err){}
+          const now = Date.now();
+          if (now - lastTouchEnd <= 300){
+            e.preventDefault();
+          }
+          lastTouchEnd = now;
+        }, { passive:false });
+      } catch(e){}
+      ['gesturestart','gesturechange','gestureend'].forEach(function(type){
+        try{
+          document.addEventListener(type, function(e){ e.preventDefault(); }, { passive:false });
+        } catch(e){}
+      });
+    })();
+
     const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
     const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
     const randFloat = (a,b) => a + Math.random() * (b - a);
     const nowMs = () => performance.now();
 
+    /* Scanplek layout (afbeelding in het scanvak), gelijk aan tg07 */
+    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV3';
+
+    const DEFAULT_SCAN_LAYOUT = {
+      landScale: 0.36,
+      landX: 80.5,
+      landY: 87,
+      portScale: 0.27,
+      portX: 88,
+      portY: 80
+    };
+
+    function loadScanLayout(){
+      try{
+        const raw = localStorage.getItem(SCAN_LAYOUT_KEY);
+        if (!raw) return { ...DEFAULT_SCAN_LAYOUT };
+        const obj = JSON.parse(raw);
+        return {
+          landScale: Number(obj.landScale ?? DEFAULT_SCAN_LAYOUT.landScale),
+          landX: Number(obj.landX ?? DEFAULT_SCAN_LAYOUT.landX),
+          landY: Number(obj.landY ?? DEFAULT_SCAN_LAYOUT.landY),
+          portScale: Number(obj.portScale ?? DEFAULT_SCAN_LAYOUT.portScale),
+          portX: Number(obj.portX ?? DEFAULT_SCAN_LAYOUT.portX),
+          portY: Number(obj.portY ?? DEFAULT_SCAN_LAYOUT.portY)
+        };
+      } catch(e){
+        return { ...DEFAULT_SCAN_LAYOUT };
+      }
+    }
+
+    let scanLayout = loadScanLayout();
+
+    function applyScanLayoutToCSS(){
+      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+      const scale = isPortrait ? scanLayout.portScale : scanLayout.landScale;
+      const x = isPortrait ? scanLayout.portX : scanLayout.landX;
+      const y = isPortrait ? scanLayout.portY : scanLayout.landY;
+
+      document.documentElement.style.setProperty('--scanplek-scale', String(clamp(scale, 0.15, 2.2)));
+      document.documentElement.style.setProperty('--scanplek-left', String(clamp(x, -50, 150)) + '%');
+      document.documentElement.style.setProperty('--scanplek-top', String(clamp(y, -50, 150)) + '%');
+    
+
+      scheduleScanUnderOffset();
+    }
+
+// Onderlegger (het getoonde cijfer onder het echte houten cijfer) moet in het witte scanvlak vallen.
+// Het scanplek-beeld heeft het witte vlak niet exact in het midden, daarom corrigeren we met een vaste fractie.
+const SCAN_UNDER_OFF_FRAC = { x: -0.20, y: -0.22 };
+let underOffsetRaf = 0;
+
+function applyScanUnderOffset(){
+  if (!scanPlaceImg) return;
+  const r = scanPlaceImg.getBoundingClientRect();
+  if (!r || !r.width) return;
+
+  const dx = r.width * SCAN_UNDER_OFF_FRAC.x;
+  const dy = r.height * SCAN_UNDER_OFF_FRAC.y;
+
+  document.documentElement.style.setProperty('--scanunder-dx', `${dx}px`);
+  document.documentElement.style.setProperty('--scanunder-dy', `${dy}px`);
+}
+
+function scheduleScanUnderOffset(){
+  if (underOffsetRaf) cancelAnimationFrame(underOffsetRaf);
+  underOffsetRaf = requestAnimationFrame(() => {
+    underOffsetRaf = 0;
+    applyScanUnderOffset();
+  });
+}
+
+
+/* Startknop layout */
+const START_LAYOUT_KEY = 'startBtnLayoutV2';
+
+const DEFAULT_START_LAYOUT = {
+  landScale: 1.03,
+  landX: 29,
+  landY: 57,
+  portScale: 0.95,
+  portX: 50,
+  portY: 31.5
+};
+
+function loadStartLayout(){
+  try{
+    const raw = localStorage.getItem(START_LAYOUT_KEY);
+    if (!raw) return { ...DEFAULT_START_LAYOUT };
+    const obj = JSON.parse(raw);
+    return {
+      landScale: Number(obj.landScale ?? DEFAULT_START_LAYOUT.landScale),
+      landX: Number(obj.landX ?? DEFAULT_START_LAYOUT.landX),
+      landY: Number(obj.landY ?? DEFAULT_START_LAYOUT.landY),
+      portScale: Number(obj.portScale ?? DEFAULT_START_LAYOUT.portScale),
+      portX: Number(obj.portX ?? DEFAULT_START_LAYOUT.portX),
+      portY: Number(obj.portY ?? DEFAULT_START_LAYOUT.portY)
+    };
+  } catch(e){
+    return { ...DEFAULT_START_LAYOUT };
+  }
+}
+
+function saveStartLayout(obj){
+  try{ localStorage.setItem(START_LAYOUT_KEY, JSON.stringify(obj)); } catch(e){}
+}
+
+let startLayout = loadStartLayout();
+
+function applyStartLayoutToCSS(){
+  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+  const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
+  const x = isPortrait ? startLayout.portX : startLayout.landX;
+  const y = isPortrait ? startLayout.portY : startLayout.landY;
+
+  document.documentElement.style.setProperty('--start-scale', String(clamp(scale, 0.25, 2.2)));
+  document.documentElement.style.setProperty('--start-left', String(clamp(x, -50, 150)) + '%');
+  document.documentElement.style.setProperty('--start-top', String(clamp(y, -50, 150)) + '%');
+}
+
+
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     const GOOD_SOUND_SRC = 'goed.mp3';
     const WRONG_SOUND_SRC = 'fout.mp3';
-    const PLOP_SOUND_SRC = 'audio/plopgeluid.mp3';
+    const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
+    const PLOP_SOUND_SRC = 'plop.mp3';
+
+    const AFTER_TUTOR_CUE_SRC = 'numagjij.mp3';
+
 
     const BLOW_GIF_SRC = 'bellen_blazen02.gif';
     const POP_GIF_SRC  = 'bel_barst.gif';
@@ -510,18 +849,68 @@
     const countCanvas = document.getElementById('countCanvas');
     const homeBtn = document.getElementById('homeBtn');
 
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
+
+    if (startOverlay){ document.body.classList.add('startActive'); }
+
+    const titlePill = document.getElementById('titlePill');
+
     const scanArea = document.getElementById('scan-area');
-    const scanTitle = document.getElementById('scan-title');
-    const scanSub = document.getElementById('scan-sub');
-    const scanHint = document.getElementById('scan-hint');
 
     const scanDigitWrap = document.getElementById('scanDigitWrap');
     const scanDigitImg = document.getElementById('scanDigitImg');
 
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
+    const scanUnderImg = document.getElementById('scanUnderImg');
+    const scanPlaceImg = document.getElementById('scanPlaceImg');
 
-    const tuneBtn = document.getElementById('tuneBtn');
+    let underDigit = null;
+    let underDigitSrc = {};
+
+    function applyUnderSize(){
+      if (!scanArea) return;
+
+      // grootte van het cijfer onder de scanplek: baseer op de scanplek zelf,
+      // zodat het cijfer echt in het witte vak past (ook in portrait op iPad)
+      const baseRect = scanPlaceImg ? scanPlaceImg.getBoundingClientRect() : null;
+      const baseW = (baseRect && baseRect.width) ? baseRect.width : scanArea.getBoundingClientRect().width;
+
+      const w = Math.max(110, Math.min(baseW * 0.60, 360));
+      document.documentElement.style.setProperty('--under-w', `${w}px`);
+
+      scheduleScanUnderOffset();
+    }
+
+    // zodra de scanplek afbeelding geladen is, opnieuw uitlijnen
+    if (scanPlaceImg){
+      scanPlaceImg.addEventListener('load', () => {
+        try{ applyUnderSize(); } catch(e){}
+      });
+    }
+
+    function showUnderDigit(d){
+      // Tijdens het scannen geen extra marbotic-beeld tonen.
+      // (Alleen de echte houten steen op de scanplek)
+      hideUnderDigit();
+    }
+
+    function hideUnderDigit(){
+      if (!scanUnderImg) return;
+      underDigit = null;
+      scanUnderImg.classList.remove('show');
+      scanUnderImg.removeAttribute('src');
+      scanUnderImg.alt = '';
+    }
+
+    const tutorialHandWrap = document.getElementById('tutorialHandWrap');
+    const tutorialHandImg = document.getElementById('tutorialHand');
+
+
+    const tutMarboticWrap = document.getElementById('tutMarboticWrap');
+    const tutMarboticInner = document.getElementById('tutMarboticInner');
+    const tutMarboticImg = document.getElementById('tutMarboticImg');
+    const tutPlateDigit = document.getElementById('tutPlateDigit');
+
     const tunePanel = document.getElementById('tunePanel');
     const tuneClose = document.getElementById('tuneClose');
 
@@ -529,6 +918,17 @@
     const countMaxRange = document.getElementById('countMaxRange');
     const countMinValue = document.getElementById('countMinValue');
     const countMaxValue = document.getElementById('countMaxValue');
+
+const startScaleRange = document.getElementById('startScaleRange');
+const startXRange = document.getElementById('startXRange');
+const startYRange = document.getElementById('startYRange');
+
+const startScaleValue = document.getElementById('startScaleValue');
+const startXValue = document.getElementById('startXValue');
+const startYValue = document.getElementById('startYValue');
+
+const startResetBtn = document.getElementById('startResetBtn');
+
     const countHint = document.getElementById('countHint');
 
     const testGoodBtn = document.getElementById('testGoodBtn');
@@ -570,6 +970,57 @@
     voicePlayer.preload = 'auto';
     voicePlayer.volume = 1;
 
+
+    const promptAudio = new Audio(PROMPT_SOUND_SRC);
+    promptAudio.preload = 'auto';
+    promptAudio.volume = 1;
+
+    const afterTutorAudio = new Audio(AFTER_TUTOR_CUE_SRC);
+    afterTutorAudio.preload = 'auto';
+    afterTutorAudio.volume = 1;
+
+    function stopPrompt(){
+      try{ promptAudio.pause(); } catch(e){}
+      try{ promptAudio.currentTime = 0; } catch(e){}
+    }
+
+    function playPrompt(){
+      try{
+        promptAudio.currentTime = 0;
+        const p = promptAudio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function playAfterTutorCueSafe(){
+      return new Promise((resolve) => {
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ afterTutorAudio.onended = null; } catch(e){}
+          try{ afterTutorAudio.onerror = null; } catch(e){}
+          resolve();
+        };
+
+        const HARD_MAX_MS = 3200;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          afterTutorAudio.pause();
+          afterTutorAudio.currentTime = 0;
+          afterTutorAudio.onended = () => { clearTimeout(hard); finish(); };
+          afterTutorAudio.onerror = () => { clearTimeout(hard); finish(); };
+          const p = afterTutorAudio.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
+
     function stopVoice(){
       try{ voicePlayer.pause(); } catch(e){}
       try{ voicePlayer.currentTime = 0; } catch(e){}
@@ -590,6 +1041,7 @@
       plopFallbackPool = Array.from({ length: 8 }, () => {
         const a = new Audio(PLOP_SOUND_SRC);
         a.preload = 'auto';
+        try{ a.load(); } catch(e){}
         return a;
       });
       plopMode = 'fallback';
@@ -626,31 +1078,61 @@
     }
 
     async function unlockAudio(){
+      // WebAudio
       try{
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
       } catch(e){}
 
+      // Fallback plop pool (mute trick)
       if (plopFallbackPool.length){
         try{
           const a = plopFallbackPool[0];
+          const oldMuted = !!a.muted;
           a.muted = true;
           const p = a.play();
           if (p && typeof p.catch === 'function') await p.catch(() => {});
           a.pause();
           a.currentTime = 0;
-          a.muted = false;
+          a.muted = oldMuted;
         } catch(e){}
       }
     }
 
-    function playPlop(){
-      if (plopMode === 'web' && audioCtx && plopBuffer){
-        try{
-          if (audioCtx.state !== 'running'){
-            try{ audioCtx.resume(); } catch(e){}
-          }
-          if (audioCtx.state !== 'running') throw new Error('ctx');
+    // audio init en unlock, veilig en zonder spam
+    let audioKickInFlight = null;
+    function kickAudio(){
+      if (audioKickInFlight) return;
 
+      const p = Promise.resolve()
+        .then(() => initWebAudio())
+        .then(() => unlockAudio())
+        .catch(() => {});
+
+      audioKickInFlight = p;
+      p.then(() => { audioKickInFlight = null; }, () => { audioKickInFlight = null; });
+    }
+
+
+    function fallbackPlop(rate=1){
+      try{ ensureFallbackPool(); } catch(e){}
+      if (!plopFallbackPool.length) return;
+
+      const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
+      plopFallbackIndex++;
+      try{
+        try{ a.pause(); } catch(e){}
+        a.currentTime = 0;
+        a.volume = 1;
+        try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function playPlop(rate=1){
+      // WebAudio is het snelst, maar iOS kan de context pauzeren na stilte.
+      if (plopMode === 'web' && audioCtx && plopBuffer){
+        const startWeb = () => {
           const src = audioCtx.createBufferSource();
           const gain = audioCtx.createGain();
           gain.gain.setValueAtTime(0.95, audioCtx.currentTime);
@@ -658,23 +1140,56 @@
           src.buffer = plopBuffer;
           src.connect(gain);
           gain.connect(audioCtx.destination);
+          try{ src.playbackRate.value = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
           src.start(audioCtx.currentTime);
+        };
+
+        try{
+          if (audioCtx.state === 'running'){
+            startWeb();
+            return;
+          }
+
+          // Probeer te hervatten binnen deze user gesture.
+          // Lukt dat niet direct, dan pakken we na een heel korte timeout de fallback,
+          // zodat de plop nooit "later nog eens" binnenkomt.
+          let done = false;
+          const t = setTimeout(() => {
+            if (done) return;
+            done = true;
+            fallbackPlop(rate);
+          }, 45);
+
+          const p = audioCtx.resume();
+          if (p && typeof p.then === 'function'){
+            p.then(() => {
+              if (done) return;
+              done = true;
+              clearTimeout(t);
+              try{
+                if (audioCtx.state === 'running') startWeb();
+                else fallbackPlop(rate);
+              } catch(e){
+                fallbackPlop(rate);
+              }
+            }).catch(() => {
+              if (done) return;
+              done = true;
+              clearTimeout(t);
+              fallbackPlop(rate);
+            });
+          } else {
+            clearTimeout(t);
+            fallbackPlop(rate);
+          }
           return;
         } catch(e){
-          ensureFallbackPool();
+          fallbackPlop(rate);
+          return;
         }
       }
 
-      if (plopFallbackPool.length){
-        const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
-        plopFallbackIndex++;
-        try{
-          a.currentTime = 0;
-          a.volume = 1;
-          const p = a.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){}
-      }
+      fallbackPlop(rate);
     }
 
     // Telbereik instellingen
@@ -717,7 +1232,70 @@
       } else {
         countHint.textContent = `Elke ronde zijn het ${countRange.min} tot ${countRange.max} dingen.`;
       }
+
     }
+
+    function syncStartUI(){
+  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+  const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
+  const x = isPortrait ? startLayout.portX : startLayout.landX;
+  const y = isPortrait ? startLayout.portY : startLayout.landY;
+
+  if (startScaleRange) startScaleRange.value = String(scale);
+  if (startXRange) startXRange.value = String(x);
+  if (startYRange) startYRange.value = String(y);
+
+  if (startScaleValue) startScaleValue.textContent = Number(scale).toFixed(2);
+  if (startXValue) startXValue.textContent = String(Math.round(x * 10) / 10);
+  if (startYValue) startYValue.textContent = String(Math.round(y * 10) / 10);
+}
+
+function setStartValueFromUI(){
+  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+  const scale = startScaleRange ? Number(startScaleRange.value) : (isPortrait ? startLayout.portScale : startLayout.landScale);
+  const x = startXRange ? Number(startXRange.value) : (isPortrait ? startLayout.portX : startLayout.landX);
+  const y = startYRange ? Number(startYRange.value) : (isPortrait ? startLayout.portY : startLayout.landY);
+
+  if (isPortrait){
+    startLayout.portScale = scale;
+    startLayout.portX = x;
+    startLayout.portY = y;
+  } else {
+    startLayout.landScale = scale;
+    startLayout.landX = x;
+    startLayout.landY = y;
+  }
+
+  saveStartLayout(startLayout);
+  applyStartLayoutToCSS();
+  syncStartUI();
+}
+
+if (startScaleRange) startScaleRange.addEventListener('input', setStartValueFromUI);
+if (startXRange) startXRange.addEventListener('input', setStartValueFromUI);
+if (startYRange) startYRange.addEventListener('input', setStartValueFromUI);
+
+if (startResetBtn){
+  startResetBtn.addEventListener('click', () => {
+    const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+    if (isPortrait){
+      startLayout.portScale = DEFAULT_START_LAYOUT.portScale;
+      startLayout.portX = DEFAULT_START_LAYOUT.portX;
+      startLayout.portY = DEFAULT_START_LAYOUT.portY;
+    } else {
+      startLayout.landScale = DEFAULT_START_LAYOUT.landScale;
+      startLayout.landX = DEFAULT_START_LAYOUT.landX;
+      startLayout.landY = DEFAULT_START_LAYOUT.landY;
+    }
+
+    saveStartLayout(startLayout);
+    applyStartLayoutToCSS();
+    syncStartUI();
+  });
+}
 
     function applyCountChange(from){
       let min = clampInt(countMinRange.value, 1, 9);
@@ -743,29 +1321,70 @@
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
-      initWebAudio().then(unlockAudio);
+      syncStartUI();
+      kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
 
-    tuneBtn.addEventListener('click', () => {
-      if (tunePanel.classList.contains('hidden')) openTunePanel();
-      else closeTunePanel();
-    });
     tuneClose.addEventListener('click', closeTunePanel);
+
+    // Instellingen openen, lang indrukken op de titelbalk
+    const TITLE_HOLD_MS = 1200;
+    let titleHoldTimer = null;
+    function cancelTitleHold(){
+      if (titleHoldTimer){ clearTimeout(titleHoldTimer); titleHoldTimer = null; }
+    }
+    function startTitleHold(){
+      cancelTitleHold();
+      titleHoldTimer = setTimeout(() => {
+        titleHoldTimer = null;
+        if (tunePanel.classList.contains('hidden')) openTunePanel();
+      }, TITLE_HOLD_MS);
+    }
+
+    if (titlePill){
+      titlePill.addEventListener('pointerdown', (e) => {
+        try{ e.preventDefault(); } catch(err) {}
+        startTitleHold();
+      }, { passive:false });
+      titlePill.addEventListener('pointerup', cancelTitleHold);
+      titlePill.addEventListener('pointercancel', cancelTitleHold);
+      titlePill.addEventListener('pointerleave', cancelTitleHold);
+    }
 
     // Scan digit hint
     let scanDigitTimer = null;
+    let scanDigitFadeTimer = null;
+
     function hideScanDigit(){
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
+
       scanDigitWrap.classList.remove('show');
+      scanDigitWrap.classList.remove('fadeOut');
       scanDigitImg.removeAttribute('src');
       scanDigitImg.alt = '';
     }
-    function showScanDigit(digit){
+
+    function showScanAsset(src, alt){
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-      scanDigitImg.src = `marbotic${digit}.png`;
-      scanDigitImg.alt = String(digit);
+      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
+
+      scanDigitWrap.classList.remove('fadeOut');
+      scanDigitImg.src = src;
+      scanDigitImg.alt = alt || '';
       scanDigitWrap.classList.add('show');
-      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
+    }
+
+    function showScanDigit(digit){
+      showScanAsset(`marbotic${digit}.png`, String(digit));
+
+      // Eerst rustig zichtbaar, daarna wegfaden en opruimen
+      scanDigitFadeTimer = setTimeout(() => {
+        scanDigitFadeTimer = null;
+        scanDigitWrap.classList.add('fadeOut');
+        scanDigitTimer = setTimeout(() => hideScanDigit(), 950);
+      }, 2400);
     }
 
     // Canvas rendering
@@ -1006,6 +1625,36 @@
       c.restore();
     }
 
+
+    function drawCountLabel(c, cx, cy, r, n, alpha){
+      const badgeR = Math.max(14, r * 0.38);
+      let bx = cx + r * 0.62;
+      let by = cy - r * 0.62;
+
+      const w = c.canvas.width;
+      const h = c.canvas.height;
+      bx = clamp(bx, badgeR + 4, w - badgeR - 4);
+      by = clamp(by, badgeR + 4, h - badgeR - 4);
+
+      c.save();
+      c.globalAlpha = Math.max(0, Math.min(1, (alpha ?? 1)));
+      c.beginPath();
+      c.arc(bx, by, badgeR, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(255,255,255,0.95)';
+      c.fill();
+      c.lineWidth = Math.max(2, badgeR * 0.18);
+      c.strokeStyle = 'rgba(229,140,116,0.70)';
+      c.stroke();
+
+      c.fillStyle = 'rgba(77,74,72,0.92)';
+      c.font = `900 ${Math.round(badgeR * 1.05)}px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(String(n), bx, by + 1);
+
+      c.restore();
+    }
+
     let renderRAF = null;
     function requestRender(){
       if (renderRAF) return;
@@ -1087,6 +1736,9 @@
 
           if (it.counted || it.helpBubble || it.floating || bAlpha > 0.01){
             drawBubble(ctx, x, y, it.r, bAlpha * itemAlpha, bScale * itemScale);
+            if (it.tutLabel){
+              drawCountLabel(ctx, x, y, it.r, it.tutLabel, bAlpha * itemAlpha);
+            }
           }
         }
       }
@@ -1112,12 +1764,12 @@
       return null;
     }
 
-    function popBubble(it, dur){
+    function popBubble(it, dur, rate){
       if (!it) return;
       it.bubblePopping = true;
       it.bubblePopStart = nowMs();
       it.bubblePopDur = dur ?? randInt(180, 320);
-      playPlop();
+      playPlop(rate ?? 1);
       requestRender();
     }
 
@@ -1127,7 +1779,7 @@
       for (const it of marked){
         const delay = randInt(0, 180);
         const dur = randInt(180, 320);
-        setTimeout(() => popBubble(it, dur), delay);
+        setTimeout(() => popBubble(it, dur, randFloat(0.85, 1.25)), delay);
       }
     }
 
@@ -1149,8 +1801,18 @@
         it.counted = true;
         it.helpBubble = false;
 
+        // natuurlijke plop timing en toonhoogte
+        const popDelay = randInt(0, 520);
+        const popDur = randInt(180, 320);
+        const popRate = randFloat(0.85, 1.25);
+        setTimeout(() => {
+          try{
+            if (!it.vanished) popBubble(it, popDur, popRate);
+          } catch(e){}
+        }, popDelay);
+
         it.floating = true;
-        it.floatStart = start + randInt(0, 650);
+        it.floatStart = start + popDelay + randInt(80, 220);
 
         const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
         it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
@@ -1179,6 +1841,14 @@
     function showSuccessSequenceTotalMs(){
       if (!successGif) return 0;
 
+      if (usePinguinSuccess){
+        const PINGUIN_TIME = 2000;
+        successGif.src = PINGUIN_GIF_SRC;
+        successGif.classList.add('show');
+        setTimeout(() => { successGif.classList.remove('show'); }, PINGUIN_TIME);
+        return PINGUIN_TIME;
+      }
+
       const BLOW_TIME = 2600;
       const POP_TIME  = 900;
 
@@ -1200,28 +1870,82 @@
     // Game flow
     let started = false;
     let locked = false;
+
+    let tutorialDone = false;
+    let tutorialToken = 0;
+    let usePinguinSuccess = false;
+    let PINGUIN_GIF_SRC = 'pinguin.gif';
+
+    
+    let idlePromptTimer = null;
+    let roundId = 0;
+    let promptPlayedThisRound = false;
+
+    function resetIdlePrompt(){
+      if (idlePromptTimer){
+        clearTimeout(idlePromptTimer);
+        idlePromptTimer = null;
+      }
+    }
+
+    function allItemsCounted(){
+      return Array.isArray(items) && items.length > 0 && items.every(it => it.counted);
+    }
+
+    function scheduleIdlePrompt(){
+      resetIdlePrompt();
+      if (!started || locked) return;
+      if (mode !== 'normal' && mode !== 'confirmDigit') return;
+      if (promptPlayedThisRound) return;
+
+      const myRound = roundId;
+      const IDLE_PROMPT_MS = 35000;
+
+      idlePromptTimer = setTimeout(() => {
+        if (myRound !== roundId) return;
+        if (!started || locked) return;
+        if (mode !== 'normal' && mode !== 'confirmDigit') return;
+        if (promptPlayedThisRound) return;
+        promptPlayedThisRound = true;
+        stopVoice();
+        playPrompt();
+      }, IDLE_PROMPT_MS);
+    }
+
+    // algemene idle monitor: elke aanraking reset, bij loslaten start de 35s timer opnieuw
+    ['pointerdown','touchstart'].forEach((type) => {
+      document.addEventListener(type, () => {
+        if (!started || locked) return;
+        resetIdlePrompt();
+      }, { passive:true });
+    });
+    ['pointerup','pointercancel','touchend','touchcancel'].forEach((type) => {
+      document.addEventListener(type, () => {
+        if (!started || locked) return;
+        scheduleIdlePrompt();
+      }, { passive:true });
+    });
+
+
     let wrongTries = 0;
     let mode = 'normal';
     let helpToken = 0;
 
     function pickTarget(){ return randInt(countRange.min, countRange.max); }
 
-    function clearRoundUI(){
-      scanTitle.textContent = 'Tel de dingen in de kaart.';
-      scanSub.textContent = 'Scan het juiste cijfer.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-    }
-
     function nextRound(){
+      resetIdlePrompt();
+      promptPlayedThisRound = false;
+      roundId += 1;
+      hideTutorialDigitOnPlate();
       locked = false;
       wrongTries = 0;
       mode = 'normal';
 
       stopVoice();
+      stopPrompt();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-
-      clearRoundUI();
 
       target = pickTarget();
 
@@ -1230,6 +1954,9 @@
       resolveOverlapsGentle();
 
       requestRender();
+
+      // start (of herstart) de idle reminder timer
+      scheduleIdlePrompt();
     }
 
     // hard safe helpers against iPad hangs
@@ -1289,21 +2016,60 @@
       });
     }
 
+    function speakTutorialNumberSafe(n, token){
+      return new Promise((resolve) => {
+        let finished = false;
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ voicePlayer.onended = null; } catch(e){}
+          try{ voicePlayer.onerror = null; } catch(e){}
+          try{ voicePlayer.onplaying = null; } catch(e){}
+          resolve();
+        };
+
+        if (token !== tutorialToken){
+          finish();
+          return;
+        }
+
+        const HARD_MAX_MS = 900;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          voicePlayer.pause();
+          voicePlayer.currentTime = 0;
+          voicePlayer.src = voiceSrc(n);
+          voicePlayer.load();
+
+          voicePlayer.onended = () => { clearTimeout(hard); finish(); };
+          voicePlayer.onerror = () => { clearTimeout(hard); finish(); };
+
+          const p = voicePlayer.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
+
     async function runHelpCounting(){
       const myToken = ++helpToken;
 
       locked = true;
-      mode = 'helpCounting';
+      mode = 'tip';
 
+      resetIdlePrompt();
       stopVoice();
+      stopPrompt();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
-      scanTitle.textContent = 'Kijk goed.';
-      scanSub.textContent = 'We tellen samen.';
-      scanHint.textContent = '';
-
-      items.forEach(it => { it.counted = false; it.helpBubble = false; });
+      // tel samen, met bellen die één voor één opbouwen
+      items.forEach(it => { it.counted = false; it.helpBubble = false; it.tutLabel = 0; });
       requestRender();
 
       for (let i = 0; i < items.length; i++){
@@ -1311,7 +2077,13 @@
 
         for (let j = 0; j <= i; j++){
           items[j].helpBubble = true;
+          items[j].tutLabel = j + 1;
         }
+        for (let j = i + 1; j < items.length; j++){
+          items[j].helpBubble = false;
+          items[j].tutLabel = 0;
+        }
+
         requestRender();
 
         await speakNumberSafe(i + 1, myToken);
@@ -1323,14 +2095,13 @@
 
       if (myToken !== helpToken) return;
 
-      items.forEach(it => { it.counted = true; it.helpBubble = false; });
+      // klaar, alles staat aan
+      items.forEach(it => { it.counted = true; it.helpBubble = false; it.tutLabel = 0; });
       requestRender();
 
       showScanDigit(target);
-
-      scanTitle.textContent = 'Leg hetzelfde cijfer.';
-      scanSub.textContent = 'Scan het cijfer dat je ziet.';
-      scanHint.textContent = '';
+      playPrompt();
+      promptPlayedThisRound = true;
 
       mode = 'confirmDigit';
       locked = false;
@@ -1339,9 +2110,6 @@
     async function onCorrectAnswer(){
       locked = true;
 
-      scanTitle.textContent = 'Goed gedaan.';
-      scanSub.textContent = '';
-      scanHint.textContent = '';
 
       playSfx(goodAudio);
 
@@ -1352,6 +2120,28 @@
       floatAllBubblesOutWithinTwoSeconds();
 
       setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
+    }
+
+    async function onCorrectAnswerTutorial(){
+      locked = true;
+
+      ensureAllHaveBubbles();
+
+      // pinguin of bellen in beeld, dan het goede geluid, daarna veel plopjes
+      const seqMs = showSuccessSequenceTotalMs();
+      playSfx(goodAudio);
+
+      setTimeout(() => {
+        try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
+      }, 260);
+
+      // wacht tot het voorbeeld echt klaar is
+      await delaySafe(Math.max(1600, seqMs + 250));
+
+      // eerst de volgende opdracht zichtbaar maken, daarna pas: nu mag jij
+      nextRound();
+      await delaySafe(240);
+      await playAfterTutorCueSafe();
     }
 
     function onWrongAnswer(){
@@ -1368,7 +2158,6 @@
       } else {
         setTimeout(() => {
           if (!started || locked) return;
-          clearRoundUI();
           if (mode === 'confirmDigit') showScanDigit(target);
         }, 380);
       }
@@ -1377,6 +2166,7 @@
     function handleAnswer(recognizedDigit){
       if (recognizedDigit == null) return;
       if (!started || locked) return;
+      resetIdlePrompt();
 
       if (recognizedDigit === target){
         onCorrectAnswer();
@@ -1388,16 +2178,28 @@
     function onCanvasPointerDown(e){
       if (!started || locked) return;
 
-      initWebAudio().then(unlockAudio);
+      kickAudio();
       e.preventDefault();
+
+      // elke tik telt als activiteit: reset de idle timer meteen
+      resetIdlePrompt();
 
       const p = getCanvasPointFromEvent(e);
       const it = hitTest(p.x, p.y);
-      if (!it) return;
+
+      if (!it){
+        scheduleIdlePrompt();
+        return;
+      }
+
+      // bij elk item dat je aantikt: plop
+      try{ playPlop(1); } catch(err){}
 
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
+
+      scheduleIdlePrompt();
     }
     countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
 
@@ -1603,30 +2405,35 @@
     function handleTouchEvent(e){
       if (!calibration || !classificationStats) return;
 
-      // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
-      if (mode === 'helpCounting') return;
+      resetIdlePrompt();
 
-      initWebAudio().then(unlockAudio);
+      // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
+      if (mode === 'tip') return;
+
+      kickAudio();
 
       const touches = e.touches || [];
       const pts = getPointsFromTouches(touches);
 
+      // Zodra er iets op de scanplek ligt: hintplaatje weg, zodat je alleen de echte steen ziet
+      if (pts.length){
+        hideScanDigit();
+      }
+
       if (pts.length === 0){
         hasResultForCurrentTouches = false;
+        hideUnderDigit();
+        // als alles geteld is en je wacht, geef een zachte reminder
+        scheduleIdlePrompt();
         return;
       }
 
       if (pts.length !== expectedTouchPoints){
         hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Even stil houden.';
-        scanSub.textContent = 'We lezen de puntjes.';
-        scanHint.textContent = '';
+        hideUnderDigit();
         return;
       }
 
-      scanTitle.textContent = 'Even stil houden.';
-      scanSub.textContent = 'We lezen de puntjes.';
-      scanHint.textContent = '';
 
       if (!hasResultForCurrentTouches && !locked){
         const digit = recognizeDigit(pts);
@@ -1649,24 +2456,251 @@
       handleAnswer(wrong);
     }
 
-    testGoodBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testGood(); });
-    testWrongBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testWrong(); });
-    newRoundBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started) nextRound(); });
+    testGoodBtn.addEventListener('click', () => { kickAudio(); testGood(); });
+    testWrongBtn.addEventListener('click', () => { kickAudio(); testWrong(); });
+    newRoundBtn.addEventListener('click', () => { kickAudio(); if (started) nextRound(); });
     testHelpBtn.addEventListener('click', () => {
-      initWebAudio().then(unlockAudio);
+      kickAudio();
       if (started && !locked){
         wrongTries = 2;
         onWrongAnswer();
       }
     });
-    testPlopBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); playPlop(); });
+    testPlopBtn.addEventListener('click', () => { kickAudio(); playPlop(); });
 
     // Start
-    function startGame(){
+    
+
+    function showHand(){
+      if (!tutorialHandWrap) return;
+      tutorialHandWrap.classList.add('show');
+    }
+    function hideHand(){
+      if (!tutorialHandWrap) return;
+      tutorialHandWrap.classList.remove('show');
+    }
+    function moveHandTo(x, y){
+      if (!tutorialHandWrap) return;
+      tutorialHandWrap.style.transform = `translate(${x}px, ${y}px)`;
+    }
+    function tapHand(){
+      if (!tutorialHandImg) return;
+      tutorialHandImg.classList.remove('tap');
+      void tutorialHandImg.offsetWidth;
+      tutorialHandImg.classList.add('tap');
+    }
+
+
+    function showMarbotic(){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.classList.add('show');
+    }
+    function hideMarbotic(){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.classList.remove('show');
+      tutMarboticWrap.classList.remove('pressed');
+    }
+    function setMarboticState({ tx=0, ty=0, scale=1 } = {}){
+      if (tutMarboticWrap){
+        tutMarboticWrap.style.setProperty('--tx', `${tx}px`);
+        tutMarboticWrap.style.setProperty('--ty', `${ty}px`);
+      }
+      if (tutMarboticInner){
+        tutMarboticInner.style.setProperty('--ms', `${scale}`);
+      }
+    }
+    function pressMarbotic(on){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.classList.toggle('pressed', !!on);
+    }
+
+    
+    function hideTutorialDigitOnPlate(){
+      if (!tutPlateDigit) return;
+      tutPlateDigit.classList.remove('show');
+      tutPlateDigit.removeAttribute('src');
+      tutPlateDigit.alt = '';
+    }
+
+    function placeTutorialDigitOnPlate(src, alt){
+      if (!tutPlateDigit || !src) return;
+      const scanRect = scanArea.getBoundingClientRect();
+      const aRect = tutMarboticImg.getBoundingClientRect();
+
+      tutPlateDigit.src = src;
+      tutPlateDigit.alt = alt || '';
+      tutPlateDigit.style.left = `${aRect.left - scanRect.left}px`;
+      tutPlateDigit.style.top = `${aRect.top - scanRect.top}px`;
+      tutPlateDigit.style.width = `${aRect.width}px`;
+      tutPlateDigit.style.height = `${aRect.height}px`;
+
+      tutPlateDigit.classList.add('show');
+    }
+function delayTutorial(ms, token){
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          if (token !== tutorialToken) return resolve(false);
+          resolve(true);
+        }, ms);
+      });
+    }
+
+    async function startTutorialDemo(){
+      if (tutorialDone){
+        nextRound();
+        return;
+      }
+      tutorialDone = true;
+      tutorialToken += 1;
+      const token = tutorialToken;
+
+      locked = true;
+      mode = 'tutorial';
+      wrongTries = 0;
+
+      stopVoice();
+      stopPrompt();
+      hideScanDigit();
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+
+
+      // Kies een veilige waarde binnen het ingestelde bereik
+      const demoTarget = 4;
+      target = demoTarget;
+
+      items = generateItems(target);
+      projectNormalizedToPixels();
+      resolveOverlapsGentle();
+      for (const it of items){
+        it.counted = false;
+        it.helpBubble = false;
+        it.tutLabel = 0;
+      }
+      requestRender();
+
+      const cardRect = gameCard.getBoundingClientRect();
+      // Hand blijft onzichtbaar tot hij echt gaat tellen
+      moveHandTo(cardRect.width + 720, cardRect.height + 720);
+      hideHand();
+      await delayTutorial(220, token);
+      showHand();
+      await delayTutorial(80, token);
+// Tel alle items één voor één
+      for (let i = 0; i < items.length; i++){
+        if (token !== tutorialToken) return;
+
+        const it = items[i];
+        const hx = it.x;
+        const hy = it.y;
+
+        moveHandTo(hx, hy);
+        await delayTutorial(520, token);
+        if (token !== tutorialToken) return;
+
+        tapHand();
+
+        it.counted = true;
+        it.tutLabel = i + 1;
+        requestRender();
+
+        // in het voorbeeld hoor je het tellen (audio/1.mp3 t/m audio/4.mp3)
+        await speakTutorialNumberSafe(i + 1, token);
+        if (token !== tutorialToken) return;
+
+        await delayTutorial(180, token);
+      }
+
+      hideHand();
+
+      // Scan voorbeeld: leg het cijfer 4 op de scanplaat
+
+      const pickExisting = async (cands) => {
+        for (const src of cands){
+          const img = await loadImage(src);
+          if (img) return src;
+        }
+        return cands[0];
+      };
+
+      const marboticASrc = await pickExisting(['marboticvoorbeelda.png','marbotic_voorbeeld/marboticvoorbeelda.png']);
+      const marboticBSrc = await pickExisting(['marboticvoorbeeldb.png','marbotic_voorbeeld/marboticvoorbeeldb.png']);
+      const marboticCSrc = await pickExisting(['marboticvoorbeeldc.png','marbotic_voorbeeld/marboticvoorbeeldc.png']);
+
+      if (tutMarboticImg) tutMarboticImg.src = marboticASrc;
+      hideTutorialDigitOnPlate();
+      hideMarbotic();
+
+      await delayTutorial(90, token);
+
+      const scanRect = scanArea.getBoundingClientRect();
+
+      // meet de basismaat (schaal 1) om de juiste schaal te berekenen
+      setMarboticState({ tx: 9999, ty: 9999, scale: 1 });
+      await delayTutorial(30, token);
+
+      const baseRect = tutMarboticImg.getBoundingClientRect();
+      const maxW = scanRect.width * 0.92;
+      const maxH = scanRect.height * 0.92;
+      const maxScale = Math.min(maxW / Math.max(1, baseRect.width), maxH / Math.max(1, baseRect.height));
+
+      const desiredScale = 1.70;
+      const finalScale = Math.max(0.65, Math.min(desiredScale, maxScale));
+
+      const scaledW = baseRect.width * finalScale;
+      const scaledH = baseRect.height * finalScale;
+
+      // volledig buiten beeld starten (rechts onder)
+      const offTX = (scanRect.width / 2) + (scaledW / 2) + 220;
+      const offTY = (scanRect.height / 2) + (scaledH / 2) + 220;
+
+      // eerst buiten beeld neerzetten, dan pas tonen
+      setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
+      showMarbotic();
+      await delayTutorial(120, token);
+
+      // naar het midden van het scanvak
+      setMarboticState({ tx: 0, ty: 0, scale: finalScale });
+      await delayTutorial(260, token);
+
+      // zet de 4 visueel midden in het witte vak
+      // (de 4 zit links in het plaatje, dus we schuiven het geheel naar rechts en iets omlaag)
+      const dxFrac = (170 - 102.0859) / 340;
+      const dyFrac = (200 - 159.2445) / 400;
+      const dx = dxFrac * scaledW;
+      const dy = dyFrac * scaledH;
+
+      setMarboticState({ tx: dx, ty: dy, scale: finalScale });
+      await delayTutorial(520, token);
+
+      // indrukken met een korte pauze
+      pressMarbotic(true);
+      await delayTutorial(240, token);
+
+      // leg de 4 op exact dezelfde plek als in de hand
+      placeTutorialDigitOnPlate(marboticBSrc, '4');
+      if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+      playPlop(randFloat(0.90, 1.20));
+      await delayTutorial(520, token);
+
+      // hand zonder cijfer, daarna uit beeld
+      if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+      await delayTutorial(90, token);
+
+      pressMarbotic(false);
+      await delayTutorial(160, token);
+
+      setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
+      await delayTutorial(560, token);
+      hideMarbotic();
+
+      // Goed antwoord tonen, daarna start het echte spel
+      setTimeout(() => hideTutorialDigitOnPlate(), 1800);
+      onCorrectAnswerTutorial();
+    }
+
+function startGame(){
       if (started) return;
       started = true;
-
-      startOverlay.style.display = 'none';
 
       Promise.resolve()
         .then(() => initWebAudio())
@@ -1678,18 +2712,94 @@
         wrongAudio.load();
       } catch(e){}
 
-      nextRound();
+      startTutorialDemo();
     }
 
-    startBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startGame();
-    });
 
-    startOverlay.addEventListener('click', (e) => {
-      if (e.target === startOverlay) startGame();
-    });
+if (startOverlay && startBtn){
+  const START_HOLD_MS = 900;
+  const START_HOLD_MOVE_TOL = 14;
+  let startHoldTimer = null;
+  let startHoldTriggered = false;
+  let holdPointerId = null;
+  let holdX = 0;
+  let holdY = 0;
+
+  function cancelStartHold(){
+    if (startHoldTimer){ clearTimeout(startHoldTimer); startHoldTimer = null; }
+    holdPointerId = null;
+  }
+
+  startOverlay.addEventListener('pointerdown', (e) => {
+    if (started) return;
+    startHoldTriggered = false;
+    cancelStartHold();
+
+    holdPointerId = e.pointerId;
+    holdX = e.clientX;
+    holdY = e.clientY;
+
+    try{ startOverlay.setPointerCapture(e.pointerId); } catch(err) {}
+
+    startHoldTimer = setTimeout(() => {
+      startHoldTimer = null;
+      startHoldTriggered = true;
+      if (tunePanel && tunePanel.classList.contains('hidden')) openTunePanel();
+    }, START_HOLD_MS);
+
+    // voorkom iOS context menu bij lang indrukken
+    try{ e.preventDefault(); } catch(err) {}
+  }, { passive:false });
+
+  startOverlay.addEventListener('pointermove', (e) => {
+    if (holdPointerId === null || e.pointerId !== holdPointerId) return;
+    const dx = e.clientX - holdX;
+    const dy = e.clientY - holdY;
+    if ((dx*dx + dy*dy) > (START_HOLD_MOVE_TOL*START_HOLD_MOVE_TOL)){
+      cancelStartHold();
+    }
+  }, { passive:true });
+
+  ['pointerup','pointercancel'].forEach(ev => {
+    startOverlay.addEventListener(ev, (e) => {
+      cancelStartHold();
+      try{ startOverlay.releasePointerCapture(e.pointerId); } catch(err) {}
+    }, { passive:true });
+  });
+
+  startBtn.addEventListener('click', (e) => {
+    if (started) return;
+    if (startHoldTriggered){
+      try{ e.preventDefault(); } catch(err) {}
+      return;
+    }
+
+    // audio vrijgeven in deze tik, alleen een plop op de knop
+    try{ ensureFallbackPool(); } catch(e){}
+
+    // eerst meteen de plop vrijgeven en afspelen
+    Promise.resolve()
+      .then(() => unlockAudio())
+      .then(() => { try{ playPlop(1); } catch(e){} })
+      .catch(() => {});
+
+    // ondertussen WebAudio opzetten voor later (als dat kan)
+    Promise.resolve()
+      .then(() => initWebAudio())
+      .then(() => unlockAudio())
+      .catch(() => {});
+
+    if (startOverlay) startOverlay.classList.add('leaving');
+    startBtn.classList.add('leaving');
+
+    setTimeout(() => {
+      if (startOverlay) startOverlay.style.display = 'none';
+      try{ document.body.classList.remove('startActive'); } catch(e){}
+      startGame();
+    }, 520);
+  });
+}
+
 
     homeBtn.addEventListener('click', () => {
       try { window.location.href = 'index.html'; } catch (e) {}
@@ -1699,28 +2809,61 @@
       itemImgs.star = await loadImage(ITEM_SRC.star);
       itemImgs.leaf = await loadImage(ITEM_SRC.leaf);
       itemImgs.lady = await loadImage(ITEM_SRC.lady);
+
+      // pinguin animatie is optioneel, bij ontbreken valt hij terug op bellen animatie
+      const candidates = ['pinguin.gif', 'pinguinanimatie.gif', 'pinguin_animatie.gif', 'pinguin-animatie.gif'];
+      let found = null;
+      for (const src of candidates){
+        const img = await loadImage(src);
+        if (img){ found = src; break; }
+      }
+      if (found){
+        usePinguinSuccess = true;
+        PINGUIN_GIF_SRC = found;
+      } else {
+        usePinguinSuccess = false;
+      }
+      // marbotic onderleggers (onder het echte cijfer op de iPad)
+      underDigitSrc = {};
+      for (let d = 0; d <= 9; d++){
+        const src = `marbotic${d}.png`;
+        const img = await loadImage(src);
+        if (img) underDigitSrc[d] = src;
+      }
+
+
       requestRender();
     }
 
-    window.addEventListener('resize', () => setTimeout(() => {
-      setAutoScale();
-      resizeCountCanvas();
-    }, 180));
+    function scheduleViewportUpdate(delay){
+      setTimeout(() => {
+        setAutoScale();
+        applyScanLayoutToCSS();
+        applyStartLayoutToCSS();
+        applyUnderSize();
+        resizeCountCanvas();
+      }, delay);
+    }
 
-    window.addEventListener('orientationchange', () => setTimeout(() => {
-      setAutoScale();
-      resizeCountCanvas();
-    }, 280));
+    window.addEventListener('resize', () => scheduleViewportUpdate(180));
+    window.addEventListener('orientationchange', () => scheduleViewportUpdate(280));
 
     window.addEventListener('load', () => {
       setAutoScale();
+      applyScanLayoutToCSS();
 
+      applyStartLayoutToCSS();
+      applyUnderSize();
       countRange = loadCountRange();
       syncCountUI();
 
+
+      syncStartUI();
       resizeCountCanvas();
-      clearRoundUI();
       preloadImages();
+      if (successGif){
+        successGif.addEventListener('error', () => { usePinguinSuccess = false; }, { once:true });
+      }
 
       hideScanDigit();
 
