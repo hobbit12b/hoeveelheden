@@ -1399,7 +1399,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
         requestRender();
       }
-      }
     }
 
     function flashTelvlakWrong(){
@@ -1618,7 +1617,7 @@ let wrongTries = 0;
       locked = false;
     }
 
-    async function onCorrectAnswer()(){
+    async function onCorrectAnswer(){
       locked = true;
 
       scanTitle.textContent = 'Goed gedaan.';
@@ -1896,7 +1895,7 @@ let wrongTries = 0;
       resetIdlePrompt();
 
       // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
-      if (mode === 'helpCounting') return;
+      if (mode === 'tip') return;
 
       initWebAudio().then(unlockAudio);
 
