@@ -50,14 +50,16 @@
 
             --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
+            --topbar-h: 72px;
+
       /* Startknop positie, wordt ook opgeslagen op dit apparaat */
       --start-left: 29.5%;
       --start-top: 57%;
       --start-scale: 0.36;
 
-      --scanplek-left: 50%;
-      --scanplek-top: 50%;
-      --scanplek-scale: 0.95;
+      --scanplek-left: 88%;
+      --scanplek-top: 80%;
+      --scanplek-scale: 0.27;
 
     }
 
@@ -117,34 +119,38 @@
     }
 
     .topbar{
-display:flex;
-      align-items:center;
-      gap: 18px;
-      flex: 0 0 auto;
-          position: relative;
-      z-index: 1300;
-    }
+  position: relative;
+  z-index: 1300;
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  flex: 0 0 auto;
+  min-height: var(--topbar-h);
+}
 
     .topIconBtn{
-      appearance:none;
-      border:none;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      box-shadow: none;
-      border-radius: 0;
-      cursor:pointer;
-      display:inline-block;
-      line-height: 0;
-      flex: 0 0 auto;
-    }
+  appearance:none;
+  border:none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  line-height: 0;
+  flex: 0 0 auto;
+  width: var(--topbar-h);
+  height: var(--topbar-h);
+}
     .topIconBtn:active{ transform: scale(0.99); }
     .topIconBtn img{
-      height: 72px;
-      width: auto;
-      object-fit: contain;
-      display:block;
-    }
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  display:block;
+}
     .topIconBtn:disabled img{
       filter: grayscale(100%);
       opacity: 0.25;
@@ -172,34 +178,43 @@ display:flex;
     .tuneBtn:active{ transform: scale(0.98); }
 
     .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
-      min-height: 64px;
-      width: min(660px, 100%);
-    }
+  height: var(--topbar-h);
+  padding: 0 44px;
+  border-radius: 22px;
+  background: var(--brand);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: clamp(22px, 2.1vw, 34px);
+  letter-spacing: 0.3px;
+  box-shadow: var(--shadow);
+  line-height: 1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  position: relative;
+  left: auto;
+  transform: none;
+  margin-left: auto;
+
+  flex: 1 1 auto;
+  max-width: 660px;
+  min-width: 0;
+  width: auto;
+}
 
     .content{
       flex:1 1 auto;
       display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
+      align-items:center;
+      justify-content:center;
       padding: 10px 6px;
       min-height: 0;
     }
 
     /* content-landscape-raise */
     @media (orientation: landscape){
-      .content{ padding: 10px 6px calc(70px * var(--scale)) 6px; }
+      .content{ padding: 10px 6px calc(120px * var(--scale)) 6px; }
     }
 
     .gameCard{
@@ -470,7 +485,49 @@ pointer-events: auto;
       height: auto;
       object-fit: contain;
       pointer-events:none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 240ms ease;
+      will-change: transform, opacity;
     }
+
+    .scanVeil{
+      position:absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 1;
+      transition: opacity 240ms ease;
+      pointer-events:none;
+      z-index: 2;
+    }
+
+    .scanPopup{
+  display:none;
+}
+
+    .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
+    .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
+
+    .scan-surface.scanPop #scanPlaceImg{
+      animation: scanPop 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+    }
+    .scan-surface.scanPop .scanPopup{
+      animation: scanPopup 980ms ease both;
+    }
+
+    @keyframes scanPop{
+      0%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 0.92)); }
+      60%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 1.06)); }
+      100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
+    }
+
+    @keyframes scanPopup{
+      0%{ opacity: 0; transform: translate(-50%, -58%) scale(0.96); }
+      18%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      72%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100%{ opacity: 0; transform: translate(-50%, -44%) scale(0.98); }
+    }
+
     .scanUI.hiddenAssist{ display:none; }
 /* Timing paneel */
     .tunePanel{
@@ -617,8 +674,8 @@ pointer-events: auto;
       background: rgba(253,238,234,0.55);
 z-index: 2000;
       display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
+      align-items:center;
+      justify-content:center;
       padding: 18px;
     }
     .settingsOverlay.hidden{ display:none; }
@@ -690,34 +747,66 @@ z-index: 2000;
       gap: 10px;
     }
     .digitToggle{
+      position: relative;
       display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
-      border-radius: 14px;
-      border: 2px solid rgba(245,180,152,0.70);
-      background: rgba(253,238,234,0.55);
+      align-items:center;
+      justify-content:center;
+      height: 72px;
+      border-radius: 18px;
+      border: 2px solid rgba(245,180,152,0.78);
+      background: rgba(253,238,234,0.60);
       box-shadow: 0 10px 18px rgba(0,0,0,0.08);
       cursor:pointer;
-      padding: 10px 0;
       user-select:none;
+      transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
     }
+    .digitToggle:active{ transform: scale(0.985); }
     .digitToggle input{ display:none; }
     .digitToggle span{
       font-weight: 950;
-      font-size: 22px;
+      font-size: 28px;
       color: #4d4a48;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
+      line-height: 1;
+    }
+    .digitToggle::after{
+      content: "✓";
+      position:absolute;
+      right: 10px;
+      top: 8px;
+      font-weight: 900;
+      font-size: 14px;
+      color: rgba(255,255,255,0.95);
+      background: rgba(0,0,0,0.12);
+      border-radius: 999px;
+      padding: 4px 7px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 120ms ease, transform 120ms ease;
+      pointer-events:none;
+    }
+    .digitToggle:not(.isOff){
+      background: var(--brand);
+      border-color: rgba(229,140,116,0.95);
+      box-shadow: 0 12px 22px rgba(229,140,116,0.25), 0 10px 18px rgba(0,0,0,0.08);
+    }
+    .digitToggle:not(.isOff) span{
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .digitToggle:not(.isOff)::after{
+      opacity: 1;
+      transform: scale(1);
     }
     .digitToggle.isOff{
-      background: rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.55);
       border-color: rgba(0,0,0,0.10);
       box-shadow: none;
     }
     .digitToggle.isOff span{
-      opacity: 0.35;
+      opacity: 0.45;
     }
-    
-  </style>
+</style>
 </head>
 
 <body>
@@ -758,6 +847,8 @@ z-index: 2000;
     
     <div class="scanOverlay">
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" />
+      <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
+      <div class="scanPopup" id="scanPopup" aria-hidden="true">✨ Je mag scannen</div>
       <div class="scanUI hiddenAssist">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
@@ -789,100 +880,10 @@ z-index: 2000;
         <div class="settingsSectionTitle">cijfers</div>
         <div class="digitGrid" id="digitGrid" aria-label="Cijfers kiezen"></div>
       </div>
-
-      <div class="settingsSection">
-        <div class="settingsSectionTitle">startknop</div>
-
-        <div class="settingsSubTitle">iPad horizontaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="startLandScaleRange" min="0.30" max="1.30" step="0.01" value="0.36" />
-          <div class="tuneValue" id="startLandScaleValue">0.36</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="startLandXRange" min="-50" max="250" step="0.5" value="29.5" />
-          <div class="tuneValue" id="startLandXValue">29.5%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="startLandYRange" min="-20" max="120" step="0.5" value="57" />
-          <div class="tuneValue" id="startLandYValue">57%</div>
-        </div>
-
-        <div class="settingsSubTitle">iPad verticaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="startPortScaleRange" min="0.30" max="1.30" step="0.01" value="0.45" />
-          <div class="tuneValue" id="startPortScaleValue">0.45</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="startPortXRange" min="-50" max="250" step="0.5" value="70" />
-          <div class="tuneValue" id="startPortXValue">70%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="startPortYRange" min="-20" max="120" step="0.5" value="38" />
-          <div class="tuneValue" id="startPortYValue">38%</div>
-        </div>
-      
-
-      <div class="settingsSection">
-        <div class="settingsSectionTitle">scanplek</div>
-
-        <div class="settingsSubTitle">iPad horizontaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="scanLandScaleRange" min="0.20" max="1.80" step="0.01" value="0.95" />
-          <div class="tuneValue" id="scanLandScaleValue">0.95</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="scanLandXRange" min="-50" max="150" step="0.5" value="50" />
-          <div class="tuneValue" id="scanLandXValue">50%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="scanLandYRange" min="-50" max="150" step="0.5" value="50" />
-          <div class="tuneValue" id="scanLandYValue">50%</div>
-        </div>
-
-        <div class="settingsSubTitle">iPad verticaal</div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Grootte</div>
-          <input type="range" id="scanPortScaleRange" min="0.20" max="1.80" step="0.01" value="0.95" />
-          <div class="tuneValue" id="scanPortScaleValue">0.95</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie x</div>
-          <input type="range" id="scanPortXRange" min="-50" max="150" step="0.5" value="50" />
-          <div class="tuneValue" id="scanPortXValue">50%</div>
-        </div>
-
-        <div class="tuneRow">
-          <div class="tuneLabel">Positie y</div>
-          <input type="range" id="scanPortYRange" min="-50" max="150" step="0.5" value="50" />
-          <div class="tuneValue" id="scanPortYValue">50%</div>
-        </div>
-      </div>
-</div>
-</div>
+    </div>
   </div>
 
-
-  <audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
+<audio id="bgMusic" src="audio/backgroundmuziek.mp3" preload="auto" loop></audio>
 
   <script>
     /*
@@ -992,6 +993,35 @@ z-index: 2000;
     const scanTitle = document.getElementById('scan-title');
     const scanSub = document.getElementById('scan-sub');
     const scanHint = document.getElementById('scan-hint');
+
+    const scanPlaceImg = document.getElementById('scanPlaceImg');
+    const scanVeil = document.getElementById('scanVeil');
+    const scanPopup = document.getElementById('scanPopup');
+
+    let scanAllowed = false;
+    let scanPopTimer = null;
+
+    function setScanPermission(allowed, opts = {}){
+      scanAllowed = !!allowed;
+      if (scanArea) scanArea.classList.toggle('scanAllowed', scanAllowed);
+      if (scanArea && !scanAllowed) scanArea.classList.remove('scanPop');
+
+      if (scanAllowed && opts && opts.pop){
+        triggerScanPop();
+      }
+    }
+
+    function triggerScanPop(){
+      if (!scanArea) return;
+      scanArea.classList.remove('scanPop');
+      void scanArea.offsetWidth;
+      scanArea.classList.add('scanPop');
+
+      if (scanPopTimer) clearTimeout(scanPopTimer);
+      scanPopTimer = setTimeout(() => {
+        if (scanArea) scanArea.classList.remove('scanPop');
+      }, 1100);
+    }
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
@@ -1124,6 +1154,50 @@ function setAutoScale(){
     revealVoices.forEach((a, i) => {
       a.addEventListener('error', () => { voiceOkReveal[i] = false; });
     });
+    /* iOS audio unlock, nodig omdat Safari pas geluid toestaat na een gebruikersactie */
+    let audioUnlocked = false;
+
+    function unlockOneAudio(el){
+      if (!el) return;
+      try{
+        const prevMuted = !!el.muted;
+        const prevVol = (typeof el.volume === 'number') ? el.volume : 1;
+
+        el.muted = true;
+        if (typeof el.volume === 'number') el.volume = 0;
+
+        const p = el.play();
+        const finish = () => {
+          try { el.pause(); } catch(e){}
+          try { el.currentTime = 0; } catch(e){}
+          el.muted = prevMuted;
+          if (typeof el.volume === 'number') el.volume = prevVol;
+        };
+
+        if (p && typeof p.then === 'function'){
+          p.then(() => setTimeout(finish, 40)).catch(() => {
+            el.muted = prevMuted;
+            if (typeof el.volume === 'number') el.volume = prevVol;
+          });
+        } else {
+          setTimeout(finish, 60);
+        }
+      } catch(e){}
+    }
+
+    function unlockAllAudioOnce(){
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+
+      unlockOneAudio(goodAudio);
+      unlockOneAudio(wrongAudio);
+
+      // 1 vraag en 1 antwoord is genoeg om de rest meestal los te trekken
+      unlockOneAudio(questionVoices && questionVoices[0]);
+      unlockOneAudio(revealVoices && revealVoices[0]);
+
+    }
+
 
     function setSpeakAvailability(canPlay){
       if (!speakBtn) return;
@@ -1136,6 +1210,7 @@ function setAutoScale(){
 
 let currentVoice = null;
     let voiceCleanup = null;
+    let currentVoicePurpose = null;
 
     function setSpeakVisual(isPlaying){
       if (!speakBtn || !speakIcon) return;
@@ -1146,19 +1221,69 @@ let currentVoice = null;
     function attachVoiceUI(a){
       if (!a) return () => {};
 
-      const onPlay = () => setSpeakVisual(true);
-      const onEnded = () => { if (a === currentVoice) setSpeakVisual(false);
-      setSpeakAvailability(false); };
-      const onPause = () => { if (a === currentVoice) setSpeakVisual(false); };
-      const onError = () => { if (a === currentVoice) setSpeakVisual(false); };
+      const isQuestionNew = () => (a === currentVoice) && (currentVoicePurpose === 'questionNew' || currentVoicePurpose === 'question');
+      const isQuestionRepeat = () => (a === currentVoice) && (currentVoicePurpose === 'questionRepeat');
 
-      a.addEventListener('playing', onPlay);
+      const allowScanAfterQuestion = (popIt) => {
+        if (started && !locked){
+          setScanPermission(true, { pop: !!popIt });
+        }
+      };
+
+      const onPlay = () => {
+        setSpeakVisual(true);
+        if (speakBtn) speakBtn.disabled = true;
+
+        // Alleen bij een nieuwe opdracht, niet bij herhalen
+        if (isQuestionNew()){
+          setScanPermission(false);
+        }
+      };
+
+      const onEnded = () => {
+        if (a === currentVoice) setSpeakVisual(false);
+        if (speakBtn) speakBtn.disabled = false;
+
+        if (isQuestionNew()){
+          currentVoicePurpose = null;
+          allowScanAfterQuestion(true);
+          return;
+        }
+
+        if (isQuestionRepeat()){
+          currentVoicePurpose = null;
+          return;
+        }
+
+        currentVoicePurpose = null;
+      };
+
+      const onPause = () => {
+        if (a === currentVoice) setSpeakVisual(false);
+        if (speakBtn) speakBtn.disabled = false;
+      };
+
+      const onError = () => {
+        if (a === currentVoice) setSpeakVisual(false);
+        if (speakBtn) speakBtn.disabled = false;
+
+        // Als afspelen faalt op iPad, geef dan niet de scan vrij (tenzij het een nieuwe opdracht is)
+        if (isQuestionNew()){
+          currentVoicePurpose = null;
+          allowScanAfterQuestion(true);
+          return;
+        }
+
+        currentVoicePurpose = null;
+      };
+
+      a.addEventListener('play', onPlay);
       a.addEventListener('ended', onEnded);
       a.addEventListener('pause', onPause);
       a.addEventListener('error', onError);
 
       return () => {
-        a.removeEventListener('playing', onPlay);
+        a.removeEventListener('play', onPlay);
         a.removeEventListener('ended', onEnded);
         a.removeEventListener('pause', onPause);
         a.removeEventListener('error', onError);
@@ -1166,6 +1291,7 @@ let currentVoice = null;
     }
 
     function stopVoice(){
+      currentVoicePurpose = null;
       if (!currentVoice) return;
       try { currentVoice.pause(); } catch(e) {}
       try { currentVoice.currentTime = 0; } catch(e) {}
@@ -1190,41 +1316,52 @@ let currentVoice = null;
 
       setSpeakVisual(false);
 
+      const recoverAfterBlocked = () => {
+        // iOS kan play blokkeren als het niet (meer) als user gesture telt
+        if (a === currentVoice && (currentVoicePurpose === 'questionNew' || currentVoicePurpose === 'question')){
+          currentVoicePurpose = null;
+          if (started && !locked) setScanPermission(true, { pop:true });
+        } else {
+          currentVoicePurpose = null;
+        }
+        setSpeakVisual(false);
+      };
+
       try{
         a.currentTime = 0;
         const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => { setSpeakVisual(false); });
+        if (p && typeof p.catch === 'function') p.catch(recoverAfterBlocked);
       } catch(e){
-        setSpeakVisual(false);
+        recoverAfterBlocked();
       }
     }
 
-    function askDigit(digit){
+    function askDigit(digit, opts = {}){
+      const isRepeat = !!opts.repeat;
       const a = questionVoices[digit];
 
       const ok = !!a && (voiceOkQuestion[digit] !== false);
       setSpeakAvailability(ok);
 
-      if (!ok){
-        stopVoice();
-        setSpeakVisual(false);
-        return;
+      // Alleen bij een nieuwe opdracht blokkeren we scannen tot na het uitspreken
+      if (!isRepeat){
+        setScanPermission(false);
+        currentVoicePurpose = 'questionNew';
+      } else {
+        currentVoicePurpose = 'questionRepeat';
       }
-      playVoice(a);
-    }
-
-
-    function sayReveal(digit){
-      const a = revealVoices[digit];
-
-      const ok = !!a && (voiceOkReveal[digit] !== false);
-      setSpeakAvailability(ok);
 
       if (!ok){
         stopVoice();
         setSpeakVisual(false);
+        currentVoicePurpose = null;
+
+        if (!isRepeat){
+          if (started && !locked) setScanPermission(true, { pop:true });
+        }
         return;
       }
+
       playVoice(a);
     }
 
@@ -1261,7 +1398,6 @@ let currentVoice = null;
       if (!bgMusic) return;
 
       bgMusic.loop = true;
-      bgMusic.volume = 0.25;
 
       if (!musicAvailable || bgMusicMuted){
         try { bgMusic.pause(); } catch(e) {}
@@ -1269,14 +1405,28 @@ let currentVoice = null;
         return;
       }
 
+      // iPad vriendelijk: start eerst met volume 0, daarna zachtjes omhoog
       try{
+        bgMusic.muted = false;
+        bgMusic.volume = 0;
+
         const p = bgMusic.play();
-        if (p && typeof p.then === 'function'){
-          p.then(() => updateMusicBtn()).catch(() => updateMusicBtn());
-        } else {
+
+        const lift = () => {
+          try { bgMusic.volume = 0.25; } catch(e) {}
           updateMusicBtn();
+        };
+
+        if (p && typeof p.then === 'function'){
+          p.then(() => setTimeout(lift, 40)).catch(() => {
+            pendingMusicResume = true;
+            updateMusicBtn();
+          });
+        } else {
+          setTimeout(lift, 60);
         }
       } catch(e){
+        pendingMusicResume = true;
         updateMusicBtn();
       }
     }
@@ -1346,7 +1496,13 @@ let currentVoice = null;
     function tryPendingMusicResume(){
       if (!pendingMusicResume) return;
       pendingMusicResume = false;
-      resumeMusicAfterSleep();
+
+      // Soms blokkeert iOS het eerste play commando, dan proberen we het opnieuw bij de eerstvolgende tik
+      if (musicWasPlayingBeforeHide){
+        resumeMusicAfterSleep();
+      } else {
+        startBackgroundMusic();
+      }
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -1387,7 +1543,7 @@ let currentVoice = null;
 
     let fairyTiming = loadTiming();
     /* Startknop layout */
-    const START_LAYOUT_KEY = 'startBtnLayoutV3';
+    const START_LAYOUT_KEY = 'startBtnLayoutV4';
 
     const DEFAULT_START_LAYOUT = {
       landScale: 0.36,
@@ -1490,15 +1646,15 @@ let currentVoice = null;
     
 
     /* Scanplek layout (afbeelding in het scanvak) */
-    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV1';
+    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV3';
 
     const DEFAULT_SCAN_LAYOUT = {
-      landScale: 0.95,
-      landX: 50,
-      landY: 50,
-      portScale: 0.95,
-      portX: 50,
-      portY: 50
+      landScale: 0.36,
+      landX: 80.5,
+      landY: 87,
+      portScale: 0.27,
+      portX: 88,
+      portY: 80
     };
 
     function loadScanLayout(){
@@ -1605,6 +1761,7 @@ let currentVoice = null;
       // als je tijdens het spel een cijfer uitzet dat nu aan de beurt is, dan pakken we meteen een nieuw cijfer
       if (started && Array.isArray(enabledDigits) && enabledDigits.length && !enabledDigits.includes(targetDigit)){
         chooseNextDigit();
+        unlockAllAudioOnce();
         askDigit(targetDigit);
       }
     }
@@ -1753,21 +1910,54 @@ function setFairySourceOnce(){
       }
 
       fairyVid.loop = false;
-      fairyVid.playbackRate = Number.isFinite(speed) ? speed : 1;
+      const rate = Number.isFinite(speed) ? speed : 1;
+      fairyVid.playbackRate = rate;
+
+      let segmentFinished = false;
+      let segmentFailSafe = null;
 
       const finish = () => {
+        if (segmentFinished) return;
+        segmentFinished = true;
+        if (segmentFailSafe) clearTimeout(segmentFailSafe);
+
         stopSegmentWatcher();
         fairyVid.removeEventListener('ended', finish);
+        fairyVid.removeEventListener('error', finish);
         try { fairyVid.pause(); } catch(e) {}
         snapToIdle();
         if (typeof onDone === 'function') onDone();
       };
 
-      const beginPlay = () => {
-        fairyVid.addEventListener('ended', finish, { once:true });
+      const segLen = Math.max(0, end - start);
+      const segMs = Math.round((segLen * 1000) / Math.max(0.05, rate));
+      segmentFailSafe = setTimeout(finish, Math.min(12000, Math.max(1800, segMs + 900)));
 
-        const p = fairyVid.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
+      const beginPlay = () => {
+        // iOS kan soms koppig zijn met video play, daarom zetten we de flags hier nog eens goed
+        try{
+          fairyVid.muted = true;
+          fairyVid.playsInline = true;
+          fairyVid.setAttribute('playsinline','');
+          fairyVid.setAttribute('webkit-playsinline','');
+        } catch(e){}
+
+        fairyVid.addEventListener('ended', finish, { once:true });
+        fairyVid.addEventListener('error', finish, { once:true });
+
+        const tryPlay = () => {
+          try{
+            const p = fairyVid.play();
+            if (p && typeof p.catch === "function") p.catch(() => {});
+          } catch(e){}
+        };
+
+        tryPlay();
+        // tweede poging, helpt bij sommige iPads als play net na seek te vroeg komt
+        setTimeout(() => {
+          if (segmentFinished) return;
+          if (fairyVid && fairyVid.paused) tryPlay();
+        }, 120);
 
         const watch = () => {
           if (fairyVid.currentTime >= end){
@@ -1779,19 +1969,35 @@ function setFairySourceOnce(){
         watch();
       };
 
-      const seekAndPlay = () => {
+
+const seekAndPlay = () => {
         try { fairyVid.pause(); } catch(e) {}
 
-        const onSeeked = () => {
-          fairyVid.removeEventListener('seeked', onSeeked);
+        let didBegin = false;
+        let fallback = null;
+
+        const safeBegin = () => {
+          if (didBegin) return;
+          didBegin = true;
+          if (fallback){ clearTimeout(fallback); fallback = null; }
           beginPlay();
         };
 
-        fairyVid.addEventListener('seeked', onSeeked, { once:true });
-        try { fairyVid.currentTime = start; } catch(e) { beginPlay(); }
+        const onSeeked = () => {
+          try { fairyVid.removeEventListener('seeked', onSeeked); } catch(e) {}
+          safeBegin();
+        };
+
+        try { fairyVid.addEventListener('seeked', onSeeked, { once:true }); } catch(e) {}
+
+        // sommige devices vuren 'seeked' niet altijd, daarom een korte fallback
+        fallback = setTimeout(safeBegin, 180);
+
+        try { fairyVid.currentTime = start; } catch(e) { safeBegin(); }
       };
 
-      if (fairyVid.readyState >= 2) seekAndPlay();
+
+if (fairyVid.readyState >= 2) seekAndPlay();
       else fairyVid.addEventListener('canplay', seekAndPlay, { once:true });
     }
 
@@ -2240,12 +2446,13 @@ function setFairySourceOnce(){
       playSegment(fairyTiming.yesStart, fairyTiming.yesEnd, FAIRY_SPEED, onDone);
     }
 
-    function nextRound(){
+    function nextRound(opts = {}){
       const myToken = ++roundToken;
 
       locked = false;
       wrongTries = 0;
       clearDigitAndExplosion();
+      setScanPermission(false);
 
       scanTitle.textContent = 'Leg het houten cijfer in het vak.';
       scanSub.textContent = 'Alle puntjes in het vak.';
@@ -2253,10 +2460,14 @@ function setFairySourceOnce(){
 
       chooseNextDigit();
 
-      setTimeout(() => {
+      const run = () => {
         if (myToken !== roundToken) return;
         askDigit(targetDigit);
-      }, 80);
+      };
+
+      // Eerste vraag op iPad liever direct, dat helpt bij audio restricties
+      if (opts && opts.immediate) run();
+      else setTimeout(run, 80);
     }
 
     function revealCorrectAfterThreeWrong(){
@@ -2284,6 +2495,7 @@ function setFairySourceOnce(){
       if (recognizedDigit === targetDigit){
         const myToken = ++roundToken;
         locked = true;
+        setScanPermission(false);
 
         scanTitle.textContent = 'Goed gedaan.';
         scanSub.textContent = '';
@@ -2307,8 +2519,16 @@ function setFairySourceOnce(){
           if (myToken === roundToken && fairyDone && explosionDone) nextRound();
         }, Math.max(0, explosionMs));
 
+        // Failsafe, voorkomt vastlopen als een video of animatie niet terugkoppelt
+        const failSafeMs = Math.min(9000, Math.max(3000, Math.max(0, explosionMs) + 2200));
+        setTimeout(() => {
+          if (myToken !== roundToken) return;
+          nextRound();
+        }, failSafeMs);
+
       } else {
         wrongTries += 1;
+        setScanPermission(false);
 
         if (wrongTries >= 3){
           wrongFeedback();
@@ -2346,6 +2566,14 @@ function setFairySourceOnce(){
 
       const touches = e.touches || [];
       currentPoints = getPointsFromTouches(touches);
+
+      if (!scanAllowed && started && !locked){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Luister eerst.';
+        scanSub.textContent = 'Je mag zo scannen.';
+        scanHint.textContent = '';
+        return;
+      }
 
       if (currentPoints.length === 0){
         hasResultForCurrentTouches = false;
@@ -2528,6 +2756,7 @@ function setFairySourceOnce(){
       if (started) return;
       started = true;
 
+
       // leuke verdwijnanimatie voor de startknop
       if (startOverlay && startBtn){
         startOverlay.classList.add('leaving');
@@ -2544,6 +2773,7 @@ function setFairySourceOnce(){
       }
 
       startBackgroundMusic();
+      unlockAllAudioOnce();
 
       warmUpVideo(explosionVid);
 
@@ -2557,13 +2787,18 @@ function setFairySourceOnce(){
         revealVoices.forEach(a => { try { a.load(); } catch(e){} });
       } catch(e){}
 
-      nextRound();
+      nextRound({ immediate:true });
     }
 
     speakBtn.addEventListener('click', () => {
       if (!started) return;
       if (speakBtn.disabled) return;
-      askDigit(targetDigit);
+
+      // Alleen klikken als de praatknop uit staat (dus er speelt nu geen uitleg of opdracht)
+      if (!speakBtn.classList.contains('isOff')) return;
+
+      unlockAllAudioOnce();
+      askDigit(targetDigit, { repeat:true });
     });
 
 startBtn.addEventListener('click', startGame);
@@ -2572,7 +2807,7 @@ startBtn.addEventListener('click', startGame);
       try { window.location.href = 'index.html'; } catch (e) {}
     });
 
-    window.addEventListener('load', () => {
+    function initApp(){
       setAutoScale();
       applyStartLayoutToCSS();
       applyScanLayoutToCSS();
@@ -2596,7 +2831,9 @@ startBtn.addEventListener('click', startGame);
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-    });
+    }
+
+    initApp();
   </script>
 </body>
 </html>
