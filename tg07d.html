@@ -667,22 +667,26 @@ pointer-events: auto;
     }
 
     .badge{
-      position:absolute;
+      position: fixed;
       left: 14px;
-      top: 14px;
-      z-index: 80;
+      top: 82px;
+      z-index: 1600;
+      max-width: calc(100vw - 28px);
       background: rgba(255,255,255,0.92);
       border: 2px solid rgba(245,180,152,0.85);
-      border-radius: 999px;
-      padding: 8px 12px;
+      border-radius: 16px;
+      padding: 10px 12px;
       font-weight: 900;
       font-size: 13px;
+      line-height: 1.25;
       color:#4d4a48;
       box-shadow: 0 12px 30px rgba(0,0,0,0.10);
       opacity: 0;
       transform: translateY(-2px);
       transition: opacity 120ms ease, transform 120ms ease;
       pointer-events:none;
+      white-space: normal;
+      word-break: break-word;
     }
     .badge.show{
       opacity: 1;
@@ -973,6 +977,10 @@ z-index: 2000;
     const QUESTION_SRC = (d) => `${VOICE_DIR}hocuspocus${String(d).padStart(2,'0')}.mp3`;
     const REVEAL_SRC   = (d) => `${VOICE_DIR}zozieteruitde${String(d).padStart(2,'0')}.mp3`;
 
+    // fallback, voor als sommige bestanden zonder voorloopnul zijn opgeslagen
+    const QUESTION_SRC_ALT = (d) => `${VOICE_DIR}hocuspocus${d}.mp3`;
+    const REVEAL_SRC_ALT   = (d) => `${VOICE_DIR}zozieteruitde${d}.mp3`;
+
     const FAIRY_SPEED = 1.00;
     const FAIRY_NO_SPEED = 1.00;
     const EXPLOSION_SPEED = 2.65;
@@ -1181,11 +1189,46 @@ function setAutoScale(){
     const voiceOkQuestion = Array(10).fill(true);
     const voiceOkReveal = Array(10).fill(true);
 
+    const triedAltQuestion = Array(10).fill(false);
+    const triedAltReveal = Array(10).fill(false);
+
     questionVoices.forEach((a, i) => {
-      a.addEventListener('error', () => { voiceOkQuestion[i] = false; });
+      a.addEventListener('error', () => {
+        // eerst een nette fallback proberen, zonder voorloopnul
+        if (!triedAltQuestion[i]){
+          triedAltQuestion[i] = true;
+          const alt = QUESTION_SRC_ALT(i);
+          const cur = a.currentSrc || a.src || '';
+          if (alt && !String(cur).endsWith(alt)){
+            try{
+              a.src = alt;
+              voiceOkQuestion[i] = true;
+              a.load();
+              return;
+            } catch(e){}
+          }
+        }
+        voiceOkQuestion[i] = false;
+      });
     });
+
     revealVoices.forEach((a, i) => {
-      a.addEventListener('error', () => { voiceOkReveal[i] = false; });
+      a.addEventListener('error', () => {
+        if (!triedAltReveal[i]){
+          triedAltReveal[i] = true;
+          const alt = REVEAL_SRC_ALT(i);
+          const cur = a.currentSrc || a.src || '';
+          if (alt && !String(cur).endsWith(alt)){
+            try{
+              a.src = alt;
+              voiceOkReveal[i] = true;
+              a.load();
+              return;
+            } catch(e){}
+          }
+        }
+        voiceOkReveal[i] = false;
+      });
     });
 /* Kleine mp3 check, zodat missende stemmen meteen zichtbaar worden */
 let badgeTimer = null;
@@ -1243,10 +1286,10 @@ function runVoiceAuditOnce(){
 
   for (let d = 0; d <= 9; d++){
     jobs.push(
-      probeAudioSrc(QUESTION_SRC(d)).then(ok => ({ kind:'vraag', digit:d, ok }))
+      probeAudioSrc(QUESTION_SRC(d)).then(ok => ok ? true : probeAudioSrc(QUESTION_SRC_ALT(d))).then(ok => ({ kind:'vraag', digit:d, ok }))
     );
     jobs.push(
-      probeAudioSrc(REVEAL_SRC(d)).then(ok => ({ kind:'antwoord', digit:d, ok }))
+      probeAudioSrc(REVEAL_SRC(d)).then(ok => ok ? true : probeAudioSrc(REVEAL_SRC_ALT(d))).then(ok => ({ kind:'antwoord', digit:d, ok }))
     );
   }
 
@@ -1258,11 +1301,9 @@ function runVoiceAuditOnce(){
       if (r.ok) return;
 
       if (r.kind === 'vraag'){
-        voiceOkQuestion[r.digit] = false;
-        missVraag.push(r.digit);
+missVraag.push(r.digit);
       } else {
-        voiceOkReveal[r.digit] = false;
-        missAntwoord.push(r.digit);
+missAntwoord.push(r.digit);
       }
     });
 
@@ -1463,6 +1504,9 @@ let currentVoice = null;
 
       return new Promise((resolve) => {
         let done = false;
+        let watchTimer = null;
+        let hardTimeout = null;
+        let playBlockedCheck = null;
 
         const finish = (ok) => {
           if (done) return;
@@ -1473,30 +1517,41 @@ let currentVoice = null;
 
         const onEnded = () => finish(true);
         const onError = () => finish(false);
-        const onPause = () => finish(true);
 
         const cleanup = () => {
+          if (watchTimer) { clearInterval(watchTimer); watchTimer = null; }
+          if (hardTimeout) { clearTimeout(hardTimeout); hardTimeout = null; }
+          if (playBlockedCheck) { clearTimeout(playBlockedCheck); playBlockedCheck = null; }
           try { a.removeEventListener('ended', onEnded); } catch(e){}
           try { a.removeEventListener('error', onError); } catch(e){}
-          try { a.removeEventListener('pause', onPause); } catch(e){}
         };
 
         try { a.addEventListener('ended', onEnded); } catch(e){}
         try { a.addEventListener('error', onError); } catch(e){}
-        try { a.addEventListener('pause', onPause); } catch(e){}
+
+        // Houd ook zelf de voortgang in de gaten, sommige Safari varianten zijn eigenwijs met ended
+        watchTimer = setInterval(() => {
+          if (done) return;
+          try{
+            const dur = Number(a.duration);
+            if (Number.isFinite(dur) && dur > 0){
+              if (a.currentTime >= dur - 0.05) finish(true);
+            }
+          } catch(e){}
+        }, 120);
 
         playVoice(a);
 
-        // als iOS play blokkeert, valt hij vaak stil op tijd 0
-        setTimeout(() => {
+        // Als iOS play blokkeert, blijft hij vaak stil op tijd 0
+        playBlockedCheck = setTimeout(() => {
           if (done) return;
           try{
             if (a.paused && (a.currentTime === 0 || a.currentTime < 0.01)) finish(false);
           } catch(e){}
-        }, 450);
+        }, 650);
 
-        const ms = Math.max(1200, Number(timeoutMs) || 12000);
-        setTimeout(() => finish(false), ms);
+        const ms = Math.max(2000, Number(timeoutMs) || 16000);
+        hardTimeout = setTimeout(() => finish(false), ms);
       });
     }
 
