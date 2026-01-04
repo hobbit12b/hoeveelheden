@@ -665,7 +665,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
   </div>
 
-  <script>
+  <script>    'use strict';
+
     // voorkom iOS Safari zoom bij dubbel tik en pinch
     (function blockZoom(){
       try{
@@ -1086,6 +1087,21 @@ const startResetBtn = document.getElementById('startResetBtn');
       }
     }
 
+    // audio init en unlock, veilig en zonder spam
+    let audioKickInFlight = null;
+    function kickAudio(){
+      if (audioKickInFlight) return;
+
+      const p = Promise.resolve()
+        .then(() => initWebAudio())
+        .then(() => unlockAudio())
+        .catch(() => {});
+
+      audioKickInFlight = p;
+      p.then(() => { audioKickInFlight = null; }, () => { audioKickInFlight = null; });
+    }
+
+
     function playPlop(rate=1){
       if (plopMode === 'web' && audioCtx && plopBuffer){
         try{
@@ -1252,7 +1268,7 @@ if (startResetBtn){
       tunePanel.classList.remove('hidden');
       syncCountUI();
       syncStartUI();
-      initWebAudio().then(unlockAudio);
+      kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
 
@@ -1822,7 +1838,8 @@ if (startResetBtn){
         playPrompt();
       }, 2800);
     }
-let wrongTries = 0;
+
+    let wrongTries = 0;
     let mode = 'normal';
     let helpToken = 0;
 
@@ -2030,14 +2047,12 @@ let wrongTries = 0;
     function onCanvasPointerDown(e){
       if (!started || locked) return;
 
-      initWebAudio().then(unlockAudio);
+      kickAudio();
       e.preventDefault();
 
       const p = getCanvasPointFromEvent(e);
       const it = hitTest(p.x, p.y);
       if (!it) return;
-
-      const wasCounted = it.counted;
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
@@ -2253,7 +2268,7 @@ let wrongTries = 0;
       // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
       if (mode === 'tip') return;
 
-      initWebAudio().then(unlockAudio);
+      kickAudio();
 
       const touches = e.touches || [];
       const pts = getPointsFromTouches(touches);
@@ -2295,17 +2310,17 @@ let wrongTries = 0;
       handleAnswer(wrong);
     }
 
-    testGoodBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testGood(); });
-    testWrongBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testWrong(); });
-    newRoundBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started) nextRound(); });
+    testGoodBtn.addEventListener('click', () => { kickAudio(); testGood(); });
+    testWrongBtn.addEventListener('click', () => { kickAudio(); testWrong(); });
+    newRoundBtn.addEventListener('click', () => { kickAudio(); if (started) nextRound(); });
     testHelpBtn.addEventListener('click', () => {
-      initWebAudio().then(unlockAudio);
+      kickAudio();
       if (started && !locked){
         wrongTries = 2;
         onWrongAnswer();
       }
     });
-    testPlopBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); playPlop(); });
+    testPlopBtn.addEventListener('click', () => { kickAudio(); playPlop(); });
 
     // Start
     
@@ -2670,21 +2685,18 @@ if (startOverlay && startBtn){
       requestRender();
     }
 
-    window.addEventListener('resize', () => setTimeout(() => {
-      setAutoScale();
-      applyScanLayoutToCSS();
-      applyStartLayoutToCSS();
-      applyUnderSize();
-      resizeCountCanvas();
-    }, 180));
+    function scheduleViewportUpdate(delay){
+      setTimeout(() => {
+        setAutoScale();
+        applyScanLayoutToCSS();
+        applyStartLayoutToCSS();
+        applyUnderSize();
+        resizeCountCanvas();
+      }, delay);
+    }
 
-    window.addEventListener('orientationchange', () => setTimeout(() => {
-      setAutoScale();
-      applyScanLayoutToCSS();
-      applyStartLayoutToCSS();
-      applyUnderSize();
-      resizeCountCanvas();
-    }, 280));
+    window.addEventListener('resize', () => scheduleViewportUpdate(180));
+    window.addEventListener('orientationchange', () => scheduleViewportUpdate(280));
 
     window.addEventListener('load', () => {
       setAutoScale();
