@@ -757,7 +757,7 @@ function applyScanUnderOffset(){
   if (!r || !r.width) return;
 
   const dx = r.width * SCAN_UNDER_OFF_FRAC.x;
-  const dy = r.width * SCAN_UNDER_OFF_FRAC.y;
+  const dy = r.height * SCAN_UNDER_OFF_FRAC.y;
 
   document.documentElement.style.setProperty('--scanunder-dx', `${dx}px`);
   document.documentElement.style.setProperty('--scanunder-dy', `${dy}px`);
@@ -867,11 +867,23 @@ function applyStartLayoutToCSS(){
 
     function applyUnderSize(){
       if (!scanArea) return;
-      const r = scanArea.getBoundingClientRect();
-      const w = Math.max(160, Math.min(r.width * 0.62, 560));
+
+      // grootte van het cijfer onder de scanplek: baseer op de scanplek zelf,
+      // zodat het cijfer echt in het witte vak past (ook in portrait op iPad)
+      const baseRect = scanPlaceImg ? scanPlaceImg.getBoundingClientRect() : null;
+      const baseW = (baseRect && baseRect.width) ? baseRect.width : scanArea.getBoundingClientRect().width;
+
+      const w = Math.max(110, Math.min(baseW * 0.60, 360));
       document.documentElement.style.setProperty('--under-w', `${w}px`);
-    
+
       scheduleScanUnderOffset();
+    }
+
+    // zodra de scanplek afbeelding geladen is, opnieuw uitlijnen
+    if (scanPlaceImg){
+      scanPlaceImg.addEventListener('load', () => {
+        try{ applyUnderSize(); } catch(e){}
+      });
     }
 
     function showUnderDigit(d){
@@ -1824,20 +1836,37 @@ if (startResetBtn){
     function scheduleIdlePrompt(){
       resetIdlePrompt();
       if (!started || locked) return;
-      if (mode !== 'normal') return;
-      if (!allItemsCounted()) return;
+      if (mode !== 'normal' && mode !== 'confirmDigit') return;
       if (promptPlayedThisRound) return;
 
       const myRound = roundId;
+      const IDLE_PROMPT_MS = 35000;
+
       idlePromptTimer = setTimeout(() => {
         if (myRound !== roundId) return;
         if (!started || locked) return;
-        if (mode !== 'normal') return;
-        if (!allItemsCounted()) return;
+        if (mode !== 'normal' && mode !== 'confirmDigit') return;
+        if (promptPlayedThisRound) return;
         promptPlayedThisRound = true;
+        stopVoice();
         playPrompt();
-      }, 2800);
+      }, IDLE_PROMPT_MS);
     }
+
+    // algemene idle monitor: elke aanraking reset, bij loslaten start de 35s timer opnieuw
+    ['pointerdown','touchstart'].forEach((type) => {
+      document.addEventListener(type, () => {
+        if (!started || locked) return;
+        resetIdlePrompt();
+      }, { passive:true });
+    });
+    ['pointerup','pointercancel','touchend','touchcancel'].forEach((type) => {
+      document.addEventListener(type, () => {
+        if (!started || locked) return;
+        scheduleIdlePrompt();
+      }, { passive:true });
+    });
+
 
     let wrongTries = 0;
     let mode = 'normal';
@@ -1866,6 +1895,9 @@ if (startResetBtn){
       resolveOverlapsGentle();
 
       requestRender();
+
+      // start (of herstart) de idle reminder timer
+      scheduleIdlePrompt();
     }
 
     // hard safe helpers against iPad hangs
@@ -1924,6 +1956,46 @@ if (startResetBtn){
         }
       });
     }
+
+    function speakTutorialNumberSafe(n, token){
+      return new Promise((resolve) => {
+        let finished = false;
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ voicePlayer.onended = null; } catch(e){}
+          try{ voicePlayer.onerror = null; } catch(e){}
+          try{ voicePlayer.onplaying = null; } catch(e){}
+          resolve();
+        };
+
+        if (token !== tutorialToken){
+          finish();
+          return;
+        }
+
+        const HARD_MAX_MS = 900;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          voicePlayer.pause();
+          voicePlayer.currentTime = 0;
+          voicePlayer.src = voiceSrc(n);
+          voicePlayer.load();
+
+          voicePlayer.onended = () => { clearTimeout(hard); finish(); };
+          voicePlayer.onerror = () => { clearTimeout(hard); finish(); };
+
+          const p = voicePlayer.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
 
     async function runHelpCounting(){
       const myToken = ++helpToken;
@@ -2050,9 +2122,20 @@ if (startResetBtn){
       kickAudio();
       e.preventDefault();
 
+      // elke tik telt als activiteit: reset de idle timer meteen
+      resetIdlePrompt();
+
       const p = getCanvasPointFromEvent(e);
       const it = hitTest(p.x, p.y);
-      if (!it) return;
+
+      if (!it){
+        scheduleIdlePrompt();
+        return;
+      }
+
+      // bij elk item dat je aantikt: plop
+      try{ playPlop(1); } catch(err){}
+
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
@@ -2452,12 +2535,16 @@ function delayTutorial(ms, token){
         if (token !== tutorialToken) return;
 
         tapHand();
-        playPlop(randFloat(0.90, 1.20));
+
         it.counted = true;
         it.tutLabel = i + 1;
         requestRender();
 
-        await delayTutorial(360, token);
+        // in het voorbeeld hoor je het tellen (audio/1.mp3 t/m audio/4.mp3)
+        await speakTutorialNumberSafe(i + 1, token);
+        if (token !== tutorialToken) return;
+
+        await delayTutorial(180, token);
       }
 
       hideHand();
