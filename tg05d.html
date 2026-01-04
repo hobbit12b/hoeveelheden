@@ -320,6 +320,37 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
     }
 
+
+    /* tutorial: marbotic voorbeeld (cijfer op scanplaat drukken) */
+    .tutMarboticWrap{
+      position:absolute;
+      left:50%;
+      top:50%;
+      --tx: 480px;
+      --ty: 360px;
+      --ms: 1.0;
+      transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(var(--ms));
+      opacity: 0;
+      transition: transform 560ms cubic-bezier(.22,.61,.35,1), opacity 180ms ease, filter 220ms ease;
+      filter: drop-shadow(0 16px 30px rgba(0,0,0,0.18));
+      pointer-events:none;
+      z-index: 25;
+      will-change: transform, opacity, filter;
+    }
+    .tutMarboticWrap.show{ opacity: 1; }
+    .tutMarboticWrap.pressed{
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.10));
+    }
+    .tutMarboticImg{
+      width: min(86%, 460px);
+      height: auto;
+      display:block;
+      user-select:none;
+      -webkit-user-drag:none;
+      pointer-events:none;
+    }
+
+
     .startOverlay{
       position:fixed;
       inset:0;
@@ -499,6 +530,10 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       <img id="scanDigitImg" alt="" />
     </div>
 
+    <div class="tutMarboticWrap" id="tutMarboticWrap" aria-hidden="true">
+      <img class="tutMarboticImg" id="tutMarboticImg" src="marboticvoorbeelda.png" alt="" draggable="false" />
+    </div>
+
     <div class="scanOverlay">
       <div class="scanUI">
         <div class="miniTile" aria-hidden="true">
@@ -585,6 +620,10 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const tutorialLayer = document.getElementById('tutorialLayer');
     const tutorialHandWrap = document.getElementById('tutorialHandWrap');
     const tutorialHandImg = document.getElementById('tutorialHand');
+
+
+    const tutMarboticWrap = document.getElementById('tutMarboticWrap');
+    const tutMarboticImg = document.getElementById('tutMarboticImg');
 
     const tuneBtn = document.getElementById('tuneBtn');
     const tunePanel = document.getElementById('tunePanel');
@@ -851,8 +890,16 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       scanDigitImg.removeAttribute('src');
       scanDigitImg.alt = '';
     }
-    function showScanDigit(digit){
+    function showScanAsset(src, alt){
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      scanDigitImg.src = src;
+      scanDigitImg.alt = alt || '';
+      scanDigitWrap.classList.add('show');
+    }
+    function showScanDigit(digit){
+      showScanAsset(`marbotic${digit}.png`, String(digit));
+      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
+    }
       scanDigitImg.src = `marbotic${digit}.png`;
       scanDigitImg.alt = String(digit);
       scanDigitWrap.classList.add('show');
@@ -1821,6 +1868,27 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       tutorialHandImg.classList.add('tap');
     }
 
+
+    function showMarbotic(){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.classList.add('show');
+    }
+    function hideMarbotic(){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.classList.remove('show');
+      tutMarboticWrap.classList.remove('pressed');
+    }
+    function setMarboticState({ tx=0, ty=0, scale=1 } = {}){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.style.setProperty('--tx', `${tx}px`);
+      tutMarboticWrap.style.setProperty('--ty', `${ty}px`);
+      tutMarboticWrap.style.setProperty('--ms', `${scale}`);
+    }
+    function pressMarbotic(on){
+      if (!tutMarboticWrap) return;
+      tutMarboticWrap.classList.toggle('pressed', !!on);
+    }
+
     function delayTutorial(ms, token){
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -1852,7 +1920,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       scanHint.textContent = '';
 
       // Kies een veilige waarde binnen het ingestelde bereik
-      const demoTarget = clamp(4, countRange.min, countRange.max);
+      const demoTarget = 4;
       target = demoTarget;
 
       items = generateItems(target);
@@ -1892,9 +1960,39 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
       hideHand();
 
-      // Laat het juiste cijfer zien alsof het gescand is
-      showScanDigit(target);
-      await delayTutorial(650, token);
+      // Scan voorbeeld: leg het cijfer 4 op de scanplaat
+      scanTitle.textContent = 'Leg het cijfer 4 op de scanplaat.';
+      scanSub.textContent = '';
+      scanHint.textContent = '';
+
+      // Start de marbotic hand buiten beeld en laat hem naar het scanvak komen
+      if (tutMarboticImg) tutMarboticImg.src = 'marboticvoorbeelda.png';
+      showMarbotic();
+      setMarboticState({ tx: 520, ty: 420, scale: 0.96 });
+      await delayTutorial(140, token);
+
+      // Naar het midden van het scanvak
+      setMarboticState({ tx: 0, ty: 0, scale: 1.05 });
+      await delayTutorial(640, token);
+
+      // Alsof hij tegen het scherm drukt
+      pressMarbotic(true);
+      setMarboticState({ tx: 0, ty: 0, scale: 1.13 });
+      await delayTutorial(260, token);
+
+      // Het cijfer ligt nu op de scanplaat (asset uit de bijlage)
+      showScanAsset('marboticvoorbeeldb.png', '4');
+
+      scanTitle.textContent = 'Even stil houden.';
+      scanSub.textContent = 'We lezen de puntjes.';
+      scanHint.textContent = '';
+      await delayTutorial(520, token);
+
+      // Nagekeken, marbotic hand uit beeld
+      pressMarbotic(false);
+      setMarboticState({ tx: 520, ty: 420, scale: 0.96 });
+      await delayTutorial(520, token);
+      hideMarbotic();
 
       // Goed antwoord tonen, daarna start het echte spel
       await onCorrectAnswer();
