@@ -273,7 +273,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       position:absolute;
       left: var(--scanplek-left, 50%);
       top: var(--scanplek-top, 50%);
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) translate(var(--scanunder-dx, 0px), var(--scanunder-dy, 0px));
       width: var(--under-w, 320px);
       height: auto;
       object-fit: contain;
@@ -740,7 +740,35 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       document.documentElement.style.setProperty('--scanplek-scale', String(clamp(scale, 0.15, 2.2)));
       document.documentElement.style.setProperty('--scanplek-left', String(clamp(x, -50, 150)) + '%');
       document.documentElement.style.setProperty('--scanplek-top', String(clamp(y, -50, 150)) + '%');
+    
+
+      scheduleScanUnderOffset();
     }
+
+// Onderlegger (het getoonde cijfer onder het echte houten cijfer) moet in het witte scanvlak vallen.
+// Het scanplek-beeld heeft het witte vlak niet exact in het midden, daarom corrigeren we met een vaste fractie.
+const SCAN_UNDER_OFF_FRAC = { x: -0.20, y: -0.22 };
+let underOffsetRaf = 0;
+
+function applyScanUnderOffset(){
+  if (!scanPlaceImg) return;
+  const r = scanPlaceImg.getBoundingClientRect();
+  if (!r || !r.width) return;
+
+  const dx = r.width * SCAN_UNDER_OFF_FRAC.x;
+  const dy = r.width * SCAN_UNDER_OFF_FRAC.y;
+
+  document.documentElement.style.setProperty('--scanunder-dx', `${dx}px`);
+  document.documentElement.style.setProperty('--scanunder-dy', `${dy}px`);
+}
+
+function scheduleScanUnderOffset(){
+  if (underOffsetRaf) cancelAnimationFrame(underOffsetRaf);
+  underOffsetRaf = requestAnimationFrame(() => {
+    underOffsetRaf = 0;
+    applyScanUnderOffset();
+  });
+}
 
 
 /* Startknop layout */
@@ -831,6 +859,7 @@ function applyStartLayoutToCSS(){
     const scanDigitImg = document.getElementById('scanDigitImg');
 
     const scanUnderImg = document.getElementById('scanUnderImg');
+    const scanPlaceImg = document.getElementById('scanPlaceImg');
 
     let underDigit = null;
     let underDigitSrc = {};
@@ -840,6 +869,8 @@ function applyStartLayoutToCSS(){
       const r = scanArea.getBoundingClientRect();
       const w = Math.max(160, Math.min(r.width * 0.62, 560));
       document.documentElement.style.setProperty('--under-w', `${w}px`);
+    
+      scheduleScanUnderOffset();
     }
 
     function showUnderDigit(d){
@@ -1044,52 +1075,15 @@ const startResetBtn = document.getElementById('startResetBtn');
       if (plopFallbackPool.length){
         try{
           const a = plopFallbackPool[0];
+          const oldMuted = !!a.muted;
           a.muted = true;
           const p = a.play();
           if (p && typeof p.catch === 'function') await p.catch(() => {});
           a.pause();
           a.currentTime = 0;
-          a.muted = false;
+          a.muted = oldMuted;
         } catch(e){}
       }
-
-      // iOS: prime HTMLAudio elementen zodat ze later altijd mogen afspelen
-      const prime = async (el, tempSrc) => {
-        if (!el) return;
-        try{
-          const oldMuted = !!el.muted;
-          const oldVol = (typeof el.volume === 'number') ? el.volume : 1;
-          const oldSrc = el.getAttribute ? el.getAttribute('src') : null;
-          const oldCur = (() => { try{ return el.currentTime || 0; } catch(e){ return 0; } })();
-
-          if (tempSrc){
-            try{ el.src = tempSrc; } catch(e){}
-          }
-
-          try{ el.muted = true; } catch(e){}
-          try{ el.volume = 0; } catch(e){}
-          try{ el.load(); } catch(e){}
-
-          const p = el.play();
-          if (p && typeof p.catch === 'function') await p.catch(() => {});
-          try{ el.pause(); } catch(e){}
-          try{ el.currentTime = 0; } catch(e){}
-
-          // herstel
-          try{ el.muted = oldMuted; } catch(e){}
-          try{ el.volume = oldVol; } catch(e){}
-          if (tempSrc && oldSrc){
-            try{ el.setAttribute('src', oldSrc); } catch(e){}
-          }
-          try{ el.currentTime = oldCur; } catch(e){}
-        } catch(e){}
-      };
-
-      await prime(goodAudio);
-      await prime(wrongAudio);
-      await prime(promptAudio);
-      await prime(afterTutorAudio);
-      await prime(voicePlayer, voiceSrc(1));
     }
 
     function playPlop(rate=1){
@@ -1993,11 +1987,13 @@ let wrongTries = 0;
         try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
       }, 260);
 
-      // wacht tot het voorbeeld echt klaar is, dan: nu mag jij
+      // wacht tot het voorbeeld echt klaar is
       await delaySafe(Math.max(1600, seqMs + 250));
-      await playAfterTutorCueSafe();
 
+      // eerst de volgende opdracht zichtbaar maken, daarna pas: nu mag jij
       nextRound();
+      await delaySafe(240);
+      await playAfterTutorCueSafe();
     }
 
     function onWrongAnswer(){
@@ -2045,10 +2041,6 @@ let wrongTries = 0;
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
-
-      if (!wasCounted && it.counted){
-        playPlop(randFloat(0.95, 1.15));
-      }
 
       scheduleIdlePrompt();
     }
@@ -2617,7 +2609,16 @@ if (startOverlay && startBtn){
       return;
     }
 
-    // audio vrijgeven in deze tik
+    // audio vrijgeven in deze tik, alleen een plop op de knop
+    try{ ensureFallbackPool(); } catch(e){}
+
+    // eerst meteen de plop vrijgeven en afspelen
+    Promise.resolve()
+      .then(() => unlockAudio())
+      .then(() => { try{ playPlop(1); } catch(e){} })
+      .catch(() => {});
+
+    // ondertussen WebAudio opzetten voor later (als dat kan)
     Promise.resolve()
       .then(() => initWebAudio())
       .then(() => unlockAudio())
