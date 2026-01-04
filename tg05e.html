@@ -367,6 +367,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
   background: transparent;
   z-index: 1500;
   overflow:hidden;
+    touch-action: manipulation;
+  -webkit-touch-callout: none;
   pointer-events: auto;
 }
 
@@ -383,7 +385,10 @@ border-top:  2px solid rgba(245,180,152,0.50); }
   border-radius: 22px;
   overflow:hidden;
   box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
+
 .startBtn:active{
   transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
 }
@@ -2320,16 +2325,11 @@ function delayTutorial(ms, token){
 
       // indrukken met een korte pauze
       pressMarbotic(true);
-      playPlop(randFloat(0.90, 1.20));
-      setMarboticState({ tx: dx, ty: dy, scale: finalScale * 1.04 });
-      await delayTutorial(420, token);
-
-      // terug naar normale schaal terwijl hij nog drukt
-      setMarboticState({ tx: dx, ty: dy, scale: finalScale });
-      await delayTutorial(120, token);
+      await delayTutorial(240, token);
 
       // leg de 4 op exact dezelfde plek als in de hand
       placeTutorialDigitOnPlate(marboticBSrc, '4');
+      if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
       playPlop(randFloat(0.90, 1.20));
       await delayTutorial(520, token);
 
@@ -2367,18 +2367,31 @@ function startGame(){
     }
 
 
-if (startBtn){
+if (startOverlay && startBtn){
   const START_HOLD_MS = 900;
+  const START_HOLD_MOVE_TOL = 14;
   let startHoldTimer = null;
   let startHoldTriggered = false;
+  let holdPointerId = null;
+  let holdX = 0;
+  let holdY = 0;
 
   function cancelStartHold(){
     if (startHoldTimer){ clearTimeout(startHoldTimer); startHoldTimer = null; }
+    holdPointerId = null;
   }
 
-  startBtn.addEventListener('pointerdown', (e) => {
+  startOverlay.addEventListener('pointerdown', (e) => {
+    if (started) return;
     startHoldTriggered = false;
     cancelStartHold();
+
+    holdPointerId = e.pointerId;
+    holdX = e.clientX;
+    holdY = e.clientY;
+
+    try{ startOverlay.setPointerCapture(e.pointerId); } catch(err) {}
+
     startHoldTimer = setTimeout(() => {
       startHoldTimer = null;
       startHoldTriggered = true;
@@ -2389,8 +2402,20 @@ if (startBtn){
     try{ e.preventDefault(); } catch(err) {}
   }, { passive:false });
 
-  ['pointerup','pointercancel','pointerleave'].forEach(ev => {
-    startBtn.addEventListener(ev, cancelStartHold);
+  startOverlay.addEventListener('pointermove', (e) => {
+    if (holdPointerId === null || e.pointerId !== holdPointerId) return;
+    const dx = e.clientX - holdX;
+    const dy = e.clientY - holdY;
+    if ((dx*dx + dy*dy) > (START_HOLD_MOVE_TOL*START_HOLD_MOVE_TOL)){
+      cancelStartHold();
+    }
+  }, { passive:true });
+
+  ['pointerup','pointercancel'].forEach(ev => {
+    startOverlay.addEventListener(ev, (e) => {
+      cancelStartHold();
+      try{ startOverlay.releasePointerCapture(e.pointerId); } catch(err) {}
+    }, { passive:true });
   });
 
   startBtn.addEventListener('click', (e) => {
