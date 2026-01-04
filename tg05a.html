@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Cijferreeksen</title>
+
+  <style>
+    :root{
+      --bg-left:#fdeeea;
+      --brand:#e58c74;
+      --text:#6f6b68;
+
+      --dash-w:4px;
+      --card-radius:28px;
+      --scale: 1;
+
+      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#ffffff;
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overflow:hidden;
+    }
+
+    body{
+      display:grid;
+      grid-template-columns: 58fr 42fr;
+      height: 100%;
+    }
+
+    @media (orientation: portrait){
+      body{
+        grid-template-columns: 1fr;
+        grid-template-rows: 54fr 46fr;
+      }
+    }
+
+    .left{
+      background: var(--bg-left);
+      padding: 28px 26px 22px 26px;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+    }
+
+    .scan-surface{
+      background:#ffffff;
+      position: relative;
+      overflow:hidden;
+      min-height: 0;
+      transition: background 120ms ease;
+    }
+
+    @media (orientation: landscape){
+      .scan-surface{ border-left: 6px dashed rgba(245,180,152,0.85); }
+    }
+    @media (orientation: portrait){
+      .scan-surface{ border-top: 6px dashed rgba(245,180,152,0.85); }
+      .left{ padding: 22px; gap: 16px; }
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap: 18px;
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    .homeBtn{
+      appearance:none;
+      -webkit-appearance:none;
+      border:none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+      line-height: 0;
+      flex: 0 0 auto;
+      width:72px;
+      height:72px;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+    }
+    .homeBtn:active{ transform: scale(0.99); }
+    .homeBtn img{
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+      display:block;
+      pointer-events:none;
+    }
+
+    .tuneBtn{
+      width:72px;
+      height:72px;
+      border-radius:18px;
+      background: #f8c3b0;
+      border: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding: 0;
+      flex: 0 0 auto;
+      font-size: 30px;
+      line-height: 1;
+      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+    }
+    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
+
+    /* tandwiel uit beeld (instellingen via lang indrukken op de titelbalk) */
+    .tuneBtn{ display:none; }
+
+    .titlePill{
+      padding: 18px 44px;
+      border-radius: 22px;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: clamp(22px, 2.1vw, 34px);
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 64px;
+      width: min(660px, 100%);
+      text-transform: lowercase;
+      cursor: pointer;
+    }
+
+    .content{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 6px;
+      min-height: 0;
+    }
+
+    .gameCard{
+      width: min(980px, 100%);
+      height: min(520px, 58vh);
+      background: #ffffff;
+      border: 3px solid rgba(245,180,152,0.65);
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      position:relative;
+      overflow: hidden;
+      transition: background 160ms ease;
+    }
+
+    .gameCard.flashWrong{ background: #fde1e1; }
+
+    @media (orientation: portrait){
+      .gameCard{ height: min(420px, 34vh); }
+    }
+
+    #countCanvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index: 10;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .successGif{
+      position:absolute;
+      left:50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+      width: clamp(160px, calc(260px * var(--scale)), 340px);
+      height: auto;
+      opacity: 0;
+      pointer-events:none;
+      z-index: 80;
+      transition: opacity 160ms ease;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
+    }
+    .successGif.show{ opacity: 1; }
+
+    .scanOverlay{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+      pointer-events:none;
+      z-index: 5;
+    }
+
+    .scanUI{
+      width: min(520px, 92%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 14px;
+      text-align:center;
+      transform: translateY(-8px);
+    }
+
+    .miniTile{
+      width: 66px;
+      height: 66px;
+      border-radius: 10px;
+      background: #78abff;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      color:#fff;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      place-items:center;
+    }
+
+    .scanTitle{
+      font-size: clamp(22px, 2vw, 34px);
+      font-weight: 800;
+      color: #7b7876;
+      margin-top: 6px;
+    }
+
+    .scanSub{
+      font-size: clamp(16px, 1.3vw, 20px);
+      color: rgba(123,120,118,0.75);
+      margin-top: -4px;
+    }
+
+    .scanHint{
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 10px;
+    }
+
+    .scan-surface.wrong{ animation: wiggle 220ms ease; }
+    @keyframes wiggle{
+      0%{ transform: translateX(0); }
+      28%{ transform: translateX(-6px); }
+      58%{ transform: translateX(5px); }
+      100%{ transform: translateX(0); }
+    }
+
+    .scanDigitWrap{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      z-index: 3;
+    }
+    .scanDigitWrap.show{ opacity: 1; }
+    .scanDigitWrap img{
+      width: min(62%, 360px);
+      height: auto;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
+    }
+
+    .startOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(253,238,234,0.55);
+      backdrop-filter: blur(2px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index: 999;
+      padding: 24px;
+    }
+
+    .startCard{
+      width: min(560px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align:center;
+    }
+
+    .startCard h1{
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #4d4a48;
+      text-transform: lowercase;
+    }
+
+    .startCard p{
+      margin: 0 0 16px 0;
+      color: rgba(77,74,72,0.82);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .startBtn{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 800;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+    }
+    .startBtn:active{ transform: scale(0.99); }
+
+    .tunePanel{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(520px, calc(100vw - 36px));
+      background: rgba(255,255,255,0.98);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+      border: 2px solid rgba(245,180,152,0.75);
+      padding: 14px 14px 12px 14px;
+      z-index: 1200;
+      color: #4d4a48;
+    }
+
+    .tunePanel.hidden{ display:none; }
+
+    .tuneHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tuneTitle{
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      text-transform: lowercase;
+    }
+
+    .tuneClose{
+      appearance:none;
+      border:none;
+      background:#f8c3b0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+    }
+    .tuneClose:active{ transform: scale(0.99); }
+
+    .tuneRow{
+      display:grid;
+      grid-template-columns: 140px 1fr 84px;
+      gap: 10px;
+      align-items:center;
+      margin: 8px 0;
+    }
+
+    .tuneLabel{
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(77,74,72,0.86);
+      text-transform: lowercase;
+    }
+
+    .tuneValue{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: 13px;
+      text-align:right;
+      color: rgba(77,74,72,0.86);
+    }
+
+    .tuneRow input[type="range"]{ width: 100%; }
+
+    .tuneButtons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tuneBtnSmall{
+      appearance:none;
+      border:none;
+      background: var(--brand);
+      color:#fff;
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+      font-size: 14px;
+    }
+    .tuneBtnSmall.secondary{
+      background:#f8c3b0;
+      color:#4d4a48;
+    }
+    .tuneBtnSmall:active{ transform: scale(0.99); }
+
+    .tuneHint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(77,74,72,0.68);
+      line-height: 1.35;
+    }
+  </style>
+</head>
+
+<body>
+  <section class="left" aria-label="Spel">
+    <div class="topbar">
+      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
+        <img src="homeknop.png" alt="Home" />
+      </button>
+
+      <button class="tuneBtn" id="tuneBtn" aria-label="Instellen" type="button">⚙️</button>
+      <div class="titlePill" id="titlePill">cijferreeksen</div>
+    </div>
+
+    <div class="content">
+      <div class="gameCard" id="gameCard" aria-label="Telkaart">
+        <canvas id="countCanvas" aria-label="Telveld"></canvas>
+        <img class="successGif" id="successGif" src="bellen_blazen02.gif" alt="" aria-hidden="true" />
+      </div>
+    </div>
+  </section>
+
+  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+    <div class="scanDigitWrap" id="scanDigitWrap" aria-hidden="true">
+      <img id="scanDigitImg" alt="" />
+    </div>
+
+    <div class="scanOverlay">
+      <div class="scanUI">
+        <div class="miniTile" aria-hidden="true">
+          <div>1</div><div>2</div><div>3</div><div>4</div>
+        </div>
+
+        <div class="scanTitle" id="scan-title">Tel de dingen in de kaart.</div>
+        <div class="scanSub" id="scan-sub">Scan het juiste cijfer.</div>
+        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+    <div class="startCard">
+      <h1>tik om te starten</h1>
+      <p>Tel de dingen, tik erop om een bel te zetten, scan daarna het juiste houten cijfer. Scannen mag ook zonder tikken.</p>
+      <button class="startBtn" id="startBtn" type="button">Start</button>
+    </div>
+  </div>
+
+  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+    <div class="tuneHeader">
+      <div class="tuneTitle">instellingen</div>
+      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
+    </div>
+
+    <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">telbereik</div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">minimum</div>
+        <input type="range" id="countMinRange" min="1" max="9" step="1" value="1" />
+        <div class="tuneValue" id="countMinValue">1</div>
+      </div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">maximum</div>
+        <input type="range" id="countMaxRange" min="1" max="9" step="1" value="5" />
+        <div class="tuneValue" id="countMaxValue">5</div>
+      </div>
+
+      <div class="tuneButtons">
+        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
+        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
+        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
+        <button class="tuneBtnSmall secondary" id="testHelpBtn" type="button">Test telhulp</button>
+        <button class="tuneBtnSmall secondary" id="testPlopBtn" type="button">Test plop</button>
+      </div>
+
+      <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
+    </div>
+  </div>
+
+  <script>
+    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+    const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+    const randFloat = (a,b) => a + Math.random() * (b - a);
+    const nowMs = () => performance.now();
+
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+
+    const GOOD_SOUND_SRC = 'goed.mp3';
+    const WRONG_SOUND_SRC = 'fout.mp3';
+    const PLOP_SOUND_SRC = 'audio/plopgeluid.mp3';
+
+    const BLOW_GIF_SRC = 'bellen_blazen02.gif';
+    const POP_GIF_SRC  = 'bel_barst.gif';
+
+    const BUBBLE_SRC = 'bubble.png';
+    const ITEM_SRC = {
+      lady: 'lieveheersbeestje.png',
+      star: 'ster.png',
+      leaf: 'blad.png'
+    };
+
+    const voiceSrc = (n) => `audio/${n}.mp3`;
+
+    const gameCard = document.getElementById('gameCard');
+    const countCanvas = document.getElementById('countCanvas');
+    const homeBtn = document.getElementById('homeBtn');
+    const titlePill = document.getElementById('titlePill');
+
+    const scanArea = document.getElementById('scan-area');
+    const scanTitle = document.getElementById('scan-title');
+    const scanSub = document.getElementById('scan-sub');
+    const scanHint = document.getElementById('scan-hint');
+
+    const scanDigitWrap = document.getElementById('scanDigitWrap');
+    const scanDigitImg = document.getElementById('scanDigitImg');
+
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
+
+    const tuneBtn = document.getElementById('tuneBtn');
+    const tunePanel = document.getElementById('tunePanel');
+    const tuneClose = document.getElementById('tuneClose');
+
+    const countMinRange = document.getElementById('countMinRange');
+    const countMaxRange = document.getElementById('countMaxRange');
+    const countMinValue = document.getElementById('countMinValue');
+    const countMaxValue = document.getElementById('countMaxValue');
+    const countHint = document.getElementById('countHint');
+
+    const testGoodBtn = document.getElementById('testGoodBtn');
+    const testWrongBtn = document.getElementById('testWrongBtn');
+    const newRoundBtn = document.getElementById('newRoundBtn');
+    const testHelpBtn = document.getElementById('testHelpBtn');
+    const testPlopBtn = document.getElementById('testPlopBtn');
+
+    const successGif = document.getElementById('successGif');
+
+    function setAutoScale(){
+      if (!gameCard) return;
+      const r = gameCard.getBoundingClientRect();
+      const baseW = 980, baseH = 520, pad = 18;
+
+      const sW = Math.max(0.1, (r.width  - pad) / baseW);
+      const sH = Math.max(0.1, (r.height - pad) / baseH);
+
+      let s = Math.min(sW, sH);
+      s = Math.max(0.55, Math.min(1.05, s));
+      document.documentElement.style.setProperty('--scale', String(s));
+    }
+
+    const goodAudio = new Audio(GOOD_SOUND_SRC);
+    const wrongAudio = new Audio(WRONG_SOUND_SRC);
+    goodAudio.preload = 'auto';
+    wrongAudio.preload = 'auto';
+
+    function playSfx(a){
+      if (!a) return;
+      try{
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    const voicePlayer = new Audio();
+    voicePlayer.preload = 'auto';
+    voicePlayer.volume = 1;
+
+    function stopVoice(){
+      try{ voicePlayer.pause(); } catch(e){}
+      try{ voicePlayer.currentTime = 0; } catch(e){}
+      try{ voicePlayer.onended = null; } catch(e){}
+      try{ voicePlayer.onerror = null; } catch(e){}
+      try{ voicePlayer.onplaying = null; } catch(e){}
+    }
+
+    // Plop WebAudio plus fallback
+    let audioCtx = null;
+    let plopBuffer = null;
+    let plopFallbackPool = [];
+    let plopFallbackIndex = 0;
+    let plopMode = 'none';
+
+    function ensureFallbackPool(){
+      if (plopFallbackPool.length) return;
+      plopFallbackPool = Array.from({ length: 8 }, () => {
+        const a = new Audio(PLOP_SOUND_SRC);
+        a.preload = 'auto';
+        return a;
+      });
+      plopMode = 'fallback';
+    }
+
+    async function initWebAudio(){
+      if (audioCtx || plopMode === 'fallback') return;
+
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx){
+        ensureFallbackPool();
+        return;
+      }
+
+      try{
+        audioCtx = new Ctx();
+      } catch(e){
+        ensureFallbackPool();
+        return;
+      }
+
+      try{
+        const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
+        const arr = await resp.arrayBuffer();
+        plopBuffer = await new Promise((resolve, reject) => {
+          try{ audioCtx.decodeAudioData(arr, resolve, reject); }
+          catch(err){ reject(err); }
+        });
+        if (plopBuffer) plopMode = 'web';
+        else ensureFallbackPool();
+      } catch(e){
+        ensureFallbackPool();
+      }
+    }
+
+    async function unlockAudio(){
+      try{
+        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+      } catch(e){}
+
+      if (plopFallbackPool.length){
+        try{
+          const a = plopFallbackPool[0];
+          a.muted = true;
+          const p = a.play();
+          if (p && typeof p.catch === 'function') await p.catch(() => {});
+          a.pause();
+          a.currentTime = 0;
+          a.muted = false;
+        } catch(e){}
+      }
+    }
+
+    function playPlop(){
+      if (plopMode === 'web' && audioCtx && plopBuffer){
+        try{
+          if (audioCtx.state !== 'running'){
+            try{ audioCtx.resume(); } catch(e){}
+          }
+          if (audioCtx.state !== 'running') throw new Error('ctx');
+
+          const src = audioCtx.createBufferSource();
+          const gain = audioCtx.createGain();
+          gain.gain.setValueAtTime(0.95, audioCtx.currentTime);
+
+          src.buffer = plopBuffer;
+          src.connect(gain);
+          gain.connect(audioCtx.destination);
+          src.start(audioCtx.currentTime);
+          return;
+        } catch(e){
+          ensureFallbackPool();
+        }
+      }
+
+      if (plopFallbackPool.length){
+        const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
+        plopFallbackIndex++;
+        try{
+          a.currentTime = 0;
+          a.volume = 1;
+          const p = a.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){}
+      }
+    }
+
+    // Telbereik instellingen
+    const COUNT_KEY = 'countRangeV3';
+    const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
+    let countRange = { ...DEFAULT_COUNT_RANGE };
+
+    function clampInt(n, a, b){
+      const v = Math.round(Number(n));
+      if (!Number.isFinite(v)) return a;
+      return Math.max(a, Math.min(b, v));
+    }
+
+    function loadCountRange(){
+      try{
+        const raw = localStorage.getItem(COUNT_KEY);
+        if (!raw) return { ...DEFAULT_COUNT_RANGE };
+        const obj = JSON.parse(raw);
+        let min = clampInt(obj.min ?? DEFAULT_COUNT_RANGE.min, 1, 9);
+        let max = clampInt(obj.max ?? DEFAULT_COUNT_RANGE.max, 1, 9);
+        if (max < min) max = min;
+        return { min, max };
+      } catch(e){
+        return { ...DEFAULT_COUNT_RANGE };
+      }
+    }
+
+    function saveCountRange(r){
+      try { localStorage.setItem(COUNT_KEY, JSON.stringify(r)); } catch(e) {}
+    }
+
+    function syncCountUI(){
+      countMinRange.value = String(countRange.min);
+      countMaxRange.value = String(countRange.max);
+      countMinValue.textContent = String(countRange.min);
+      countMaxValue.textContent = String(countRange.max);
+
+      if (countRange.min === countRange.max){
+        countHint.textContent = `Elke ronde zijn het precies ${countRange.min} dingen.`;
+      } else {
+        countHint.textContent = `Elke ronde zijn het ${countRange.min} tot ${countRange.max} dingen.`;
+      }
+    }
+
+    function applyCountChange(from){
+      let min = clampInt(countMinRange.value, 1, 9);
+      let max = clampInt(countMaxRange.value, 1, 9);
+
+      if (from === 'min' && max < min){
+        max = min;
+        countMaxRange.value = String(max);
+      }
+      if (from === 'max' && max < min){
+        min = max;
+        countMinRange.value = String(min);
+      }
+
+      countRange = { min, max };
+      saveCountRange(countRange);
+      syncCountUI();
+    }
+
+    countMinRange.addEventListener('input', () => applyCountChange('min'));
+    countMaxRange.addEventListener('input', () => applyCountChange('max'));
+
+    function openTunePanel(){
+      tunePanel.classList.remove('hidden');
+      syncCountUI();
+      initWebAudio().then(unlockAudio);
+    }
+    function closeTunePanel(){ tunePanel.classList.add('hidden'); }
+
+    tuneBtn.addEventListener('click', () => {
+      if (tunePanel.classList.contains('hidden')) openTunePanel();
+      else closeTunePanel();
+    });
+    tuneClose.addEventListener('click', closeTunePanel);
+
+    // Instellingen openen, lang indrukken op de titelbalk
+    const TITLE_HOLD_MS = 1200;
+    let titleHoldTimer = null;
+    function cancelTitleHold(){
+      if (titleHoldTimer){ clearTimeout(titleHoldTimer); titleHoldTimer = null; }
+    }
+    function startTitleHold(){
+      cancelTitleHold();
+      titleHoldTimer = setTimeout(() => {
+        titleHoldTimer = null;
+        if (tunePanel.classList.contains('hidden')) openTunePanel();
+      }, TITLE_HOLD_MS);
+    }
+
+    if (titlePill){
+      titlePill.addEventListener('pointerdown', (e) => {
+        try{ e.preventDefault(); } catch(err) {}
+        startTitleHold();
+      }, { passive:false });
+      titlePill.addEventListener('pointerup', cancelTitleHold);
+      titlePill.addEventListener('pointercancel', cancelTitleHold);
+      titlePill.addEventListener('pointerleave', cancelTitleHold);
+    }
+
+    // Scan digit hint
+    let scanDigitTimer = null;
+    function hideScanDigit(){
+      scanDigitWrap.classList.remove('show');
+      scanDigitImg.removeAttribute('src');
+      scanDigitImg.alt = '';
+    }
+    function showScanDigit(digit){
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      scanDigitImg.src = `marbotic${digit}.png`;
+      scanDigitImg.alt = String(digit);
+      scanDigitWrap.classList.add('show');
+      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
+    }
+
+    // Canvas rendering
+    let ctx = null;
+    let items = [];
+    let target = 1;
+
+    const bubbleImg = new Image();
+    bubbleImg.src = BUBBLE_SRC;
+
+    const itemImgs = { star:null, leaf:null, lady:null };
+
+    function loadImage(src){
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    function getSafeRectWH(w, h){
+      const pad = Math.max(44, Math.min(76, w * 0.065));
+      return { x: pad, y: pad, w: Math.max(60, w - pad * 2), h: Math.max(60, h - pad * 2) };
+    }
+
+    function computeBaseRadius(w){
+      return Math.max(38, Math.min(58, w * 0.075));
+    }
+
+    function kindScale(kind){
+      if (kind === 'star') return 0.78;
+      return 1.00;
+    }
+
+    function pickKind(){
+      const all = ['star','leaf','lady'];
+      return all[Math.floor(Math.random() * all.length)];
+    }
+
+    function makeItem(nx, ny, kind, baseR, safe, appearBase){
+      const x = safe.x + nx * safe.w;
+      const y = safe.y + ny * safe.h;
+
+      const delay = randInt(0, 220);
+      const appearDur = randInt(260, 360);
+
+      return {
+        nx, ny, x, y,
+        kind,
+        r: baseR * kindScale(kind),
+        rot: randFloat(-2.35, 2.35),
+
+        counted: false,
+        helpBubble: false,
+
+        bubblePopping: false,
+        bubblePopStart: 0,
+        bubblePopDur: 220,
+
+        floating: false,
+        floatStart: 0,
+        floatDur: 1500,
+        driftX: 0,
+        driftPhase: Math.random() * Math.PI * 2,
+
+        vanished: false,
+
+        appearStart: appearBase + delay,
+        appearDur,
+        appearDone: false
+      };
+    }
+
+    function generateItems(n){
+      const r = gameCard.getBoundingClientRect();
+      const safe = getSafeRectWH(r.width, r.height);
+      const baseR = computeBaseRadius(r.width);
+      const minDist = baseR * 2.25;
+
+      const out = [];
+      let tries = 0;
+      const maxTries = 3000;
+      const appearBase = nowMs();
+
+      while(out.length < n && tries < maxTries){
+        tries++;
+
+        const nx = Math.random();
+        const ny = Math.random();
+        const x = safe.x + nx * safe.w;
+        const y = safe.y + ny * safe.h;
+
+        let ok = true;
+        for (const it of out){
+          const d = Math.hypot(it.x - x, it.y - y);
+          if (d < minDist) { ok = false; break; }
+        }
+        if (!ok) continue;
+
+        out.push(makeItem(nx, ny, pickKind(), baseR, safe, appearBase));
+      }
+      return out;
+    }
+
+    function projectNormalizedToPixels(){
+      const r = gameCard.getBoundingClientRect();
+      const safe = getSafeRectWH(r.width, r.height);
+      const baseR = computeBaseRadius(r.width);
+
+      for (const it of items){
+        it.x = safe.x + it.nx * safe.w;
+        it.y = safe.y + it.ny * safe.h;
+
+        it.r = baseR * kindScale(it.kind);
+
+        const margin = it.r * 1.25;
+        it.x = clamp(it.x, safe.x + margin, safe.x + safe.w - margin);
+        it.y = clamp(it.y, safe.y + margin, safe.y + safe.h - margin);
+
+        it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
+        it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
+      }
+    }
+
+    function resolveOverlapsGentle(){
+      const r = gameCard.getBoundingClientRect();
+      const safe = getSafeRectWH(r.width, r.height);
+
+      const maxIter = 22;
+      for (let iter = 0; iter < maxIter; iter++){
+        let moved = false;
+
+        for (let i = 0; i < items.length; i++){
+          for (let j = i + 1; j < items.length; j++){
+            const a = items[i];
+            const b = items[j];
+
+            const minD = (a.r + b.r) * 1.18;
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const d = Math.hypot(dx, dy) || 0.0001;
+
+            if (d < minD){
+              const push = (minD - d) * 0.52;
+              const ux = dx / d;
+              const uy = dy / d;
+
+              a.x -= ux * push;
+              a.y -= uy * push;
+              b.x += ux * push;
+              b.y += uy * push;
+
+              moved = true;
+            }
+          }
+        }
+
+        if (moved){
+          for (const it of items){
+            const margin = it.r * 1.25;
+            it.x = clamp(it.x, safe.x + margin, safe.x + safe.w - margin);
+            it.y = clamp(it.y, safe.y + margin, safe.y + safe.h - margin);
+
+            it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
+            it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
+          }
+        } else break;
+      }
+    }
+
+    function relayoutKeepPositions(){
+      if (!items || !items.length) return;
+      projectNormalizedToPixels();
+      resolveOverlapsGentle();
+      requestRender();
+    }
+
+    function resizeCountCanvas(){
+      if (!countCanvas || !gameCard) return;
+
+      const r = gameCard.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+      countCanvas.width = Math.round(r.width * dpr);
+      countCanvas.height = Math.round(r.height * dpr);
+      countCanvas.style.width = r.width + 'px';
+      countCanvas.style.height = r.height + 'px';
+
+      ctx = countCanvas.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      if (started && items && items.length) relayoutKeepPositions();
+      else render();
+    }
+
+    function easeOut(t){ t = clamp(t,0,1); return 1 - Math.pow(1 - t, 3); }
+    function easeInOut(t){
+      t = clamp(t,0,1);
+      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+    }
+    function easeOutBack(t){
+      t = clamp(t,0,1);
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    function drawSprite(c, img, cx, cy, r, rot, alpha, scale){
+      if (!img || !img.complete) return;
+      const base = r * 2.25;
+      const size = base * (scale || 1);
+
+      c.save();
+      c.globalAlpha = alpha;
+
+      c.translate(cx, cy);
+      c.rotate(rot || 0);
+
+      c.shadowColor = 'rgba(0,0,0,0.30)';
+      c.shadowBlur = Math.max(14, r * 0.46);
+      c.shadowOffsetX = Math.max(2, r * 0.10);
+      c.shadowOffsetY = Math.max(6, r * 0.22);
+
+      c.imageSmoothingEnabled = true;
+      c.drawImage(img, -size/2, -size/2, size, size);
+      c.restore();
+    }
+
+    function drawBubble(c, cx, cy, r, alpha, scale){
+      if (!bubbleImg || !bubbleImg.complete) return;
+      const mult = 2.25;
+      const size = r * mult * (scale || 1);
+
+      c.save();
+      c.globalAlpha = 0.92 * alpha;
+      c.drawImage(bubbleImg, cx - size/2, cy - size/2, size, size);
+      c.restore();
+    }
+
+    let renderRAF = null;
+    function requestRender(){
+      if (renderRAF) return;
+      renderRAF = requestAnimationFrame(() => {
+        renderRAF = null;
+        render();
+      });
+    }
+
+    function render(){
+      if (!ctx || !gameCard) return;
+      const card = gameCard.getBoundingClientRect();
+      ctx.clearRect(0,0,card.width,card.height);
+
+      const tNow = nowMs();
+      items = items.filter(it => !it.vanished);
+
+      for (const it of items){
+        const img = itemImgs[it.kind];
+
+        let x = it.x;
+        let y = it.y;
+        let itemAlpha = 1;
+        let itemScale = 1;
+
+        if (!it.appearDone){
+          const t = (tNow - it.appearStart) / Math.max(1, it.appearDur);
+          if (t <= 0){
+            itemAlpha = 0;
+            itemScale = 0.88;
+            requestRender();
+          } else if (t < 1){
+            const e = easeOut(t);
+            itemAlpha = e;
+            itemScale = 0.88 + easeOutBack(t) * 0.16;
+            requestRender();
+          } else it.appearDone = true;
+        }
+
+        if (it.floating){
+          const t = (tNow - it.floatStart) / Math.max(1, it.floatDur);
+          const e = easeInOut(t);
+
+          const lift = (card.height + it.r * 3.2) * e;
+          y = it.y - lift;
+
+          const sway = Math.sin((tNow / 220) + it.driftPhase) * it.driftX;
+          x = it.x + sway;
+
+          if (t > 0.72) itemAlpha *= clamp(1 - (t - 0.72) / 0.28, 0, 1);
+
+          if (t >= 1){
+            it.vanished = true;
+            requestRender();
+            continue;
+          } else requestRender();
+        }
+
+        drawSprite(ctx, img, x, y, it.r, it.rot, itemAlpha, itemScale);
+
+        const bubbleVisible = it.counted || it.helpBubble || it.bubblePopping || it.floating;
+        if (bubbleVisible){
+          let bAlpha = 1;
+          let bScale = 1;
+
+          if (it.bubblePopping){
+            const t = (tNow - it.bubblePopStart) / Math.max(1, it.bubblePopDur);
+            const e = easeOut(t);
+            bAlpha = 1 - e;
+            bScale = 1 + e * 0.28;
+
+            if (t >= 1){
+              it.bubblePopping = false;
+              it.counted = false;
+              it.helpBubble = false;
+              bAlpha = 0;
+            } else requestRender();
+          }
+
+          if (it.counted || it.helpBubble || it.floating || bAlpha > 0.01){
+            drawBubble(ctx, x, y, it.r, bAlpha * itemAlpha, bScale * itemScale);
+          }
+        }
+      }
+    }
+
+    function getCanvasPointFromEvent(e){
+      const rect = countCanvas.getBoundingClientRect();
+      const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function hitTest(px, py){
+      for (let i = items.length - 1; i >= 0; i--){
+        const it = items[i];
+        if (it.vanished) continue;
+
+        const d = Math.hypot(it.x - px, it.y - py);
+        const minTap = 44;
+        const extra = Math.max(minTap, it.r * 1.55);
+        if (d <= extra) return it;
+      }
+      return null;
+    }
+
+    function popBubble(it, dur){
+      if (!it) return;
+      it.bubblePopping = true;
+      it.bubblePopStart = nowMs();
+      it.bubblePopDur = dur ?? randInt(180, 320);
+      playPlop();
+      requestRender();
+    }
+
+    function popAllMarkedBubblesOnly(){
+      const marked = items.filter(it => it.counted && !it.floating && !it.vanished);
+      if (!marked.length) return;
+      for (const it of marked){
+        const delay = randInt(0, 180);
+        const dur = randInt(180, 320);
+        setTimeout(() => popBubble(it, dur), delay);
+      }
+    }
+
+    function ensureAllHaveBubbles(){
+      for (const it of items){
+        it.counted = true;
+        it.helpBubble = false;
+      }
+    }
+
+    function floatAllBubblesOutWithinTwoSeconds(){
+      const start = nowMs();
+      const deadline = start + 2000;
+      const card = gameCard.getBoundingClientRect();
+
+      for (const it of items){
+        if (it.vanished) continue;
+
+        it.counted = true;
+        it.helpBubble = false;
+
+        it.floating = true;
+        it.floatStart = start + randInt(0, 650);
+
+        const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
+        it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
+
+        const driftMax = Math.max(10, Math.min(46, card.width * 0.060));
+        it.driftX = randFloat(driftMax * 0.35, driftMax);
+
+        requestRender();
+      }
+    }
+
+    function flashTelvlakWrong(){
+      gameCard.classList.remove('flashWrong');
+      void gameCard.offsetHeight;
+      gameCard.classList.add('flashWrong');
+      setTimeout(() => gameCard.classList.remove('flashWrong'), 240);
+    }
+
+    function wrongFeedback(){
+      scanArea.classList.remove('wrong');
+      void scanArea.offsetHeight;
+      scanArea.classList.add('wrong');
+      setTimeout(() => scanArea.classList.remove('wrong'), 240);
+    }
+
+    function showSuccessSequenceTotalMs(){
+      if (!successGif) return 0;
+
+      const BLOW_TIME = 2600;
+      const POP_TIME  = 900;
+
+      successGif.src = BLOW_GIF_SRC;
+      successGif.classList.add('show');
+
+      setTimeout(() => {
+        successGif.src = POP_GIF_SRC;
+        playPlop();
+      }, BLOW_TIME);
+
+      setTimeout(() => {
+        successGif.classList.remove('show');
+      }, BLOW_TIME + POP_TIME);
+
+      return BLOW_TIME + POP_TIME;
+    }
+
+    // Game flow
+    let started = false;
+    let locked = false;
+    let wrongTries = 0;
+    let mode = 'normal';
+    let helpToken = 0;
+
+    function pickTarget(){ return randInt(countRange.min, countRange.max); }
+
+    function clearRoundUI(){
+      scanTitle.textContent = 'Tel de dingen in de kaart.';
+      scanSub.textContent = 'Scan het juiste cijfer.';
+      scanHint.textContent = '📱 Blokje stil laten liggen';
+    }
+
+    function nextRound(){
+      locked = false;
+      wrongTries = 0;
+      mode = 'normal';
+
+      stopVoice();
+      hideScanDigit();
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+
+      clearRoundUI();
+
+      target = pickTarget();
+
+      items = generateItems(target);
+      projectNormalizedToPixels();
+      resolveOverlapsGentle();
+
+      requestRender();
+    }
+
+    // hard safe helpers against iPad hangs
+    function delaySafe(ms, token){
+      return new Promise((resolve) => {
+        const t = setTimeout(() => resolve(), ms);
+        if (token !== undefined){
+          const check = () => {
+            if (token !== helpToken){
+              clearTimeout(t);
+              resolve();
+              return;
+            }
+            requestAnimationFrame(check);
+          };
+          requestAnimationFrame(check);
+        }
+      });
+    }
+
+    function speakNumberSafe(n, token){
+      return new Promise((resolve) => {
+        let finished = false;
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ voicePlayer.onended = null; } catch(e){}
+          try{ voicePlayer.onerror = null; } catch(e){}
+          try{ voicePlayer.onplaying = null; } catch(e){}
+          resolve();
+        };
+
+        if (token !== undefined && token !== helpToken){
+          finish();
+          return;
+        }
+
+        const HARD_MAX_MS = 900;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          voicePlayer.pause();
+          voicePlayer.currentTime = 0;
+          voicePlayer.src = voiceSrc(n);
+          voicePlayer.load();
+
+          voicePlayer.onended = () => { clearTimeout(hard); finish(); };
+          voicePlayer.onerror = () => { clearTimeout(hard); finish(); };
+
+          const p = voicePlayer.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
+    async function runHelpCounting(){
+      const myToken = ++helpToken;
+
+      locked = true;
+      mode = 'helpCounting';
+
+      stopVoice();
+      hideScanDigit();
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+
+      scanTitle.textContent = 'Kijk goed.';
+      scanSub.textContent = 'We tellen samen.';
+      scanHint.textContent = '';
+
+      items.forEach(it => { it.counted = false; it.helpBubble = false; });
+      requestRender();
+
+      for (let i = 0; i < items.length; i++){
+        if (myToken !== helpToken) return;
+
+        for (let j = 0; j <= i; j++){
+          items[j].helpBubble = true;
+        }
+        requestRender();
+
+        await speakNumberSafe(i + 1, myToken);
+        if (myToken !== helpToken) return;
+
+        await delaySafe(220, myToken);
+        if (myToken !== helpToken) return;
+      }
+
+      if (myToken !== helpToken) return;
+
+      items.forEach(it => { it.counted = true; it.helpBubble = false; });
+      requestRender();
+
+      showScanDigit(target);
+
+      scanTitle.textContent = 'Leg hetzelfde cijfer.';
+      scanSub.textContent = 'Scan het cijfer dat je ziet.';
+      scanHint.textContent = '';
+
+      mode = 'confirmDigit';
+      locked = false;
+    }
+
+    async function onCorrectAnswer(){
+      locked = true;
+
+      scanTitle.textContent = 'Goed gedaan.';
+      scanSub.textContent = '';
+      scanHint.textContent = '';
+
+      playSfx(goodAudio);
+
+      await speakNumberSafe(target);
+
+      ensureAllHaveBubbles();
+      const seqMs = showSuccessSequenceTotalMs();
+      floatAllBubblesOutWithinTwoSeconds();
+
+      setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
+    }
+
+    function onWrongAnswer(){
+      wrongTries += 1;
+
+      playSfx(wrongAudio);
+      flashTelvlakWrong();
+      wrongFeedback();
+
+      popAllMarkedBubblesOnly();
+
+      if (wrongTries >= 3){
+        runHelpCounting();
+      } else {
+        setTimeout(() => {
+          if (!started || locked) return;
+          clearRoundUI();
+          if (mode === 'confirmDigit') showScanDigit(target);
+        }, 380);
+      }
+    }
+
+    function handleAnswer(recognizedDigit){
+      if (recognizedDigit == null) return;
+      if (!started || locked) return;
+
+      if (recognizedDigit === target){
+        onCorrectAnswer();
+      } else {
+        onWrongAnswer();
+      }
+    }
+
+    function onCanvasPointerDown(e){
+      if (!started || locked) return;
+
+      initWebAudio().then(unlockAudio);
+      e.preventDefault();
+
+      const p = getCanvasPointFromEvent(e);
+      const it = hitTest(p.x, p.y);
+      if (!it) return;
+
+      it.counted = !it.counted;
+      it.helpBubble = false;
+      requestRender();
+    }
+    countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
+
+    // Marbotic herkenning
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
+        return;
+      }
+
+      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
+        ? calibrationData.expectedTouchPoints
+        : 3;
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
+    }
+
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = data[String(d)];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+          const features = computeFeatures(pts);
+          obj[String(d)].samples.push({ points: pts, features });
+        });
+      });
+
+      return obj;
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) return { vector: [0,0,0] };
+
+      const p0 = points[0], p1 = points[1], p2 = points[2];
+      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
+
+      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
+
+      let maxDist = 0;
+      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
+      if (maxDist < 1e-6) maxDist = 1;
+
+      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
+
+      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
+
+      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      const orientationVal = (a,b,c) => {
+        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+        return v > 0 ? 1 : v < 0 ? -1 : 0;
+      };
+      const orientation = orientationVal(A,B,C);
+
+      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
+      const denom = 2 * AC * BC;
+      let cosAngle = 0;
+      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
+
+      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
+      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
+      let width = maxX-minX, height = maxY-minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
+      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
+      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
+      const aspect = height / (width + height);
+
+      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
+      return { vector };
+    }
+
+    function buildFeatureVector(f) {
+      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
+      return [
+        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
+        f.cosAngle*wCos, f.orientation*wOrient,
+        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
+        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
+        f.aspect*wAspect
+      ];
+    }
+
+    function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
+      return Math.sqrt(sum);
+    }
+
+    function recomputeClassificationStats() {
+      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
+
+      const allSamples = [];
+      DIGIT_ORDER.forEach(d => {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
+      });
+
+      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
+
+      const sameMin = [];
+      const betweenMin = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        let minSame = Infinity, minOther = Infinity;
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const dist = vectorDistance(a.vector, b.vector);
+          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
+          else minOther = Math.min(minOther, dist);
+        }
+        if (minSame < Infinity) sameMin.push(minSame);
+        if (minOther < Infinity) betweenMin.push(minOther);
+      }
+
+      const maxSame = Math.max.apply(null, sameMin);
+      const minBetween = Math.min.apply(null, betweenMin);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const vec = computeFeatures(points).vector;
+      if (!vec) return null;
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const entry = calibration[String(d)];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const dist = vectorDistance(vec, samples[i].features.vector);
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+        }
+      });
+
+      if (bestDigit === null) return null;
+      if (bestDist > classificationStats.thresholdUnknown) return null;
+      if (bestDist > classificationStats.thresholdBase) return null;
+      return bestDigit;
+    }
+
+    let hasResultForCurrentTouches = false;
+
+    function getPointsFromTouches(touchList) {
+      const rect = scanArea.getBoundingClientRect();
+      const points = [];
+      for (let i = 0; i < touchList.length; i++) {
+        const t = touchList[i];
+        const x = t.clientX;
+        const y = t.clientY;
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          points.push({ x, y });
+        }
+      }
+      return points;
+    }
+
+    function handleTouchEvent(e){
+      if (!calibration || !classificationStats) return;
+
+      // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
+      if (mode === 'helpCounting') return;
+
+      initWebAudio().then(unlockAudio);
+
+      const touches = e.touches || [];
+      const pts = getPointsFromTouches(touches);
+
+      if (pts.length === 0){
+        hasResultForCurrentTouches = false;
+        return;
+      }
+
+      if (pts.length !== expectedTouchPoints){
+        hasResultForCurrentTouches = false;
+        scanTitle.textContent = 'Even stil houden.';
+        scanSub.textContent = 'We lezen de puntjes.';
+        scanHint.textContent = '';
+        return;
+      }
+
+      scanTitle.textContent = 'Even stil houden.';
+      scanSub.textContent = 'We lezen de puntjes.';
+      scanHint.textContent = '';
+
+      if (!hasResultForCurrentTouches && !locked){
+        const digit = recognizeDigit(pts);
+        if (digit !== null && typeof digit === "number"){
+          hasResultForCurrentTouches = true;
+          handleAnswer(digit);
+        }
+      }
+    }
+
+    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
+      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
+    });
+
+    // Tests
+    function testGood(){ if (!started || locked) return; handleAnswer(target); }
+    function testWrong(){
+      if (!started || locked) return;
+      const wrong = target === 9 ? 1 : target + 1;
+      handleAnswer(wrong);
+    }
+
+    testGoodBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testGood(); });
+    testWrongBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testWrong(); });
+    newRoundBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started) nextRound(); });
+    testHelpBtn.addEventListener('click', () => {
+      initWebAudio().then(unlockAudio);
+      if (started && !locked){
+        wrongTries = 2;
+        onWrongAnswer();
+      }
+    });
+    testPlopBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); playPlop(); });
+
+    // Start
+    function startGame(){
+      if (started) return;
+      started = true;
+
+      startOverlay.style.display = 'none';
+
+      Promise.resolve()
+        .then(() => initWebAudio())
+        .then(() => unlockAudio())
+        .catch(() => {});
+
+      try{
+        goodAudio.load();
+        wrongAudio.load();
+      } catch(e){}
+
+      nextRound();
+    }
+
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startGame();
+    });
+
+    startOverlay.addEventListener('click', (e) => {
+      if (e.target === startOverlay) startGame();
+    });
+
+    homeBtn.addEventListener('click', () => {
+      try { window.location.href = 'index.html'; } catch (e) {}
+    });
+
+    async function preloadImages(){
+      itemImgs.star = await loadImage(ITEM_SRC.star);
+      itemImgs.leaf = await loadImage(ITEM_SRC.leaf);
+      itemImgs.lady = await loadImage(ITEM_SRC.lady);
+      requestRender();
+    }
+
+    window.addEventListener('resize', () => setTimeout(() => {
+      setAutoScale();
+      resizeCountCanvas();
+    }, 180));
+
+    window.addEventListener('orientationchange', () => setTimeout(() => {
+      setAutoScale();
+      resizeCountCanvas();
+    }, 280));
+
+    window.addEventListener('load', () => {
+      setAutoScale();
+
+      countRange = loadCountRange();
+      syncCountUI();
+
+      resizeCountCanvas();
+      clearRoundUI();
+      preloadImages();
+
+      hideScanDigit();
+
+      fetch('calibration.json', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => initCalibration(data))
+        .catch(() => { });
+    });
+  </script>
+</body>
+</html>
