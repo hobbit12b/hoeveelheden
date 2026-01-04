@@ -522,47 +522,16 @@ pointer-events: auto;
       z-index: 2;
     }
 
-    .scanPopup{
-      position: absolute;
-      left: 50%;
-      top: 34%;
-      transform: translate(-50%, -58%) scale(0.96);
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: 2px solid rgba(245,180,152,0.85);
-      background: rgba(255,255,255,0.92);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-      font-weight: 900;
-      font-size: 16px;
-      letter-spacing: 0.2px;
-      color: #4d4a48;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 3;
-    }
-
     .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
     .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
 
     .scan-surface.scanPop #scanPlaceImg{
       animation: scanPop 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
     }
-    .scan-surface.scanPop .scanPopup{
-      animation: scanPopup 980ms ease both;
-    }
-
     @keyframes scanPop{
       0%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 0.92)); }
       60%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 1.06)); }
       100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
-    }
-
-    @keyframes scanPopup{
-      0%{ opacity: 0; transform: translate(-50%, -58%) scale(0.96); }
-      18%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      72%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      100%{ opacity: 0; transform: translate(-50%, -44%) scale(0.98); }
     }
 
     .scanUI.hiddenAssist{ display:none; }
@@ -885,7 +854,6 @@ z-index: 2000;
     <div class="scanOverlay">
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
-      <div class="scanPopup" id="scanPopup" aria-hidden="true">✨ Je mag scannen</div>
       <div class="scanUI hiddenAssist">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
@@ -1033,8 +1001,6 @@ z-index: 2000;
 
     const scanPlaceImg = document.getElementById('scanPlaceImg');
     const scanVeil = document.getElementById('scanVeil');
-    const scanPopup = document.getElementById('scanPopup');
-
     let scanAllowed = false;
     let scanPopTimer = null;
 
@@ -2421,6 +2387,9 @@ if (fairyVid.readyState >= 2) seekAndPlay();
 
     let wrongTries = 0;
 
+    const MAX_WRONG_TRIES = 2;
+    let forceNextDigit = null;
+
     let currentPoints = [];
     let hasResultForCurrentTouches = false;
 
@@ -2572,6 +2541,15 @@ if (fairyVid.readyState >= 2) seekAndPlay();
 
       const pool = (Array.isArray(enabledDigits) && enabledDigits.length) ? enabledDigits : DIGIT_ORDER;
 
+
+      if (forceNextDigit !== null && forceNextDigit !== undefined){
+        const forced = forceNextDigit;
+        forceNextDigit = null;
+        if (pool.indexOf(forced) >= 0){
+          targetDigit = forced;
+          return;
+        }
+      }
       if (pool.length === 1){
         targetDigit = pool[0];
         return;
@@ -2668,6 +2646,7 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       const myToken = ++roundToken;
 
       locked = true;
+      forceNextDigit = targetDigit;
 
       scanTitle.textContent = 'Kijk goed.';
       scanSub.textContent = 'Zo ziet het juiste cijfer eruit.';
@@ -2729,9 +2708,8 @@ if (fairyVid.readyState >= 2) seekAndPlay();
 
       } else {
         wrongTries += 1;
-        setScanPermission(false);
 
-        if (wrongTries >= 3){
+        if (wrongTries >= MAX_WRONG_TRIES){
           wrongFeedback();
           playSfx(wrongAudio);
           revealCorrectAfterThreeWrong();
@@ -2743,7 +2721,11 @@ if (fairyVid.readyState >= 2) seekAndPlay();
 
         playWrongAnimation(() => {
           if (!started || locked) return;
-          setTimeout(() => askDigit(targetDigit), 250);
+          setTimeout(() => {
+            if (!started || locked) return;
+            setScanPermission(true);
+            askDigit(targetDigit, { repeat:true });
+          }, 250);
         });
       }
     }
@@ -2771,7 +2753,7 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       if (!scanAllowed && started && !locked){
         hasResultForCurrentTouches = false;
         scanTitle.textContent = 'Luister eerst.';
-        scanSub.textContent = 'Je mag zo scannen.';
+        scanSub.textContent = 'Wacht even.';
         scanHint.textContent = '';
         return;
       }
