@@ -371,6 +371,8 @@
     }
 
     .scanUI{
+      position: relative;
+      z-index: 3;
       width: min(520px, 92%);
       display:flex;
       flex-direction:column;
@@ -880,7 +882,7 @@ z-index: 2000;
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
       <div class="scanPopup" id="scanPopup" aria-hidden="true">✨ Je mag scannen</div>
-      <div class="scanUI hiddenAssist">
+      <div class="scanUI">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
         </div>
@@ -1267,6 +1269,7 @@ missAntwoord.push(r.digit);
 
     /* iOS audio unlock, nodig omdat Safari pas geluid toestaat na een gebruikersactie */
     let audioUnlocked = false;
+    let speakAvailable = false;
 
     function unlockOneAudio(el){
       if (!el) return;
@@ -1312,11 +1315,13 @@ missAntwoord.push(r.digit);
 
     function setSpeakAvailability(canPlay){
       if (!speakBtn) return;
-      speakBtn.disabled = !canPlay;
-      if (!canPlay){
-        if (speakIcon) speakIcon.src = 'praatknopuit.png';
-        speakBtn.classList.add('isOff');
+      speakAvailable = !!canPlay;
+      speakBtn.disabled = !speakAvailable;
+
+      if (speakIcon){
+        speakIcon.src = speakAvailable ? 'praatknopaan.png' : 'praatknopuit.png';
       }
+      speakBtn.classList.toggle('isOff', !speakAvailable);
     }
 
 let currentVoice = null;
@@ -1325,8 +1330,12 @@ let currentVoice = null;
 
     function setSpeakVisual(isPlaying){
       if (!speakBtn || !speakIcon) return;
-      speakIcon.src = isPlaying ? 'praatknopaan.png' : 'praatknopuit.png';
-      speakBtn.classList.toggle('isOff', !isPlaying);
+      if (isPlaying){
+        speakIcon.src = 'praatknopaan.png';
+      } else {
+        speakIcon.src = speakAvailable ? 'praatknopaan.png' : 'praatknopuit.png';
+      }
+      speakBtn.classList.toggle('isPlaying', !!isPlaying);
     }
 
     function attachVoiceUI(a){
@@ -3144,10 +3153,6 @@ function revealCorrectAfterThreeWrong(){
     speakBtn.addEventListener('click', () => {
       if (!started) return;
       if (speakBtn.disabled) return;
-
-      // Alleen klikken als de praatknop uit staat (dus er speelt nu geen uitleg of opdracht)
-      if (!speakBtn.classList.contains('isOff')) return;
-
       unlockAllAudioOnce();
       askDigit(targetDigit, { repeat:true });
     });
@@ -3167,6 +3172,7 @@ startBtn.addEventListener('click', startGame);
       primeStartVideo();
       initSettingsUI();
       updateMusicBtn();
+      setSpeakAvailability(false);
       setSpeakVisual(false);
 
       showFirstFrame();
