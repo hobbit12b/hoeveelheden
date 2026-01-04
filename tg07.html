@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>tovergetallen</title>
@@ -54,7 +54,7 @@
 
       /* Startknop positie, wordt ook opgeslagen op dit apparaat */
       --start-left: 29.5%;
-      --start-top: 57%;
+      --start-top: 52%;
       --start-scale: 0.36;
 
       --scanplek-left: 88%;
@@ -62,6 +62,15 @@
       --scanplek-scale: 0.27;
 
     }
+
+    @media (orientation: portrait){
+      :root{
+        --start-left: 70%;
+        --start-top: 38%;
+        --start-scale: 0.45;
+      }
+    }
+
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -908,6 +917,31 @@ z-index: 2000;
       audio/zozieteruitde00.mp3 t/m audio/zozieteruitde09.mp3
     */
 
+    /* iPad: voorkom dubbel tik zoom en pinch zoom */
+    (function preventIOSZoom(){
+      // Dblclick kan in Safari zoom triggeren, ook op iPad met trackpad
+      document.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+      }, { passive: false });
+
+      // Dubbel tik zoom blokkeren, maar normale tikken laten werken
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300){
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, { passive: false });
+
+      // Pinch zoom gesture blokkeren op iOS Safari
+      ['gesturestart','gesturechange','gestureend'].forEach((type) => {
+        document.addEventListener(type, (e) => {
+          e.preventDefault();
+        }, { passive: false });
+      });
+    })();
+
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
     const ASSET_DIGIT = (d) => `marbotic${d}.png`;
 
@@ -1579,7 +1613,7 @@ let currentVoice = null;
     const DEFAULT_START_LAYOUT = {
       landScale: 0.36,
       landX: 29.5,
-      landY: 57,
+      landY: 52,
       portScale: 0.45,
       portX: 70,
       portY: 38
@@ -1590,7 +1624,8 @@ let currentVoice = null;
         const raw = localStorage.getItem(START_LAYOUT_KEY);
         if (!raw) return { ...DEFAULT_START_LAYOUT };
         const obj = JSON.parse(raw);
-        return {
+
+        const loaded = {
           landScale: Number(obj.landScale ?? DEFAULT_START_LAYOUT.landScale),
           landX: Number(obj.landX ?? DEFAULT_START_LAYOUT.landX),
           landY: Number(obj.landY ?? DEFAULT_START_LAYOUT.landY),
@@ -1598,6 +1633,24 @@ let currentVoice = null;
           portX: Number(obj.portX ?? DEFAULT_START_LAYOUT.portX),
           portY: Number(obj.portY ?? DEFAULT_START_LAYOUT.portY)
         };
+
+        // Migratie: als alles nog exact de oude standaard was, zet de startknop iets hoger in landscape
+        const oldDefault = { landScale: 0.36, landX: 29.5, landY: 57, portScale: 0.45, portX: 70, portY: 38 };
+        const near = (a,b) => Math.abs(Number(a) - Number(b)) < 1e-6;
+        const isOldDefault =
+          near(loaded.landScale, oldDefault.landScale) &&
+          near(loaded.landX, oldDefault.landX) &&
+          near(loaded.landY, oldDefault.landY) &&
+          near(loaded.portScale, oldDefault.portScale) &&
+          near(loaded.portX, oldDefault.portX) &&
+          near(loaded.portY, oldDefault.portY);
+
+        if (isOldDefault){
+          loaded.landY = DEFAULT_START_LAYOUT.landY;
+          try { localStorage.setItem(START_LAYOUT_KEY, JSON.stringify(loaded)); } catch(e) {}
+        }
+
+        return loaded;
       } catch(e){
         return { ...DEFAULT_START_LAYOUT };
       }
