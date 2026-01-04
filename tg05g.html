@@ -324,9 +324,11 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       z-index: 5;
     }
     .scanDigitWrap.show{ opacity: 1; }
+    .scanDigitWrap.fadeOut{ opacity: 0; transition: opacity 900ms ease; }
     .scanDigitWrap img{
       width: min(62%, 360px);
       height: auto;
+      opacity: 0.5;
       filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
     }
 
@@ -887,13 +889,9 @@ function applyStartLayoutToCSS(){
     }
 
     function showUnderDigit(d){
-      if (!scanUnderImg) return;
-      if (underDigit === d && scanUnderImg.classList.contains('show')) return;
-      underDigit = d;
-      const src = underDigitSrc[d] || `marbotic${d}.png`;
-      scanUnderImg.src = src;
-      scanUnderImg.alt = String(d);
-      scanUnderImg.classList.add('show');
+      // Tijdens het scannen geen extra marbotic-beeld tonen.
+      // (Alleen de echte houten steen op de scanplek)
+      hideUnderDigit();
     }
 
     function hideUnderDigit(){
@@ -1043,6 +1041,7 @@ const startResetBtn = document.getElementById('startResetBtn');
       plopFallbackPool = Array.from({ length: 8 }, () => {
         const a = new Audio(PLOP_SOUND_SRC);
         a.preload = 'auto';
+        try{ a.load(); } catch(e){}
         return a;
       });
       plopMode = 'fallback';
@@ -1114,14 +1113,26 @@ const startResetBtn = document.getElementById('startResetBtn');
     }
 
 
-    function playPlop(rate=1){
-      if (plopMode === 'web' && audioCtx && plopBuffer){
-        try{
-          if (audioCtx.state !== 'running'){
-            try{ audioCtx.resume(); } catch(e){}
-          }
-          if (audioCtx.state !== 'running') throw new Error('ctx');
+    function fallbackPlop(rate=1){
+      try{ ensureFallbackPool(); } catch(e){}
+      if (!plopFallbackPool.length) return;
 
+      const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
+      plopFallbackIndex++;
+      try{
+        try{ a.pause(); } catch(e){}
+        a.currentTime = 0;
+        a.volume = 1;
+        try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
+    function playPlop(rate=1){
+      // WebAudio is het snelst, maar iOS kan de context pauzeren na stilte.
+      if (plopMode === 'web' && audioCtx && plopBuffer){
+        const startWeb = () => {
           const src = audioCtx.createBufferSource();
           const gain = audioCtx.createGain();
           gain.gain.setValueAtTime(0.95, audioCtx.currentTime);
@@ -1131,23 +1142,54 @@ const startResetBtn = document.getElementById('startResetBtn');
           gain.connect(audioCtx.destination);
           try{ src.playbackRate.value = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
           src.start(audioCtx.currentTime);
+        };
+
+        try{
+          if (audioCtx.state === 'running'){
+            startWeb();
+            return;
+          }
+
+          // Probeer te hervatten binnen deze user gesture.
+          // Lukt dat niet direct, dan pakken we na een heel korte timeout de fallback,
+          // zodat de plop nooit "later nog eens" binnenkomt.
+          let done = false;
+          const t = setTimeout(() => {
+            if (done) return;
+            done = true;
+            fallbackPlop(rate);
+          }, 45);
+
+          const p = audioCtx.resume();
+          if (p && typeof p.then === 'function'){
+            p.then(() => {
+              if (done) return;
+              done = true;
+              clearTimeout(t);
+              try{
+                if (audioCtx.state === 'running') startWeb();
+                else fallbackPlop(rate);
+              } catch(e){
+                fallbackPlop(rate);
+              }
+            }).catch(() => {
+              if (done) return;
+              done = true;
+              clearTimeout(t);
+              fallbackPlop(rate);
+            });
+          } else {
+            clearTimeout(t);
+            fallbackPlop(rate);
+          }
           return;
         } catch(e){
-          ensureFallbackPool();
+          fallbackPlop(rate);
+          return;
         }
       }
 
-      if (plopFallbackPool.length){
-        const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
-        plopFallbackIndex++;
-        try{
-          a.currentTime = 0;
-          a.volume = 1;
-          try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
-          const p = a.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){}
-      }
+      fallbackPlop(rate);
     }
 
     // Telbereik instellingen
@@ -1312,20 +1354,37 @@ if (startResetBtn){
 
     // Scan digit hint
     let scanDigitTimer = null;
+    let scanDigitFadeTimer = null;
+
     function hideScanDigit(){
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
+
       scanDigitWrap.classList.remove('show');
+      scanDigitWrap.classList.remove('fadeOut');
       scanDigitImg.removeAttribute('src');
       scanDigitImg.alt = '';
     }
+
     function showScanAsset(src, alt){
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
+
+      scanDigitWrap.classList.remove('fadeOut');
       scanDigitImg.src = src;
       scanDigitImg.alt = alt || '';
       scanDigitWrap.classList.add('show');
     }
+
     function showScanDigit(digit){
       showScanAsset(`marbotic${digit}.png`, String(digit));
-      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
+
+      // Eerst rustig zichtbaar, daarna wegfaden en opruimen
+      scanDigitFadeTimer = setTimeout(() => {
+        scanDigitFadeTimer = null;
+        scanDigitWrap.classList.add('fadeOut');
+        scanDigitTimer = setTimeout(() => hideScanDigit(), 950);
+      }, 2400);
     }
 
     // Canvas rendering
@@ -2356,6 +2415,11 @@ if (startResetBtn){
       const touches = e.touches || [];
       const pts = getPointsFromTouches(touches);
 
+      // Zodra er iets op de scanplek ligt: hintplaatje weg, zodat je alleen de echte steen ziet
+      if (pts.length){
+        hideScanDigit();
+      }
+
       if (pts.length === 0){
         hasResultForCurrentTouches = false;
         hideUnderDigit();
@@ -2375,7 +2439,6 @@ if (startResetBtn){
         const digit = recognizeDigit(pts);
         if (digit !== null && typeof digit === "number"){
           hasResultForCurrentTouches = true;
-          showUnderDigit(digit);
           handleAnswer(digit);
         }
       }
