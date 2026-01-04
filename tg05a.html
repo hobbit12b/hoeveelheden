@@ -267,6 +267,15 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       will-change: transform, opacity;
     }
 
+    #scanPlaceImg.nudge{
+      animation: scanNudge 360ms cubic-bezier(.22,.61,.35,1) 1;
+    }
+    @keyframes scanNudge{
+      0%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
+      45%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 0.92)); }
+      100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
+    }
+
 
     /* onderlegger: laat hetzelfde marbotic-cijfer zien onder de scanplek */
     #scanUnderImg{
@@ -1917,6 +1926,61 @@ if (startResetBtn){
     let roundId = 0;
     let promptPlayedThisRound = false;
 
+    let scanNudgeTimer = null;
+    let lastMotionAt = Date.now();
+
+    function clearScanNudge(){
+      if (scanNudgeTimer){
+        clearTimeout(scanNudgeTimer);
+        scanNudgeTimer = null;
+      }
+    }
+
+    function scheduleScanNudge(){
+      clearScanNudge();
+      if (!scanPlaceImg) return;
+      if (document.body.classList.contains('startActive')) return;
+      const IDLE_NUDGE_MS = 15000;
+      const since = Date.now() - lastMotionAt;
+      const wait = Math.max(0, IDLE_NUDGE_MS - since);
+      scanNudgeTimer = setTimeout(() => {
+        if (!scanPlaceImg) return;
+        if (document.body.classList.contains('startActive')) return;
+        if ((Date.now() - lastMotionAt) < (IDLE_NUDGE_MS - 40)){
+          scheduleScanNudge();
+          return;
+        }
+
+        scanPlaceImg.classList.remove('nudge');
+        void scanPlaceImg.offsetHeight;
+        scanPlaceImg.classList.add('nudge');
+
+        const again = randInt(7000, 11000);
+        scanNudgeTimer = setTimeout(() => {
+          if ((Date.now() - lastMotionAt) >= IDLE_NUDGE_MS) scheduleScanNudge();
+        }, again);
+      }, wait);
+    }
+
+    function markMotion(){
+      lastMotionAt = Date.now();
+      scheduleScanNudge();
+    }
+
+    if (scanPlaceImg){
+      scanPlaceImg.addEventListener('animationend', (e) => {
+        try{ if (e && e.animationName === 'scanNudge') scanPlaceImg.classList.remove('nudge'); } catch(err){}
+      });
+    }
+
+    ['pointerdown','pointermove','touchstart','touchmove'].forEach((type) => {
+      try{
+        document.addEventListener(type, () => {
+          markMotion();
+        }, { passive:true });
+      } catch(e){}
+    });
+
     function resetIdlePrompt(){
       if (idlePromptTimer){
         clearTimeout(idlePromptTimer);
@@ -2696,7 +2760,9 @@ function delayTutorial(ms, token){
 
       // naar het midden van het scanvak
       setMarboticState({ tx: 0, ty: 0, scale: finalScale });
-      await delayTutorial(260, tasync function startGame(){
+      await delayTutorial(260, token);
+
+    async function startGame(){
       if (started) return;
       started = true;
 
@@ -2784,6 +2850,7 @@ if (startOverlay && startBtn){
 
   startOverlay.addEventListener('pointerdown', (e) => {
     if (started) return;
+    if (e && e.target && typeof e.target.closest === 'function' && e.target.closest('#startBtn')) return;
     startHoldTriggered = false;
     cancelStartHold();
 
@@ -2847,6 +2914,7 @@ if (startOverlay && startBtn){
     setTimeout(() => {
       if (startOverlay) startOverlay.style.display = 'none';
       try{ document.body.classList.remove('startActive'); } catch(e){}
+      try{ scheduleScanNudge(); } catch(e){}
       startGame();
     }, 520);
   });
