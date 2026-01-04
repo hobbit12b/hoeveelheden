@@ -107,6 +107,9 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       box-shadow: none;
       border-radius: 0;
       cursor:pointer;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
       display:grid;
       place-items:center;
       line-height: 0;
@@ -123,27 +126,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       display:block;
       pointer-events:none;
     }
-
-    .tuneBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-      font-size: 30px;
-      line-height: 1;
-      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
-    }
-    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
-
-    /* tandwiel uit beeld (instellingen via lang indrukken op de titelbalk) */
-    .tuneBtn{ display:none; }
 
     .titlePill{
       padding: 18px 44px;
@@ -286,8 +268,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       z-index: 2;
     }
 
-    .scanPopup{ display:none; }
-
     .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
     .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
 
@@ -381,7 +361,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
 
 
-
     .startOverlay{
   position:fixed;
   inset:0;
@@ -441,7 +420,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1200;
+      z-index: 1700;
       color: #4d4a48;
     }
 
@@ -572,7 +551,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     <div class="scanOverlay">
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" draggable="false" aria-hidden="true" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
-      <div class="scanPopup" id="scanPopup" aria-hidden="true">✨ Je mag scannen</div>
       
     </div>
   </section>
@@ -772,15 +750,12 @@ function applyStartLayoutToCSS(){
 
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
-    const startVid = document.getElementById('startVid');
     const titlePill = document.getElementById('titlePill');
 
     const scanArea = document.getElementById('scan-area');
 
     const scanDigitWrap = document.getElementById('scanDigitWrap');
     const scanDigitImg = document.getElementById('scanDigitImg');
-
-    const tutorialLayer = document.getElementById('tutorialLayer');
     const tutorialHandWrap = document.getElementById('tutorialHandWrap');
     const tutorialHandImg = document.getElementById('tutorialHand');
 
@@ -790,7 +765,6 @@ function applyStartLayoutToCSS(){
     const tutMarboticImg = document.getElementById('tutMarboticImg');
     const tutPlateDigit = document.getElementById('tutPlateDigit');
 
-    const tuneBtn = document.getElementById('tuneBtn');
     const tunePanel = document.getElementById('tunePanel');
     const tuneClose = document.getElementById('tuneClose');
 
@@ -1018,8 +992,9 @@ const startResetBtn = document.getElementById('startResetBtn');
         countHint.textContent = `Elke ronde zijn het ${countRange.min} tot ${countRange.max} dingen.`;
       }
 
+    }
 
-function syncStartUI(){
+    function syncStartUI(){
   const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
 
   const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
@@ -1081,8 +1056,6 @@ if (startResetBtn){
   });
 }
 
-    }
-
     function applyCountChange(from){
       let min = clampInt(countMinRange.value, 1, 9);
       let max = clampInt(countMaxRange.value, 1, 9);
@@ -1107,15 +1080,10 @@ if (startResetBtn){
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
+      syncStartUI();
       initWebAudio().then(unlockAudio);
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
-    if (tuneBtn){
-      tuneBtn.addEventListener('click', () => {
-        if (tunePanel.classList.contains('hidden')) openTunePanel();
-        else closeTunePanel();
-      });
-    }
 
     tuneClose.addEventListener('click', closeTunePanel);
 
@@ -1689,9 +1657,6 @@ let wrongTries = 0;
 
     function pickTarget(){ return randInt(countRange.min, countRange.max); }
 
-    function clearRoundUI(){
-    }
-
     function nextRound(){
       resetIdlePrompt();
       promptPlayedThisRound = false;
@@ -1705,8 +1670,6 @@ let wrongTries = 0;
       stopPrompt();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-
-      clearRoundUI();
 
       target = pickTarget();
 
@@ -1857,7 +1820,6 @@ let wrongTries = 0;
       } else {
         setTimeout(() => {
           if (!started || locked) return;
-          clearRoundUI();
           if (mode === 'confirmDigit') showScanDigit(target);
         }, 380);
       }
@@ -2406,15 +2368,50 @@ function startGame(){
 
 
 if (startBtn){
-  startBtn.addEventListener('click', () => {
+  const START_HOLD_MS = 900;
+  let startHoldTimer = null;
+  let startHoldTriggered = false;
+
+  function cancelStartHold(){
+    if (startHoldTimer){ clearTimeout(startHoldTimer); startHoldTimer = null; }
+  }
+
+  startBtn.addEventListener('pointerdown', (e) => {
+    startHoldTriggered = false;
+    cancelStartHold();
+    startHoldTimer = setTimeout(() => {
+      startHoldTimer = null;
+      startHoldTriggered = true;
+      if (tunePanel && tunePanel.classList.contains('hidden')) openTunePanel();
+    }, START_HOLD_MS);
+
+    // voorkom iOS context menu bij lang indrukken
+    try{ e.preventDefault(); } catch(err) {}
+  }, { passive:false });
+
+  ['pointerup','pointercancel','pointerleave'].forEach(ev => {
+    startBtn.addEventListener(ev, cancelStartHold);
+  });
+
+  startBtn.addEventListener('click', (e) => {
     if (started) return;
+    if (startHoldTriggered){
+      try{ e.preventDefault(); } catch(err) {}
+      return;
+    }
+
+    // audio vrijgeven in deze tik
+    Promise.resolve()
+      .then(() => initWebAudio())
+      .then(() => unlockAudio())
+      .catch(() => {});
 
     if (startOverlay) startOverlay.classList.add('leaving');
     startBtn.classList.add('leaving');
 
-    // Start nu het spel, zodat audio is vrijgegeven door deze tik
     setTimeout(() => {
       if (startOverlay) startOverlay.style.display = 'none';
+      startGame();
     }, 520);
   });
 }
@@ -2471,7 +2468,6 @@ if (startBtn){
 
       syncStartUI();
       resizeCountCanvas();
-      clearRoundUI();
       preloadImages();
       if (successGif){
         successGif.addEventListener('error', () => { usePinguinSuccess = false; }, { once:true });
@@ -2483,8 +2479,6 @@ if (startBtn){
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-
-      startGame();
     });
   </script>
 </body>
