@@ -312,6 +312,10 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
 
     .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
+
+    /* tutorial: tijdens de voorbeeldanimatie is de scanplek rustiger zichtbaar */
+    body.tutorialActive .scan-surface.scanAllowed #scanPlaceImg{ opacity: 0.4; }
+
     .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
 
     .scan-surface.wrong{ animation: wiggle 220ms ease; }
@@ -2239,6 +2243,7 @@ if (startResetBtn){
       await delaySafe(Math.max(1600, seqMs + 250));
 
       // eerst de volgende opdracht zichtbaar maken, daarna pas: nu mag jij
+      try{ document.body.classList.remove('tutorialActive'); } catch(e){}
       nextRound();
       await delaySafe(240);
       await playAfterTutorCueSafe();
@@ -2663,6 +2668,7 @@ function delayTutorial(ms, token){
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
+      try{ document.body.classList.add('tutorialActive'); } catch(e){}
 
       // Kies een veilige waarde binnen het ingestelde bereik
       const demoTarget = 4;
@@ -2762,31 +2768,24 @@ function delayTutorial(ms, token){
       setMarboticState({ tx: 0, ty: 0, scale: finalScale });
       await delayTutorial(260, token);
 
-    async function startGame(){
-      if (started) return;
-      started = true;
-
-      const ready = Promise.resolve()
-        .then(() => { try{ ensureFallbackPool(); } catch(e){} })
-        .then(() => initWebAudio())
-        .then(() => unlockAudio())
-        .then(() => { try{ startAudioKeepAlive(); } catch(e){} })
-        .catch(() => {});
-
-      // korte warmup, zodat plop vrijwel altijd direct klinkt
-      await Promise.race([
-        ready,
-        new Promise(r => setTimeout(r, 650))
-      ]);
-
+      // naar de witte scanplek: het witte vlak zit niet exact in het midden van de scanplek-afbeelding
+      let dx = 0, dy = 0;
       try{
-        goodAudio.load();
-        wrongAudio.load();
+        if (scanPlaceImg){
+          const placeRect = scanPlaceImg.getBoundingClientRect();
+          const cx = scanRect.left + (scanRect.width / 2);
+          const cy = scanRect.top  + (scanRect.height / 2);
+
+          const fracX = (typeof SCAN_UNDER_OFF_FRAC === 'object' && SCAN_UNDER_OFF_FRAC) ? (Number(SCAN_UNDER_OFF_FRAC.x) || 0) : 0;
+          const fracY = (typeof SCAN_UNDER_OFF_FRAC === 'object' && SCAN_UNDER_OFF_FRAC) ? (Number(SCAN_UNDER_OFF_FRAC.y) || 0) : 0;
+
+          const px = (placeRect.left + (placeRect.width / 2)) + (placeRect.width * fracX);
+          const py = (placeRect.top  + (placeRect.height / 2)) + (placeRect.height * fracY);
+
+          dx = px - cx;
+          dy = py - cy;
+        }
       } catch(e){}
-
-      startTutorialDemo();
-    }dH;
-
       setMarboticState({ tx: dx, ty: dy, scale: finalScale });
       await delayTutorial(520, token);
 
