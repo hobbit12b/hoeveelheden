@@ -322,6 +322,13 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
 
 
+    @media (orientation: portrait){
+      .scanDigitWrap img{
+        width: min(49.6%, 288px);
+      }
+    }
+
+
     /* tutorial: marbotic voorbeeld (cijfer op scanplaat drukken) */
     .tutPlateDigit{
       position:absolute;
@@ -623,7 +630,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     const GOOD_SOUND_SRC = 'goed.mp3';
     const WRONG_SOUND_SRC = 'fout.mp3';
-    const PLOP_SOUND_SRC = 'audio/plopgeluid.mp3';
+    const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
+    const PLOP_SOUND_SRC = 'plop.mp3';
 
     const BLOW_GIF_SRC = 'bellen_blazen02.gif';
     const POP_GIF_SRC  = 'bel_barst.gif';
@@ -709,6 +717,24 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     voicePlayer.preload = 'auto';
     voicePlayer.volume = 1;
 
+
+    const promptAudio = new Audio(PROMPT_SOUND_SRC);
+    promptAudio.preload = 'auto';
+    promptAudio.volume = 1;
+
+    function stopPrompt(){
+      try{ promptAudio.pause(); } catch(e){}
+      try{ promptAudio.currentTime = 0; } catch(e){}
+    }
+
+    function playPrompt(){
+      try{
+        promptAudio.currentTime = 0;
+        const p = promptAudio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
+    }
+
     function stopVoice(){
       try{ voicePlayer.pause(); } catch(e){}
       try{ voicePlayer.currentTime = 0; } catch(e){}
@@ -782,7 +808,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       }
     }
 
-    function playPlop(){
+    function playPlop(rate=1){
       if (plopMode === 'web' && audioCtx && plopBuffer){
         try{
           if (audioCtx.state !== 'running'){
@@ -797,6 +823,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
           src.buffer = plopBuffer;
           src.connect(gain);
           gain.connect(audioCtx.destination);
+          try{ src.playbackRate.value = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
           src.start(audioCtx.currentTime);
           return;
         } catch(e){
@@ -810,6 +837,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         try{
           a.currentTime = 0;
           a.volume = 1;
+          try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
           const p = a.play();
           if (p && typeof p.catch === 'function') p.catch(() => {});
         } catch(e){}
@@ -1313,12 +1341,12 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       return null;
     }
 
-    function popBubble(it, dur){
+    function popBubble(it, dur, rate){
       if (!it) return;
       it.bubblePopping = true;
       it.bubblePopStart = nowMs();
       it.bubblePopDur = dur ?? randInt(180, 320);
-      playPlop();
+      playPlop(rate ?? 1);
       requestRender();
     }
 
@@ -1328,7 +1356,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       for (const it of marked){
         const delay = randInt(0, 180);
         const dur = randInt(180, 320);
-        setTimeout(() => popBubble(it, dur), delay);
+        setTimeout(() => popBubble(it, dur, randFloat(0.85, 1.25)), delay);
       }
     }
 
@@ -1350,8 +1378,18 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         it.counted = true;
         it.helpBubble = false;
 
+        // natuurlijke plop timing en toonhoogte
+        const popDelay = randInt(0, 520);
+        const popDur = randInt(180, 320);
+        const popRate = randFloat(0.85, 1.25);
+        setTimeout(() => {
+          try{
+            if (!it.vanished) popBubble(it, popDur, popRate);
+          } catch(e){}
+        }, popDelay);
+
         it.floating = true;
-        it.floatStart = start + randInt(0, 650);
+        it.floatStart = start + popDelay + randInt(80, 220);
 
         const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
         it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
@@ -1360,6 +1398,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         it.driftX = randFloat(driftMax * 0.35, driftMax);
 
         requestRender();
+      }
       }
     }
 
@@ -1415,7 +1454,40 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     let usePinguinSuccess = false;
     let PINGUIN_GIF_SRC = 'pinguin.gif';
 
-    let wrongTries = 0;
+    
+    let idlePromptTimer = null;
+    let roundId = 0;
+    let promptPlayedThisRound = false;
+
+    function resetIdlePrompt(){
+      if (idlePromptTimer){
+        clearTimeout(idlePromptTimer);
+        idlePromptTimer = null;
+      }
+    }
+
+    function allItemsCounted(){
+      return Array.isArray(items) && items.length > 0 && items.every(it => it.counted);
+    }
+
+    function scheduleIdlePrompt(){
+      resetIdlePrompt();
+      if (!started || locked) return;
+      if (mode !== 'normal') return;
+      if (!allItemsCounted()) return;
+      if (promptPlayedThisRound) return;
+
+      const myRound = roundId;
+      idlePromptTimer = setTimeout(() => {
+        if (myRound !== roundId) return;
+        if (!started || locked) return;
+        if (mode !== 'normal') return;
+        if (!allItemsCounted()) return;
+        promptPlayedThisRound = true;
+        playPrompt();
+      }, 2800);
+    }
+let wrongTries = 0;
     let mode = 'normal';
     let helpToken = 0;
 
@@ -1428,12 +1500,16 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
 
     function nextRound(){
+      resetIdlePrompt();
+      promptPlayedThisRound = false;
+      roundId += 1;
       hideTutorialDigitOnPlate();
       locked = false;
       wrongTries = 0;
       mode = 'normal';
 
       stopVoice();
+      stopPrompt();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
@@ -1509,50 +1585,40 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       const myToken = ++helpToken;
 
       locked = true;
-      mode = 'helpCounting';
+      mode = 'tip';
 
+      resetIdlePrompt();
       stopVoice();
+      stopPrompt();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
-      scanTitle.textContent = 'Kijk goed.';
-      scanSub.textContent = 'We tellen samen.';
-      scanHint.textContent = '';
-
+      // tel alles automatisch, zonder extra tekst
       items.forEach(it => { it.counted = false; it.helpBubble = false; });
       requestRender();
 
       for (let i = 0; i < items.length; i++){
         if (myToken !== helpToken) return;
 
-        for (let j = 0; j <= i; j++){
-          items[j].helpBubble = true;
-        }
+        items[i].counted = true;
         requestRender();
+        playPlop(randFloat(0.90, 1.20));
 
-        await speakNumberSafe(i + 1, myToken);
-        if (myToken !== helpToken) return;
-
-        await delaySafe(220, myToken);
+        await delaySafe(240, myToken);
         if (myToken !== helpToken) return;
       }
 
       if (myToken !== helpToken) return;
 
-      items.forEach(it => { it.counted = true; it.helpBubble = false; });
-      requestRender();
-
       showScanDigit(target);
-
-      scanTitle.textContent = 'Leg hetzelfde cijfer.';
-      scanSub.textContent = 'Scan het cijfer dat je ziet.';
-      scanHint.textContent = '';
+      playPrompt();
+      promptPlayedThisRound = true;
 
       mode = 'confirmDigit';
       locked = false;
     }
 
-    async function onCorrectAnswer(){
+    async function onCorrectAnswer()(){
       locked = true;
 
       scanTitle.textContent = 'Goed gedaan.';
@@ -1593,6 +1659,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function handleAnswer(recognizedDigit){
       if (recognizedDigit == null) return;
       if (!started || locked) return;
+      resetIdlePrompt();
 
       if (recognizedDigit === target){
         onCorrectAnswer();
@@ -1611,9 +1678,16 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       const it = hitTest(p.x, p.y);
       if (!it) return;
 
+      const wasCounted = it.counted;
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
+
+      if (!wasCounted && it.counted){
+        playPlop(randFloat(0.95, 1.15));
+      }
+
+      scheduleIdlePrompt();
     }
     countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
 
@@ -1819,6 +1893,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function handleTouchEvent(e){
       if (!calibration || !classificationStats) return;
 
+      resetIdlePrompt();
+
       // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
       if (mode === 'helpCounting') return;
 
@@ -1829,6 +1905,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
       if (pts.length === 0){
         hasResultForCurrentTouches = false;
+        // als alles geteld is en je wacht, geef een zachte reminder
+        scheduleIdlePrompt();
         return;
       }
 
@@ -1968,6 +2046,7 @@ function delayTutorial(ms, token){
       wrongTries = 0;
 
       stopVoice();
+      stopPrompt();
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
