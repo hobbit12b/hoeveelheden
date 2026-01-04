@@ -371,8 +371,6 @@
     }
 
     .scanUI{
-      position: relative;
-      z-index: 3;
       width: min(520px, 92%);
       display:flex;
       flex-direction:column;
@@ -458,11 +456,6 @@ position:absolute;
       overflow:hidden;
 pointer-events: auto;
     }
-
-    @media (orientation: landscape){
-      .startBtn{ top: calc(var(--start-top, 60%) - 10px); }
-    }
-
     .startBtn:active{
       transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
     }
@@ -530,8 +523,24 @@ pointer-events: auto;
     }
 
     .scanPopup{
-  display:none;
-}
+      position: absolute;
+      left: 50%;
+      top: 34%;
+      transform: translate(-50%, -58%) scale(0.96);
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 2px solid rgba(245,180,152,0.85);
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 0.2px;
+      color: #4d4a48;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
 
     .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
     .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
@@ -674,26 +683,22 @@ pointer-events: auto;
     }
 
     .badge{
-      position: fixed;
+      position:absolute;
       left: 14px;
-      top: 82px;
-      z-index: 1600;
-      max-width: calc(100vw - 28px);
+      top: 14px;
+      z-index: 80;
       background: rgba(255,255,255,0.92);
       border: 2px solid rgba(245,180,152,0.85);
-      border-radius: 16px;
-      padding: 10px 12px;
+      border-radius: 999px;
+      padding: 8px 12px;
       font-weight: 900;
       font-size: 13px;
-      line-height: 1.25;
       color:#4d4a48;
       box-shadow: 0 12px 30px rgba(0,0,0,0.10);
       opacity: 0;
       transform: translateY(-2px);
       transition: opacity 120ms ease, transform 120ms ease;
       pointer-events:none;
-      white-space: normal;
-      word-break: break-word;
     }
     .badge.show{
       opacity: 1;
@@ -842,7 +847,6 @@ z-index: 2000;
 </head>
 
 <body>
-  <div id="audioBadge" class="badge" aria-hidden="true"></div>
   <section class="left" aria-label="Spel">
     <div class="topbar">
       <button class="topIconBtn homeBtn" id="homeBtn" aria-label="Naar het menu">
@@ -858,11 +862,11 @@ z-index: 2000;
       </button>
 
       <div class="titlePill" id="titlePill">tovergetallen</div>
-</div>
+    </div>
 
     <div class="content">
       <div class="gameCard" id="gameCard" aria-label="Toverkaart">
-<div class="cardInner">
+        <div class="cardInner">
           <div class="stage" id="stage">
             <div id="explosionWrap" aria-hidden="true">
               <video id="explosionVid" muted playsinline preload="auto" aria-label="Explosie"></video>
@@ -882,7 +886,7 @@ z-index: 2000;
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
       <div class="scanPopup" id="scanPopup" aria-hidden="true">✨ Je mag scannen</div>
-      <div class="scanUI">
+      <div class="scanUI hiddenAssist">
         <div class="miniTile" aria-hidden="true">
           <div>1</div><div>2</div><div>3</div><div>4</div>
         </div>
@@ -984,10 +988,6 @@ z-index: 2000;
     const QUESTION_SRC = (d) => `${VOICE_DIR}hocuspocus${String(d).padStart(2,'0')}.mp3`;
     const REVEAL_SRC   = (d) => `${VOICE_DIR}zozieteruitde${String(d).padStart(2,'0')}.mp3`;
 
-    // fallback, voor als sommige bestanden zonder voorloopnul zijn opgeslagen
-    const QUESTION_SRC_ALT = (d) => `${VOICE_DIR}hocuspocus${d}.mp3`;
-    const REVEAL_SRC_ALT   = (d) => `${VOICE_DIR}zozieteruitde${d}.mp3`;
-
     const FAIRY_SPEED = 1.00;
     const FAIRY_NO_SPEED = 1.00;
     const EXPLOSION_SPEED = 2.65;
@@ -1026,8 +1026,6 @@ z-index: 2000;
     const speakIcon = document.getElementById('speakIcon');
     const homeBtn = document.getElementById('homeBtn');
 
-
-    const audioBadge = document.getElementById('audioBadge');
     const scanArea = document.getElementById('scan-area');
     const scanTitle = document.getElementById('scan-title');
     const scanSub = document.getElementById('scan-sub');
@@ -1178,98 +1176,32 @@ function setAutoScale(){
       } catch(e){}
     }
 
-
-    // Start de succes jingle bewust nét later, zodat beeld eerst mag starten
-    function playGoodSfxDelayed(token){
-      // als audio nog niet los is op iOS, dan liever direct spelen binnen de touch context
-      if (!audioUnlocked){
-        playSfx(goodAudio);
-        return;
-      }
-
-      const delayMs = getVarMillis('--good-sfx-delay', 450);
-      setTimeout(() => {
-        if (token != null && token !== roundToken) return;
-        playSfx(goodAudio);
-      }, Math.max(0, Number(delayMs) || 0));
-    }
-
-function probeAudioSrc(src, timeoutMs){
-  return new Promise((resolve) => {
-    if (!src) return resolve(false);
-    let done = false;
-    const a = new Audio();
-    a.preload = 'auto';
-
-    const finish = (ok) => {
-      if (done) return;
-      done = true;
-      try { a.removeAttribute('src'); } catch(e){}
-      try { a.load(); } catch(e){}
-      resolve(!!ok);
-    };
-
-    const ok = () => finish(true);
-    const bad = () => finish(false);
-
-    a.addEventListener('canplaythrough', ok, { once:true });
-    a.addEventListener('canplay', ok, { once:true });
-    a.addEventListener('loadeddata', ok, { once:true });
-    a.addEventListener('error', bad, { once:true });
-
-    try{
-      a.src = src;
-      a.load();
-    } catch(e){
-      return finish(false);
-    }
-
-    setTimeout(() => bad(), Math.max(500, Number(timeoutMs) || 1400));
-  });
-}
-
-let voiceAuditRan = false;
-function runVoiceAuditOnce(){
-  if (voiceAuditRan) return;
-  voiceAuditRan = true;
-
-  const jobs = [];
-
-  for (let d = 0; d <= 9; d++){
-    jobs.push(
-      probeAudioSrc(QUESTION_SRC(d)).then(ok => ok ? true : probeAudioSrc(QUESTION_SRC_ALT(d))).then(ok => ({ kind:'vraag', digit:d, ok }))
-    );
-    jobs.push(
-      probeAudioSrc(REVEAL_SRC(d)).then(ok => ok ? true : probeAudioSrc(REVEAL_SRC_ALT(d))).then(ok => ({ kind:'antwoord', digit:d, ok }))
-    );
-  }
-
-  Promise.all(jobs).then(results => {
-    const missVraag = [];
-    const missAntwoord = [];
-
-    results.forEach(r => {
-      if (r.ok) return;
-
-      if (r.kind === 'vraag'){
-missVraag.push(r.digit);
-      } else {
-missAntwoord.push(r.digit);
-      }
+    /* Mp3 stemmen */
+    const questionVoices = DIGIT_ORDER.map(d => {
+      const a = new Audio(QUESTION_SRC(d));
+      a.preload = 'auto';
+      return a;
     });
 
-    if (!missVraag.length && !missAntwoord.length) return;
+    const revealVoices = DIGIT_ORDER.map(d => {
+      const a = new Audio(REVEAL_SRC(d));
+      a.preload = 'auto';
+      return a;
+    });
 
-    let msg = 'Stem mist:';
-    if (missVraag.length) msg += ' vraag ' + missVraag.join(',');
-    if (missAntwoord.length) msg += (missVraag.length ? ' , ' : ' ') + 'antwoord ' + missAntwoord.join(',');
-    showBadge(msg, 9000);
-  }).catch(() => {});
-}
+    
 
+    const voiceOkQuestion = Array(10).fill(true);
+    const voiceOkReveal = Array(10).fill(true);
+
+    questionVoices.forEach((a, i) => {
+      a.addEventListener('error', () => { voiceOkQuestion[i] = false; });
+    });
+    revealVoices.forEach((a, i) => {
+      a.addEventListener('error', () => { voiceOkReveal[i] = false; });
+    });
     /* iOS audio unlock, nodig omdat Safari pas geluid toestaat na een gebruikersactie */
     let audioUnlocked = false;
-    let speakAvailable = false;
 
     function unlockOneAudio(el){
       if (!el) return;
@@ -1315,13 +1247,11 @@ missAntwoord.push(r.digit);
 
     function setSpeakAvailability(canPlay){
       if (!speakBtn) return;
-      speakAvailable = !!canPlay;
-      speakBtn.disabled = !speakAvailable;
-
-      if (speakIcon){
-        speakIcon.src = speakAvailable ? 'praatknopaan.png' : 'praatknopuit.png';
+      speakBtn.disabled = !canPlay;
+      if (!canPlay){
+        if (speakIcon) speakIcon.src = 'praatknopuit.png';
+        speakBtn.classList.add('isOff');
       }
-      speakBtn.classList.toggle('isOff', !speakAvailable);
     }
 
 let currentVoice = null;
@@ -1330,12 +1260,8 @@ let currentVoice = null;
 
     function setSpeakVisual(isPlaying){
       if (!speakBtn || !speakIcon) return;
-      if (isPlaying){
-        speakIcon.src = 'praatknopaan.png';
-      } else {
-        speakIcon.src = speakAvailable ? 'praatknopaan.png' : 'praatknopuit.png';
-      }
-      speakBtn.classList.toggle('isPlaying', !!isPlaying);
+      speakIcon.src = isPlaying ? 'praatknopaan.png' : 'praatknopuit.png';
+      speakBtn.classList.toggle('isOff', !isPlaying);
     }
 
     function attachVoiceUI(a){
@@ -1454,63 +1380,6 @@ let currentVoice = null;
       } catch(e){
         recoverAfterBlocked();
       }
-    }
-
-
-    function playVoiceAndWait(a, timeoutMs){
-      if (!a) { setSpeakVisual(false); return Promise.resolve(false); }
-
-      return new Promise((resolve) => {
-        let done = false;
-        let watchTimer = null;
-        let hardTimeout = null;
-        let playBlockedCheck = null;
-
-        const finish = (ok) => {
-          if (done) return;
-          done = true;
-          cleanup();
-          resolve(!!ok);
-        };
-
-        const onEnded = () => finish(true);
-        const onError = () => finish(false);
-
-        const cleanup = () => {
-          if (watchTimer) { clearInterval(watchTimer); watchTimer = null; }
-          if (hardTimeout) { clearTimeout(hardTimeout); hardTimeout = null; }
-          if (playBlockedCheck) { clearTimeout(playBlockedCheck); playBlockedCheck = null; }
-          try { a.removeEventListener('ended', onEnded); } catch(e){}
-          try { a.removeEventListener('error', onError); } catch(e){}
-        };
-
-        try { a.addEventListener('ended', onEnded); } catch(e){}
-        try { a.addEventListener('error', onError); } catch(e){}
-
-        // Houd ook zelf de voortgang in de gaten, sommige Safari varianten zijn eigenwijs met ended
-        watchTimer = setInterval(() => {
-          if (done) return;
-          try{
-            const dur = Number(a.duration);
-            if (Number.isFinite(dur) && dur > 0){
-              if (a.currentTime >= dur - 0.05) finish(true);
-            }
-          } catch(e){}
-        }, 120);
-
-        playVoice(a);
-
-        // Als iOS play blokkeert, blijft hij vaak stil op tijd 0
-        playBlockedCheck = setTimeout(() => {
-          if (done) return;
-          try{
-            if (a.paused && (a.currentTime === 0 || a.currentTime < 0.01)) finish(false);
-          } catch(e){}
-        }, 650);
-
-        const ms = Math.max(2000, Number(timeoutMs) || 16000);
-        hardTimeout = setTimeout(() => finish(false), ms);
-      });
     }
 
     function askDigit(digit, opts = {}){
@@ -2795,56 +2664,30 @@ if (fairyVid.readyState >= 2) seekAndPlay();
       else setTimeout(run, 80);
     }
 
-    
-function revealCorrectAfterThreeWrong(){
-  const myToken = ++roundToken;
+    function revealCorrectAfterThreeWrong(){
+      const myToken = ++roundToken;
 
-  locked = true;
+      locked = true;
 
-  scanTitle.textContent = 'Kijk goed.';
-  scanSub.textContent = 'Zo ziet het juiste cijfer eruit.';
-  scanHint.textContent = '';
+      scanTitle.textContent = 'Kijk goed.';
+      scanSub.textContent = 'Zo ziet het juiste cijfer eruit.';
+      scanHint.textContent = '';
 
-  stopVoice();
+      stopVoice();
+      sayReveal(targetDigit);
 
-  let animDone = false;
-  let voiceDone = false;
+      playRevealAnimation(targetDigit, () => {
+        if (myToken !== roundToken) return;
+        nextRound();
+      });
 
-  const finishIfReady = () => {
-    if (myToken !== roundToken) return;
-    if (!animDone) return;
-    if (!voiceDone) return;
-    nextRound();
-  };
-
-  // start stem en animatie tegelijk, en wacht tot ze allebei klaar zijn
-  const a = revealVoices[targetDigit];
-  const ok = !!a && (voiceOkReveal[targetDigit] !== false);
-
-  if (ok){
-    currentVoicePurpose = 'reveal';
-    playVoiceAndWait(a, 16000).then(() => {
-      voiceDone = true;
-      finishIfReady();
-    });
-  } else {
-    currentVoicePurpose = null;
-    voiceDone = true;
-  }
-
-  playRevealAnimation(targetDigit, () => {
-    animDone = true;
-    finishIfReady();
-  });
-
-  // Failsafe: alleen als er echt iets mis gaat, dan alsnog door
-  const failSafeMs = 20000;
-  setTimeout(() => {
-    if (myToken !== roundToken) return;
-    nextRound();
-  }, failSafeMs);
-}
-
+      // Failsafe, voorkomt vastlopen als de fee animatie geen callback geeft
+      const failSafeMs = 8000;
+      setTimeout(() => {
+        if (myToken !== roundToken) return;
+        nextRound();
+      }, failSafeMs);
+    }
 
     function handleRecognitionResult(recognizedDigit){
       if (recognizedDigit == null) return;
@@ -2862,7 +2705,7 @@ function revealCorrectAfterThreeWrong(){
         wrongTries = 0;
 
         stopVoice();
-        playGoodSfxDelayed(myToken);
+        playSfx(goodAudio);
 
         let fairyDone = false;
         let explosionDone = false;
@@ -3145,14 +2988,16 @@ function revealCorrectAfterThreeWrong(){
         revealVoices.forEach(a => { try { a.load(); } catch(e){} });
       } catch(e){}
 
-      runVoiceAuditOnce();
-
       nextRound({ immediate:true });
     }
 
     speakBtn.addEventListener('click', () => {
       if (!started) return;
       if (speakBtn.disabled) return;
+
+      // Alleen klikken als de praatknop uit staat (dus er speelt nu geen uitleg of opdracht)
+      if (!speakBtn.classList.contains('isOff')) return;
+
       unlockAllAudioOnce();
       askDigit(targetDigit, { repeat:true });
     });
@@ -3172,7 +3017,6 @@ startBtn.addEventListener('click', startGame);
       primeStartVideo();
       initSettingsUI();
       updateMusicBtn();
-      setSpeakAvailability(false);
       setSpeakVisual(false);
 
       showFirstFrame();
