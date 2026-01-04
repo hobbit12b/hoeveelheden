@@ -50,6 +50,8 @@
 
             --shadow: 0 16px 40px rgba(0,0,0,0.08);
 
+            --topbar-h: 72px;
+
       /* Startknop positie, wordt ook opgeslagen op dit apparaat */
       --start-left: 29.5%;
       --start-top: 57%;
@@ -117,35 +119,38 @@
     }
 
     .topbar{
-      position: relative;
-display:flex;
-      align-items:center;
-      gap: 18px;
-      flex: 0 0 auto;
-          position: relative;
-      z-index: 1300;
-    }
+  position: relative;
+  z-index: 1300;
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  flex: 0 0 auto;
+  min-height: var(--topbar-h);
+}
 
     .topIconBtn{
-      appearance:none;
-      border:none;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      box-shadow: none;
-      border-radius: 0;
-      cursor:pointer;
-      display:inline-block;
-      line-height: 0;
-      flex: 0 0 auto;
-    }
+  appearance:none;
+  border:none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  line-height: 0;
+  flex: 0 0 auto;
+  width: var(--topbar-h);
+  height: var(--topbar-h);
+}
     .topIconBtn:active{ transform: scale(0.99); }
     .topIconBtn img{
-      height: 72px;
-      width: auto;
-      object-fit: contain;
-      display:block;
-    }
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  display:block;
+}
     .topIconBtn:disabled img{
       filter: grayscale(100%);
       opacity: 0.25;
@@ -173,24 +178,30 @@ display:flex;
     .tuneBtn:active{ transform: scale(0.98); }
 
     .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 64px;
-      width: min(660px, calc(100% - 220px));
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-    }
+  height: var(--topbar-h);
+  padding: 0 44px;
+  border-radius: 22px;
+  background: var(--brand);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: clamp(22px, 2.1vw, 34px);
+  letter-spacing: 0.3px;
+  box-shadow: var(--shadow);
+  line-height: 1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  position: relative;
+  left: auto;
+  transform: none;
+  margin-left: auto;
+
+  flex: 1 1 auto;
+  max-width: 660px;
+  min-width: 0;
+  width: auto;
+}
 
     .content{
       flex:1 1 auto;
@@ -491,22 +502,8 @@ pointer-events: auto;
     }
 
     .scanPopup{
-      position:absolute;
-      left: var(--scanplek-left, 50%);
-      top: calc(var(--scanplek-top, 50%) - 18%);
-      transform: translate(-50%, -50%);
-      background: rgba(255,255,255,0.94);
-      border: 2px solid rgba(245,180,152,0.75);
-      box-shadow: 0 14px 26px rgba(0,0,0,0.10);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 900;
-      color: #4d4a48;
-      opacity: 0;
-      pointer-events:none;
-      z-index: 3;
-      letter-spacing: 0.2px;
-    }
+  display:none;
+}
 
     .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
     .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
@@ -1938,11 +1935,30 @@ function setFairySourceOnce(){
       segmentFailSafe = setTimeout(finish, Math.min(12000, Math.max(1800, segMs + 900)));
 
       const beginPlay = () => {
+        // iOS kan soms koppig zijn met video play, daarom zetten we de flags hier nog eens goed
+        try{
+          fairyVid.muted = true;
+          fairyVid.playsInline = true;
+          fairyVid.setAttribute('playsinline','');
+          fairyVid.setAttribute('webkit-playsinline','');
+        } catch(e){}
+
         fairyVid.addEventListener('ended', finish, { once:true });
         fairyVid.addEventListener('error', finish, { once:true });
 
-        const p = fairyVid.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
+        const tryPlay = () => {
+          try{
+            const p = fairyVid.play();
+            if (p && typeof p.catch === "function") p.catch(() => {});
+          } catch(e){}
+        };
+
+        tryPlay();
+        // tweede poging, helpt bij sommige iPads als play net na seek te vroeg komt
+        setTimeout(() => {
+          if (segmentFinished) return;
+          if (fairyVid && fairyVid.paused) tryPlay();
+        }, 120);
 
         const watch = () => {
           if (fairyVid.currentTime >= end){
@@ -1954,19 +1970,35 @@ function setFairySourceOnce(){
         watch();
       };
 
-      const seekAndPlay = () => {
+
+const seekAndPlay = () => {
         try { fairyVid.pause(); } catch(e) {}
 
-        const onSeeked = () => {
-          fairyVid.removeEventListener('seeked', onSeeked);
+        let didBegin = false;
+        let fallback = null;
+
+        const safeBegin = () => {
+          if (didBegin) return;
+          didBegin = true;
+          if (fallback){ clearTimeout(fallback); fallback = null; }
           beginPlay();
         };
 
-        fairyVid.addEventListener('seeked', onSeeked, { once:true });
-        try { fairyVid.currentTime = start; } catch(e) { beginPlay(); }
+        const onSeeked = () => {
+          try { fairyVid.removeEventListener('seeked', onSeeked); } catch(e) {}
+          safeBegin();
+        };
+
+        try { fairyVid.addEventListener('seeked', onSeeked, { once:true }); } catch(e) {}
+
+        // sommige devices vuren 'seeked' niet altijd, daarom een korte fallback
+        fallback = setTimeout(safeBegin, 180);
+
+        try { fairyVid.currentTime = start; } catch(e) { safeBegin(); }
       };
 
-      if (fairyVid.readyState >= 2) seekAndPlay();
+
+if (fairyVid.readyState >= 2) seekAndPlay();
       else fairyVid.addEventListener('canplay', seekAndPlay, { once:true });
     }
 
