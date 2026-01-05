@@ -7,89 +7,56 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>cijferreeksen</title>
 <style>
+
 :root{
   --bg-left:#fdeeea;
   --brand:#e58c74;
   --text:#6f6b68;
   --midLine: rgba(245,180,152,0.85);
-  --card-radius:28px;
   --shadow: 0 16px 40px rgba(0,0,0,0.08);
-  --pressDown: 2px;
 
-  --scan-border-neutral: rgba(245,180,152,0.85);
-  --scan-border-scan: rgba(245,180,152,0.95);
-  --scan-border-good: rgba(144, 204, 152, 0.92);
-  --scan-border-bad: rgba(217, 75, 75, 0.92);
-
-  --scan-bg-neutral: rgba(229, 140, 116, 0.10);
-  --scan-bg-scan: rgba(229, 140, 116, 0.14);
+  --scan-bg-scan: rgba(229, 140, 116, 0.12);
   --scan-bg-good: rgba(210, 244, 214, 0.92);
   --scan-bg-bad: rgba(248, 197, 197, 0.85);
 
-  --slot-border: rgba(245,180,152,0.55);
-  --slot-border-strong: rgba(245,180,152,0.85);
-  --activeFill: rgba(229, 140, 116, 0.18);
+  --slot-border: rgba(245,180,152,0.35);
+  --slot-border-strong: rgba(245,180,152,0.75);
 }
 
 *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
 html, body{ height:100%; margin:0; padding:0; }
 body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background:#ffffff;
+  background: var(--bg-left);
   color: var(--text);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
   touch-action: none;
   overflow:hidden;
+}
 
+.app{
+  height:100%;
+  width:100%;
   display:grid;
-  grid-template-columns: 58fr 42fr;
-  grid-template-rows: 1fr;
-  height: 100%;
-  position: relative;
-  isolation: isolate;
-}
-@media (orientation: portrait){
-  body{ grid-template-columns: 1fr; grid-template-rows: 54fr 46fr; }
-}
-
-/* ======= panelen (zoals tg04) ======= */
-.left{
-  background: var(--bg-left);
-  padding: 28px 26px 22px 26px;
-  display:flex;
-  flex-direction:column;
-  gap: 22px;
-  position: relative;
-  overflow:hidden;
-  min-height: 0;
-  z-index: 1;
-}
-.scan-surface{
-  background:#ffffff;
-  position: relative;
-  min-height: 0;
-  overflow:hidden;
-  z-index: 1;
-}
-@media (orientation: landscape){
-  .scan-surface{ border-left: 6px dashed var(--midLine); }
-}
-@media (orientation: portrait){
-  .scan-surface{ border-top: 6px dashed var(--midLine); }
-  .left{ padding: 22px; gap: 16px; }
+  grid-template-rows: auto auto 1fr;
+  gap: 14px;
+  padding:
+    calc(env(safe-area-inset-top) + 14px)
+    18px
+    calc(env(safe-area-inset-bottom) + 18px)
+    18px;
 }
 
 /* ======= topbar ======= */
 .topbar{
-  display:flex;
+  display:grid;
+  grid-template-columns: 70px 1fr 70px;
   align-items:center;
-  gap: 18px;
-  flex: 0 0 auto;
-  position: relative;
-  z-index: 2;
+  gap: 10px;
 }
+
 .homeBtn{
   appearance:none;
   -webkit-appearance:none;
@@ -97,17 +64,14 @@ body{
   background: transparent;
   padding: 0;
   margin: 0;
-  box-shadow: none;
-  border-radius: 0;
   cursor:pointer;
   display:grid;
   place-items:center;
   line-height: 0;
-  flex: 0 0 auto;
-  width:72px;
-  height:72px;
-  transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+  width:64px;
+  height:64px;
   text-decoration:none;
+  transition: transform 140ms cubic-bezier(.22,.61,.35,1);
 }
 .homeBtn:active{ transform: scale(0.99); }
 .homeBtn img{
@@ -117,376 +81,363 @@ body{
   display:block;
   pointer-events:none;
 }
+
 .titlePill{
-  padding: 18px 44px;
-  border-radius: 22px;
-  background: var(--brand);
-  color: #ffffff;
-  font-weight: 900;
-  font-size: clamp(22px, 2.1vw, 34px);
-  letter-spacing: 0.3px;
-  box-shadow: var(--shadow);
-  line-height: 1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height: 64px;
-  width: min(660px, 100%);
-  text-transform: lowercase;
-}
-
-/* ======= kaarten ======= */
-.content{
-  flex:1 1 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 10px 6px;
-  min-height: 0;
-  position: relative;
-  overflow:hidden;
-}
-.gameCard{
-  width: min(980px, 100%);
-  height: min(520px, 58vh);
-  background: #ffffff;
-  border: 4px solid var(--midLine);
-  border-radius: var(--card-radius);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-  position:relative;
-  overflow: hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 18px;
-}
-@media (orientation: portrait){
-  .gameCard{ height: min(420px, 34vh); }
-}
-
-/* ======= game binnen card ======= */
-.game{
-  width:100%;
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  gap: 14px;
-  align-items:center;
-  justify-content:flex-start;
-  padding: 8px 10px 12px 10px;
-}
-
-/* header badge (instructie) */
-.game-header{
-  flex: 0 0 auto;
-  display:none;
-  justify-content:center;
-  align-items:center;
-  position: relative;
-  width: 100%;
-}
-.title-badge{
-  background: rgba(255, 255, 255, 0.88);
-  border-radius: 999px;
+  justify-self: center;
   padding: 10px 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-  border: 2px solid rgba(245,180,152,0.55);
-  cursor: pointer;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.60);
+  border: 3px solid rgba(245,180,152,0.45);
+  color: rgba(77,74,72,0.92);
+  font-weight: 950;
+  font-size: clamp(18px, 2.1vw, 28px);
+  letter-spacing: 0.2px;
+  line-height: 1;
+  text-transform: lowercase;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.06);
   user-select:none;
 }
-.title-icon{ font-size: 1.35rem; line-height: 1; }
-.title-text{
-  font-size: clamp(16px, 1.5vw, 22px);
-  font-weight: 900;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  text-transform: lowercase;
-  color: rgba(77,74,72,0.92);
-}
 
-/* main layout */
-.game-main{
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 0;
-  display:flex;
-  align-items:stretch;
-  justify-content:stretch;
-}
-
-/* ======= opdracht layout: cijfers boven, beloning onder ======= */
-.opdracht-layout{
-  width: 100%;
-  height: 100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  gap: 16px;
-}
-.numbers-top{
-  width: 100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  padding-top: 4px;
-}
-.reward-area{
-  width: min(760px, 100%);
-  flex: 1 1 auto;
-  background: #ffffff;
-  border-radius: 24px;
-  position: relative;
-  overflow:hidden;
+/* ======= nummers boven ======= */
+.numbersStrip{
   display:flex;
   align-items:center;
   justify-content:center;
-}
-
-.top-layout{
-  display: grid;
-  grid-template-columns: min(22vw, 140px) auto min(22vw, 140px);
-  align-items: center;
-  width: 100%;
-  max-width: 760px;
-  gap: 0;
-}
-
-.side-box{
-  width: min(22vw, 140px);
-  height: min(22vw, 140px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 14px;
+  padding: 2px 0 2px;
   position: relative;
-  overflow: visible;
-  pointer-events: none;
 }
-.side-box.left  { justify-self: start; justify-content: flex-end; }
-.side-box.right { justify-self: end;   justify-content: flex-start; }
 
-.side-animation{
-  width: min(46vw, 260px);
-  height: min(46vw, 260px);
+.pinguinWrap{
+  width: clamp(60px, 10vw, 92px);
+  height: clamp(60px, 10vw, 92px);
+  position: relative;
+  pointer-events:none;
+  flex: 0 0 auto;
+}
+
+.pinguinAnim{
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.82);
-  pointer-events: none;
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 5;
+  transform: scale(0.88);
+  transition: opacity 0.22s ease-out, transform 0.22s ease-out;
 }
-.side-animation.show{
+.pinguinAnim.show{
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: scale(1);
 }
 
-/* overlap per level */
-.game[data-level="2"] #right-animation{ --shift-x: -42px; }
-.game[data-level="3"] #left-animation { --shift-x:  42px; }
-
-.number-area{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  justify-self: center;
-}
 .number-row{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: clamp(14px, 3vw, 28px);
-  width: 100%;
-  max-width: 640px;
-  margin-top: 2px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: clamp(12px, 2.4vw, 22px);
 }
-.number-row.row-appear { animation: rowIn 0.4s ease-out; }
+
+.number-row.row-appear{ animation: rowIn 0.35s ease-out; }
 @keyframes rowIn { 0%{transform:translateY(-10px);opacity:0} 100%{transform:translateY(0);opacity:1} }
 
 .number-slot{
-  position: relative;
-  z-index: 1;
   flex: 0 0 auto;
-  width: clamp(86px, 10vw, 128px);
+  width: clamp(82px, 11.5vw, 132px);
   aspect-ratio: 1 / 1;
-  background-color: #ffffff;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
   border-radius: 26px;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.90);
   border: 5px solid var(--slot-border);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: transform 180ms cubic-bezier(.22,.61,.35,1), box-shadow 180ms cubic-bezier(.22,.61,.35,1), border-color 220ms ease, background 220ms ease;
+  box-shadow: 0 12px 22px rgba(0,0,0,0.10);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition: transform 180ms cubic-bezier(.22,.61,.35,1), border-color 200ms ease, background 200ms ease;
 }
+
 .number-text{
-  font-size: clamp(44px, 6.6vw, 78px);
+  font-size: clamp(48px, 7.3vw, 86px);
   font-weight: 950;
-  color: rgba(77,74,72,0.92);
+  line-height: 1;
   transform: translateY(4px);
-  pointer-events: none;
+  pointer-events:none;
+  text-shadow: 0 10px 18px rgba(0,0,0,0.08);
 }
+
+/* kleuren zoals in ontwerp: posities */
+.number-slot.pos0 .number-text{ color: #f2e21b; }
+.number-slot.pos1 .number-text{ color: #1447b8; }
+.number-slot.pos2 .number-text{ color: #d57f6a; }
+
 .number-slot.missing{
-  background-image: none;
-  background-color: var(--activeFill);
+  background: rgba(255,255,255,0.35);
   border-style: dashed;
   border-color: var(--slot-border-strong);
 }
-.number-slot.missing .number-text{ color: var(--brand); }
+.number-slot.missing .number-text{ color: #d57f6a; }
 
 .number-slot.correct-pop { animation: pop 0.35s ease-out; }
-.number-row.shake { animation: shake 0.35s ease-out; }
-
 @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
+
+.number-row.shake { animation: shake 0.35s ease-out; }
 @keyframes shake {
   0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)}
   60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)}
 }
 
-.feedback-symbol{
-  font-size: 2.4rem;
-  line-height: 1;
-  height: 2.4rem;
-  text-align: center;
-  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+.feedback-symbol{ display:none; }
 
-  display:none;
+/* ======= speelveld ======= */
+.stage{
+  min-height: 0;
+  display:grid;
+  grid-template-columns: 86px 1fr;
+  gap: 16px;
+  align-items: stretch;
 }
 
-/* ======= scan paneel ======= */
-.scanStage{
-  height:100%;
-  width:100%;
+.sideLabel{
+  background: var(--brand);
+  border-radius: 26px;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.10);
   display:flex;
-  align-items:stretch;
-  justify-content:stretch;
-  padding: 0;
+  align-items:center;
+  justify-content:center;
+  padding: 14px 8px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: #ffffff;
+  font-weight: 950;
+  font-size: clamp(22px, 2.8vw, 34px);
+  letter-spacing: 0.3px;
+  text-transform: lowercase;
+  user-select:none;
+  cursor:pointer;
 }
-.scanCard{
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
+
+.visuallyHidden{
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.scanPanel{
+  min-height: 0;
+  background: #ffffff;
+  border: 6px dashed var(--midLine);
+  border-radius: 34px;
   overflow:hidden;
-  padding: 0;
-  display:flex;
-  align-items:stretch;
-  justify-content:stretch;
-}
-@media (orientation: portrait){
-  .scanCard{ height: 100%; }
+  box-shadow: 0 18px 34px rgba(0,0,0,0.08);
+  position: relative;
 }
 
 .scan-area{
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width:100%;
+  height:100%;
+  background: #ffffff;
   transition: background 180ms ease;
-  position: relative;
-  overflow: hidden;
 }
-.scan-area-inner{
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-  padding: 10px;
-}
-.scan-icon{ font-size: 2.6rem; animation: scanPulse 2s ease-in-out infinite; }
-@keyframes scanPulse { 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.08);opacity:1} }
 
-.scan-text{ font-size: clamp(16px, 1.8vw, 20px); color: rgba(77,74,72,0.82); font-weight: 800; text-transform: lowercase; }
-.scan-hint{ font-size: clamp(13px, 1.4vw, 16px); color: rgba(77,74,72,0.62); text-transform: lowercase; }
-
-.scan-area.state-neutral{ background: transparent; }
+.scan-area.state-neutral{ background: #ffffff; }
 .scan-area.state-scanning{ background: var(--scan-bg-scan); }
 .scan-area.state-correct{ background: var(--scan-bg-good); }
 .scan-area.state-wrong{ background: var(--scan-bg-bad); }
 
-@media (max-width: 600px) {
+@media (orientation: portrait){
+  .app{ gap: 12px; padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px) 16px; }
+  .stage{ grid-template-columns: 78px 1fr; gap: 14px; }
   .homeBtn{ width:60px; height:60px; }
-  .titlePill{ padding: 16px 34px; }
-  .top-layout{ grid-template-columns: min(22vw, 120px) auto min(22vw, 120px); }
-  .side-box { width: min(22vw, 120px); height: min(22vw, 120px); }
-  .game[data-level="2"] #right-animation{ --shift-x: -34px; }
-  .game[data-level="3"] #left-animation { --shift-x:  34px; }
 }
+
+@media (max-width: 600px){
+  .stage{ grid-template-columns: 72px 1fr; }
+  .sideLabel{ border-radius: 22px; }
+}
+
+/* ======= instellingen overlay ======= */
+.settingsOverlay{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0,0,0,0.35);
+  z-index: 50;
+}
+.settingsOverlay.show{ display:flex; }
+
+.settingsPanel{
+  width: min(760px, 94vw);
+  background: rgba(255,255,255,0.96);
+  border-radius: 26px;
+  border: 4px solid var(--midLine);
+  box-shadow: var(--shadow);
+  padding: 18px 18px 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.settingsHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.settingsTitle{
+  font-weight: 950;
+  letter-spacing: 0.3px;
+  font-size: clamp(18px, 2.2vw, 24px);
+  text-transform: lowercase;
+  color: rgba(77,74,72,0.92);
+}
+.settingsClose{
+  appearance:none;
+  -webkit-appearance:none;
+  border: none;
+  border-radius: 16px;
+  padding: 10px 14px;
+  background: rgba(229, 140, 116, 0.14);
+  color: rgba(77,74,72,0.92);
+  font-weight: 900;
+  cursor:pointer;
+}
+.settingsClose:active{ transform: translateY(1px); }
+
+.settingsGroup{ margin-top: 12px; }
+.settingsLabel{
+  font-weight: 900;
+  color: rgba(77,74,72,0.86);
+  text-transform: lowercase;
+  margin-bottom: 8px;
+}
+
+.segmented{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.segBtn{
+  appearance:none;
+  -webkit-appearance:none;
+  border: 3px solid rgba(245,180,152,0.55);
+  background: rgba(255,255,255,0.9);
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-weight: 950;
+  text-transform: lowercase;
+  color: rgba(77,74,72,0.92);
+  cursor:pointer;
+  transition: transform 140ms cubic-bezier(.22,.61,.35,1), background 160ms ease, border-color 160ms ease;
+}
+.segBtn:active{ transform: translateY(1px); }
+.segBtn.active{
+  border-color: rgba(245,180,152,0.95);
+  background: rgba(229, 140, 116, 0.18);
+}
+
+.settingsFooter{
+  margin-top: 16px;
+  display:flex;
+  justify-content:flex-end;
+}
+.dangerBtn{
+  appearance:none;
+  -webkit-appearance:none;
+  border:none;
+  border-radius: 18px;
+  padding: 12px 16px;
+  font-weight: 950;
+  text-transform: lowercase;
+  background: rgba(217, 75, 75, 0.12);
+  color: rgba(217, 75, 75, 0.92);
+  cursor:pointer;
+}
+.dangerBtn:active{ transform: translateY(1px); }
+
 </style>
 </head>
 
 <body>
-  <section class="left" aria-label="Spel">
-    <div class="topbar">
+  <div class="app" id="game" data-level="1">
+    <div class="topbar" aria-label="Bovenbalk">
       <a class="homeBtn" id="homeBtn" href="index.html" aria-label="Naar het menu">
         <img src="homeknop.png" alt="Home" />
       </a>
+
       <div class="titlePill" id="titlePill">cijferreeksen</div>
+
+      <div aria-hidden="true"></div>
     </div>
 
-    <div class="content">
-      <div class="gameCard" aria-label="Opgave">
-        <div class="game" id="game" data-level="1">
-          <header class="game-header">
-            <div class="title-badge" id="title-badge" role="button" aria-label="Luister nog een keer">
-              <span class="title-icon" id="title-icon">🔍</span>
-              <span class="title-text" id="title-text">Welk cijfer mist?</span>
-            </div>
-          </header>
-
-          <main class="game-main">
-            <div class="opdracht-layout">
-              <div class="numbers-top">
-                <div class="number-row row-appear" id="number-row">
-                  <div class="number-slot" data-index="0"><span class="number-text">0</span></div>
-                  <div class="number-slot missing" data-index="1"><span class="number-text">?</span></div>
-                  <div class="number-slot" data-index="2"><span class="number-text">2</span></div>
-                </div>
-                <div id="feedback-symbol" class="feedback-symbol"></div>
-              </div>
-              <div class="reward-area" aria-label="Beloning">
-                <img id="left-animation" src="love-heart.gif" alt="" class="side-animation" />
-                <img id="right-animation" src="goed.gif" alt="" class="side-animation" />
-              </div>
-            </div>
-          </main>
-        </div>
+    <div class="numbersStrip" aria-label="Opgave">
+      <div class="pinguinWrap" aria-hidden="true">
+        <img id="pinguin-animation" src="goed.gif" alt="" class="pinguinAnim" />
       </div>
-    </div>
-  </section>
 
-  <section class="scan-surface" aria-label="Scanvak">
-    <div class="scanStage">
-      <div class="scanCard" aria-label="Scanveld">
+      <div class="number-row row-appear" id="number-row">
+        <div class="number-slot pos0" data-index="0"><span class="number-text">0</span></div>
+        <div class="number-slot pos1 missing" data-index="1"><span class="number-text">?</span></div>
+        <div class="number-slot pos2" data-index="2"><span class="number-text">2</span></div>
+      </div>
+
+      <div id="feedback-symbol" class="feedback-symbol" aria-hidden="true"></div>
+    </div>
+
+    <div class="stage" aria-label="Speelveld">
+      <div class="sideLabel" id="title-badge" role="button" aria-label="Luister nog een keer">
+        <span id="title-icon" class="visuallyHidden">🔍</span>
+        <span id="title-text">welk cijfer mist?</span>
+      </div>
+
+      <div class="scanPanel" aria-label="Scanvak">
         <div class="scan-area state-neutral" id="scan-area"></div>
       </div>
     </div>
-  </section>
+  </div>
 
-<!-- Voice prompts -->
+  <!-- Instellingen (lange druk op titel) -->
+  <div class="settingsOverlay" id="settingsOverlay" aria-hidden="true">
+    <div class="settingsPanel" role="dialog" aria-modal="true" aria-label="Instellingen">
+      <div class="settingsHeader">
+        <div class="settingsTitle">instellingen</div>
+        <button class="settingsClose" id="settingsClose" type="button">sluiten</button>
+      </div>
+
+      <div class="settingsGroup">
+        <div class="settingsLabel">oefenen met cijfers</div>
+        <div class="segmented" role="group" aria-label="Cijferbereik">
+          <button type="button" class="segBtn" data-maxdigit="5">t m 5</button>
+          <button type="button" class="segBtn" data-maxdigit="9">t m 10</button>
+        </div>
+      </div>
+
+      <div class="settingsGroup">
+        <div class="settingsLabel">vraagteken staat</div>
+        <div class="segmented" role="group" aria-label="Positie van het vraagteken">
+          <button type="button" class="segBtn" data-missing="0">eerste</button>
+          <button type="button" class="segBtn" data-missing="1">midden</button>
+          <button type="button" class="segBtn" data-missing="2">laatste</button>
+          <button type="button" class="segBtn" data-missing="random">wisselend</button>
+        </div>
+      </div>
+
+      <div class="settingsFooter">
+        <button type="button" class="dangerBtn" id="resetGameBtn">reset</button>
+      </div>
+    </div>
+  </div>
+
   <audio id="voice-grote" src="audio/grote buurgetal.mp3" preload="auto"></audio>
   <audio id="voice-kleine" src="audio/kleine buurgetal.mp3" preload="auto"></audio>
 
   <script>
-    /* ================================
+/* ================================
        MARBOTIC HERKENNINGSMODULE
        (logica ongewijzigd)
        ================================ */
@@ -917,10 +868,102 @@ body{
       const titleIcon = document.getElementById("title-icon");
       const titleText = document.getElementById("title-text");
 
-      const leftAnim = document.getElementById("left-animation");
-      const rightAnim = document.getElementById("right-animation");
+      const titlePill = document.getElementById("titlePill");
+      const settingsOverlay = document.getElementById("settingsOverlay");
+      const settingsClose = document.getElementById("settingsClose");
+      const resetGameBtn = document.getElementById("resetGameBtn");
+      const segBtns = Array.from(document.querySelectorAll(".segBtn"));
 
-      const voiceGrote = document.getElementById("voice-grote");
+      function syncSettingsUI() {
+        segBtns.forEach(function (btn) {
+          const md = btn.getAttribute("data-maxdigit");
+          const mp = btn.getAttribute("data-missing");
+          let active = false;
+
+          if (md != null) active = Number(md) === Number(settings.maxDigit);
+          if (mp != null) active = (mp === "random") ? (settings.missingPos === "random") : (Number(mp) === Number(settings.missingPos));
+
+          btn.classList.toggle("active", !!active);
+        });
+      }
+
+      function openSettings() {
+        if (!settingsOverlay) return;
+        settingsOpen = true;
+        settingsOverlay.classList.add("show");
+        settingsOverlay.setAttribute("aria-hidden", "false");
+        syncSettingsUI();
+      }
+
+      function closeSettings() {
+        if (!settingsOverlay) return;
+        settingsOpen = false;
+        settingsOverlay.classList.remove("show");
+        settingsOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      function resetGame() {
+        hideAnimations();
+        feedbackSymbol.textContent = "";
+        setScanState("neutral");
+        numberRow.classList.remove("shake");
+        hasResultForCurrentTouches = false;
+        roundActive = true;
+        newRound();
+      }
+
+      if (settingsClose) settingsClose.addEventListener("click", function () { closeSettings(); });
+      if (resetGameBtn) resetGameBtn.addEventListener("click", function () { closeSettings(); resetGame(); });
+
+      if (settingsOverlay) {
+        settingsOverlay.addEventListener("click", function (e) {
+          if (e.target === settingsOverlay) closeSettings();
+        });
+      }
+
+      segBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const md = btn.getAttribute("data-maxdigit");
+          const mp = btn.getAttribute("data-missing");
+
+          if (md != null) settings.maxDigit = Number(md);
+          if (mp != null) settings.missingPos = (mp === "random") ? "random" : Number(mp);
+
+          saveSettings();
+          syncSettingsUI();
+          newRound();
+        });
+      });
+
+      /* lange druk op titel voor instellingen */
+      (function setupLongPress() {
+        if (!titlePill) return;
+        let timer = null;
+        const holdMs = 650;
+
+        function start() {
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            openSettings();
+          }, holdMs);
+        }
+        function cancel() {
+          clearTimeout(timer);
+          timer = null;
+        }
+
+        titlePill.addEventListener("touchstart", function () { start(); }, { passive: true });
+        titlePill.addEventListener("touchend", function () { cancel(); });
+        titlePill.addEventListener("touchcancel", function () { cancel(); });
+
+        titlePill.addEventListener("mousedown", function () { start(); });
+        titlePill.addEventListener("mouseup", function () { cancel(); });
+        titlePill.addEventListener("mouseleave", function () { cancel(); });
+      })();
+
+
+      const pinguinAnim = document.getElementById("pinguin-animation");
+const voiceGrote = document.getElementById("voice-grote");
       const voiceKleine = document.getElementById("voice-kleine");
 
       // Levels: 1 = 3 cijfers, 2 = grote buur, 3 = kleine buur
@@ -933,6 +976,31 @@ body{
       let sequence = [0, 1, 2];
       let missingIndex = 1;
       let missingNumber = 1;
+
+let settings = loadSettings();
+
+/* instellingen: max digit (5 of 9) en positie van het vraagteken (0,1,2 of "random") */
+function defaultSettings() {
+  return { maxDigit: 9, missingPos: "random" };
+}
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem("tg08a_settings");
+    if (!raw) return defaultSettings();
+    const obj = JSON.parse(raw);
+    const d = defaultSettings();
+    if (obj && (obj.maxDigit === 5 || obj.maxDigit === 9)) d.maxDigit = obj.maxDigit;
+    if (obj && (obj.missingPos === 0 || obj.missingPos === 1 || obj.missingPos === 2 || obj.missingPos === "random")) d.missingPos = obj.missingPos;
+    return d;
+  } catch (e) {
+    return defaultSettings();
+  }
+}
+function saveSettings() {
+  try { localStorage.setItem("tg08a_settings", JSON.stringify(settings)); } catch (e) {}
+}
+
+let settingsOpen = false;
 
       // Touch/recognition
       let currentPoints = [];
@@ -953,27 +1021,25 @@ body{
       }
 
       function hideAnimations() {
-        leftAnim.classList.remove("show");
-        rightAnim.classList.remove("show");
+        if (pinguinAnim) pinguinAnim.classList.remove("show");
       }
 
       function showSuccessAnimation() {
         hideAnimations();
-        if (level === 3) leftAnim.classList.add("show");
-        else rightAnim.classList.add("show");
+        if (pinguinAnim) pinguinAnim.classList.add("show");
       }
 
       function setSlotDigit(slot, digit, isMissing) {
         const span = slot.querySelector(".number-text");
         slot.classList.remove("missing", "correct-pop");
 
+        slot.style.backgroundImage = "none";
+
         if (isMissing) {
-          slot.style.backgroundImage = "none";
           slot.classList.add("missing");
           span.textContent = "?";
         } else {
-          span.textContent = "";
-          slot.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
+          span.textContent = String(digit);
           slot.setAttribute("aria-label", "cijfer " + digit);
         }
       }
@@ -1089,24 +1155,10 @@ body{
 
       function setLevelUI() {
         hideAnimations();
-        gameEl.dataset.level = String(level);
-
-        if (level === 1) {
-          titleIcon.textContent = "🔍";
-          titleText.textContent = "Welk cijfer mist?";
-          rightAnim.src = "goed.gif";
-          leftAnim.src = "love-heart.gif";
-        } else if (level === 2) {
-          titleIcon.textContent = "🔊";
-          titleText.textContent = "Grote buur";
-          rightAnim.src = "happy-excited.gif";
-          leftAnim.src = "love-heart.gif";
-        } else {
-          titleIcon.textContent = "🔊";
-          titleText.textContent = "Kleine buur";
-          rightAnim.src = "happy-excited.gif";
-          leftAnim.src = "love-heart.gif";
-        }
+        gameEl.dataset.level = "1";
+        titleIcon.textContent = "🔍";
+        titleText.textContent = "Welk cijfer mist?";
+        if (pinguinAnim) pinguinAnim.src = "goed.gif";
       }
 
       function newRound() {
@@ -1117,50 +1169,23 @@ body{
         numberRow.classList.remove("shake");
         hasResultForCurrentTouches = false;
 
-        if (level === 1) {
-          const base = Math.floor(Math.random() * 8);
-          sequence = [base, base + 1, base + 2];
-          visibleSlots = 3;
+        const maxDigit = (settings && settings.maxDigit) ? settings.maxDigit : 9;
+        const baseMax = Math.max(0, maxDigit - 2); // 0..3 bij max 5, 0..7 bij max 9
+        const base = Math.floor(Math.random() * (baseMax + 1));
 
-          missingIndex = Math.floor(Math.random() * 3);
-          missingNumber = sequence[missingIndex];
-        } else if (level === 2) {
-          const start = Math.floor(Math.random() * 9); // 0..8
-          const target = start + 1;                    // 1..9
-          sequence = [start, target];
-          visibleSlots = 2;
+        sequence = [base, base + 1, base + 2];
+        visibleSlots = 3;
 
-          missingIndex = 1;       // ? rechts
-          missingNumber = target;
-        } else {
-          const shown = 1 + Math.floor(Math.random() * 9); // 1..9
-          const answer = shown - 1;                        // 0..8
-          sequence = [answer, shown];
-          visibleSlots = 2;
+        if (settings && settings.missingPos !== "random") missingIndex = settings.missingPos;
+        else missingIndex = Math.floor(Math.random() * 3);
 
-          missingIndex = 0;       // ? links
-          missingNumber = answer;
-        }
+        missingNumber = sequence[missingIndex];
 
         numberRow.classList.remove("row-appear");
         void numberRow.offsetWidth;
         numberRow.classList.add("row-appear");
 
         updateNumberDisplay();
-      }
-
-      function goToLevel(nextLevel) {
-        level = nextLevel;
-        correctStreak = 0;
-
-        setupIntroForLevel();
-        setLevelUI();
-        newRound();
-
-        // ✅ meteen proberen te starten (werkt meestal na "unlock")
-        ensureAudio();
-        unlockMediaOnce();
-        startIntroNow();
       }
 
       function handleRecognitionResult(digit) {
@@ -1176,16 +1201,6 @@ body{
           const missingSlot = numberSlots[missingIndex];
           setSlotDigit(missingSlot, missingNumber, false);
           missingSlot.classList.add("correct-pop");
-
-          correctStreak += 1;
-
-          // ✅ 7x achter elkaar goed -> volgend level (1->2->3)
-          if (correctStreak >= 7) {
-            if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
-            if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
-            // level 3 blijft doorlopen
-            correctStreak = 0;
-          }
 
           setTimeout(function () { newRound(); }, 1200);
         } else {
@@ -1222,7 +1237,8 @@ body{
         ensureAudio();
         unlockMediaOnce();
 
-        // ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
+        if (settingsOpen) return;
+// ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
         if (intro.pending && !intro.playing && !intro.done) startIntroNow();
 
         const touches = e.touches || [];
