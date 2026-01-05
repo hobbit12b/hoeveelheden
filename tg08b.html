@@ -140,20 +140,20 @@ body{
 }
 .gameCard{
   width: min(980px, 100%);
-  height: min(520px, 100%);
-  background: #ffffff;
-  border: 4px solid var(--midLine);
-  border-radius: var(--card-radius);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   position:relative;
-  overflow: hidden;
+  overflow: visible;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding: 18px;
+  padding: 0;
 }
 @media (orientation: portrait){
-  .gameCard{ height: min(420px, 100%); }
+  .gameCard{ height: 100%; }
 }
 
 /* ======= game binnen card ======= */
@@ -227,17 +227,8 @@ body{
   justify-content:flex-start;
   padding-top: 4px;
 }
-.reward-area{
-  width: min(760px, 100%);
-  flex: 1 1 auto;
-  background: #ffffff;
-  border-radius: 24px;
-  position: relative;
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+.reward-area{ display:none; }
+
 
 .top-layout{
   display: grid;
@@ -280,9 +271,6 @@ body{
 }
 
 /* overlap per level */
-.game[data-level="2"] #right-animation{ --shift-x: -42px; }
-.game[data-level="3"] #left-animation { --shift-x:  42px; }
-
 .number-area{
   display: flex;
   flex-direction: column;
@@ -419,9 +407,110 @@ body{
   .titlePill{ padding: 16px 34px; }
   .top-layout{ grid-template-columns: min(22vw, 120px) auto min(22vw, 120px); }
   .side-box { width: min(22vw, 120px); height: min(22vw, 120px); }
-  .game[data-level="2"] #right-animation{ --shift-x: -34px; }
-  .game[data-level="3"] #left-animation { --shift-x:  34px; }
+    }
+
+/* ======= instellingen overlay ======= */
+.settingsOverlay{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0,0,0,0.35);
+  z-index: 50;
 }
+.settingsOverlay.show{ display:flex; }
+
+.settingsPanel{
+  width: min(760px, 94vw);
+  background: rgba(255,255,255,0.96);
+  border-radius: 26px;
+  border: 4px solid var(--midLine);
+  box-shadow: var(--shadow);
+  padding: 18px 18px 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.settingsHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.settingsTitle{
+  font-weight: 950;
+  letter-spacing: 0.3px;
+  font-size: clamp(18px, 2.2vw, 24px);
+  text-transform: lowercase;
+  color: rgba(77,74,72,0.92);
+}
+.settingsClose{
+  appearance:none;
+  -webkit-appearance:none;
+  border: none;
+  border-radius: 16px;
+  padding: 10px 14px;
+  background: rgba(229, 140, 116, 0.14);
+  color: rgba(77,74,72,0.92);
+  font-weight: 900;
+  cursor:pointer;
+}
+.settingsClose:active{ transform: translateY(1px); }
+
+.settingsGroup{ margin-top: 12px; }
+.settingsLabel{
+  font-weight: 900;
+  color: rgba(77,74,72,0.86);
+  text-transform: lowercase;
+  margin-bottom: 8px;
+}
+
+.segmented{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.segBtn{
+  appearance:none;
+  -webkit-appearance:none;
+  border: 3px solid rgba(245,180,152,0.55);
+  background: rgba(255,255,255,0.9);
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-weight: 950;
+  text-transform: lowercase;
+  color: rgba(77,74,72,0.92);
+  cursor:pointer;
+  transition: transform 140ms cubic-bezier(.22,.61,.35,1), background 160ms ease, border-color 160ms ease;
+}
+.segBtn:active{ transform: translateY(1px); }
+.segBtn.active{
+  border-color: rgba(245,180,152,0.95);
+  background: rgba(229, 140, 116, 0.18);
+}
+
+.settingsFooter{
+  margin-top: 16px;
+  display:flex;
+  justify-content:flex-end;
+}
+.dangerBtn{
+  appearance:none;
+  -webkit-appearance:none;
+  border:none;
+  border-radius: 18px;
+  padding: 12px 16px;
+  font-weight: 950;
+  text-transform: lowercase;
+  background: rgba(217, 75, 75, 0.12);
+  color: rgba(217, 75, 75, 0.92);
+  cursor:pointer;
+}
+.dangerBtn:active{ transform: translateY(1px); }
+
 </style>
 </head>
 
@@ -445,8 +534,12 @@ body{
           </header>
 
           <main class="game-main">
-            <div class="opdracht-layout">
-              <div class="numbers-top">
+            <div class="top-layout" aria-label="Opgave">
+              <div class="side-box left" aria-hidden="true">
+                <img id="pinguin-animation" src="goed.gif" alt="" class="side-animation" />
+              </div>
+
+              <div class="number-area">
                 <div class="number-row row-appear" id="number-row">
                   <div class="number-slot" data-index="0"><span class="number-text">0</span></div>
                   <div class="number-slot missing" data-index="1"><span class="number-text">?</span></div>
@@ -454,10 +547,8 @@ body{
                 </div>
                 <div id="feedback-symbol" class="feedback-symbol"></div>
               </div>
-              <div class="reward-area" aria-label="Beloning">
-                <img id="left-animation" src="love-heart.gif" alt="" class="side-animation" />
-                <img id="right-animation" src="goed.gif" alt="" class="side-animation" />
-              </div>
+
+              <div class="side-box right" aria-hidden="true"></div>
             </div>
           </main>
         </div>
@@ -472,6 +563,40 @@ body{
       </div>
     </div>
   </section>
+
+
+  <!-- Instellingen (lange druk op titel) -->
+  <div class="settingsOverlay" id="settingsOverlay" aria-hidden="true">
+    <div class="settingsPanel" role="dialog" aria-modal="true" aria-label="Instellingen">
+      <div class="settingsHeader">
+        <div class="settingsTitle">instellingen</div>
+        <button class="settingsClose" id="settingsClose" type="button">sluiten</button>
+      </div>
+
+      <div class="settingsGroup">
+        <div class="settingsLabel">oefenen met cijfers</div>
+        <div class="segmented" role="group" aria-label="Cijferbereik">
+          <button type="button" class="segBtn" data-maxdigit="5">t m 5</button>
+          <button type="button" class="segBtn" data-maxdigit="9">t m 10</button>
+        </div>
+      </div>
+
+      <div class="settingsGroup">
+        <div class="settingsLabel">vraagteken staat</div>
+        <div class="segmented" role="group" aria-label="Positie van het vraagteken">
+          <button type="button" class="segBtn" data-missing="0">eerste</button>
+          <button type="button" class="segBtn" data-missing="1">midden</button>
+          <button type="button" class="segBtn" data-missing="2">laatste</button>
+          <button type="button" class="segBtn" data-missing="random">wisselend</button>
+        </div>
+      </div>
+
+      <div class="settingsFooter">
+        <button type="button" class="dangerBtn" id="resetGameBtn">reset</button>
+      </div>
+    </div>
+  </div>
+
 
 <!-- Voice prompts -->
   <audio id="voice-grote" src="audio/grote buurgetal.mp3" preload="auto"></audio>
@@ -909,10 +1034,102 @@ body{
       const titleIcon = document.getElementById("title-icon");
       const titleText = document.getElementById("title-text");
 
-      const leftAnim = document.getElementById("left-animation");
-      const rightAnim = document.getElementById("right-animation");
+      const titlePill = document.getElementById("titlePill");
+      const settingsOverlay = document.getElementById("settingsOverlay");
+      const settingsClose = document.getElementById("settingsClose");
+      const resetGameBtn = document.getElementById("resetGameBtn");
+      const segBtns = Array.from(document.querySelectorAll(".segBtn"));
 
-      const voiceGrote = document.getElementById("voice-grote");
+      function syncSettingsUI() {
+        segBtns.forEach(function (btn) {
+          const md = btn.getAttribute("data-maxdigit");
+          const mp = btn.getAttribute("data-missing");
+          let active = false;
+
+          if (md != null) active = Number(md) === Number(settings.maxDigit);
+          if (mp != null) active = (mp === "random") ? (settings.missingPos === "random") : (Number(mp) === Number(settings.missingPos));
+
+          btn.classList.toggle("active", !!active);
+        });
+      }
+
+      function openSettings() {
+        if (!settingsOverlay) return;
+        settingsOpen = true;
+        settingsOverlay.classList.add("show");
+        settingsOverlay.setAttribute("aria-hidden", "false");
+        syncSettingsUI();
+      }
+
+      function closeSettings() {
+        if (!settingsOverlay) return;
+        settingsOpen = false;
+        settingsOverlay.classList.remove("show");
+        settingsOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      function resetGame() {
+        hideAnimations();
+        feedbackSymbol.textContent = "";
+        setScanState("neutral");
+        numberRow.classList.remove("shake");
+        hasResultForCurrentTouches = false;
+        roundActive = true;
+        newRound();
+      }
+
+      if (settingsClose) settingsClose.addEventListener("click", function () { closeSettings(); });
+      if (resetGameBtn) resetGameBtn.addEventListener("click", function () { closeSettings(); resetGame(); });
+
+      if (settingsOverlay) {
+        settingsOverlay.addEventListener("click", function (e) {
+          if (e.target === settingsOverlay) closeSettings();
+        });
+      }
+
+      segBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const md = btn.getAttribute("data-maxdigit");
+          const mp = btn.getAttribute("data-missing");
+
+          if (md != null) settings.maxDigit = Number(md);
+          if (mp != null) settings.missingPos = (mp === "random") ? "random" : Number(mp);
+
+          saveSettings();
+          syncSettingsUI();
+          newRound();
+        });
+      });
+
+      /* lange druk op titel voor instellingen */
+      (function setupLongPress() {
+        if (!titlePill) return;
+        let timer = null;
+        const holdMs = 650;
+
+        function start() {
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            openSettings();
+          }, holdMs);
+        }
+        function cancel() {
+          clearTimeout(timer);
+          timer = null;
+        }
+
+        titlePill.addEventListener("touchstart", function () { start(); }, { passive: true });
+        titlePill.addEventListener("touchend", function () { cancel(); });
+        titlePill.addEventListener("touchcancel", function () { cancel(); });
+
+        titlePill.addEventListener("mousedown", function () { start(); });
+        titlePill.addEventListener("mouseup", function () { cancel(); });
+        titlePill.addEventListener("mouseleave", function () { cancel(); });
+      })();
+
+
+      const pinguinAnim = document.getElementById("pinguin-animation");
+const voiceGrote = document.getElementById("voice-grote");
       const voiceKleine = document.getElementById("voice-kleine");
 
       // Levels: 1 = 3 cijfers, 2 = grote buur, 3 = kleine buur
@@ -925,6 +1142,31 @@ body{
       let sequence = [0, 1, 2];
       let missingIndex = 1;
       let missingNumber = 1;
+
+let settings = loadSettings();
+
+/* instellingen: max digit (5 of 9) en positie van het vraagteken (0,1,2 of "random") */
+function defaultSettings() {
+  return { maxDigit: 9, missingPos: "random" };
+}
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem("tg08a_settings");
+    if (!raw) return defaultSettings();
+    const obj = JSON.parse(raw);
+    const d = defaultSettings();
+    if (obj && (obj.maxDigit === 5 || obj.maxDigit === 9)) d.maxDigit = obj.maxDigit;
+    if (obj && (obj.missingPos === 0 || obj.missingPos === 1 || obj.missingPos === 2 || obj.missingPos === "random")) d.missingPos = obj.missingPos;
+    return d;
+  } catch (e) {
+    return defaultSettings();
+  }
+}
+function saveSettings() {
+  try { localStorage.setItem("tg08a_settings", JSON.stringify(settings)); } catch (e) {}
+}
+
+let settingsOpen = false;
 
       // Touch/recognition
       let currentPoints = [];
@@ -945,14 +1187,12 @@ body{
       }
 
       function hideAnimations() {
-        leftAnim.classList.remove("show");
-        rightAnim.classList.remove("show");
+        if (pinguinAnim) pinguinAnim.classList.remove("show");
       }
 
       function showSuccessAnimation() {
         hideAnimations();
-        if (level === 3) leftAnim.classList.add("show");
-        else rightAnim.classList.add("show");
+        if (pinguinAnim) pinguinAnim.classList.add("show");
       }
 
       function setSlotDigit(slot, digit, isMissing) {
@@ -1081,24 +1321,10 @@ body{
 
       function setLevelUI() {
         hideAnimations();
-        gameEl.dataset.level = String(level);
-
-        if (level === 1) {
-          titleIcon.textContent = "🔍";
-          titleText.textContent = "Welk cijfer mist?";
-          rightAnim.src = "goed.gif";
-          leftAnim.src = "love-heart.gif";
-        } else if (level === 2) {
-          titleIcon.textContent = "🔊";
-          titleText.textContent = "Grote buur";
-          rightAnim.src = "happy-excited.gif";
-          leftAnim.src = "love-heart.gif";
-        } else {
-          titleIcon.textContent = "🔊";
-          titleText.textContent = "Kleine buur";
-          rightAnim.src = "happy-excited.gif";
-          leftAnim.src = "love-heart.gif";
-        }
+        gameEl.dataset.level = "1";
+        titleIcon.textContent = "🔍";
+        titleText.textContent = "Welk cijfer mist?";
+        if (pinguinAnim) pinguinAnim.src = "goed.gif";
       }
 
       function newRound() {
@@ -1109,50 +1335,23 @@ body{
         numberRow.classList.remove("shake");
         hasResultForCurrentTouches = false;
 
-        if (level === 1) {
-          const base = Math.floor(Math.random() * 8);
-          sequence = [base, base + 1, base + 2];
-          visibleSlots = 3;
+        const maxDigit = (settings && settings.maxDigit) ? settings.maxDigit : 9;
+        const baseMax = Math.max(0, maxDigit - 2); // 0..3 bij max 5, 0..7 bij max 9
+        const base = Math.floor(Math.random() * (baseMax + 1));
 
-          missingIndex = Math.floor(Math.random() * 3);
-          missingNumber = sequence[missingIndex];
-        } else if (level === 2) {
-          const start = Math.floor(Math.random() * 9); // 0..8
-          const target = start + 1;                    // 1..9
-          sequence = [start, target];
-          visibleSlots = 2;
+        sequence = [base, base + 1, base + 2];
+        visibleSlots = 3;
 
-          missingIndex = 1;       // ? rechts
-          missingNumber = target;
-        } else {
-          const shown = 1 + Math.floor(Math.random() * 9); // 1..9
-          const answer = shown - 1;                        // 0..8
-          sequence = [answer, shown];
-          visibleSlots = 2;
+        if (settings && settings.missingPos !== "random") missingIndex = settings.missingPos;
+        else missingIndex = Math.floor(Math.random() * 3);
 
-          missingIndex = 0;       // ? links
-          missingNumber = answer;
-        }
+        missingNumber = sequence[missingIndex];
 
         numberRow.classList.remove("row-appear");
         void numberRow.offsetWidth;
         numberRow.classList.add("row-appear");
 
         updateNumberDisplay();
-      }
-
-      function goToLevel(nextLevel) {
-        level = nextLevel;
-        correctStreak = 0;
-
-        setupIntroForLevel();
-        setLevelUI();
-        newRound();
-
-        // ✅ meteen proberen te starten (werkt meestal na "unlock")
-        ensureAudio();
-        unlockMediaOnce();
-        startIntroNow();
       }
 
       function handleRecognitionResult(digit) {
@@ -1168,16 +1367,6 @@ body{
           const missingSlot = numberSlots[missingIndex];
           setSlotDigit(missingSlot, missingNumber, false);
           missingSlot.classList.add("correct-pop");
-
-          correctStreak += 1;
-
-          // ✅ 7x achter elkaar goed -> volgend level (1->2->3)
-          if (correctStreak >= 7) {
-            if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
-            if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
-            // level 3 blijft doorlopen
-            correctStreak = 0;
-          }
 
           setTimeout(function () { newRound(); }, 1200);
         } else {
@@ -1214,7 +1403,8 @@ body{
         ensureAudio();
         unlockMediaOnce();
 
-        // ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
+        if (settingsOpen) return;
+// ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
         if (intro.pending && !intro.playing && !intro.done) startIntroNow();
 
         const touches = e.touches || [];
