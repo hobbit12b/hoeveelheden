@@ -9,6 +9,7 @@
 <style>
 
 :root{
+  --homeSize:64px;
   --bg-left:#fdeeea;
   --brand:#e58c74;
   --text:#6f6b68;
@@ -40,22 +41,24 @@ body{
   height:100%;
   width:100%;
   display:grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 14px;
+  grid-template-rows: auto 1fr;
+  gap: 0px;
   padding:
     calc(env(safe-area-inset-top) + 14px)
     18px
     calc(env(safe-area-inset-bottom) + 18px)
     18px;
+  position: relative;
 }
 
 /* ======= topbar ======= */
 .topbar{
-  display:grid;
-  grid-template-columns: 70px 1fr 70px;
+  position: relative;
+  height: var(--homeSize);
+  display:flex;
   align-items:center;
-  gap: 10px;
 }
+
 
 .homeBtn{
   appearance:none;
@@ -68,8 +71,8 @@ body{
   display:grid;
   place-items:center;
   line-height: 0;
-  width:64px;
-  height:64px;
+  width:var(--homeSize);
+  height:var(--homeSize);
   text-decoration:none;
   transition: transform 140ms cubic-bezier(.22,.61,.35,1);
 }
@@ -82,20 +85,18 @@ body{
   pointer-events:none;
 }
 
-.titlePill{
-  justify-self: center;
-  padding: 10px 18px;
-  border-radius: 22px;
-  background: rgba(255,255,255,0.60);
-  border: 3px solid rgba(245,180,152,0.45);
-  color: rgba(77,74,72,0.92);
-  font-weight: 950;
-  font-size: clamp(18px, 2.1vw, 28px);
-  letter-spacing: 0.2px;
-  line-height: 1;
-  text-transform: lowercase;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-  user-select:none;
+.settingsHotspot{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%);
+  width: min(340px, 56vw);
+  height: var(--homeSize);
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
 }
 
 /* ======= nummers boven ======= */
@@ -145,6 +146,9 @@ body{
   aspect-ratio: 1 / 1;
   border-radius: 26px;
   background: rgba(255,255,255,0.90);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
   border: 5px solid var(--slot-border);
   box-shadow: 0 12px 22px rgba(0,0,0,0.10);
   display:flex;
@@ -186,53 +190,46 @@ body{
 .feedback-symbol{ display:none; }
 
 /* ======= speelveld ======= */
-.stage{
+.mainArea{
   min-height: 0;
   display:grid;
   grid-template-columns: 86px 1fr;
+  grid-template-rows: auto 1fr;
   gap: 16px;
   align-items: stretch;
 }
 
-.sideLabel{
-  background: var(--brand);
-  border-radius: 26px;
-  box-shadow: 0 14px 28px rgba(0,0,0,0.10);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 14px 8px;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  color: #ffffff;
-  font-weight: 950;
-  font-size: clamp(22px, 2.8vw, 34px);
-  letter-spacing: 0.3px;
-  text-transform: lowercase;
-  user-select:none;
-  cursor:pointer;
+.mainArea .sideLabel{
+  grid-column: 1;
+  grid-row: 1 / 3;
 }
 
-.visuallyHidden{
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
+.mainArea .numbersStrip{
+  grid-column: 2;
+  grid-row: 1;
 }
 
-.scanPanel{
+.mainArea .scanPanel{
   min-height: 0;
   background: #ffffff;
-  border: 6px dashed var(--midLine);
-  border-radius: 34px;
+  border: none;
+  border-top-left-radius: 34px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
   overflow:hidden;
   box-shadow: 0 18px 34px rgba(0,0,0,0.08);
   position: relative;
+}
+
+.scanPanel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-top: 6px dashed var(--midLine);
+  border-left: 6px dashed var(--midLine);
+  border-top-left-radius: 34px;
+  pointer-events:none;
 }
 
 .scan-area{
@@ -248,14 +245,13 @@ body{
 .scan-area.state-wrong{ background: var(--scan-bg-bad); }
 
 @media (orientation: portrait){
-  .app{ gap: 12px; padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px) 16px; }
-  .stage{ grid-template-columns: 78px 1fr; gap: 14px; }
-  .homeBtn{ width:60px; height:60px; }
-}
-
-@media (max-width: 600px){
-  .stage{ grid-template-columns: 72px 1fr; }
-  .sideLabel{ border-radius: 22px; }
+  :root{ --homeSize:60px; }
+  .app{ gap: 0px; padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px) 16px; }
+  .mainArea{ grid-template-columns: 92px 1fr; gap: 16px; }
+  .pinguinWrap{ width: clamp(92px, 18vw, 150px); height: clamp(92px, 18vw, 150px); }
+  .number-slot{ width: clamp(108px, 22vw, 170px); border-radius: 30px; }
+  .number-text{ font-size: clamp(58px, 12vw, 96px); }
+  .sideLabel{ border-radius: 30px; font-size: clamp(26px, 3.4vw, 40px); }
 }
 
 /* ======= instellingen overlay ======= */
@@ -370,29 +366,27 @@ body{
         <img src="homeknop.png" alt="Home" />
       </a>
 
-      <div class="titlePill" id="titlePill">cijferreeksen</div>
-
-      <div aria-hidden="true"></div>
+      <button class="settingsHotspot" id="settingsHotspot" type="button" aria-label="Instellingen openen"></button>
     </div>
 
-    <div class="numbersStrip" aria-label="Opgave">
-      <div class="pinguinWrap" aria-hidden="true">
-        <img id="pinguin-animation" src="goed.gif" alt="" class="pinguinAnim" />
-      </div>
-
-      <div class="number-row row-appear" id="number-row">
-        <div class="number-slot pos0" data-index="0"><span class="number-text">0</span></div>
-        <div class="number-slot pos1 missing" data-index="1"><span class="number-text">?</span></div>
-        <div class="number-slot pos2" data-index="2"><span class="number-text">2</span></div>
-      </div>
-
-      <div id="feedback-symbol" class="feedback-symbol" aria-hidden="true"></div>
-    </div>
-
-    <div class="stage" aria-label="Speelveld">
+    <div class="mainArea" aria-label="Speelveld">
       <div class="sideLabel" id="title-badge" role="button" aria-label="Luister nog een keer">
         <span id="title-icon" class="visuallyHidden">🔍</span>
-        <span id="title-text">welk cijfer mist?</span>
+        <span id="title-text">welk cijfer is weg?</span>
+      </div>
+
+      <div class="numbersStrip" aria-label="Opgave">
+        <div class="pinguinWrap" aria-hidden="true">
+          <img id="pinguin-animation" src="goed.gif" alt="" class="pinguinAnim" />
+        </div>
+
+        <div class="number-row row-appear" id="number-row">
+          <div class="number-slot pos0" data-index="0"><span class="number-text">0</span></div>
+          <div class="number-slot pos1 missing" data-index="1"><span class="number-text">?</span></div>
+          <div class="number-slot pos2" data-index="2"><span class="number-text">2</span></div>
+        </div>
+
+        <div id="feedback-symbol" class="feedback-symbol" aria-hidden="true"></div>
       </div>
 
       <div class="scanPanel" aria-label="Scanvak">
@@ -868,7 +862,7 @@ body{
       const titleIcon = document.getElementById("title-icon");
       const titleText = document.getElementById("title-text");
 
-      const titlePill = document.getElementById("titlePill");
+      const titlePill = document.getElementById("settingsHotspot");
       const settingsOverlay = document.getElementById("settingsOverlay");
       const settingsClose = document.getElementById("settingsClose");
       const resetGameBtn = document.getElementById("resetGameBtn");
@@ -1033,13 +1027,13 @@ let settingsOpen = false;
         const span = slot.querySelector(".number-text");
         slot.classList.remove("missing", "correct-pop");
 
-        slot.style.backgroundImage = "none";
-
         if (isMissing) {
+          slot.style.backgroundImage = "none";
           slot.classList.add("missing");
           span.textContent = "?";
         } else {
-          span.textContent = String(digit);
+          span.textContent = "";
+          slot.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
           slot.setAttribute("aria-label", "cijfer " + digit);
         }
       }
