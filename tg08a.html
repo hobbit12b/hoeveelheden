@@ -150,7 +150,7 @@ body{
   width: min(980px, 100%);
   height: min(520px, 58vh);
   background: #ffffff;
-  border: 6px solid var(--midLine);
+  border: 4px solid var(--midLine);
   border-radius: var(--card-radius);
   box-shadow: 0 10px 22px rgba(0,0,0,0.08);
   position:relative;
@@ -179,7 +179,7 @@ body{
 /* header badge (instructie) */
 .game-header{
   flex: 0 0 auto;
-  display:flex;
+  display:none;
   justify-content:center;
   align-items:center;
   position: relative;
@@ -213,9 +213,40 @@ body{
   width: 100%;
   min-height: 0;
   display:flex;
+  align-items:stretch;
+  justify-content:stretch;
+}
+
+/* ======= opdracht layout: cijfers boven, beloning onder ======= */
+.opdracht-layout{
+  width: 100%;
+  height: 100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap: 16px;
+}
+.numbers-top{
+  width: 100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top: 4px;
+}
+.reward-area{
+  width: min(760px, 100%);
+  flex: 1 1 auto;
+  background: #ffffff;
+  border-radius: 24px;
+  position: relative;
+  overflow:hidden;
+  display:flex;
   align-items:center;
   justify-content:center;
 }
+
 .top-layout{
   display: grid;
   grid-template-columns: min(22vw, 140px) auto min(22vw, 140px);
@@ -239,21 +270,21 @@ body{
 .side-box.right { justify-self: end;   justify-content: flex-start; }
 
 .side-animation{
-  --shift-x: 0px;
-  width: 100%;
-  height: 100%;
-  max-width: 160px;
+  width: min(46vw, 260px);
+  height: min(46vw, 260px);
   object-fit: contain;
   opacity: 0;
-  transform: translateX(var(--shift-x)) scale(0.82);
+  transform: translate(-50%, -50%) scale(0.82);
   pointer-events: none;
   transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-  position: relative;
+  position: absolute;
+  left: 50%;
+  top: 50%;
   z-index: 5;
 }
 .side-animation.show{
   opacity: 1;
-  transform: translateX(var(--shift-x)) scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 /* overlap per level */
@@ -327,6 +358,8 @@ body{
   height: 2.4rem;
   text-align: center;
   filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+
+  display:none;
 }
 
 /* ======= scan paneel ======= */
@@ -334,41 +367,38 @@ body{
   height:100%;
   width:100%;
   display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 18px;
+  align-items:stretch;
+  justify-content:stretch;
+  padding: 0;
 }
 .scanCard{
-  width: min(980px, 100%);
-  height: min(620px, 74vh);
-  background:#ffffff;
-  border: 6px solid var(--midLine);
-  border-radius: var(--card-radius);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   overflow:hidden;
-  padding: 18px;
+  padding: 0;
   display:flex;
-  align-items:center;
-  justify-content:center;
+  align-items:stretch;
+  justify-content:stretch;
 }
 @media (orientation: portrait){
-  .scanCard{ height: min(420px, 38vh); }
+  .scanCard{ height: 100%; }
 }
 
 .scan-area{
-  border-radius: 26px;
-  border-width: 6px;
-  border-style: dashed;
-  border-color: var(--scan-border-neutral);
-  background: var(--scan-bg-neutral);
   width: 100%;
   height: 100%;
   min-height: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.55);
-  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 140ms cubic-bezier(.22,.61,.35,1);
+  transition: background 180ms ease;
   position: relative;
   overflow: hidden;
 }
@@ -387,10 +417,10 @@ body{
 .scan-text{ font-size: clamp(16px, 1.8vw, 20px); color: rgba(77,74,72,0.82); font-weight: 800; text-transform: lowercase; }
 .scan-hint{ font-size: clamp(13px, 1.4vw, 16px); color: rgba(77,74,72,0.62); text-transform: lowercase; }
 
-.scan-area.state-neutral{ border-style:dashed; border-color:var(--scan-border-neutral); background:var(--scan-bg-neutral); transform:translateY(0); }
-.scan-area.state-scanning{ border-style:solid; border-color:var(--scan-border-scan); background:var(--scan-bg-scan); box-shadow:0 14px 30px rgba(0,0,0,0.10); transform:translateY(-2px); }
-.scan-area.state-correct{ border-style:solid; border-color:var(--scan-border-good); background:var(--scan-bg-good); box-shadow:0 14px 32px rgba(144,204,152,0.35); transform:translateY(-2px); }
-.scan-area.state-wrong{ border-style:solid; border-color:var(--scan-border-bad); background:var(--scan-bg-bad); box-shadow:0 14px 32px rgba(217,75,75,0.25); transform:translateY(-2px); }
+.scan-area.state-neutral{ background: transparent; }
+.scan-area.state-scanning{ background: var(--scan-bg-scan); }
+.scan-area.state-correct{ background: var(--scan-bg-good); }
+.scan-area.state-wrong{ background: var(--scan-bg-bad); }
 
 @media (max-width: 600px) {
   .homeBtn{ width:60px; height:60px; }
@@ -423,12 +453,8 @@ body{
           </header>
 
           <main class="game-main">
-            <div class="top-layout">
-              <div class="side-box left">
-                <img id="left-animation" src="love-heart.gif" alt="" class="side-animation" />
-              </div>
-
-              <div class="number-area">
+            <div class="opdracht-layout">
+              <div class="numbers-top">
                 <div class="number-row row-appear" id="number-row">
                   <div class="number-slot" data-index="0"><span class="number-text">0</span></div>
                   <div class="number-slot missing" data-index="1"><span class="number-text">?</span></div>
@@ -436,8 +462,8 @@ body{
                 </div>
                 <div id="feedback-symbol" class="feedback-symbol"></div>
               </div>
-
-              <div class="side-box right">
+              <div class="reward-area" aria-label="Beloning">
+                <img id="left-animation" src="love-heart.gif" alt="" class="side-animation" />
                 <img id="right-animation" src="goed.gif" alt="" class="side-animation" />
               </div>
             </div>
@@ -450,13 +476,7 @@ body{
   <section class="scan-surface" aria-label="Scanvak">
     <div class="scanStage">
       <div class="scanCard" aria-label="Scanveld">
-        <div class="scan-area state-neutral" id="scan-area">
-          <div class="scan-area-inner">
-            <div class="scan-icon">🔢</div>
-            <div class="scan-text">Leg het houten cijfer in het vak.</div>
-            <div class="scan-hint">Alle puntjes in het vak.</div>
-          </div>
-        </div>
+        <div class="scan-area state-neutral" id="scan-area"></div>
       </div>
     </div>
   </section>
