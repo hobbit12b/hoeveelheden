@@ -1,1472 +1,701 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Marbotic, welk cijfer mist?</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#FDEEE9" />
+  <title>spelkader tg08</title>
   <style>
-    :root{
-      --frame: 4px;
-      --purple: #753EC0;
-      --bg: #FCEDE8;
-      --orange: #E97433;
-      --orange-line: #D98A55;
-      --slot-bg: #FFFFFF;
-      --slot-border: rgba(0,0,0,0.10);
-      --capsule-bg: rgba(255,255,255,0.55);
-      --capsule-border: rgba(233,116,51,0.50);
-      --missing-bg: #FADBD8;
-      --missing-border: rgba(233,116,51,0.35);
-            --shadow-soft: 0 2px 0 rgba(0,0,0,0.10);
+:root{
+  --bg: #FDEEE9;
+  --purple: #8A54C6;
+  --purpleInner: #6230AD;
+  --orange: #EA7331;
+  --dash: #DA7645;
+  --tile: #FBE7DE;
+  --tileQ: #FADCD4;
+  --tileStroke: rgba(204,129,87,0.55);
+  --shadow: rgba(0,0,0,0.10);
+  --white: #FFFFFF;
 
-      /* afstel waardes per stand, worden door sliders aangepast */
-      --headerH-portrait: 96px;
-      --headerH-landscape: 92px;
+  /* Afstelling */
+  --homeSize: 72px;
 
-      --pengW-portrait: 120px;
-      --pengW-landscape: 120px;
+  --titleBarH: 72px;
+  --titleBarW: 72px;
 
-      --pengX-portrait: 0px;
-      --pengY-portrait: 0px;
-      --pengX-landscape: 0px;
-      --pengY-landscape: 0px;
+  --digitsXPortrait: 0px;
+  --digitsYPortrait: 0px;
+  --digitsXLandscape: 0px;
+  --digitsYLandscape: 0px;
 
-      --contentTop-landscape: 18px;
+  --topBarHPortrait: 172px;
+  --topBarHLandscape: 122px;
 
-      /* actieve waardes, gekozen via media query */
-      --headerH: var(--headerH-portrait);
-      --pengW: var(--pengW-portrait);
-      --pengX: var(--pengX-portrait);
-      --pengY: var(--pengY-portrait);
-      --pengFlip: -1;
-    }
+  --penguinSizePortrait: 88px;
+    --penguinXPortrait: 0px;
+  --penguinYPortrait: 0px;
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-    html, body{ width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
+  --penguinSizeLandscape: 92px;
+    --penguinXLandscape: 0px;
+  --penguinYLandscape: 0px;
+}
 
-    body{
-      background: var(--purple);
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-    }
+*{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body{ height:100%; width:100%; margin:0; padding:0; background: var(--bg); overflow:hidden; }
+body{
+  font-family: system-ui, -apple-system, "Avenir Next", "Arial Rounded MT Bold", Arial, sans-serif;
+  user-select: none;
+  touch-action: manipulation;
+}
 
-    /* Paarse rand zoals het voorbeeld */
-    .game{
-      position: fixed;
-      inset: var(--frame);
-      background: var(--bg);
-      overflow: hidden;
-    }
+.frame{
+  position: relative;
+  height: 100dvh;
+  width: 100dvw;
+  background: var(--bg);
+  border: 4px solid var(--purple);
+  box-shadow: inset 0 0 0 2px var(--purpleInner);
+  overflow: hidden;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 10px)
+           calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
+}
 
-    /* Home knop */
-    .homeBtn{
-      appearance:none;
-      -webkit-appearance:none;
-      border:none;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      box-shadow: none;
-      border-radius: 0;
-      cursor:pointer;
-      display:grid;
-      place-items:center;
-      line-height: 0;
-      flex: 0 0 auto;
-      width:72px;
-      height:72px;
-      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
+.homeBtn{
+  position:absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: calc(env(safe-area-inset-left, 0px) + 10px);
+  width: var(--homeSize);
+  height: var(--homeSize);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.homeBtn img{ width:100%; height:100%; display:block; }
 
-      position: absolute;
-      z-index: 10;
-      top: calc(env(safe-area-inset-top) + 6px);
-      left: 8px;
-    }
-    .homeBtn:active{ transform: scale(0.99); }
-    .homeBtn img{
-      height: 100%;
-      width: 100%;
-      object-fit: contain;
-      display:block;
-      pointer-events:none;
-    }
+.penguin{
+  display:block;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 0 rgba(255,255,255,0.65));
+}
 
-    /* Titelbalk, verandert van positie bij oriëntatie */
-    .title-badge{
-      position: absolute;
-      z-index: 9;
-      background: var(--orange);
-      color: #fff;
-      border: 0;
-      border-radius: 16px;
-      box-shadow: var(--shadow-soft);
-      font-weight: 800;
-      letter-spacing: 0.2px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 0 18px;
-      text-transform: lowercase;
-    }
-    .title-icon{ display:none; }
-    .title-text{ font-size: 26px; line-height: 1; }
+/* Portret pinguin tuning via transform zodat de cijfers niet verspringen */
+.portrait .penguin{
+  width: var(--penguinSizePortrait);
+  height: auto;
+  transform: translate(var(--penguinXPortrait), var(--penguinYPortrait));
+}
 
-    /* Content area: boven (pinguïn + cijfers), daaronder wit scanvlak */
-    .content{
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display:flex;
-      flex-direction: column;
-      gap: 0;
-    }
+/* Liggend pinguin tuning op de wrapper, zodat rechtsboven anker stabiel blijft */
+.landscape .penguin{
+  width: var(--penguinSizeLandscape);
+  height: auto;
+}
+.landscape .penguinWrap{
+  transform: translate(var(--penguinXLandscape), var(--penguinYLandscape));
+}
 
-    .header-line{
-      width: 100%;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: end;
-      padding: 6px 12px 6px 12px;
-      height: var(--headerH);
-    }
+.digitTile{
+  width: var(--tileSize);
+  height: var(--tileSize);
+  border-radius: calc(var(--tileSize) * 0.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: var(--tile);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.6), 0 10px 20px rgba(0,0,0,0.06);
+  border: 2px solid rgba(204,129,87,0.15);
+}
+.digitTile img{ width: 80%; height: auto; }
 
-    .penguin-holder{
-      justify-self: start;
-      position: relative;
-      height: var(--headerH);
-      width: calc(var(--pengW) + 90px);
-    }
+.digit4{
+  font-weight: 900;
+  font-size: calc(var(--tileSize) * 0.80);
+  line-height: 1;
+  color: #173D8C;
+  -webkit-text-stroke: calc(var(--tileSize) * 0.08) #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgba(0,0,0,0.06);
+}
 
-    .penguin-wrap{
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      transform: translate(var(--pengX), var(--pengY)) scaleX(var(--pengFlip));
-      transform-origin: 50% 100%;
-      pointer-events: none;
-    }
+.digitTile.question{
+  background: var(--tileQ);
+  border: 3px dashed rgba(218,118,69,0.65);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.55), 0 10px 20px rgba(0,0,0,0.05);
+}
+.questionMark{
+  font-weight: 900;
+  font-size: calc(var(--tileSize) * 0.62);
+  color: rgba(184, 106, 80, 0.60);
+  -webkit-text-stroke: calc(var(--tileSize) * 0.03) rgba(255,255,255,0.75);
+}
 
-    .penguin{
-      width: var(--pengW);
-      height: auto;
-      object-fit: contain;
-      pointer-events: none;
-    }
-    /* 'show' wordt door de game gebruikt, we maken er een kleine pop van */
+.separatorDash{
+  width: 100%;
+  height: 0;
+  border-top: 4px dashed var(--dash);
+  opacity: 0.95;
+}
 
-.penguin.show{
-      animation: penguinPop 450ms ease-out;
-    }
-    @keyframes penguinPop{
-      0%{ transform: scale(1); }
-      45%{ transform: scale(1.06); }
-      100%{ transform: scale(1); }
-    }
+/* Portret: stippellijn op de grens van de bovenbalk */
+.portrait .separatorDash{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
 
-    .header-spacer{ }
+/* Speelveld, in liggend teken ik alleen boven en links de stippellijn */
+.playArea{
+  position: relative;
+  background: var(--white);
+  border: none;
+  border-radius: 28px;
+  overflow: hidden;
+}
+.landscape .playArea::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-top: 4px dashed var(--dash);
+  border-left: 4px dashed var(--dash);
+  border-top-left-radius: inherit;
+  pointer-events:none;
+  opacity: 0.95;
+}
 
-    .digits-capsule{
-      justify-self: center;
-      position: relative;
-      z-index: 8;
-      background: var(--capsule-bg);
-      border: 3px solid var(--capsule-border);
-      border-radius: 22px;
-      padding: 8px 10px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.06);
-    }
+/* Portrait layout */
+.portrait{
+  --tileSize: clamp(58px, 10.8vmin, 86px);
+}
+.portrait .titlePill{
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(78vw, 720px);
+  height: var(--titleBarH);
+  background: var(--orange);
+  border-radius: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight: 900;
+  font-size: clamp(18px, 3.4vmin, 30px);
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+}
+.portrait .headerArea{
+  position: relative;
+  height: var(--topBarHPortrait);
+  min-height: 128px;
+  padding-top: clamp(64px, 10vmin, 92px);
+  padding-left: clamp(64px, 10vmin, 86px);
+  padding-right: clamp(18px, 4vmin, 34px);
+}
+.portrait .row2{
+  display:flex;
+  align-items:flex-end;
+  gap: clamp(10px, 2.4vmin, 18px);
+}
+.portrait .digits{
+  display:flex;
+  align-items:center;
+  gap: clamp(10px, 2.2vmin, 18px);
+  margin-top: clamp(12px, 2.2vmin, 18px);
+  transform: translate(var(--digitsXPortrait), var(--digitsYPortrait));
+}
+.portrait .mainFill{
+  position:absolute;
+  left: 0; right: 0;
+  top: var(--topBarHPortrait);
+  bottom: 0;
+  background: var(--white);
+}
 
-    .number-row{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap: 10px;
-    }
+.gameArea{ position:absolute; inset:0; width:100%; height:100%; overflow:hidden; }
+#gameHostPortrait{ position:absolute; }
+#gameHostLandscape{ position:absolute; }
 
-    .number-slot{
-      width: clamp(60px, 13vw, 82px);
-      height: clamp(60px, 13vw, 82px);
-      border-radius: 20px;
-      background-color: var(--slot-bg);
-      border: 3px solid rgba(0,0,0,0.06);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.05);
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: 78% 78%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
+/* Landscape layout */
+.landscape{
+  --tileSize: clamp(52px, 10vmin, 78px);
+}
+.landscape .layout{
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display:flex;
+}
+.landscape .sidebar{
+  width: var(--titleBarW);
+  padding-top: clamp(72px, 11.5vmin, 110px);
+  display:flex;
+  justify-content:center;
+}
+.landscape .sidePill{
+  width: var(--titleBarW);
+  height: min(70vh, 620px);
+  background: var(--orange);
+  border-radius: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+}
+.landscape .sidePill span{
+  color:#fff;
+  font-weight: 900;
+  font-size: clamp(18px, 3.2vmin, 28px);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.3px;
+}
 
-    .number-text{
-      font-size: 44px;
-      font-weight: 900;
-      color: #2d2d2d;
-      transform: translateY(2px);
-      pointer-events:none;
-    }
+.landscape .content{
+  flex: 1;
+  position: relative;
+  padding-top: clamp(12px, 2.5vmin, 18px);
+  padding-right: clamp(14px, 2.6vmin, 22px);
+  padding-left: clamp(8px, 1.5vmin, 12px);
+  padding-bottom: clamp(14px, 2.6vmin, 22px);
+}
+.landscape .topRow{
+  height: var(--topBarHLandscape);
+  min-height: 86px;
+  display:flex;
+  align-items:center;
+  justify-content: center;
+  position: relative;
+}
+.landscape .digitsBubble{
+  background: #fff;
+  border: 3px solid rgba(204,129,87,0.70);
+  border-radius: 20px;
+  padding: clamp(10px, 2vmin, 14px) clamp(12px, 2.2vmin, 16px);
+  display:flex;
+  align-items:center;
+  gap: clamp(10px, 2vmin, 16px);
+  box-shadow: 0 8px 0 rgba(255,255,255,0.35);
+  transform: translate(var(--digitsXLandscape), var(--digitsYLandscape));
+}
+.landscape .penguinWrap{
+  position:absolute;
+  right: clamp(6px, 1.2vmin, 12px);
+  top: clamp(6px, 1.2vmin, 10px);
+}
+.landscape .playArea{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--topBarHLandscape);
+  bottom: 0;
+  margin-left: clamp(6px, 1.2vmin, 10px);
+  border-radius: 34px 0 0 0;
+}
 
-    .number-slot.missing{
-      background-image: none;
-      background-color: var(--missing-bg);
-      border: 3px dashed var(--missing-border);
-    }
-    .number-slot.missing .number-text{
-      color: var(--orange);
-    }
+/* Layout keuze op basis van oriëntatie */
+.frame{ display:block; }
+@media (orientation: portrait){
+  .frame.landscape{ display:none; }
+}
+@media (orientation: landscape){
+  .frame.portrait{ display:none; }
+}
 
-    /* feedback in dit ontwerp niet zichtbaar */
-    .feedback-symbol{ display:none; }
+/* Tuner, klein bedienpaneel voor afstelling */
+.tuner{
+  position: fixed;
+  right: calc(env(safe-area-inset-right, 0px) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  z-index: 999;
+  width: min(92vw, 380px);
+  pointer-events: auto;
+}
+.tunerHead{
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+}
+.tunerToggle{
+  background: rgba(255,255,255,0.95);
+  border: 2px solid rgba(138,84,198,0.28);
+  border-radius: 18px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 14px;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+}
+.tunerPanel{
+  margin-top: 10px;
+  background: rgba(255,255,255,0.95);
+  border: 2px solid rgba(138,84,198,0.28);
+  border-radius: 22px;
+  padding: 12px 12px 14px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.14);
+  backdrop-filter: blur(6px);
+}
+.tunerPanel.hidden{ display:none; }
 
-    /* Scan area */
-    .scan-area{
-      position: relative;
-      flex: 1 1 auto;
-      background: #fff;
-      min-height: 50vh;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    /* gestreepte lijn bovenin */
-    .scan-area::before{
-      content:"";
-      position:absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      border-top: 4px dashed var(--orange-line);
-      pointer-events:none;
-    }
-
-    /* Landscape heeft ook een stippellijn links */
-    @media (orientation: landscape){
-      :root{
-        --headerH: var(--headerH-landscape);
-        --pengW: var(--pengW-landscape);
-        --pengX: var(--pengX-landscape);
-        --pengY: var(--pengY-landscape);
-        --pengFlip: 1;
-      }
-      .scan-area::after{
-        content:"";
-        position:absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        border-left: 4px dashed var(--orange-line);
-        pointer-events:none;
-      }
-    }
-
-    /* Scan state kan subtiel, zonder het ontwerp te verstoren */
-    .scan-area.state-scanning{ }
-    .scan-area.state-correct{ }
-    .scan-area.state-wrong{ }
-
-    /* PORTRAIT */
-    @media (orientation: portrait){
-      :root{
-        --headerH: var(--headerH-portrait);
-        --pengW: var(--pengW-portrait);
-        --pengX: var(--pengX-portrait);
-        --pengY: var(--pengY-portrait);
-        --pengFlip: -1;
-      }
-      .title-badge{
-        top: calc(env(safe-area-inset-top) + var(--contentTop-landscape));
-        left: calc(8px + 72px + 10px);
-        right: 8px;
-        height: 48px;
-      }
-      .content{
-        top: calc(env(safe-area-inset-top) + 8px + 48px + 8px);
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      .penguin-holder{ grid-column: 1; }
-      .digits-capsule{ grid-column: 2; }
-      .header-spacer{ grid-column: 3; }
-    }
-
-    /* LANDSCAPE */
-    @media (orientation: landscape){
-      .title-badge{
-        top: calc(env(safe-area-inset-top) + 70px);
-        bottom: calc(env(safe-area-inset-bottom) + 8px);
-        left: 8px;
-        width: 64px;
-        padding: 0;
-        border-radius: 18px;
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-      }
-      .title-text{ font-size: 24px; }
-
-      .content{
-        top: calc(env(safe-area-inset-top) + 8px);
-        left: calc(8px + 64px + 10px);
-        right: 0;
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      .header-line{
-        padding-left: 10px;
-        padding-right: 10px;
-      }
-      /* pinguïn rechts, zoals in het voorbeeld */
-      .penguin-holder{
-        grid-column: 3;
-        justify-self: end;
-      }
-      .header-spacer{
-        grid-column: 1;
-      }
-    }
-
-
-    /* Afstel paneel, alleen voor jou als maker */
-    .tuneToggle{
-      position: absolute;
-      z-index: 40;
-      right: 10px;
-      bottom: calc(env(safe-area-inset-bottom) + 10px);
-      width: 46px;
-      height: 46px;
-      border: none;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.78);
-      box-shadow: var(--shadow-soft);
-      display: grid;
-      place-items: center;
-      font-size: 22px;
-      line-height: 0;
-      cursor: pointer;
-      touch-action: auto;
-    }
-
-    .tunePanel{
-      position: absolute;
-      z-index: 50;
-      right: 10px;
-      bottom: calc(env(safe-area-inset-bottom) + 10px);
-      width: min(360px, calc(100% - 20px));
-      background: rgba(255,255,255,0.92);
-      border: 2px solid rgba(0,0,0,0.10);
-      border-radius: 18px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.18);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      touch-action: auto;
-    }
-    .tunePanel[hidden]{ display:none; }
-
-    .tuneTitle{
-      font-weight: 900;
-      font-size: 16px;
-    }
-    .tuneSub{
-      font-size: 12px;
-      opacity: 0.75;
-      margin-top: -4px;
-    }
-
-    .tuneRow label{
-      display:flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 6px;
-    }
-    .tuneRow .val{
-      font-weight: 900;
-      opacity: 0.75;
-      font-variant-numeric: tabular-nums;
-    }
-    .tuneRow input[type="range"]{
-      width: 100%;
-    }
-
-    .tuneClose{
-      appearance:none;
-      -webkit-appearance:none;
-      border:none;
-      background: var(--orange);
-      color: #fff;
-      font-weight: 900;
-      border-radius: 14px;
-      padding: 10px 12px;
-      cursor: pointer;
-    }
-
+.tunerTitle{
+  font-weight: 950;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  color: rgba(20,20,20,0.78);
+  margin: 0 0 8px 0;
+}
+.tunerHint{
+  font-size: 12px;
+  color: rgba(20,20,20,0.55);
+  margin: 0 0 10px 0;
+}
+.tunerRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
+.tunerRow label{
+  font-weight: 850;
+  font-size: 13px;
+  color: rgba(20,20,20,0.70);
+}
+.tunerVal{
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: rgba(20,20,20,0.55);
+}
+.tunerPanel input[type="range"]{
+  width: 100%;
+  accent-color: var(--purple);
+}
+.tunerActions{
+  display:flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tunerBtn{
+  flex:1;
+  background: #fff;
+  border: 2px solid rgba(234,115,49,0.35);
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 13px;
+}
+.tunerBtn.secondary{
+  border-color: rgba(138,84,198,0.28);
+}
   </style>
-
 </head>
-
 <body>
-  <div class="game" id="game" data-level="1">
-    <button class="homeBtn" id="homeBtn" type="button" aria-label="Terug naar start">
-      <img src="homeknop.png" alt="" />
+
+  <div class="frame portrait" role="application" aria-label="Spelkader tg08 verticaal">
+    <button class="homeBtn" type="button" aria-label="Home" onclick="goHome()">
+      <img src="./homeknop.png" alt="" />
     </button>
 
-    <button class="title-badge" id="title-badge" type="button" aria-label="Luister nog een keer">
-      <span class="title-icon" id="title-icon" aria-hidden="true"></span>
-      <span class="title-text" id="title-text">welk cijfer mist?</span>
-    </button>
+    <div class="titlePill">welk cijfer mist?</div>
 
-    <div class="content">
-      <div class="header-line">
-        <div class="penguin-holder" id="penguin-holder">
-          <div class="penguin-wrap" id="right-wrap"><img id="right-animation" class="penguin" src="goed.gif" alt="" /></div>
-          <div class="penguin-wrap" id="left-wrap"><img id="left-animation" class="penguin" src="goed.gif" alt="" /></div>
+    <header class="headerArea" aria-hidden="true">
+      <div class="row2">
+        <img class="penguin" src="./goed.gif" alt="" />
+        <div class="digits" aria-hidden="true">
+          <div class="digitTile" title="3">
+            <img src="./marbotic3.png" alt="3" />
+          </div>
+          <div class="digitTile" title="4">
+            <div class="digit4">4</div>
+          </div>
+          <div class="digitTile question" title="?">
+            <div class="questionMark">?</div>
+          </div>
         </div>
+      </div>
 
-        <div class="digits-capsule" aria-label="opgave">
-          <div class="number-row" id="number-row">
-            <div class="number-slot" data-index="0"><span class="number-text">3</span></div>
-            <div class="number-slot" data-index="1"><span class="number-text">4</span></div>
-            <div class="number-slot missing" data-index="2"><span class="number-text">?</span></div>
+      <div class="separatorDash"></div>
+    </header>
+
+    <main class="mainFill" id="gameHostPortrait" aria-label="Speelveld">
+      <div id="gameArea" class="gameArea" aria-label="Speelveld">
+        <!-- Plaats hier je game content -->
+      </div>
+    </main>
+  </div>
+
+  <div class="frame landscape" role="application" aria-label="Spelkader tg08 horizontaal">
+    <button class="homeBtn" type="button" aria-label="Home" onclick="goHome()">
+      <img src="./homeknop.png" alt="" />
+    </button>
+
+    <div class="layout">
+      <aside class="sidebar" aria-hidden="true">
+        <div class="sidePill"><span>welk cijfer mist?</span></div>
+      </aside>
+
+      <section class="content">
+        <div class="topRow" aria-hidden="true">
+          <div class="digitsBubble" aria-hidden="true">
+            <div class="digitTile" title="3">
+              <img src="./marbotic3.png" alt="3" />
+            </div>
+            <div class="digitTile" title="4">
+              <div class="digit4">4</div>
+            </div>
+            <div class="digitTile question" title="?">
+              <div class="questionMark">?</div>
+            </div>
+          </div>
+
+          <div class="penguinWrap">
+            <img class="penguin" src="./goed.gif" alt="" />
           </div>
         </div>
 
-        <div class="header-spacer" aria-hidden="true"></div>
-      </div>
-
-      <div id="feedback-symbol" class="feedback-symbol" aria-hidden="true"></div>
-
-      <div class="scan-area state-neutral" id="scan-area" aria-label="scanvak"></div>
+        <div class="playArea" id="gameHostLandscape" aria-label="Speelveld">
+          <!-- Plaats hier je game content -->
+        </div>
+      </section>
     </div>
-
-
-    <button class="tuneToggle" id="tuneToggle" type="button" aria-label="Instellingen">⚙</button>
-
-    <div class="tunePanel" id="tunePanel" hidden>
-      <div class="tuneTitle">Afstellen</div>
-      <div class="tuneSub" id="tuneMode">stand</div>
-
-      <div class="tuneRow">
-        <label for="slHeader">bovenbalk hoogte <span class="val" id="valHeader"></span></label>
-        <input id="slHeader" type="range" min="60" max="170" step="1" />
-      </div>
-
-      <div class="tuneRow">
-        <label for="slPengW">pinguïn grootte <span class="val" id="valPengW"></span></label>
-        <input id="slPengW" type="range" min="60" max="220" step="1" />
-      </div>
-
-      <div class="tuneRow">
-        <label for="slPengX">pinguïn positie x <span class="val" id="valPengX"></span></label>
-        <input id="slPengX" type="range" min="-260" max="260" step="1" />
-      </div>
-
-      <div class="tuneRow">
-        <label for="slPengY">pinguïn positie y <span class="val" id="valPengY"></span></label>
-        <input id="slPengY" type="range" min="-260" max="260" step="1" />
-      </div>
-
-      <button class="tuneClose" id="tuneClose" type="button">sluit</button>
-    </div>
-
   </div>
 
-  <!-- Voice prompts -->
-  <audio id="voice-grote" src="audio/grote%20buurgetal.mp3" preload="auto"></audio>
-  <audio id="voice-kleine" src="audio/kleine%20buurgetal.mp3" preload="auto"></audio>
+  <!-- Afstel paneel -->
+  <div class="tuner" id="tuner" aria-label="Afstelling">
+    <div class="tunerHead">
+      <button class="tunerToggle" id="tunerToggle" type="button" aria-expanded="true">instellen</button>
+    </div>
 
-  <script>
+    <div class="tunerPanel" id="tunerPanel">
+      <p class="tunerTitle" id="tunerTitle">Afstelling, portret</p>
+      <p class="tunerHint">Wijzig waarden, draai de iPad om om ook liggend af te stellen</p>
 
-    /* ================================
-       MARBOTIC HERKENNINGSMODULE
-       (logica ongewijzigd)
-       ================================ */
+      <div class="tunerRow"><label for="topbar">bovenbalk hoogte</label><div class="tunerVal" id="topbarVal">0 px</div></div>
+<input id="topbar" type="range" min="90" max="240" step="1" value="172" />
 
-    const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+<div class="tunerRow"><label for="dX">cijfers blok positie X</label><div class="tunerVal" id="dXVal">0 px</div></div>
+<input id="dX" type="range" min="-240" max="240" step="1" value="0" />
 
-    let calibration = null;
-    let classificationStats = null;
-    let expectedTouchPoints = 3;
+<div class="tunerRow"><label for="dY">cijfers blok positie Y</label><div class="tunerVal" id="dYVal">0 px</div></div>
+<input id="dY" type="range" min="-240" max="240" step="1" value="0" />
 
-    function initCalibration(calibrationData) {
-      if (!calibrationData || typeof calibrationData !== "object") {
-        calibration = null;
-        classificationStats = null;
-        expectedTouchPoints = 3;
-        return;
-      }
+<div class="tunerRow"><label for="pS">pinguin grootte</label><div class="tunerVal" id="pSVal">0 px</div></div>
+<input id="pS" type="range" min="40" max="240" step="1" value="88" />
 
-      if (typeof calibrationData.expectedTouchPoints === "number") {
-        expectedTouchPoints = calibrationData.expectedTouchPoints;
-      } else {
-        expectedTouchPoints = 3;
-      }
+<div class="tunerRow"><label for="pX">pinguin positie X</label><div class="tunerVal" id="pXVal">0 px</div></div>
+<input id="pX" type="range" min="-180" max="180" step="1" value="0" />
 
-      calibration = buildCalibrationFromData(calibrationData);
-      recomputeClassificationStats();
-    }
+<div class="tunerRow"><label for="pY">pinguin positie Y</label><div class="tunerVal" id="pYVal">0 px</div></div>
+<input id="pY" type="range" min="-180" max="180" step="1" value="0" />
 
-    function buildCalibrationFromData(data) {
-      const obj = {};
-      DIGIT_ORDER.forEach(function (d) {
-        obj[String(d)] = { digit: d, samples: [] };
-      });
+      <div class="tunerActions">
+        <button class="tunerBtn secondary" id="resetBtn" type="button">reset</button>
+        <button class="tunerBtn" id="closeBtn" type="button">sluiten</button>
+      </div>
+    </div>
+  </div>
 
-      DIGIT_ORDER.forEach(function (d) {
-        const key = String(d);
-        const entry = data[key];
-        if (!entry || !Array.isArray(entry.samples)) return;
+<script>
+  function goHome(){
+    const target = document.body.dataset.home || "index.html";
+    try{ window.location.href = target; }catch(e){ console.log("Home", e); }
+  }
 
-        entry.samples.forEach(function (s) {
-          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+  function isPortrait(){
+    return window.matchMedia("(orientation: portrait)").matches || window.innerHeight >= window.innerWidth;
+  }
 
-          const pts = s.points.map(function (p) {
-            return { x: Number(p.x), y: Number(p.y) };
-          });
+  function setLayout(){
+    const portrait = isPortrait();
+    const host = document.getElementById(portrait ? "gameHostPortrait" : "gameHostLandscape");
+    const gameArea = document.getElementById("gameArea");
+    if(host && gameArea && gameArea.parentElement !== host) host.appendChild(gameArea);
+    syncTunerMode();
+  }
 
-          const features = computeFeatures(pts);
-          obj[key].samples.push({ points: pts, features: features });
-        });
-      });
+  function debounce(fn, wait){
+    let t;
+    return function(){
+      clearTimeout(t);
+      t = setTimeout(fn, wait);
+    };
+  }
 
-      return obj;
-    }
+    const structuredClone = window.structuredClone || ((obj) => JSON.parse(JSON.stringify(obj)));
 
-    function computeFeatures(points) {
-      if (!points || points.length !== 3) {
-        return {
-          sides: [0, 0, 0],
-          orientation: 0,
-          cosAngle: 0,
-          centroid: { x: 0, y: 0 },
-          yNorm: [0, 0, 0],
-          xPattern: [0, 0, 0],
-          aspect: 0,
-          vector: [0, 0, 0]
-        };
-      }
+  const STORE_KEY = "tg08_tune_v2";
 
-      const p0 = points[0];
-      const p1 = points[1];
-      const p2 = points[2];
+  const defaults = {
+    portrait:  { topBarH: 172, dX: 0, dY: 0, pS: 88, pX: 0, pY: 0 },
+    landscape: { topBarH: 122, dX: 0, dY: 0, pS: 92, pX: 0, pY: 0 }
+  };
 
-      const centroidRaw = {
-        x: (p0.x + p1.x + p2.x) / 3,
-        y: (p0.y + p1.y + p2.y) / 3
+  let tune = loadTune();
+
+  function loadTune(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY) || localStorage.getItem("tg08_tune_v1");
+      if(!raw) return structuredClone(defaults);
+      const parsed = JSON.parse(raw);
+
+      const normalize = (mode) => {
+        const src = parsed[mode] || {};
+        const out = { ...defaults[mode], ...src };
+
+        // migratie van oude breedte, hoogte naar grootte
+        if(out.pS == null){
+          if(src.pW != null) out.pS = src.pW;
+          else if(src.pH != null) out.pS = src.pH;
+          else out.pS = defaults[mode].pS;
+        }
+        return out;
       };
 
-      const isoPoints = [p0, p1, p2].map(function (p) {
-        const dx = p.x - centroidRaw.x;
-        const dy = p.y - centroidRaw.y;
-        return { x: dx, y: dy };
-      });
+      return { portrait: normalize("portrait"), landscape: normalize("landscape") };
+    }catch(e){
+      return structuredClone(defaults);
+    }
+  }
 
-      let maxDist = 0;
-      for (let i = 0; i < isoPoints.length; i++) {
-        const q = isoPoints[i];
-        const d = Math.sqrt(q.x * q.x + q.y * q.y);
-        if (d > maxDist) maxDist = d;
-      }
-      if (maxDist < 1e-6) maxDist = 1;
+  function saveTune(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(tune)); }catch(e){}
+  }
 
-      for (let i = 0; i < isoPoints.length; i++) {
-        isoPoints[i].x /= maxDist;
-        isoPoints[i].y /= maxDist;
-      }
+  function applyTune(){
+    const r = document.documentElement.style;
 
-      function dist(a, b) {
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        return Math.sqrt(dx * dx + dy * dy);
-      }
+    r.setProperty("--topBarHPortrait", tune.portrait.topBarH + "px");
+    r.setProperty("--topBarHLandscape", tune.landscape.topBarH + "px");
 
-      const L01 = dist(isoPoints[0], isoPoints[1]);
-      const L12 = dist(isoPoints[1], isoPoints[2]);
-      const L20 = dist(isoPoints[2], isoPoints[0]);
+    r.setProperty("--digitsXPortrait", tune.portrait.dX + "px");
+    r.setProperty("--digitsYPortrait", tune.portrait.dY + "px");
+    r.setProperty("--digitsXLandscape", tune.landscape.dX + "px");
+    r.setProperty("--digitsYLandscape", tune.landscape.dY + "px");
 
-      const sides = [
-        { len: L01, i: 0, j: 1 },
-        { len: L12, i: 1, j: 2 },
-        { len: L20, i: 2, j: 0 }
-      ];
-      const maxSideLen = Math.max(L01, L12, L20) || 1;
-      const sidesNormSorted = sides
-        .slice()
-        .sort(function (a, b) { return a.len - b.len; })
-        .map(function (s) { return s.len / maxSideLen; });
+    r.setProperty("--penguinSizePortrait", tune.portrait.pS + "px");
+    r.setProperty("--penguinXPortrait", tune.portrait.pX + "px");
+    r.setProperty("--penguinYPortrait", tune.portrait.pY + "px");
 
-      const largest = sides
-        .slice()
-        .sort(function (a, b) { return a.len - b.len; })[2];
+    r.setProperty("--penguinSizeLandscape", tune.landscape.pS + "px");
+    r.setProperty("--penguinXLandscape", tune.landscape.pX + "px");
+    r.setProperty("--penguinYLandscape", tune.landscape.pY + "px");
+  }
 
-      const A = isoPoints[largest.i];
-      const B = isoPoints[largest.j];
-      const CIndex = 3 - largest.i - largest.j;
-      const C = isoPoints[CIndex];
+  function currentMode(){
+    return isPortrait() ? "portrait" : "landscape";
+  }
 
-      function orientationVal(a, b, c) {
-        const value =
-          (b.x - a.x) * (c.y - a.y) -
-          (b.y - a.y) * (c.x - a.x);
-        if (value > 0) return 1;
-        if (value < 0) return -1;
-        return 0;
-      }
+  function syncTunerMode(){
+    const mode = currentMode();
+    const panel = document.getElementById("tunerPanel");
+    if(!panel) return;
 
-      const orientation = orientationVal(A, B, C);
+    const title = document.getElementById("tunerTitle");
+    title.textContent = "Afstelling, " + (mode === "portrait" ? "portret" : "liggend");
 
-      const AC = dist(A, C);
-      const BC = dist(B, C);
-      const AB = largest.len;
-      const AC2 = AC * AC;
-      const BC2 = BC * BC;
-      const AB2 = AB * AB;
-      let cosAngle = 0;
-      const denom = 2 * AC * BC;
-      if (denom > 1e-6) {
-        cosAngle = (AC2 + BC2 - AB2) / denom;
-      }
-
-      let minX = Math.min(p0.x, p1.x, p2.x);
-      let maxX = Math.max(p0.x, p1.x, p2.x);
-      let minY = Math.min(p0.y, p1.y, p2.y);
-      let maxY = Math.max(p0.y, p1.y, p2.y);
-      let width = maxX - minX;
-      let height = maxY - minY;
-      if (width < 1e-6) width = 1;
-      if (height < 1e-6) height = 1;
-
-      const yNormVals = [p0, p1, p2]
-        .map(function (p) { return (p.y - minY) / height; })
-        .sort(function (a, b) { return a - b; });
-
-      const pointsWithIndex = [
-        { p: p0, idx: 0 },
-        { p: p1, idx: 1 },
-        { p: p2, idx: 2 }
-      ].sort(function (a, b) { return a.p.y - b.p.y; });
-
-      const xPattern = pointsWithIndex.map(function (item) {
-        return (item.p.x - minX) / width;
-      });
-
-      const aspect = height / (width + height);
-
-      const centroidBox = {
-        x: (centroidRaw.x - minX) / width,
-        y: (centroidRaw.y - minY) / height
-      };
-
-      const vector = buildFeatureVector({
-        sides: sidesNormSorted,
-        orientation: orientation,
-        cosAngle: cosAngle,
-        centroid: centroidBox,
-        yNorm: yNormVals,
-        xPattern: xPattern,
-        aspect: aspect
-      });
-
-      return {
-        sides: sidesNormSorted,
-        orientation: orientation,
-        cosAngle: cosAngle,
-        centroid: centroidBox,
-        yNorm: yNormVals,
-        xPattern: xPattern,
-        aspect: aspect,
-        vector: vector
-      };
+    const topbar = document.getElementById("topbar");
+    if(mode === "portrait"){
+      topbar.min = 90; topbar.max = 260;
+    }else{
+      topbar.min = 70; topbar.max = 200;
     }
 
-    function buildFeatureVector(f) {
-      const wSides = 3.0;
-      const wCos = 4.0;
-      const wOrient = 2.0;
-      const wY = 3.0;
-      const wX = 2.0;
-      const wAspect = 2.0;
+    const t = tune[mode];
+    setSlider("topbar", t.topBarH);
+    setSlider("dX", t.dX);
+    setSlider("dY", t.dY);
+    setSlider("pS", t.pS);
+    setSlider("pX", t.pX);
+    setSlider("pY", t.pY);
 
-      const v = [];
-      v.push(f.sides[0] * wSides);
-      v.push(f.sides[1] * wSides);
-      v.push(f.sides[2] * wSides);
+    updateLabels();
+  }
 
-      v.push(f.cosAngle * wCos);
-      v.push(f.orientation * wOrient);
+  function setSlider(id, val){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.value = String(val);
+  }
 
-      v.push(f.yNorm[0] * wY);
-      v.push(f.yNorm[1] * wY);
-      v.push(f.yNorm[2] * wY);
+  function setVal(id, text){
+    const el = document.getElementById(id);
+    if(el) el.textContent = text;
+  }
 
-      v.push(f.xPattern[0] * wX);
-      v.push(f.xPattern[1] * wX);
-      v.push(f.xPattern[2] * wX);
+  function updateLabels(){
+    setVal("topbarVal", document.getElementById("topbar").value + " px");
+    setVal("dXVal", document.getElementById("dX").value + " px");
+    setVal("dYVal", document.getElementById("dY").value + " px");
+    setVal("pSVal", document.getElementById("pS").value + " px");
+    setVal("pXVal", document.getElementById("pX").value + " px");
+    setVal("pYVal", document.getElementById("pY").value + " px");
+  }
 
-      v.push(f.aspect * wAspect);
+  function bindTuner(){
+    const toggle = document.getElementById("tunerToggle");
+    const panel = document.getElementById("tunerPanel");
+    const closeBtn = document.getElementById("closeBtn");
+    const resetBtn = document.getElementById("resetBtn");
 
-      return v;
+    function setOpen(open){
+      panel.classList.toggle("hidden", !open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
     }
 
-    function vectorDistance(a, b) {
-      if (!a || !b || a.length !== b.length) return Infinity;
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) {
-        const diff = a[i] - b[i];
-        sum += diff * diff;
-      }
-      return Math.sqrt(sum);
-    }
-
-    function recomputeClassificationStats() {
-      if (!calibration) {
-        classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
-        return;
-      }
-
-      const allSamples = [];
-      DIGIT_ORDER.forEach(function (d) {
-        const key = String(d);
-        if (!calibration[key]) return;
-        const samples = calibration[key].samples || [];
-        samples.forEach(function (s) {
-          allSamples.push({ digit: d, features: s.features });
-        });
-      });
-
-      if (allSamples.length < 2) {
-        classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 };
-        return;
-      }
-
-      const sameMinDistances = [];
-      const betweenMinDistances = [];
-
-      for (let i = 0; i < allSamples.length; i++) {
-        const a = allSamples[i];
-        const vecA = a.features.vector;
-        let minSame = Infinity;
-        let minOther = Infinity;
-
-        for (let j = 0; j < allSamples.length; j++) {
-          if (i === j) continue;
-          const b = allSamples[j];
-          const vecB = b.features.vector;
-          const dist = vectorDistance(vecA, vecB);
-
-          if (a.digit === b.digit) {
-            if (dist < minSame) minSame = dist;
-          } else {
-            if (dist < minOther) minOther = dist;
-          }
-        }
-
-        if (minSame < Infinity) sameMinDistances.push(minSame);
-        if (minOther < Infinity) betweenMinDistances.push(minOther);
-      }
-
-      if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
-        classificationStats = { thresholdBase: 0.7, thresholdUnknown: 1.2 };
-        return;
-      }
-
-      const maxSame = Math.max.apply(null, sameMinDistances);
-      const minBetween = Math.min.apply(null, betweenMinDistances);
-
-      let thresholdBase;
-      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
-      else thresholdBase = maxSame * 1.3;
-
-      const thresholdUnknown = thresholdBase * 1.5;
-
-      classificationStats = {
-        thresholdBase: thresholdBase,
-        thresholdUnknown: thresholdUnknown,
-        maxSame: maxSame,
-        minBetween: minBetween
-      };
-    }
-
-    function classifyMeasurement(features) {
-      const vec = features.vector;
-      if (!vec || !calibration) {
-        return { digit: null, bestDist: null, certainty: "onbekend", isUnknown: true, topMatches: [] };
-      }
-
-      const bestPerDigit = {};
-      DIGIT_ORDER.forEach(function (d) { bestPerDigit[d] = Infinity; });
-
-      let bestDigit = null;
-      let bestDist = Infinity;
-
-      DIGIT_ORDER.forEach(function (d) {
-        const key = String(d);
-        const entry = calibration[key];
-        if (!entry) return;
-        const samples = entry.samples || [];
-        for (let i = 0; i < samples.length; i++) {
-          const sampleVec = samples[i].features.vector;
-          const dist = vectorDistance(vec, sampleVec);
-          if (dist < bestPerDigit[d]) bestPerDigit[d] = dist;
-          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
-        }
-      });
-
-      const perDigitArray = [];
-      DIGIT_ORDER.forEach(function (d) {
-        const val = bestPerDigit[d];
-        if (val < Infinity) perDigitArray.push({ digit: d, distance: val });
-      });
-      perDigitArray.sort(function (a, b) { return a.distance - b.distance; });
-      const topMatches = perDigitArray.slice(0, 3);
-
-      if (bestDigit === null || bestDist === Infinity) {
-        return { digit: null, bestDist: null, certainty: "onbekend", isUnknown: true, topMatches: topMatches };
-      }
-
-      let stats = classificationStats || { thresholdBase: 0.8, thresholdUnknown: 1.5 };
-      const base = stats.thresholdBase;
-      const unknownThresh = stats.thresholdUnknown;
-
-      let isUnknown = false;
-      let certainty = "zeker";
-
-      if (bestDist > unknownThresh) isUnknown = true;
-      else if (bestDist > base) certainty = "twijfelachtig";
-
-      if (!isUnknown && topMatches.length > 1) {
-        const second = topMatches[1].distance;
-        if (second > 0) {
-          const ratio = bestDist / second;
-          if (ratio > 0.9 && certainty === "zeker") certainty = "twijfelachtig";
-        }
-      }
-
-      return {
-        digit: isUnknown ? null : bestDigit,
-        bestDist: bestDist,
-        certainty: certainty,
-        isUnknown: isUnknown,
-        topMatches: topMatches
-      };
-    }
-
-    function recognizeDigit(points) {
-      if (!calibration || !classificationStats) return null;
-      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
-
-      const features = computeFeatures(points);
-      const classification = classifyMeasurement(features);
-
-      if (!classification || classification.isUnknown || classification.digit == null) return null;
-      return classification.digit;
-    }
-
-    /* ================================
-       SPELLOGICA + 3 LEVELS
-       ================================ */
-
-    const DIGIT_IMAGE_PREFIX = "marbotic";
-    const DIGIT_IMAGE_SUFFIX = ".png";
-
-    let audioCtx = null;
-    function ensureAudio() {
-      if (!audioCtx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) audioCtx = new AC();
-      }
-      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-    }
-
-    function playTone(freq, duration) {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      const now = audioCtx.currentTime;
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-      osc.start(now);
-      osc.stop(now + duration + 0.05);
-    }
-    function playSuccessSound() { playTone(880, 0.16); setTimeout(function () { playTone(1175, 0.18); }, 140); }
-    function playErrorSound() { playTone(220, 0.22); }
-
-    document.addEventListener("DOMContentLoaded", function () {
-      const gameEl = document.getElementById("game");
-
-      const numberRow = document.getElementById("number-row");
-      const numberSlots = Array.from(document.querySelectorAll(".number-slot"));
-      const feedbackSymbol = document.getElementById("feedback-symbol");
-      const scanArea = document.getElementById("scan-area");
-
-      const titleBadge = document.getElementById("title-badge");
-      const titleIcon = document.getElementById("title-icon");
-      const titleText = document.getElementById("title-text");
-
-      const leftAnim = document.getElementById("left-animation");
-      const rightAnim = document.getElementById("right-animation");
-
-      const voiceGrote = document.getElementById("voice-grote");
-      const voiceKleine = document.getElementById("voice-kleine");
-
-      const homeBtn = document.getElementById("homeBtn");
-      if (homeBtn) {
-        homeBtn.addEventListener("click", function () {
-          window.location.href = "index.html";
-        });
-      }
-
-      /* ================================
-         AFSTELLEN MET SLIDERS
-         ================================ */
-      const tuneToggle = document.getElementById("tuneToggle");
-      const tunePanel = document.getElementById("tunePanel");
-      const tuneClose = document.getElementById("tuneClose");
-      const tuneMode = document.getElementById("tuneMode");
-
-      const slHeader = document.getElementById("slHeader");
-      const slPengW = document.getElementById("slPengW");
-      const slPengX = document.getElementById("slPengX");
-      const slPengY = document.getElementById("slPengY");
-
-      const valHeader = document.getElementById("valHeader");
-      const valPengW = document.getElementById("valPengW");
-      const valPengX = document.getElementById("valPengX");
-      const valPengY = document.getElementById("valPengY");
-
-      const TUNE_KEY = "tg08_tune_v2";
-
-      function getOrientationName() {
-        return window.matchMedia("(orientation: portrait)").matches ? "portrait" : "landscape";
-      }
-      function modeLabel(name) {
-        return name === "portrait" ? "staand" : "liggend";
-      }
-
-      function defaultTune() {
-        return {
-          portrait: { headerH: 96, pengW: 120, pengX: 0, pengY: 0 },
-          landscape: { headerH: 92, pengW: 120, pengX: 0, pengY: 0 }
-        };
-      }
-
-      function loadTune() {
-        try {
-          const raw = localStorage.getItem(TUNE_KEY);
-          if (!raw) return defaultTune();
-          const parsed = JSON.parse(raw);
-          const d = defaultTune();
-          ["portrait", "landscape"].forEach(function (k) {
-            if (!parsed[k]) parsed[k] = {};
-            parsed[k].headerH = Number(parsed[k].headerH ?? d[k].headerH);
-            parsed[k].pengW = Number(parsed[k].pengW ?? d[k].pengW);
-            parsed[k].pengX = Number(parsed[k].pengX ?? d[k].pengX);
-            parsed[k].pengY = Number(parsed[k].pengY ?? d[k].pengY);
-          });
-          return parsed;
-        } catch (e) {
-          return defaultTune();
-        }
-      }
-
-      function saveTune() {
-        try { localStorage.setItem(TUNE_KEY, JSON.stringify(tune)); } catch (e) {}
-      }
-
-      function applyTuneToCSS() {
-        const s = document.documentElement.style;
-
-        s.setProperty("--headerH-portrait", tune.portrait.headerH + "px");
-        s.setProperty("--headerH-landscape", tune.landscape.headerH + "px");
-
-        s.setProperty("--pengW-portrait", tune.portrait.pengW + "px");
-        s.setProperty("--pengW-landscape", tune.landscape.pengW + "px");
-
-        s.setProperty("--pengX-portrait", tune.portrait.pengX + "px");
-        s.setProperty("--pengY-portrait", tune.portrait.pengY + "px");
-
-        s.setProperty("--pengX-landscape", tune.landscape.pengX + "px");
-        s.setProperty("--pengY-landscape", tune.landscape.pengY + "px");
-      }
-
-      function setPanelUI() {
-        const ori = getOrientationName();
-        if (tuneMode) tuneMode.textContent = "stand, " + modeLabel(ori);
-
-        const v = tune[ori];
-        if (slHeader) slHeader.value = String(v.headerH);
-        if (slPengW) slPengW.value = String(v.pengW);
-        if (slPengX) slPengX.value = String(v.pengX);
-        if (slPengY) slPengY.value = String(v.pengY);
-
-        if (valHeader) valHeader.textContent = v.headerH + " px";
-        if (valPengW) valPengW.textContent = v.pengW + " px";
-        if (valPengX) valPengX.textContent = v.pengX + " px";
-        if (valPengY) valPengY.textContent = v.pengY + " px";
-      }
-
-      function hookSlider(sliderEl, valueEl, key) {
-        if (!sliderEl) return;
-        sliderEl.addEventListener("input", function () {
-          const ori = getOrientationName();
-          const n = Number(sliderEl.value);
-          tune[ori][key] = n;
-
-          if (valueEl) valueEl.textContent = n + " px";
-          applyTuneToCSS();
-          saveTune();
-        });
-      }
-
-      let tune = loadTune();
-      applyTuneToCSS();
-      setPanelUI();
-
-      if (tuneToggle && tunePanel) {
-        tuneToggle.addEventListener("click", function () {
-          tunePanel.hidden = false;
-          tuneToggle.hidden = true;
-          setPanelUI();
-        });
-      }
-      if (tuneClose && tunePanel && tuneToggle) {
-        tuneClose.addEventListener("click", function () {
-          tunePanel.hidden = true;
-          tuneToggle.hidden = false;
-        });
-      }
-
-      hookSlider(slHeader, valHeader, "headerH");
-      hookSlider(slPengW, valPengW, "pengW");
-      hookSlider(slPengX, valPengX, "pengX");
-      hookSlider(slPengY, valPengY, "pengY");
-
-      function stopPanelPropagation(el) {
-        if (!el) return;
-        ["touchstart", "touchmove", "touchend", "pointerdown", "pointermove", "pointerup"].forEach(function (evt) {
-          el.addEventListener(evt, function (e) { e.stopPropagation(); }, { passive: false });
-        });
-      }
-      stopPanelPropagation(tunePanel);
-      stopPanelPropagation(tuneToggle);
-
-      // bij draaien van het scherm sliders updaten
-      let lastOri = getOrientationName();
-      window.addEventListener("resize", function () {
-        const nowOri = getOrientationName();
-        if (nowOri !== lastOri) {
-          lastOri = nowOri;
-          setPanelUI();
-        }
-      });
-
-
-      // Levels: 1 = 3 cijfers, 2 = grote buur, 3 = kleine buur
-      let level = 1;
-      let correctStreak = 0;
-
-      // Opgave
-      let roundActive = true;
-      let visibleSlots = 3;
-      let sequence = [0, 1, 2];
-      let missingIndex = 1;
-      let missingNumber = 1;
-
-      let firstRound = true;
-
-      // Touch/recognition
-      let currentPoints = [];
-      let hasResultForCurrentTouches = false;
-
-      // iOS media unlock
-      let mediaUnlocked = false;
-
-      // Intro voice: 1x automatisch bij start level 2/3 (zonder blokkeren), daarna alleen via titel
-      const intro = { el: null, done: true, playing: false, pending: false };
-
-      function setScanState(state) {
-        scanArea.classList.remove("state-neutral", "state-scanning", "state-correct", "state-wrong");
-        if (state === "scanning") scanArea.classList.add("state-scanning");
-        else if (state === "correct") scanArea.classList.add("state-correct");
-        else if (state === "wrong") scanArea.classList.add("state-wrong");
-        else scanArea.classList.add("state-neutral");
-      }
-
-      function hideAnimations() {
-        leftAnim.classList.remove("show");
-        rightAnim.classList.remove("show");
-      }
-
-      function showSuccessAnimation() {
-        hideAnimations();
-        if (level === 3) leftAnim.classList.add("show");
-        else rightAnim.classList.add("show");
-      }
-
-      function setSlotDigit(slot, digit, isMissing) {
-        const span = slot.querySelector(".number-text");
-        slot.classList.remove("missing", "correct-pop");
-
-        if (isMissing) {
-          slot.style.backgroundImage = "none";
-          slot.classList.add("missing");
-          span.textContent = "?";
-        } else {
-          span.textContent = "";
-          slot.style.backgroundImage = "url('" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX + "')";
-          slot.setAttribute("aria-label", "cijfer " + digit);
-        }
-      }
-
-      function applyVisibleSlots() {
-        numberSlots.forEach(function (slot, idx) {
-          slot.style.display = (idx < visibleSlots) ? "flex" : "none";
-        });
-      }
-
-      function updateNumberDisplay() {
-        applyVisibleSlots();
-        for (let i = 0; i < visibleSlots; i++) {
-          const slot = numberSlots[i];
-          if (i === missingIndex) setSlotDigit(slot, sequence[i], true);
-          else setSlotDigit(slot, sequence[i], false);
-        }
-      }
-
-      function stopVoice(el) {
-        if (!el) return;
-        try { el.pause(); el.currentTime = 0; } catch (e) {}
-      }
-
-      function stopAllVoice() {
-        stopVoice(voiceGrote);
-        stopVoice(voiceKleine);
-        intro.playing = false;
-      }
-
-      function unlockAudioElement(el) {
-        if (!el) return;
-        try {
-          const oldMuted = el.muted;
-          const oldVol = el.volume;
-          el.muted = true;
-          el.volume = 0;
-          const p = el.play();
-          if (p && typeof p.then === "function") {
-            p.then(function () {
-              el.pause();
-              el.currentTime = 0;
-              el.muted = oldMuted;
-              el.volume = oldVol;
-            }).catch(function () {
-              el.pause();
-              el.currentTime = 0;
-              el.muted = oldMuted;
-              el.volume = oldVol;
-            });
-          } else {
-            el.pause();
-            el.currentTime = 0;
-            el.muted = oldMuted;
-            el.volume = oldVol;
-          }
-        } catch (e) {}
-      }
-
-      function unlockMediaOnce() {
-        if (mediaUnlocked) return;
-        mediaUnlocked = true;
-        unlockAudioElement(voiceGrote);
-        unlockAudioElement(voiceKleine);
-      }
-
-      function tryPlay(el, onFail) {
-        if (!el) return;
-        try { el.currentTime = 0; } catch (e) {}
-        const p = el.play();
-        if (p && typeof p.catch === "function") p.catch(onFail || function () {});
-      }
-
-      function setupIntroForLevel() {
-        intro.playing = false;
-        intro.pending = false;
-        intro.done = true;
-        intro.el = null;
-
-        if (level === 2) { intro.el = voiceGrote; intro.done = false; }
-        if (level === 3) { intro.el = voiceKleine; intro.done = false; }
-
-        if (intro.el) {
-          intro.pending = true;
-          try { intro.el.load(); } catch (e) {}
-        }
-      }
-
-      function startIntroNow() {
-        if (!intro.el) return;
-        if (intro.done) return;
-        if (intro.playing) return;
-
-        intro.pending = false;
-        intro.playing = true;
-
-        tryPlay(intro.el, function () {
-          intro.playing = false;
-          intro.pending = true;
-        });
-      }
-
-      if (voiceGrote) {
-        voiceGrote.addEventListener("ended", function () {
-          if (intro.el === voiceGrote) { intro.playing = false; intro.done = true; }
-        });
-      }
-      if (voiceKleine) {
-        voiceKleine.addEventListener("ended", function () {
-          if (intro.el === voiceKleine) { intro.playing = false; intro.done = true; }
-        });
-      }
-
-      function setLevelUI() {
-        hideAnimations();
-        gameEl.dataset.level = String(level);
-
-        // Labels in dezelfde stijl als het kader
-        titleIcon.textContent = "";
-        if (level === 1) titleText.textContent = "welk cijfer mist?";
-        else if (level === 2) titleText.textContent = "grote buur";
-        else titleText.textContent = "kleine buur";
-
-        // Gebruik alleen assets die zeker bestaan in dit pakket
-        rightAnim.src = "goed.gif";
-        leftAnim.src = "goed.gif";
-        syncPenguinVisibleSide();
-      }
-
-
-      function syncPenguinVisibleSide() {
-        const showLeft = (level === 3);
-        if (leftAnim) leftAnim.style.display = showLeft ? "block" : "none";
-        if (rightAnim) rightAnim.style.display = showLeft ? "none" : "block";
-      }
-
-      function newRound() {
-        roundActive = true;
-        feedbackSymbol.textContent = "";
-        hideAnimations();
-        setScanState("neutral");
-        numberRow.classList.remove("shake");
-        hasResultForCurrentTouches = false;
-
-        if (level === 1) {
-          // Startbeeld zoals in het voorbeeld: 3 4 ?
-          if (firstRound) {
-            sequence = [3, 4, 5];
-            visibleSlots = 3;
-            missingIndex = 2;
-            missingNumber = sequence[missingIndex];
-            firstRound = false;
-          } else {
-            const base = Math.floor(Math.random() * 8);
-            sequence = [base, base + 1, base + 2];
-            visibleSlots = 3;
-
-            missingIndex = Math.floor(Math.random() * 3);
-            missingNumber = sequence[missingIndex];
-          }
-        } else if (level === 2) {
-          const start = Math.floor(Math.random() * 9); // 0..8
-          const target = start + 1;                    // 1..9
-          sequence = [start, target];
-          visibleSlots = 2;
-
-          missingIndex = 1;       // ? rechts
-          missingNumber = target;
-        } else {
-          const shown = 1 + Math.floor(Math.random() * 9); // 1..9
-          const answer = shown - 1;                        // 0..8
-          sequence = [answer, shown];
-          visibleSlots = 2;
-
-          missingIndex = 0;       // ? links
-          missingNumber = answer;
-        }
-
-        numberRow.classList.remove("row-appear");
-        void numberRow.offsetWidth;
-        numberRow.classList.add("row-appear");
-
-        updateNumberDisplay();
-      }
-
-      function goToLevel(nextLevel) {
-        level = nextLevel;
-        correctStreak = 0;
-
-        setupIntroForLevel();
-        setLevelUI();
-        newRound();
-
-        // ✅ meteen proberen te starten (werkt meestal na "unlock")
-        ensureAudio();
-        unlockMediaOnce();
-        startIntroNow();
-      }
-
-      function handleRecognitionResult(digit) {
-        if (!roundActive) return;
-
-        if (digit === missingNumber) {
-          roundActive = false;
-          setScanState("correct");
-          feedbackSymbol.textContent = "";
-          showSuccessAnimation();
-          playSuccessSound();
-
-          const missingSlot = numberSlots[missingIndex];
-          setSlotDigit(missingSlot, missingNumber, false);
-          missingSlot.classList.add("correct-pop");
-
-          correctStreak += 1;
-
-          // ✅ 7x achter elkaar goed -> volgend level (1->2->3)
-          if (correctStreak >= 7) {
-            if (level === 1) { setTimeout(function () { goToLevel(2); }, 1200); return; }
-            if (level === 2) { setTimeout(function () { goToLevel(3); }, 1200); return; }
-            // level 3 blijft doorlopen
-            correctStreak = 0;
-          }
-
-          setTimeout(function () { newRound(); }, 1200);
-        } else {
-          setScanState("wrong");
-          hideAnimations();
-          feedbackSymbol.textContent = "✖";
-          playErrorSound();
-          numberRow.classList.add("shake");
-          correctStreak = 0;
-
-          setTimeout(function () {
-            numberRow.classList.remove("shake");
-            if (currentPoints.length === 0) setScanState("neutral");
-            else setScanState("scanning");
-          }, 450);
-        }
-      }
-
-      function getPointsFromTouches(touchList) {
-        const rect = scanArea.getBoundingClientRect();
-        const points = [];
-        for (let i = 0; i < touchList.length; i++) {
-          const t = touchList[i];
-          const x = t.clientX;
-          const y = t.clientY;
-          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-            points.push({ x: x, y: y });
-          }
-        }
-        return points;
-      }
-
-      function handleTouchEvent(e) {
-        ensureAudio();
-        unlockMediaOnce();
-
-        // ✅ als intro ooit faalde: bij elke touch opnieuw proberen (zonder gameplay te blokkeren)
-        if (intro.pending && !intro.playing && !intro.done) startIntroNow();
-
-        const touches = e.touches || [];
-        currentPoints = getPointsFromTouches(touches);
-
-        if (currentPoints.length === 0) {
-          hasResultForCurrentTouches = false;
-          setScanState("neutral");
-          return;
-        }
-
-        if (currentPoints.length !== expectedTouchPoints) {
-          hasResultForCurrentTouches = false;
-          setScanState("scanning");
-          return;
-        }
-
-        setScanState("scanning");
-
-        if (!hasResultForCurrentTouches && roundActive) {
-          const digit = recognizeDigit(currentPoints);
-          if (digit !== null && typeof digit === "number") {
-            hasResultForCurrentTouches = true;
-            handleRecognitionResult(digit);
-          }
-        }
-      }
-
-      function addTouchListeners(elem) {
-        ["touchstart", "touchmove", "touchend", "touchcancel"].forEach(function (type) {
-          elem.addEventListener(type, handleTouchEvent, { passive: true });
-        });
-      }
-
-      // ✅ Titelknop: meteen afspelen (en je kunt doorspelen)
-      let lastTitleTouch = 0;
-
-      function playTitleVoiceNow() {
-        ensureAudio();
-        unlockMediaOnce();
-
-        // meteen starten: stop eventueel lopende stem en speel opnieuw
-        stopAllVoice();
-
-        if (level === 2) {
-          intro.el = voiceGrote;
-          intro.done = true; // intro is al geweest; dit is handmatig
-          intro.playing = false;
-          intro.pending = false;
-          tryPlay(voiceGrote);
-        } else if (level === 3) {
-          intro.el = voiceKleine;
-          intro.done = true;
-          intro.playing = false;
-          intro.pending = false;
-          tryPlay(voiceKleine);
-        }
-      }
-
-      titleBadge.addEventListener("touchstart", function () {
-        lastTitleTouch = Date.now();
-        playTitleVoiceNow();
-      }, { passive: true });
-
-      titleBadge.addEventListener("click", function () {
-        if (Date.now() - lastTitleTouch < 500) return;
-        playTitleVoiceNow();
-      });
-
-      // Start level 1
-      setupIntroForLevel();
-      setLevelUI();
-      newRound();
-
-      addTouchListeners(scanArea);
-
-      fetch("calibration.json")
-        .then(function (r) { return r.json(); })
-        .then(function (data) { initCalibration(data); })
-        .catch(function () { /* geen debug in UI */ });
+    toggle.addEventListener("click", () => {
+      const isOpen = !panel.classList.contains("hidden");
+      setOpen(!isOpen);
     });
-  
-  </script>
+
+    closeBtn.addEventListener("click", () => setOpen(false));
+
+    resetBtn.addEventListener("click", () => {
+      const mode = currentMode();
+      tune[mode] = structuredClone(defaults[mode]);
+      applyTune();
+      saveTune();
+      syncTunerMode();
+    });
+
+    const ids = ["topbar","dX","dY","pS","pX","pY"];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if(!el) return;
+
+      el.addEventListener("input", () => {
+        const mode = currentMode();
+        const v = parseInt(el.value, 10) || 0;
+
+        if(id === "topbar") tune[mode].topBarH = v;
+        if(id === "dX") tune[mode].dX = v;
+        if(id === "dY") tune[mode].dY = v;
+        if(id === "pS") tune[mode].pS = v;
+        if(id === "pX") tune[mode].pX = v;
+        if(id === "pY") tune[mode].pY = v;
+
+        applyTune();
+        saveTune();
+        updateLabels();
+      }, { passive:true });
+    });
+
+    setOpen(true);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    applyTune();
+    bindTuner();
+    setLayout();
+  });
+
+  window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
+
+  const mql = window.matchMedia("(orientation: portrait)");
+  if(mql.addEventListener) mql.addEventListener("change", setLayout);
+  else if(mql.addListener) mql.addListener(setLayout);
+</script>
 </body>
 </html>
