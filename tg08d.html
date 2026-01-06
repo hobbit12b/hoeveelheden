@@ -14,8 +14,8 @@
   --purpleInner: #6230AD;
   --orange: #EA7331;
   --dash: #DA7645;
-  --tile: #FBE7DE;
-  --tileQ: #FADCD4;
+  --tile: #FFFFFF;
+  --tileQ: #FFFFFF;
   --tileStroke: rgba(204,129,87,0.55);
   --shadow: rgba(0,0,0,0.10);
   --white: #FFFFFF;
@@ -25,22 +25,18 @@
 
   --titleBarH: 72px;
   --titleBarW: 72px;
-
-  --digitsXPortrait: 0px;
-  --digitsYPortrait: 0px;
-  --digitsXLandscape: 0px;
-  --digitsYLandscape: 0px;
-
-  --topBarHPortrait: 172px;
-  --topBarHLandscape: 122px;
-
-  --penguinSizePortrait: 88px;
-    --penguinXPortrait: 0px;
-  --penguinYPortrait: 0px;
-
-  --penguinSizeLandscape: 92px;
-    --penguinXLandscape: 0px;
-  --penguinYLandscape: 0px;
+  --digitsXPortrait: -20px;
+  --digitsYPortrait: -20px;
+  --digitsXLandscape: 16px;
+  --digitsYLandscape: -26px;
+  --topBarHPortrait: 292px;
+  --topBarHLandscape: 148px;
+  --penguinSizePortrait: 165px;
+  --penguinXPortrait: 7px;
+  --penguinYPortrait: 20px;
+  --penguinSizeLandscape: 159px;
+  --penguinXLandscape: -156px;
+  --penguinYLandscape: -43px;
 }
 
 *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,8 +52,8 @@ body{
   height: 100dvh;
   width: 100dvw;
   background: var(--bg);
-  border: 4px solid var(--purple);
-  box-shadow: inset 0 0 0 2px var(--purpleInner);
+  border: none;
+  box-shadow: none;
   overflow: hidden;
   padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 10px)
            calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
@@ -92,6 +88,8 @@ body{
 .landscape .penguin{
   width: var(--penguinSizeLandscape);
   height: auto;
+  transform: scaleX(-1);
+  transform-origin: center;
 }
 .landscape .penguinWrap{
   transform: translate(var(--penguinXLandscape), var(--penguinYLandscape));
@@ -140,12 +138,20 @@ body{
 }
 
 /* Portret: stippellijn op de grens van de bovenbalk */
-.portrait .separatorDash{
-  position: absolute;
+.portrait .separatorDash{ display:none; }
+
+/* Portret: duidelijke afscheiding tussen bovenbalk en speelveld */
+.portrait .mainFill::before{
+  content:"";
+  position:absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: 0;
+  border-top: 4px dashed var(--dash);
+  opacity: 0.95;
+  pointer-events:none;
 }
+
 
 /* Speelveld, in liggend teken ik alleen boven en links de stippellijn */
 .playArea{
@@ -168,14 +174,15 @@ body{
 
 /* Portrait layout */
 .portrait{
-  --tileSize: clamp(58px, 10.8vmin, 86px);
+  --tileSize: clamp(66px, 12.5vmin, 98px);
 }
 .portrait .titlePill{
   position: absolute;
   top: calc(env(safe-area-inset-top, 0px) + 12px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(78vw, 720px);
+  left: calc(env(safe-area-inset-left, 0px) + 10px + var(--homeSize) + 14px);
+  right: calc(env(safe-area-inset-right, 0px) + 10px + 14px);
+  transform: none;
+  width: auto;
   height: var(--titleBarH);
   background: var(--orange);
   border-radius: 18px;
@@ -222,7 +229,7 @@ body{
 
 /* Landscape layout */
 .landscape{
-  --tileSize: clamp(52px, 10vmin, 78px);
+  --tileSize: clamp(60px, 11.5vmin, 92px);
 }
 .landscape .layout{
   position: relative;
@@ -232,19 +239,20 @@ body{
 }
 .landscape .sidebar{
   width: var(--titleBarW);
-  padding-top: clamp(72px, 11.5vmin, 110px);
   display:flex;
-  justify-content:center;
+  align-items:stretch;
 }
 .landscape .sidePill{
   width: var(--titleBarW);
-  height: min(70vh, 620px);
   background: var(--orange);
   border-radius: 18px;
   display:flex;
   align-items:center;
   justify-content:center;
   box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+  margin-top: calc(var(--homeSize) + env(safe-area-inset-top, 0px) + 10px);
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  flex: 1;
 }
 .landscape .sidePill span{
   color:#fff;
@@ -409,7 +417,7 @@ body{
             <img src="./marbotic3.png" alt="3" />
           </div>
           <div class="digitTile" title="4">
-            <div class="digit4">4</div>
+            <img src="./marbotic4.png" alt="4" />
           </div>
           <div class="digitTile question" title="?">
             <div class="questionMark">?</div>
@@ -444,8 +452,8 @@ body{
               <img src="./marbotic3.png" alt="3" />
             </div>
             <div class="digitTile" title="4">
-              <div class="digit4">4</div>
-            </div>
+            <img src="./marbotic4.png" alt="4" />
+          </div>
             <div class="digitTile question" title="?">
               <div class="questionMark">?</div>
             </div>
@@ -474,22 +482,22 @@ body{
       <p class="tunerHint">Wijzig waarden, draai de iPad om om ook liggend af te stellen</p>
 
       <div class="tunerRow"><label for="topbar">bovenbalk hoogte</label><div class="tunerVal" id="topbarVal">0 px</div></div>
-<input id="topbar" type="range" min="90" max="240" step="1" value="172" />
+<input id="topbar" type="range" min="90" max="340" step="1" value="292" />
 
 <div class="tunerRow"><label for="dX">cijfers blok positie X</label><div class="tunerVal" id="dXVal">0 px</div></div>
-<input id="dX" type="range" min="-240" max="240" step="1" value="0" />
+<input id="dX" type="range" min="-240" max="240" step="1" value="-20" />
 
 <div class="tunerRow"><label for="dY">cijfers blok positie Y</label><div class="tunerVal" id="dYVal">0 px</div></div>
-<input id="dY" type="range" min="-240" max="240" step="1" value="0" />
+<input id="dY" type="range" min="-240" max="240" step="1" value="-20" />
 
 <div class="tunerRow"><label for="pS">pinguin grootte</label><div class="tunerVal" id="pSVal">0 px</div></div>
-<input id="pS" type="range" min="40" max="240" step="1" value="88" />
+<input id="pS" type="range" min="40" max="260" step="1" value="165" />
 
 <div class="tunerRow"><label for="pX">pinguin positie X</label><div class="tunerVal" id="pXVal">0 px</div></div>
-<input id="pX" type="range" min="-180" max="180" step="1" value="0" />
+<input id="pX" type="range" min="-180" max="180" step="1" value="7" />
 
 <div class="tunerRow"><label for="pY">pinguin positie Y</label><div class="tunerVal" id="pYVal">0 px</div></div>
-<input id="pY" type="range" min="-180" max="180" step="1" value="0" />
+<input id="pY" type="range" min="-180" max="180" step="1" value="20" />
 
       <div class="tunerActions">
         <button class="tunerBtn secondary" id="resetBtn" type="button">reset</button>
@@ -526,18 +534,18 @@ body{
 
     const structuredClone = window.structuredClone || ((obj) => JSON.parse(JSON.stringify(obj)));
 
-  const STORE_KEY = "tg08_tune_v2";
+  const STORE_KEY = "tg08_tune_v4";
 
   const defaults = {
-    portrait:  { topBarH: 172, dX: 0, dY: 0, pS: 88, pX: 0, pY: 0 },
-    landscape: { topBarH: 122, dX: 0, dY: 0, pS: 92, pX: 0, pY: 0 }
+    portrait:  { topBarH: 292, dX: -20, dY: -20, pS: 165, pX: 7, pY: 20 },
+    landscape: { topBarH: 148, dX: 16, dY: -26, pS: 159, pX: -156, pY: -43 }
   };
 
   let tune = loadTune();
 
   function loadTune(){
     try{
-      const raw = localStorage.getItem(STORE_KEY) || localStorage.getItem("tg08_tune_v1");
+      const raw = localStorage.getItem(STORE_KEY);
       if(!raw) return structuredClone(defaults);
       const parsed = JSON.parse(raw);
 
@@ -598,9 +606,9 @@ body{
 
     const topbar = document.getElementById("topbar");
     if(mode === "portrait"){
-      topbar.min = 90; topbar.max = 260;
+      topbar.min = 90; topbar.max = 340;
     }else{
-      topbar.min = 70; topbar.max = 200;
+      topbar.min = 70; topbar.max = 260;
     }
 
     const t = tune[mode];
