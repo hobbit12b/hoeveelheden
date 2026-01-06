@@ -37,6 +37,7 @@
   --penguinSizeLandscape: 159px;
   --penguinXLandscape: -156px;
   --penguinYLandscape: -43px;
+  --penguinFadeMs: 0.5s;
 }
 
 *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -68,7 +69,11 @@ body{
   border: none;
   background: transparent;
   padding: 0;
+  z-index: 60;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
+
 .homeBtn img{ width:100%; height:100%; display:block; }
 
 .penguin{
@@ -77,10 +82,15 @@ body{
   filter: drop-shadow(0 2px 0 rgba(255,255,255,0.65));
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.12s ease;
+  transition: opacity var(--penguinFadeMs, 0.5s) ease;
+  pointer-events: none;
 }
 .penguin.is-visible{
   opacity: 1;
+  visibility: visible;
+}
+.penguin.is-hiding{
+  opacity: 0;
   visibility: visible;
 }
 
@@ -297,6 +307,28 @@ body{
   box-shadow: 0 8px 0 rgba(255,255,255,0.35);
   transform: translate(var(--digitsXLandscape), var(--digitsYLandscape));
 }
+
+/* feedback: bij goed antwoord kleurt het vlak achter de cijfers groen (zonder randen te veranderen) */
+.portrait .digits{ position: relative; }
+.portrait .digits::before{
+  content:"";
+  position:absolute;
+  left: -8px;
+  right: -8px;
+  top: -8px;
+  bottom: -8px;
+  border-radius: 22px;
+  background: transparent;
+  transition: background 0.18s ease;
+  z-index: 0;
+}
+.portrait .digits > .digitTile{ position: relative; z-index: 1; }
+
+.landscape .digitsBubble{ transition: background 0.18s ease; }
+
+.portrait .digits.digitsBgCorrect::before{ background: rgba(76,175,80,0.22); }
+.landscape .digitsBubble.digitsBgCorrect{ background: rgba(76,175,80,0.22); }
+
 .landscape .penguinWrap{
   position:absolute;
   right: clamp(6px, 1.2vmin, 12px);
@@ -482,7 +514,7 @@ body{
   height: 36px;
   margin: 0;
   background: transparent;
-  pointer-events: auto;
+  pointer-events: none;
 }
 .dualRange input[type="range"]::-webkit-slider-runnable-track{
   height: 8px;
@@ -495,6 +527,7 @@ body{
 .dualRange input[type="range"]::-webkit-slider-thumb{
   -webkit-appearance: none;
   appearance: none;
+  pointer-events: auto;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -504,6 +537,7 @@ body{
   margin-top: -7px;
 }
 .dualRange input[type="range"]::-moz-range-thumb{
+  pointer-events: auto;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -561,18 +595,6 @@ body{
   border-radius: inherit;
   pointer-events:auto;
 }
-#gameArea::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: inherit;
-  pointer-events:none;
-  opacity:0;
-  transition: opacity 0.18s ease;
-}
-#gameArea.state-scanning::after{ opacity:0.18; background: rgba(138,84,198,0.10); }
-#gameArea.state-correct::after{ opacity:0.26; background: rgba(76,175,80,0.18); }
-#gameArea.state-wrong::after{ opacity:0.26; background: rgba(229,57,53,0.18); }
 
 /* tuner alleen zichtbaar via lang indrukken */
 .tuner{ display:none; }
@@ -701,17 +723,18 @@ body{
         <p class="settingsLabel">minimum en maximum</p>
 
         <div class="rangeRow">
-          <label>bereik</label>
-          <div class="rangeVal"><span id="minVal">0</span> tot <span id="maxVal">9</span></div>
+          <label for="rangeMin">minimum</label>
+          <div class="rangeVal" id="minVal">0</div>
         </div>
+        <input id="rangeMin" type="range" min="0" max="9" step="1" value="0" aria-label="minimum" />
 
-        <div class="dualRange" id="dualRange">
-          <div class="dualRail" aria-hidden="true"></div>
-          <div class="dualFill" id="rangeFill" aria-hidden="true"></div>
-          <input id="rangeMin" type="range" min="0" max="9" step="1" value="0" aria-label="minimum" />
-          <input id="rangeMax" type="range" min="0" max="9" step="1" value="9" aria-label="maximum" />
+        <div class="rangeRow" style="margin-top: 10px;">
+          <label for="rangeMax">maximum</label>
+          <div class="rangeVal" id="maxVal">9</div>
         </div>
-        <div class="settingsHint">sleep de linker knop voor minimum en de rechter knop voor maximum</div>
+        <input id="rangeMax" type="range" min="0" max="9" step="1" value="9" aria-label="maximum" />
+
+        <div class="settingsHint">sleep beide sliders: minimum mag niet groter zijn dan maximum</div>
       </div>
 
       <div class="settingsBlock">
@@ -719,9 +742,9 @@ body{
 
         <div class="rangeRow">
           <label for="penguinRange">seconden</label>
-          <div class="rangeVal" id="penguinVal">1.2</div>
+          <div class="rangeVal" id="penguinVal">2.5</div>
         </div>
-        <input id="penguinRange" type="range" min="600" max="4000" step="100" value="1200" />
+        <input id="penguinRange" type="range" min="600" max="8000" step="100" value="2500" />
       </div>
 
 <div class="tunerActions">
@@ -735,7 +758,43 @@ body{
 
 <script>
   function goHome(){
-    try{ window.location.href = "index.html"; }catch(e){ console.log("Home", e); }
+    try{ window.location.href = "index.html"; }
+  function bindHomeButtons(){
+    let lastTap = 0;
+
+    function nav(e){
+      const now = Date.now();
+      if(now - lastTap < 450) return;
+      lastTap = now;
+
+      try{
+        if(e){
+          if(e.cancelable) e.preventDefault();
+          if(e.stopPropagation) e.stopPropagation();
+        }
+      }catch(_){}
+
+      goHome();
+    }
+
+    document.querySelectorAll(".homeBtn").forEach(btn => {
+      // touch
+      btn.addEventListener("touchstart", nav, { passive:false });
+      // pointer (moderne browsers)
+      btn.addEventListener("pointerdown", nav);
+      // fallback
+      btn.addEventListener("mousedown", nav);
+      // en voor de zekerheid de click
+      btn.addEventListener("click", nav);
+    });
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", bindHomeButtons);
+  }else{
+    bindHomeButtons();
+  }
+catch(e){ console.log("Home", e); }
   }
 
   function isPortrait(){
@@ -758,25 +817,35 @@ body{
   }
 
   
-// voorkom dubbel tik zoomen en pinch zoomen
+// voorkom dubbel tik zoomen, zonder Marbotic multi touch te blokkeren
 (function preventZoom(){
   let lastTouchEnd = 0;
+
+  // dubbel tik
   document.addEventListener("touchend", function(e){
     const now = Date.now();
-    if(now - lastTouchEnd <= 350){
+    if(now - lastTouchEnd <= 300){
       e.preventDefault();
     }
     lastTouchEnd = now;
   }, { passive:false });
 
+  // extra zekerheid
+  document.addEventListener("dblclick", function(e){
+    e.preventDefault();
+  }, { passive:false });
+
+  // iOS pinch, dit blokkeert het zoomen, Marbotic blijft werken
   ["gesturestart","gesturechange","gestureend"].forEach(evt => {
     document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
   });
 })();
 
+
+
 (function(){
-    const STORE_KEY = "tg08_settings_v1";
-    const defaults = { allowedSlots: [true, true, true], min: 0, max: 9, penguinMs: 1200 };
+    const STORE_KEY = "tg08_settings_v2";
+    const defaults = { allowedSlots: [true, true, true], min: 0, max: 9, penguinMs: 2500 };
 
     function safeClone(o){ return JSON.parse(JSON.stringify(o)); }
     function clampInt(v, lo, hi){
@@ -794,7 +863,7 @@ body{
         }
         out.min = clampInt(s.min, 0, 9);
         out.max = clampInt(s.max, 0, 9);
-        out.penguinMs = clampInt(s.penguinMs, 600, 4000);
+        out.penguinMs = clampInt(s.penguinMs, 600, 8000);
       }
       return out;
     }
@@ -897,7 +966,7 @@ body{
       if(rangeMax) rangeMax.value = String(clampInt(s.max, 0, 9));
 
       const penguinRange = document.getElementById("penguinRange");
-      if(penguinRange) penguinRange.value = String(clampInt(s.penguinMs, 600, 4000));
+      if(penguinRange) penguinRange.value = String(clampInt(s.penguinMs, 600, 8000));
 
       updateRangeLabels();
     }
@@ -966,7 +1035,7 @@ body{
 
       if(penguinRange){
         penguinRange.addEventListener("input", () => {
-          const ms = clampInt(penguinRange.value, 600, 4000);
+          const ms = clampInt(penguinRange.value, 600, 8000);
           penguinRange.value = String(ms);
           window.__tg08.settings.penguinMs = ms;
           window.__tg08.saveSettings();
@@ -1418,7 +1487,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     if(!Number.isFinite(ms)) ms = 1200;
     ms = Math.round(ms);
     if(ms < 600) ms = 600;
-    if(ms > 4000) ms = 4000;
+    if(ms > 8000) ms = 8000;
     return ms;
   }
 
@@ -1467,13 +1536,19 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     return { min, max, allowedSlots };
   }
 
+  function setDigitsCorrect(isCorrect){
+    const on = !!isCorrect;
+    ["digitsPortrait","digitsLandscape"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle("digitsBgCorrect", on);
+    });
+  }
+
   function setScanState(state){
-    const area = document.getElementById("gameArea");
-    if(!area) return;
-    area.classList.remove("state-scanning","state-correct","state-wrong");
-    if(state === "scanning") area.classList.add("state-scanning");
-    if(state === "correct") area.classList.add("state-correct");
-    if(state === "wrong") area.classList.add("state-wrong");
+    // scanvlak en randen blijven neutraal,
+    // alleen het vlak achter de cijfers krijgt feedback bij goed antwoord
+    if(state === "correct") setDigitsCorrect(true);
+    else setDigitsCorrect(false);
   }
 
   function tilesForMode(mode){
@@ -1533,8 +1608,31 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     });
   }
 
-  function hidePenguin(){
-    document.querySelectorAll(".penguin").forEach(img => img.classList.remove("is-visible"));
+  const PENGUIN_FADE_MS = 500;
+
+  function setPenguinFadeVar(){
+    try{
+      document.documentElement.style.setProperty("--penguinFadeMs", (PENGUIN_FADE_MS / 1000) + "s");
+    }catch(e){}
+  }
+
+  function hidePenguinImmediate(){
+    document.querySelectorAll(".penguin").forEach(img => img.classList.remove("is-visible","is-hiding"));
+  }
+
+  function hidePenguinFade(){
+    const imgs = Array.from(document.querySelectorAll(".penguin"));
+    imgs.forEach(img => {
+      img.classList.remove("is-visible");
+      img.classList.add("is-hiding");
+    });
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        imgs.forEach(img => img.classList.remove("is-hiding"));
+        resolve();
+      }, PENGUIN_FADE_MS);
+    });
   }
 
   function showPenguinOnce(){
@@ -1545,14 +1643,18 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
 
       const clone = img.cloneNode(true);
       clone.setAttribute("src", base);
+      clone.style.transition = "none";
+      clone.classList.remove("is-hiding");
       clone.classList.add("is-visible");
 
       // vervang, dan start de gif opnieuw vanaf frame 1
       img.replaceWith(clone);
-    });
+      requestAnimationFrame(() => { clone.style.transition = ""; });
+});
 
     return new Promise(resolve => setTimeout(resolve, getPenguinMs()));
   }
+
 
   function pickMissingIndex(allowedSlots){
     const options = [];
@@ -1573,7 +1675,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     roundActive = true;
     hasResultForCurrentTouches = false;
 
-    hidePenguin();
+    hidePenguinImmediate();
 
     const cfg = getConfig();
     const baseMin = cfg.min;
@@ -1622,15 +1724,13 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
       playSuccessSound();
       revealCorrect();
 
-      showPenguinOnce().then(() => {
-        hidePenguin();
-        isAnimating = false;
-
-        if(pendingNewRound) newRound();
-        else newRound();
-      });
-
-      return;
+      showPenguinOnce()
+        .then(() => hidePenguinFade())
+        .then(() => {
+          isAnimating = false;
+          newRound();
+        });
+return;
     }
 
     setScanState("wrong");
@@ -1701,9 +1801,8 @@ function startScanRetry(){
   }
 
   function handleTouchEvent(e){
-    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
-    if(isAnimating){ stopScanRetry(); return; }
-
+    // belangrijke regel: releases altijd verwerken
+    // ook als er animaties lopen of het instellingenmenu open staat
     ensureAudio();
     const touches = e.touches || [];
     currentPoints = getPointsFromTouches(touches);
@@ -1715,6 +1814,9 @@ function startScanRetry(){
       setScanState(null);
       return;
     }
+
+    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
+    if(isAnimating){ stopScanRetry(); return; }
 
     if(mustReleaseBetweenRounds){
       stopScanRetry();
@@ -1731,6 +1833,48 @@ function startScanRetry(){
 
     setScanState("scanning");
 
+    // direct proberen, zodat een eerste "tik" ook meteen scant
+    if(!hasResultForCurrentTouches && roundActive){
+      const digit = recognizeDigit(currentPoints);
+      if(digit !== null && typeof digit === "number"){
+        hasResultForCurrentTouches = true;
+        handleRecognitionResult(digit);
+        stopScanRetry();
+        return;
+      }
+    }
+
+    // als de punten net bewegen of de timing krap is, blijf kort proberen
+    startScanRetry();
+  }
+
+    if(mustReleaseBetweenRounds){
+      stopScanRetry();
+      setScanState(null);
+      return;
+    }
+
+    if(currentPoints.length !== expectedTouchPoints){
+      stopScanRetry();
+      hasResultForCurrentTouches = false;
+      setScanState("scanning");
+      return;
+    }
+
+    setScanState("scanning");
+
+    // direct proberen, zodat een eerste "tik" ook meteen scant
+    if(!hasResultForCurrentTouches && roundActive){
+      const digit = recognizeDigit(currentPoints);
+      if(digit !== null && typeof digit === "number"){
+        hasResultForCurrentTouches = true;
+        handleRecognitionResult(digit);
+        stopScanRetry();
+        return;
+      }
+    }
+
+    // als de punten net bewegen of de timing krap is, blijf kort proberen
     startScanRetry();
   }
 
@@ -1789,7 +1933,8 @@ function startScanRetry(){
       if(img && img.decode) img.decode().catch(() => {});
     });
 
-    hidePenguin();
+    setPenguinFadeVar();
+    hidePenguinImmediate();
 
     window.__tg08 = window.__tg08 || {};
     window.__tg08.requestNewRound = () => newRound();
