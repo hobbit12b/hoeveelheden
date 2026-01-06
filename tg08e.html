@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#FDEEE9" />
+  <title>spelkader tg08</title>
+  <style>
+:root{
+  --bg: #FDEEE9;
+  --purple: #8A54C6;
+  --purpleInner: #6230AD;
+  --orange: #EA7331;
+  --dash: #DA7645;
+  --tile: #FBE7DE;
+  --tileQ: #FADCD4;
+  --tileStroke: rgba(204,129,87,0.55);
+  --shadow: rgba(0,0,0,0.10);
+  --white: #FFFFFF;
+
+  /* Afstelling */
+  --homeSize: 72px;
+
+  --topBarHPortrait: 172px;
+  --topBarHLandscape: 122px;
+
+  --penguinWPortrait: 88px;
+  --penguinHPortrait: 88px;
+  --penguinXPortrait: 0px;
+  --penguinYPortrait: 0px;
+
+  --penguinWLandscape: 92px;
+  --penguinHLandscape: 92px;
+  --penguinXLandscape: 0px;
+  --penguinYLandscape: 0px;
+}
+
+*{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body{ height:100%; width:100%; margin:0; padding:0; background: var(--bg); overflow:hidden; }
+body{
+  font-family: system-ui, -apple-system, "Avenir Next", "Arial Rounded MT Bold", Arial, sans-serif;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.frame{
+  position: relative;
+  height: 100dvh;
+  width: 100dvw;
+  background: var(--bg);
+  border: 4px solid var(--purple);
+  box-shadow: inset 0 0 0 2px var(--purpleInner);
+  overflow: hidden;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 10px)
+           calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
+}
+
+.homeBtn{
+  position:absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: calc(env(safe-area-inset-left, 0px) + 10px);
+  width: var(--homeSize);
+  height: var(--homeSize);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.homeBtn img{ width:100%; height:100%; display:block; }
+
+.penguin{
+  display:block;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 0 rgba(255,255,255,0.65));
+}
+
+/* Portret pinguin tuning via transform zodat de cijfers niet verspringen */
+.portrait .penguin{
+  width: var(--penguinWPortrait);
+  height: var(--penguinHPortrait);
+  transform: translate(var(--penguinXPortrait), var(--penguinYPortrait));
+}
+
+/* Liggend pinguin tuning op de wrapper, zodat rechtsboven anker stabiel blijft */
+.landscape .penguin{
+  width: var(--penguinWLandscape);
+  height: var(--penguinHLandscape);
+}
+.landscape .penguinWrap{
+  transform: translate(var(--penguinXLandscape), var(--penguinYLandscape));
+}
+
+.digitTile{
+  width: var(--tileSize);
+  height: var(--tileSize);
+  border-radius: calc(var(--tileSize) * 0.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: var(--tile);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.6), 0 10px 20px rgba(0,0,0,0.06);
+  border: 2px solid rgba(204,129,87,0.15);
+}
+.digitTile img{ width: 80%; height: auto; }
+
+.digit4{
+  font-weight: 900;
+  font-size: calc(var(--tileSize) * 0.80);
+  line-height: 1;
+  color: #173D8C;
+  -webkit-text-stroke: calc(var(--tileSize) * 0.08) #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgba(0,0,0,0.06);
+}
+
+.digitTile.question{
+  background: var(--tileQ);
+  border: 3px dashed rgba(218,118,69,0.65);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.55), 0 10px 20px rgba(0,0,0,0.05);
+}
+.questionMark{
+  font-weight: 900;
+  font-size: calc(var(--tileSize) * 0.62);
+  color: rgba(184, 106, 80, 0.60);
+  -webkit-text-stroke: calc(var(--tileSize) * 0.03) rgba(255,255,255,0.75);
+}
+
+.separatorDash{
+  width: 100%;
+  height: 0;
+  border-top: 4px dashed var(--dash);
+  opacity: 0.95;
+}
+
+/* Speelveld, in liggend teken ik alleen boven en links de stippellijn */
+.playArea{
+  position: relative;
+  background: var(--white);
+  border: none;
+  border-radius: 28px;
+  overflow: hidden;
+}
+.landscape .playArea::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-top: 4px dashed var(--dash);
+  border-left: 4px dashed var(--dash);
+  border-top-left-radius: inherit;
+  pointer-events:none;
+  opacity: 0.95;
+}
+
+/* Portrait layout */
+.portrait{
+  --tileSize: clamp(58px, 10.8vmin, 86px);
+}
+.portrait .titlePill{
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(78vw, 720px);
+  height: clamp(40px, 7.2vmin, 62px);
+  background: var(--orange);
+  border-radius: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight: 900;
+  font-size: clamp(18px, 3.4vmin, 30px);
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+}
+.portrait .headerArea{
+  position: relative;
+  height: var(--topBarHPortrait);
+  min-height: 128px;
+  padding-top: clamp(64px, 10vmin, 92px);
+  padding-left: clamp(64px, 10vmin, 86px);
+  padding-right: clamp(18px, 4vmin, 34px);
+}
+.portrait .row2{
+  display:flex;
+  align-items:flex-end;
+  gap: clamp(10px, 2.4vmin, 18px);
+}
+.portrait .digits{
+  display:flex;
+  align-items:center;
+  gap: clamp(10px, 2.2vmin, 18px);
+  margin-top: clamp(12px, 2.2vmin, 18px);
+}
+.portrait .mainFill{
+  position:absolute;
+  left: 0; right: 0;
+  top: var(--topBarHPortrait);
+  bottom: 0;
+  background: var(--white);
+}
+
+.gameArea{ position:absolute; inset:0; width:100%; height:100%; overflow:hidden; }
+#gameHostPortrait{ position:absolute; }
+#gameHostLandscape{ position:absolute; }
+
+/* Landscape layout */
+.landscape{
+  --tileSize: clamp(52px, 10vmin, 78px);
+}
+.landscape .layout{
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display:flex;
+}
+.landscape .sidebar{
+  width: clamp(66px, 10.5vmin, 96px);
+  padding-top: clamp(72px, 11.5vmin, 110px);
+  display:flex;
+  justify-content:center;
+}
+.landscape .sidePill{
+  width: clamp(50px, 8.5vmin, 74px);
+  height: min(70vh, 620px);
+  background: var(--orange);
+  border-radius: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+}
+.landscape .sidePill span{
+  color:#fff;
+  font-weight: 900;
+  font-size: clamp(18px, 3.2vmin, 28px);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.3px;
+}
+
+.landscape .content{
+  flex: 1;
+  position: relative;
+  padding-top: clamp(12px, 2.5vmin, 18px);
+  padding-right: clamp(14px, 2.6vmin, 22px);
+  padding-left: clamp(8px, 1.5vmin, 12px);
+  padding-bottom: clamp(14px, 2.6vmin, 22px);
+}
+.landscape .topRow{
+  height: var(--topBarHLandscape);
+  min-height: 86px;
+  display:flex;
+  align-items:center;
+  justify-content: center;
+  position: relative;
+}
+.landscape .digitsBubble{
+  background: #fff;
+  border: 3px solid rgba(204,129,87,0.70);
+  border-radius: 20px;
+  padding: clamp(10px, 2vmin, 14px) clamp(12px, 2.2vmin, 16px);
+  display:flex;
+  align-items:center;
+  gap: clamp(10px, 2vmin, 16px);
+  box-shadow: 0 8px 0 rgba(255,255,255,0.35);
+}
+.landscape .penguinWrap{
+  position:absolute;
+  right: clamp(6px, 1.2vmin, 12px);
+  top: clamp(6px, 1.2vmin, 10px);
+}
+.landscape .playArea{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--topBarHLandscape);
+  bottom: 0;
+  margin-left: clamp(6px, 1.2vmin, 10px);
+  border-radius: 34px 0 0 0;
+}
+
+/* Layout keuze op basis van oriëntatie */
+.frame{ display:block; }
+@media (orientation: portrait){
+  .frame.landscape{ display:none; }
+}
+@media (orientation: landscape){
+  .frame.portrait{ display:none; }
+}
+
+/* Tuner, klein bedienpaneel voor afstelling */
+.tuner{
+  position: fixed;
+  right: calc(env(safe-area-inset-right, 0px) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  z-index: 999;
+  width: min(92vw, 380px);
+  pointer-events: auto;
+}
+.tunerHead{
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+}
+.tunerToggle{
+  background: rgba(255,255,255,0.95);
+  border: 2px solid rgba(138,84,198,0.28);
+  border-radius: 18px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 14px;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+}
+.tunerPanel{
+  margin-top: 10px;
+  background: rgba(255,255,255,0.95);
+  border: 2px solid rgba(138,84,198,0.28);
+  border-radius: 22px;
+  padding: 12px 12px 14px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.14);
+  backdrop-filter: blur(6px);
+}
+.tunerPanel.hidden{ display:none; }
+
+.tunerTitle{
+  font-weight: 950;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  color: rgba(20,20,20,0.78);
+  margin: 0 0 8px 0;
+}
+.tunerHint{
+  font-size: 12px;
+  color: rgba(20,20,20,0.55);
+  margin: 0 0 10px 0;
+}
+.tunerRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
+.tunerRow label{
+  font-weight: 850;
+  font-size: 13px;
+  color: rgba(20,20,20,0.70);
+}
+.tunerVal{
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: rgba(20,20,20,0.55);
+}
+.tunerPanel input[type="range"]{
+  width: 100%;
+  accent-color: var(--purple);
+}
+.tunerActions{
+  display:flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tunerBtn{
+  flex:1;
+  background: #fff;
+  border: 2px solid rgba(234,115,49,0.35);
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 13px;
+}
+.tunerBtn.secondary{
+  border-color: rgba(138,84,198,0.28);
+}
+  </style>
+</head>
+<body>
+
+  <div class="frame portrait" role="application" aria-label="Spelkader tg08 verticaal">
+    <button class="homeBtn" type="button" aria-label="Home" onclick="goHome()">
+      <img src="./homeknop.png" alt="" />
+    </button>
+
+    <div class="titlePill">welk cijfer mist?</div>
+
+    <header class="headerArea" aria-hidden="true">
+      <div class="row2">
+        <img class="penguin" src="./goed.gif" alt="" />
+        <div class="digits" aria-hidden="true">
+          <div class="digitTile" title="3">
+            <img src="./marbotic3.png" alt="3" />
+          </div>
+          <div class="digitTile" title="4">
+            <div class="digit4">4</div>
+          </div>
+          <div class="digitTile question" title="?">
+            <div class="questionMark">?</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="separatorDash"></div>
+    </header>
+
+    <main class="mainFill" id="gameHostPortrait" aria-label="Speelveld">
+      <div id="gameArea" class="gameArea" aria-label="Speelveld">
+        <!-- Plaats hier je game content -->
+      </div>
+    </main>
+  </div>
+
+  <div class="frame landscape" role="application" aria-label="Spelkader tg08 horizontaal">
+    <button class="homeBtn" type="button" aria-label="Home" onclick="goHome()">
+      <img src="./homeknop.png" alt="" />
+    </button>
+
+    <div class="layout">
+      <aside class="sidebar" aria-hidden="true">
+        <div class="sidePill"><span>welk cijfer mist?</span></div>
+      </aside>
+
+      <section class="content">
+        <div class="topRow" aria-hidden="true">
+          <div class="digitsBubble" aria-hidden="true">
+            <div class="digitTile" title="3">
+              <img src="./marbotic3.png" alt="3" />
+            </div>
+            <div class="digitTile" title="4">
+              <div class="digit4">4</div>
+            </div>
+            <div class="digitTile question" title="?">
+              <div class="questionMark">?</div>
+            </div>
+          </div>
+
+          <div class="penguinWrap">
+            <img class="penguin" src="./goed.gif" alt="" />
+          </div>
+        </div>
+
+        <div class="playArea" id="gameHostLandscape" aria-label="Speelveld">
+          <!-- Plaats hier je game content -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Afstel paneel -->
+  <div class="tuner" id="tuner" aria-label="Afstelling">
+    <div class="tunerHead">
+      <button class="tunerToggle" id="tunerToggle" type="button" aria-expanded="true">instellen</button>
+    </div>
+
+    <div class="tunerPanel" id="tunerPanel">
+      <p class="tunerTitle" id="tunerTitle">Afstelling, portret</p>
+      <p class="tunerHint">Wijzig waarden, draai de iPad om om ook liggend af te stellen</p>
+
+      <div class="tunerRow"><label for="topbar">bovenbalk hoogte</label><div class="tunerVal" id="topbarVal">0 px</div></div>
+      <input id="topbar" type="range" min="90" max="240" step="1" value="172" />
+
+      <div class="tunerRow"><label for="pW">pinguin breedte</label><div class="tunerVal" id="pWVal">0 px</div></div>
+      <input id="pW" type="range" min="40" max="240" step="1" value="88" />
+
+      <div class="tunerRow"><label for="pH">pinguin hoogte</label><div class="tunerVal" id="pHVal">0 px</div></div>
+      <input id="pH" type="range" min="40" max="240" step="1" value="88" />
+
+      <div class="tunerRow"><label for="pX">pinguin positie X</label><div class="tunerVal" id="pXVal">0 px</div></div>
+      <input id="pX" type="range" min="-180" max="180" step="1" value="0" />
+
+      <div class="tunerRow"><label for="pY">pinguin positie Y</label><div class="tunerVal" id="pYVal">0 px</div></div>
+      <input id="pY" type="range" min="-180" max="180" step="1" value="0" />
+
+      <div class="tunerActions">
+        <button class="tunerBtn secondary" id="resetBtn" type="button">reset</button>
+        <button class="tunerBtn" id="closeBtn" type="button">sluiten</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function goHome(){
+    const target = document.body.dataset.home || "index.html";
+    try{ window.location.href = target; }catch(e){ console.log("Home", e); }
+  }
+
+  function isPortrait(){
+    return window.matchMedia("(orientation: portrait)").matches || window.innerHeight >= window.innerWidth;
+  }
+
+  function setLayout(){
+    const portrait = isPortrait();
+    const host = document.getElementById(portrait ? "gameHostPortrait" : "gameHostLandscape");
+    const gameArea = document.getElementById("gameArea");
+    if(host && gameArea && gameArea.parentElement !== host) host.appendChild(gameArea);
+    syncTunerMode();
+  }
+
+  function debounce(fn, wait){
+    let t;
+    return function(){
+      clearTimeout(t);
+      t = setTimeout(fn, wait);
+    };
+  }
+
+  const STORE_KEY = "tg08_tune_v1";
+
+  const defaults = {
+    portrait: { topBarH: 172, pW: 88, pH: 88, pX: 0, pY: 0 },
+    landscape:{ topBarH: 122, pW: 92, pH: 92, pX: 0, pY: 0 }
+  };
+
+  let tune = loadTune();
+
+  function loadTune(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return JSON.parse(JSON.stringify(defaults));
+      const parsed = JSON.parse(raw);
+      return {
+        portrait: { ...defaults.portrait, ...(parsed.portrait||{}) },
+        landscape:{ ...defaults.landscape, ...(parsed.landscape||{}) }
+      };
+    }catch(e){
+      return JSON.parse(JSON.stringify(defaults));
+    }
+  }
+
+  function saveTune(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(tune)); }catch(e){}
+  }
+
+  function applyTune(){
+    const r = document.documentElement.style;
+    r.setProperty("--topBarHPortrait", tune.portrait.topBarH + "px");
+    r.setProperty("--topBarHLandscape", tune.landscape.topBarH + "px");
+
+    r.setProperty("--penguinWPortrait", tune.portrait.pW + "px");
+    r.setProperty("--penguinHPortrait", tune.portrait.pH + "px");
+    r.setProperty("--penguinXPortrait", tune.portrait.pX + "px");
+    r.setProperty("--penguinYPortrait", tune.portrait.pY + "px");
+
+    r.setProperty("--penguinWLandscape", tune.landscape.pW + "px");
+    r.setProperty("--penguinHLandscape", tune.landscape.pH + "px");
+    r.setProperty("--penguinXLandscape", tune.landscape.pX + "px");
+    r.setProperty("--penguinYLandscape", tune.landscape.pY + "px");
+  }
+
+  function currentMode(){
+    return isPortrait() ? "portrait" : "landscape";
+  }
+
+  function syncTunerMode(){
+    const mode = currentMode();
+    const panel = document.getElementById("tunerPanel");
+    if(!panel) return;
+
+    const title = document.getElementById("tunerTitle");
+    title.textContent = "Afstelling, " + (mode === "portrait" ? "portret" : "liggend");
+
+    // ranges, voor liggend iets compacter
+    const topbar = document.getElementById("topbar");
+    if(mode === "portrait"){
+      topbar.min = 90; topbar.max = 260;
+    }else{
+      topbar.min = 70; topbar.max = 200;
+    }
+
+    // set values
+    const t = tune[mode];
+    setSlider("topbar", t.topBarH);
+    setSlider("pW", t.pW);
+    setSlider("pH", t.pH);
+    setSlider("pX", t.pX);
+    setSlider("pY", t.pY);
+
+    updateLabels();
+  }
+
+  function setSlider(id, val){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.value = String(val);
+  }
+
+  function updateLabels(){
+    setVal("topbarVal", document.getElementById("topbar").value + " px");
+    setVal("pWVal", document.getElementById("pW").value + " px");
+    setVal("pHVal", document.getElementById("pH").value + " px");
+    setVal("pXVal", document.getElementById("pX").value + " px");
+    setVal("pYVal", document.getElementById("pY").value + " px");
+  }
+
+  function setVal(id, text){
+    const el = document.getElementById(id);
+    if(el) el.textContent = text;
+  }
+
+  function bindTuner(){
+    const toggle = document.getElementById("tunerToggle");
+    const panel = document.getElementById("tunerPanel");
+    const closeBtn = document.getElementById("closeBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    function setOpen(open){
+      panel.classList.toggle("hidden", !open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    toggle.addEventListener("click", () => {
+      const isOpen = !panel.classList.contains("hidden");
+      setOpen(!isOpen);
+    });
+
+    closeBtn.addEventListener("click", () => setOpen(false));
+
+    resetBtn.addEventListener("click", () => {
+      const mode = currentMode();
+      tune[mode] = JSON.parse(JSON.stringify(defaults[mode]));
+      applyTune();
+      saveTune();
+      syncTunerMode();
+    });
+
+    const ids = ["topbar","pW","pH","pX","pY"];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener("input", () => {
+        const mode = currentMode();
+        const v = parseInt(el.value, 10) || 0;
+
+        if(id === "topbar") tune[mode].topBarH = v;
+        if(id === "pW") tune[mode].pW = v;
+        if(id === "pH") tune[mode].pH = v;
+        if(id === "pX") tune[mode].pX = v;
+        if(id === "pY") tune[mode].pY = v;
+
+        applyTune();
+        saveTune();
+        updateLabels();
+      }, { passive:true });
+    });
+
+    // open by default, handig bij afstellen
+    setOpen(true);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    applyTune();
+    bindTuner();
+    setLayout();
+  });
+
+  window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
+
+  const mql = window.matchMedia("(orientation: portrait)");
+  if(mql.addEventListener) mql.addEventListener("change", setLayout);
+  else if(mql.addListener) mql.addListener(setLayout);
+</script>
+</body>
+</html>
