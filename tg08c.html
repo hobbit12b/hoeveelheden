@@ -766,44 +766,31 @@ body{
   }
 
   
-// voorkom dubbel tik zoomen en pinch zoomen
+// voorkom dubbel tik zoomen, zonder Marbotic multi touch te blokkeren
 (function preventZoom(){
-  let lastTap = 0;
+  let lastTouchEnd = 0;
 
-  document.addEventListener("touchstart", function(e){
+  // dubbel tik
+  document.addEventListener("touchend", function(e){
     const now = Date.now();
-
-    // pinch
-    if(e.touches && e.touches.length > 1){
-      e.preventDefault();
-      return;
-    }
-
-    // dubbel tik
-    if(now - lastTap < 300){
-      e.preventDefault();
-    }
-    lastTap = now;
-  }, { passive:false, capture:true });
-
-  document.addEventListener("dblclick", function(e){
-    e.preventDefault();
-  }, { passive:false });
-
-  ["gesturestart","gesturechange","gestureend"].forEach(evt => {
-    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
-  });
-})();
-    if(now - lastTouchEnd <= 350){
+    if(now - lastTouchEnd <= 300){
       e.preventDefault();
     }
     lastTouchEnd = now;
   }, { passive:false });
 
+  // extra zekerheid
+  document.addEventListener("dblclick", function(e){
+    e.preventDefault();
+  }, { passive:false });
+
+  // iOS pinch, dit blokkeert het zoomen, Marbotic blijft werken
   ["gesturestart","gesturechange","gestureend"].forEach(evt => {
     document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
   });
 })();
+
+
 
 (function(){
     const STORE_KEY = "tg08_settings_v1";
