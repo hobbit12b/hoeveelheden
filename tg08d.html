@@ -69,7 +69,11 @@ body{
   border: none;
   background: transparent;
   padding: 0;
+
+  z-index: 50;
+  touch-action: manipulation;
 }
+
 .homeBtn img{ width:100%; height:100%; display:block; }
 
 .penguin{
@@ -303,6 +307,28 @@ body{
   box-shadow: 0 8px 0 rgba(255,255,255,0.35);
   transform: translate(var(--digitsXLandscape), var(--digitsYLandscape));
 }
+
+/* feedback: bij goed antwoord kleurt het vlak achter de cijfers groen (zonder randen te veranderen) */
+.portrait .digits{ position: relative; }
+.portrait .digits::before{
+  content:"";
+  position:absolute;
+  left: -8px;
+  right: -8px;
+  top: -8px;
+  bottom: -8px;
+  border-radius: 22px;
+  background: transparent;
+  transition: background 0.18s ease;
+  z-index: 0;
+}
+.portrait .digits > .digitTile{ position: relative; z-index: 1; }
+
+.landscape .digitsBubble{ transition: background 0.18s ease; }
+
+.portrait .digits.digitsBgCorrect::before{ background: rgba(76,175,80,0.22); }
+.landscape .digitsBubble.digitsBgCorrect{ background: rgba(76,175,80,0.22); }
+
 .landscape .penguinWrap{
   position:absolute;
   right: clamp(6px, 1.2vmin, 12px);
@@ -569,18 +595,6 @@ body{
   border-radius: inherit;
   pointer-events:auto;
 }
-#gameArea::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: inherit;
-  pointer-events:none;
-  opacity:0;
-  transition: opacity 0.18s ease;
-}
-#gameArea.state-scanning::after{ opacity:0.18; background: rgba(138,84,198,0.10); }
-#gameArea.state-correct::after{ opacity:0.26; background: rgba(76,175,80,0.18); }
-#gameArea.state-wrong::after{ opacity:0.26; background: rgba(229,57,53,0.18); }
 
 /* tuner alleen zichtbaar via lang indrukken */
 .tuner{ display:none; }
@@ -709,17 +723,18 @@ body{
         <p class="settingsLabel">minimum en maximum</p>
 
         <div class="rangeRow">
-          <label>bereik</label>
-          <div class="rangeVal"><span id="minVal">0</span> tot <span id="maxVal">9</span></div>
+          <label for="rangeMin">minimum</label>
+          <div class="rangeVal" id="minVal">0</div>
         </div>
+        <input id="rangeMin" type="range" min="0" max="9" step="1" value="0" aria-label="minimum" />
 
-        <div class="dualRange" id="dualRange">
-          <div class="dualRail" aria-hidden="true"></div>
-          <div class="dualFill" id="rangeFill" aria-hidden="true"></div>
-          <input id="rangeMin" type="range" min="0" max="9" step="1" value="0" aria-label="minimum" />
-          <input id="rangeMax" type="range" min="0" max="9" step="1" value="9" aria-label="maximum" />
+        <div class="rangeRow" style="margin-top: 10px;">
+          <label for="rangeMax">maximum</label>
+          <div class="rangeVal" id="maxVal">9</div>
         </div>
-        <div class="settingsHint">sleep de linker knop voor minimum en de rechter knop voor maximum</div>
+        <input id="rangeMax" type="range" min="0" max="9" step="1" value="9" aria-label="maximum" />
+
+        <div class="settingsHint">sleep beide sliders: minimum mag niet groter zijn dan maximum</div>
       </div>
 
       <div class="settingsBlock">
@@ -727,9 +742,9 @@ body{
 
         <div class="rangeRow">
           <label for="penguinRange">seconden</label>
-          <div class="rangeVal" id="penguinVal">1.2</div>
+          <div class="rangeVal" id="penguinVal">2.5</div>
         </div>
-        <input id="penguinRange" type="range" min="600" max="8000" step="100" value="1200" />
+        <input id="penguinRange" type="range" min="600" max="8000" step="100" value="2500" />
       </div>
 
 <div class="tunerActions">
@@ -770,9 +785,29 @@ body{
 (function preventZoom(){
   let lastTouchEnd = 0;
 
-  // dubbel tik
+  function isInteractiveTarget(t){
+    if(!t || !t.closest) return false;
+    return !!t.closest("button, a, input, label, select, textarea, .tunerPanel, .tuner");
+  }
+
+  // dubbel tik zoomen uit, maar laat Marbotic multitouch en knoppen met rust
   document.addEventListener("touchend", function(e){
     const now = Date.now();
+
+    // laat knoppen en instellingen werken
+    if(isInteractiveTarget(e.target)){
+      lastTouchEnd = now;
+      return;
+    }
+
+    // Marbotic en andere multitouch, nooit blokkeren
+    const changed = e.changedTouches ? e.changedTouches.length : 0;
+    const active = e.touches ? e.touches.length : 0;
+    if(changed > 1 || active > 1){
+      lastTouchEnd = now;
+      return;
+    }
+
     if(now - lastTouchEnd <= 300){
       e.preventDefault();
     }
@@ -784,17 +819,13 @@ body{
     e.preventDefault();
   }, { passive:false });
 
-  // iOS pinch, dit blokkeert het zoomen, Marbotic blijft werken
+  // iOS pinch
   ["gesturestart","gesturechange","gestureend"].forEach(evt => {
     document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
   });
-})();
-
-
-
-(function(){
-    const STORE_KEY = "tg08_settings_v1";
-    const defaults = { allowedSlots: [true, true, true], min: 0, max: 9, penguinMs: 1200 };
+})();(function(){
+    const STORE_KEY = "tg08_settings_v2";
+    const defaults = { allowedSlots: [true, true, true], min: 0, max: 9, penguinMs: 2500 };
 
     function safeClone(o){ return JSON.parse(JSON.stringify(o)); }
     function clampInt(v, lo, hi){
@@ -1454,6 +1485,9 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
 
   let scanRetryTimer = null;
   let scanRetryCutoff = null;
+  let scanArmTimer = null;
+  let lastPointsKey = "";
+
 
   function qs(sel){ return document.querySelector(sel); }
   function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
@@ -1485,13 +1519,19 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     return { min, max, allowedSlots };
   }
 
+  function setDigitsCorrect(isCorrect){
+    const on = !!isCorrect;
+    ["digitsPortrait","digitsLandscape"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle("digitsBgCorrect", on);
+    });
+  }
+
   function setScanState(state){
-    const area = document.getElementById("gameArea");
-    if(!area) return;
-    area.classList.remove("state-scanning","state-correct","state-wrong");
-    if(state === "scanning") area.classList.add("state-scanning");
-    if(state === "correct") area.classList.add("state-correct");
-    if(state === "wrong") area.classList.add("state-wrong");
+    // scanvlak en randen blijven neutraal,
+    // alleen het vlak achter de cijfers krijgt feedback bij goed antwoord
+    if(state === "correct") setDigitsCorrect(true);
+    else setDigitsCorrect(false);
   }
 
   function tilesForMode(mode){
@@ -1686,6 +1726,36 @@ return;
     }, 450);
   }
 
+function pointsKey(pts){
+  // order independent sleutel, afgerond zodat mini jitter niet alles reset
+  return (pts || [])
+    .slice()
+    .sort((a,b) => (a.x-b.x) || (a.y-b.y))
+    .map(p => (Math.round(p.x/2)*2) + "," + (Math.round(p.y/2)*2))
+    .join("|");
+}
+
+function armScan(){
+  if(scanArmTimer) return;
+  scanArmTimer = setTimeout(() => {
+    scanArmTimer = null;
+
+    if(!roundActive || isAnimating) return;
+    if(window.__tg08 && window.__tg08.settingsOpen) return;
+    if(mustReleaseBetweenRounds) return;
+
+    if(currentPoints.length !== expectedTouchPoints) return;
+    if(hasResultForCurrentTouches) return;
+
+    const digit = recognizeDigit(currentPoints);
+    if(digit !== null && typeof digit === "number"){
+      hasResultForCurrentTouches = true;
+      handleRecognitionResult(digit);
+      stopScanRetry();
+    }
+  }, 45);
+}
+
 function stopScanRetry(){
   if(scanRetryTimer){
     clearInterval(scanRetryTimer);
@@ -1731,12 +1801,16 @@ function startScanRetry(){
     const area = document.getElementById("gameArea");
     if(!area) return [];
     const rect = area.getBoundingClientRect();
+
+    // kleine marge, zodat een randje buiten het vlak niet meteen alles breekt
+    const margin = 32;
+
     const points = [];
     for(let i = 0; i < touchList.length; i++){
       const t = touchList[i];
       const x = t.clientX;
       const y = t.clientY;
-      if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom){
+      if(x >= rect.left - margin && x <= rect.right + margin && y >= rect.top - margin && y <= rect.bottom + margin){
         points.push({ x, y });
       }
     }
@@ -1751,7 +1825,13 @@ function startScanRetry(){
     const touches = e.touches || [];
     currentPoints = getPointsFromTouches(touches);
 
-    if(currentPoints.length === 0){
+    
+    const keyNow = pointsKey(currentPoints);
+    if(keyNow !== lastPointsKey){
+      lastPointsKey = keyNow;
+      hasResultForCurrentTouches = false;
+    }
+if(currentPoints.length === 0){
       stopScanRetry();
       hasResultForCurrentTouches = false;
       mustReleaseBetweenRounds = false;
@@ -1774,12 +1854,28 @@ function startScanRetry(){
 
     setScanState("scanning");
 
+    armScan();
+
+    // direct proberen, zodat een eerste "tik" ook meteen scant
+    if(!hasResultForCurrentTouches && roundActive){
+      const digit = recognizeDigit(currentPoints);
+      if(digit !== null && typeof digit === "number"){
+        hasResultForCurrentTouches = true;
+        handleRecognitionResult(digit);
+        stopScanRetry();
+        return;
+      }
+    }
+
+    // als de punten net bewegen of de timing krap is, blijf kort proberen
     startScanRetry();
   }
 
-  function addTouchListeners(elem){
+  function addTouchListeners(){
     ["touchstart","touchmove","touchend","touchcancel"].forEach(type => {
-      elem.addEventListener(type, handleTouchEvent, { passive:true });
+      document.addEventListener(type, handleTouchEvent, { passive:true, capture:true });
+    });
+  });
     });
   }
 
@@ -1820,9 +1916,14 @@ function startScanRetry(){
 
   document.addEventListener("DOMContentLoaded", () => {
     const area = document.getElementById("gameArea");
-    if(area) addTouchListeners(area);
+    if(area) addTouchListeners();
 
-    bindLongPress(document.getElementById("titlePillPortrait"));
+    // home altijd klikbaar, ook als iOS click onderdrukt
+    document.querySelectorAll('.homeBtn').forEach(btn => {
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); goHome(); }, { passive:false });
+      btn.addEventListener('click', (e) => { e.preventDefault(); goHome(); }, { passive:false });
+    });
+bindLongPress(document.getElementById("titlePillPortrait"));
     bindLongPress(document.getElementById("titlePillLandscape"));
 
     // warm up de gif zodat de eerste keer niet hapert
