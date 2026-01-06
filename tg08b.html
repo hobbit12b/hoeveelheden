@@ -758,13 +758,16 @@ body{
 
 <script>
   function goHome(){
-    try{ window.location.href = "index.html"; }
-  function bindHomeButtons(){
+    try{ window.location.href = "index.html"; }catch(e){ console.log("Home", e); }
+  }
+
+  // Homeknop moet altijd klikbaar zijn, ook op iPad (touchstart is leidend)
+  (function bindHomeButtons(){
     let lastTap = 0;
 
     function nav(e){
       const now = Date.now();
-      if(now - lastTap < 450) return;
+      if(now - lastTap < 250) return; // simpele dubbel-tik guard
       lastTap = now;
 
       try{
@@ -777,25 +780,25 @@ body{
       goHome();
     }
 
-    document.querySelectorAll(".homeBtn").forEach(btn => {
-      // touch
-      btn.addEventListener("touchstart", nav, { passive:false });
-      // pointer (moderne browsers)
-      btn.addEventListener("pointerdown", nav);
-      // fallback
-      btn.addEventListener("mousedown", nav);
-      // en voor de zekerheid de click
-      btn.addEventListener("click", nav);
-    });
-  }
+    function attach(){
+      document.querySelectorAll(".homeBtn").forEach(btn => {
+        // zorg dat er nooit een 'dead' knop ontstaat door een parent stacking context
+        btn.style.pointerEvents = "auto";
+        btn.style.touchAction = "manipulation";
 
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", bindHomeButtons);
-  }else{
-    bindHomeButtons();
-  }
-catch(e){ console.log("Home", e); }
-  }
+        btn.addEventListener("touchstart", nav, { passive:false });
+        btn.addEventListener("pointerdown", nav);
+        btn.addEventListener("mousedown", nav);
+        btn.addEventListener("click", nav);
+      });
+    }
+
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", attach);
+    }else{
+      attach();
+    }
+  })();
 
   function isPortrait(){
     return window.matchMedia("(orientation: portrait)").matches || window.innerHeight >= window.innerWidth;
@@ -1817,36 +1820,6 @@ function startScanRetry(){
 
     if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
     if(isAnimating){ stopScanRetry(); return; }
-
-    if(mustReleaseBetweenRounds){
-      stopScanRetry();
-      setScanState(null);
-      return;
-    }
-
-    if(currentPoints.length !== expectedTouchPoints){
-      stopScanRetry();
-      hasResultForCurrentTouches = false;
-      setScanState("scanning");
-      return;
-    }
-
-    setScanState("scanning");
-
-    // direct proberen, zodat een eerste "tik" ook meteen scant
-    if(!hasResultForCurrentTouches && roundActive){
-      const digit = recognizeDigit(currentPoints);
-      if(digit !== null && typeof digit === "number"){
-        hasResultForCurrentTouches = true;
-        handleRecognitionResult(digit);
-        stopScanRetry();
-        return;
-      }
-    }
-
-    // als de punten net bewegen of de timing krap is, blijf kort proberen
-    startScanRetry();
-  }
 
     if(mustReleaseBetweenRounds){
       stopScanRetry();
