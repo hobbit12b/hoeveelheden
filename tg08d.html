@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#FDEEE9" />
@@ -37,6 +37,7 @@
   --penguinSizeLandscape: 159px;
   --penguinXLandscape: -156px;
   --penguinYLandscape: -43px;
+  --penguinFadeMs: 0.5s;
 }
 
 *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -44,7 +45,7 @@ html,body{ height:100%; width:100%; margin:0; padding:0; background: var(--bg); 
 body{
   font-family: system-ui, -apple-system, "Avenir Next", "Arial Rounded MT Bold", Arial, sans-serif;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .frame{
@@ -75,6 +76,18 @@ body{
   display:block;
   object-fit: contain;
   filter: drop-shadow(0 2px 0 rgba(255,255,255,0.65));
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--penguinFadeMs, 0.5s) ease;
+  pointer-events: none;
+}
+.penguin.is-visible{
+  opacity: 1;
+  visibility: visible;
+}
+.penguin.is-hiding{
+  opacity: 0;
+  visibility: visible;
 }
 
 /* Portret pinguin tuning via transform zodat de cijfers niet verspringen */
@@ -314,65 +327,127 @@ body{
   .frame.portrait{ display:none; }
 }
 
-/* Tuner, klein bedienpaneel voor afstelling */
+/* Instellingen menu, open via lang indrukken op de titel */
 .tuner{
   position: fixed;
-  right: calc(env(safe-area-inset-right, 0px) + 10px);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  inset: 0;
   z-index: 999;
-  width: min(92vw, 380px);
+  display: none;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 10px)
+           calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
+  background: rgba(0,0,0,0.18);
   pointer-events: auto;
 }
-.tunerHead{
-  display:flex;
-  justify-content:flex-end;
-  gap: 10px;
-}
-.tunerToggle{
-  background: rgba(255,255,255,0.95);
-  border: 2px solid rgba(138,84,198,0.28);
-  border-radius: 18px;
-  padding: 10px 12px;
-  font-weight: 900;
-  font-size: 14px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-}
+.tuner.is-visible{ display:flex; }
+
 .tunerPanel{
-  margin-top: 10px;
-  background: rgba(255,255,255,0.95);
+  width: min(92vw, 420px);
+  background: rgba(255,255,255,0.97);
   border: 2px solid rgba(138,84,198,0.28);
   border-radius: 22px;
-  padding: 12px 12px 14px;
-  box-shadow: 0 16px 36px rgba(0,0,0,0.14);
+  padding: 14px 14px 16px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.18);
   backdrop-filter: blur(6px);
 }
-.tunerPanel.hidden{ display:none; }
 
-.tunerTitle{
+.settingsTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.settingsTitle{
   font-weight: 950;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.2px;
   color: rgba(20,20,20,0.78);
+}
+.settingsClose{
+  background: #fff;
+  border: 2px solid rgba(234,115,49,0.35);
+  border-radius: 16px;
+  padding: 8px 10px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.settingsBlock{
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.settingsLabel{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(20,20,20,0.70);
   margin: 0 0 8px 0;
 }
-.tunerHint{
+.settingsHint{
   font-size: 12px;
   color: rgba(20,20,20,0.55);
-  margin: 0 0 10px 0;
+  margin-top: 8px;
 }
-.tunerRow{
+
+.slotGrid{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.slotBox{
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 3px solid rgba(204,129,87,0.55);
+  background: #fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  font-weight: 950;
+  font-size: 16px;
+  color: rgba(20,20,20,0.70);
+  cursor: pointer;
+}
+.slotBox input{
+  position:absolute;
+  inset:0;
+  opacity:0;
+}
+.slotBox span{
+  pointer-events:none;
+}
+.slotBox .check{
+  position:absolute;
+  right: 6px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(138,84,198,0.55);
+  background: rgba(255,255,255,0.9);
+}
+.slotBox input:checked + span + .check{
+  background: rgba(138,84,198,0.92);
+  border-color: rgba(138,84,198,0.92);
+}
+
+.rangeRow{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 10px;
   margin: 10px 0 6px;
 }
-.tunerRow label{
+.rangeRow label{
   font-weight: 850;
   font-size: 13px;
   color: rgba(20,20,20,0.70);
 }
-.tunerVal{
+.rangeVal{
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   color: rgba(20,20,20,0.55);
@@ -381,10 +456,74 @@ body{
   width: 100%;
   accent-color: var(--purple);
 }
+.dualRange{
+  position: relative;
+  height: 36px;
+  width: 100%;
+  margin-top: 6px;
+}
+.dualRail{
+  position:absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
+  background: rgba(138,84,198,0.16);
+  border-radius: 999px;
+}
+.dualFill{
+  position:absolute;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
+  background: rgba(138,84,198,0.75);
+  border-radius: 999px;
+  left: 0;
+  right: 0;
+}
+.dualRange input[type="range"]{
+  position:absolute;
+  left: 0; top: 0;
+  width: 100%;
+  height: 36px;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.dualRange input[type="range"]::-webkit-slider-runnable-track{
+  height: 8px;
+  background: transparent;
+}
+.dualRange input[type="range"]::-moz-range-track{
+  height: 8px;
+  background: transparent;
+}
+.dualRange input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid rgba(138,84,198,0.92);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  margin-top: -7px;
+}
+.dualRange input[type="range"]::-moz-range-thumb{
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid rgba(138,84,198,0.92);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
 .tunerActions{
   display:flex;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 .tunerBtn{
   flex:1;
@@ -397,8 +536,57 @@ body{
 }
 .tunerBtn.secondary{
   border-color: rgba(138,84,198,0.28);
+}/* extra, spel feedback */
+.digitTile .digitFallback{ display:none; }
+.digitTile .questionMark{ display:none; }
+.digitTile.question .questionMark{ display:block; }
+.digitTile.question .digitImg,
+.digitTile.question .digitFallback{ display:none; }
+
+@keyframes digitsShake{
+  0%{ transform: translateX(0); }
+  20%{ transform: translateX(-10px); }
+  40%{ transform: translateX(10px); }
+  60%{ transform: translateX(-6px); }
+  80%{ transform: translateX(6px); }
+  100%{ transform: translateX(0); }
 }
-  </style>
+.digits.shake,
+.digitsBubble.shake{ animation: digitsShake 0.32s ease; }
+
+@keyframes tilePop{
+  0%{ transform: scale(1); }
+  45%{ transform: scale(1.08); }
+  100%{ transform: scale(1); }
+}
+.digitTile.pop{ animation: tilePop 0.32s ease; }
+
+#gameArea{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border-radius: inherit;
+  pointer-events:auto;
+}
+#gameArea::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: inherit;
+  pointer-events:none;
+  opacity:0;
+  transition: opacity 0.18s ease;
+}
+#gameArea.state-scanning::after{ opacity:0.18; background: rgba(138,84,198,0.10); }
+#gameArea.state-correct::after{ opacity:0.26; background: rgba(76,175,80,0.18); }
+#gameArea.state-wrong::after{ opacity:0.26; background: rgba(229,57,53,0.18); }
+
+/* tuner alleen zichtbaar via lang indrukken */
+.tuner{ display:none; }
+.tuner.is-visible{ display:flex; }
+
+</style>
 </head>
 <body>
 
@@ -407,22 +595,30 @@ body{
       <img src="./homeknop.png" alt="" />
     </button>
 
-    <div class="titlePill">welk cijfer mist?</div>
+    <div class="titlePill" id="titlePillPortrait">welk cijfer mist?</div>
 
     <header class="headerArea" aria-hidden="true">
       <div class="row2">
         <img class="penguin" src="./goed.gif" alt="" />
-        <div class="digits" aria-hidden="true">
-          <div class="digitTile" title="3">
-            <img src="./marbotic3.png" alt="3" />
-          </div>
-          <div class="digitTile" title="4">
-            <img src="./marbotic4.png" alt="4" />
-          </div>
-          <div class="digitTile question" title="?">
-            <div class="questionMark">?</div>
-          </div>
-        </div>
+        
+<div class="digits" id="digitsPortrait" aria-hidden="true">
+  <div class="digitTile" data-slot="0">
+    <img class="digitImg" src="./marbotic3.png" alt="3" />
+    <div class="digitFallback"></div>
+    <div class="questionMark">?</div>
+  </div>
+  <div class="digitTile" data-slot="1">
+    <img class="digitImg" src="./marbotic4.png" alt="4" />
+    <div class="digitFallback"></div>
+    <div class="questionMark">?</div>
+  </div>
+  <div class="digitTile question" data-slot="2">
+    <img class="digitImg" src="./marbotic0.png" alt="0" />
+    <div class="digitFallback"></div>
+    <div class="questionMark">?</div>
+  </div>
+</div>
+
       </div>
 
       <div class="separatorDash"></div>
@@ -442,22 +638,30 @@ body{
 
     <div class="layout">
       <aside class="sidebar" aria-hidden="true">
-        <div class="sidePill"><span>welk cijfer mist?</span></div>
+        <div class="sidePill" id="titlePillLandscape"><span>welk cijfer mist?</span></div>
       </aside>
 
       <section class="content">
         <div class="topRow" aria-hidden="true">
-          <div class="digitsBubble" aria-hidden="true">
-            <div class="digitTile" title="3">
-              <img src="./marbotic3.png" alt="3" />
-            </div>
-            <div class="digitTile" title="4">
-            <img src="./marbotic4.png" alt="4" />
-          </div>
-            <div class="digitTile question" title="?">
-              <div class="questionMark">?</div>
-            </div>
-          </div>
+          
+<div class="digitsBubble" id="digitsLandscape" aria-hidden="true">
+  <div class="digitTile" data-slot="0">
+    <img class="digitImg" src="./marbotic3.png" alt="3" />
+    <div class="digitFallback"></div>
+    <div class="questionMark">?</div>
+  </div>
+  <div class="digitTile" data-slot="1">
+    <img class="digitImg" src="./marbotic4.png" alt="4" />
+    <div class="digitFallback"></div>
+    <div class="questionMark">?</div>
+  </div>
+  <div class="digitTile question" data-slot="2">
+    <img class="digitImg" src="./marbotic0.png" alt="0" />
+    <div class="digitFallback"></div>
+    <div class="questionMark">?</div>
+  </div>
+</div>
+
 
           <div class="penguinWrap">
             <img class="penguin" src="./goed.gif" alt="" />
@@ -471,45 +675,75 @@ body{
     </div>
   </div>
 
-  <!-- Afstel paneel -->
-  <div class="tuner" id="tuner" aria-label="Afstelling">
-    <div class="tunerHead">
-      <button class="tunerToggle" id="tunerToggle" type="button" aria-expanded="true">instellen</button>
-    </div>
+  <!-- Instellingen, open via lang indrukken op de titel -->
+  <div class="tuner" id="tuner" aria-label="Instellingen">
+    <div class="tunerPanel" id="tunerPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settingsTop">
+        <div class="settingsTitle" id="settingsTitle">instellingen</div>
+        <button class="settingsClose" id="closeBtn" type="button" aria-label="Sluiten">sluiten</button>
+      </div>
 
-    <div class="tunerPanel" id="tunerPanel">
-      <p class="tunerTitle" id="tunerTitle">Afstelling, portret</p>
-      <p class="tunerHint">Wijzig waarden, draai de iPad om om ook liggend af te stellen</p>
+      <div class="settingsBlock">
+        <p class="settingsLabel">waar mag het vraagteken staan</p>
+        <div class="slotGrid" role="group" aria-label="Vraagtekenposities">
+          <label class="slotBox" aria-label="positie 1">
+            <input type="checkbox" id="slot0" />
+            <span>1</span>
+            <span class="check" aria-hidden="true"></span>
+          </label>
+          <label class="slotBox" aria-label="positie 2">
+            <input type="checkbox" id="slot1" />
+            <span>2</span>
+            <span class="check" aria-hidden="true"></span>
+          </label>
+          <label class="slotBox" aria-label="positie 3">
+            <input type="checkbox" id="slot2" />
+            <span>3</span>
+            <span class="check" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="settingsHint">vink één of meer hokjes aan</div>
+      </div>
 
-      <div class="tunerRow"><label for="topbar">bovenbalk hoogte</label><div class="tunerVal" id="topbarVal">0 px</div></div>
-<input id="topbar" type="range" min="90" max="340" step="1" value="292" />
+      <div class="settingsBlock">
+        <p class="settingsLabel">minimum en maximum</p>
 
-<div class="tunerRow"><label for="dX">cijfers blok positie X</label><div class="tunerVal" id="dXVal">0 px</div></div>
-<input id="dX" type="range" min="-240" max="240" step="1" value="-20" />
+        <div class="rangeRow">
+          <label>bereik</label>
+          <div class="rangeVal"><span id="minVal">0</span> tot <span id="maxVal">9</span></div>
+        </div>
 
-<div class="tunerRow"><label for="dY">cijfers blok positie Y</label><div class="tunerVal" id="dYVal">0 px</div></div>
-<input id="dY" type="range" min="-240" max="240" step="1" value="-20" />
+        <div class="dualRange" id="dualRange">
+          <div class="dualRail" aria-hidden="true"></div>
+          <div class="dualFill" id="rangeFill" aria-hidden="true"></div>
+          <input id="rangeMin" type="range" min="0" max="9" step="1" value="0" aria-label="minimum" />
+          <input id="rangeMax" type="range" min="0" max="9" step="1" value="9" aria-label="maximum" />
+        </div>
+        <div class="settingsHint">sleep de linker knop voor minimum en de rechter knop voor maximum</div>
+      </div>
 
-<div class="tunerRow"><label for="pS">pinguin grootte</label><div class="tunerVal" id="pSVal">0 px</div></div>
-<input id="pS" type="range" min="40" max="260" step="1" value="165" />
+      <div class="settingsBlock">
+        <p class="settingsLabel">duur pinguin animatie</p>
 
-<div class="tunerRow"><label for="pX">pinguin positie X</label><div class="tunerVal" id="pXVal">0 px</div></div>
-<input id="pX" type="range" min="-180" max="180" step="1" value="7" />
+        <div class="rangeRow">
+          <label for="penguinRange">seconden</label>
+          <div class="rangeVal" id="penguinVal">1.2</div>
+        </div>
+        <input id="penguinRange" type="range" min="600" max="8000" step="100" value="1200" />
+      </div>
 
-<div class="tunerRow"><label for="pY">pinguin positie Y</label><div class="tunerVal" id="pYVal">0 px</div></div>
-<input id="pY" type="range" min="-180" max="180" step="1" value="20" />
-
-      <div class="tunerActions">
+<div class="tunerActions">
         <button class="tunerBtn secondary" id="resetBtn" type="button">reset</button>
-        <button class="tunerBtn" id="closeBtn" type="button">sluiten</button>
+        <button class="tunerBtn" id="doneBtn" type="button">klaar</button>
       </div>
     </div>
   </div>
 
+  <img id="penguinPreload" src="./goed.gif" alt="" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;" />
+
 <script>
   function goHome(){
-    const target = document.body.dataset.home || "index.html";
-    try{ window.location.href = target; }catch(e){ console.log("Home", e); }
+    try{ window.location.href = "index.html"; }catch(e){ console.log("Home", e); }
   }
 
   function isPortrait(){
@@ -521,7 +755,6 @@ body{
     const host = document.getElementById(portrait ? "gameHostPortrait" : "gameHostLandscape");
     const gameArea = document.getElementById("gameArea");
     if(host && gameArea && gameArea.parentElement !== host) host.appendChild(gameArea);
-    syncTunerMode();
   }
 
   function debounce(fn, wait){
@@ -532,178 +765,1089 @@ body{
     };
   }
 
-    const structuredClone = window.structuredClone || ((obj) => JSON.parse(JSON.stringify(obj)));
+  
+// voorkom dubbel tik zoomen, zonder Marbotic multi touch te blokkeren
+(function preventZoom(){
+  let lastTouchEnd = 0;
 
-  const STORE_KEY = "tg08_tune_v4";
+  // dubbel tik
+  document.addEventListener("touchend", function(e){
+    const now = Date.now();
+    if(now - lastTouchEnd <= 300){
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive:false });
 
-  const defaults = {
-    portrait:  { topBarH: 292, dX: -20, dY: -20, pS: 165, pX: 7, pY: 20 },
-    landscape: { topBarH: 148, dX: 16, dY: -26, pS: 159, pX: -156, pY: -43 }
-  };
+  // extra zekerheid
+  document.addEventListener("dblclick", function(e){
+    e.preventDefault();
+  }, { passive:false });
 
-  let tune = loadTune();
+  // iOS pinch, dit blokkeert het zoomen, Marbotic blijft werken
+  ["gesturestart","gesturechange","gestureend"].forEach(evt => {
+    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+  });
+})();
 
-  function loadTune(){
-    try{
-      const raw = localStorage.getItem(STORE_KEY);
-      if(!raw) return structuredClone(defaults);
-      const parsed = JSON.parse(raw);
 
-      const normalize = (mode) => {
-        const src = parsed[mode] || {};
-        const out = { ...defaults[mode], ...src };
 
-        // migratie van oude breedte, hoogte naar grootte
-        if(out.pS == null){
-          if(src.pW != null) out.pS = src.pW;
-          else if(src.pH != null) out.pS = src.pH;
-          else out.pS = defaults[mode].pS;
+(function(){
+    const STORE_KEY = "tg08_settings_v1";
+    const defaults = { allowedSlots: [true, true, true], min: 0, max: 9, penguinMs: 1200 };
+
+    function safeClone(o){ return JSON.parse(JSON.stringify(o)); }
+    function clampInt(v, lo, hi){
+      v = Number(v);
+      if(!Number.isFinite(v)) v = lo;
+      v = Math.round(v);
+      return Math.max(lo, Math.min(hi, v));
+    }
+
+    function normalizeSettings(s){
+      const out = safeClone(defaults);
+      if(s && typeof s === "object"){
+        if(Array.isArray(s.allowedSlots) && s.allowedSlots.length === 3){
+          out.allowedSlots = s.allowedSlots.slice(0,3).map(x => !!x);
         }
-        return out;
+        out.min = clampInt(s.min, 0, 9);
+        out.max = clampInt(s.max, 0, 9);
+        out.penguinMs = clampInt(s.penguinMs, 600, 8000);
+      }
+      return out;
+    }
+
+    function loadSettings(){
+      try{
+        const raw = localStorage.getItem(STORE_KEY);
+        if(!raw) return safeClone(defaults);
+        return normalizeSettings(JSON.parse(raw));
+      }catch(e){
+        return safeClone(defaults);
+      }
+    }
+
+    function saveSettings(s){
+      try{ localStorage.setItem(STORE_KEY, JSON.stringify(normalizeSettings(s))); }catch(e){}
+    }
+
+    window.__tg08 = window.__tg08 || {};
+    window.__tg08.defaults = defaults;
+    window.__tg08.settings = loadSettings();
+    window.__tg08.settingsOpen = false;
+
+    window.__tg08.saveSettings = function(){
+      saveSettings(window.__tg08.settings);
+      try{
+        window.dispatchEvent(new CustomEvent("tg08:settings", { detail: safeClone(window.__tg08.settings) }));
+      }catch(e){}
+    };
+
+    function overlay(){ return document.getElementById("tuner"); }
+
+    window.__tg08.showSettings = function(){
+      const o = overlay();
+      if(!o) return;
+      window.__tg08.settingsOpen = true;
+      syncUIFromSettings();
+      o.classList.add("is-visible");
+    };
+
+    window.__tg08.hideSettings = function(){
+      const o = overlay();
+      if(!o) return;
+      window.__tg08.settingsOpen = false;
+      o.classList.remove("is-visible");
+    };
+
+    function updateRangeLabels(){
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      const minVal = document.getElementById("minVal");
+      const maxVal = document.getElementById("maxVal");
+      if(minVal && rangeMin) minVal.textContent = String(rangeMin.value);
+      if(maxVal && rangeMax) maxVal.textContent = String(rangeMax.value);
+
+      const penguinRange = document.getElementById("penguinRange");
+      const penguinVal = document.getElementById("penguinVal");
+      if(penguinRange && penguinVal){
+        penguinVal.textContent = (Number(penguinRange.value) / 1000).toFixed(1);
+      }
+      updateRangeFill();
+    }
+
+    function updateRangeFill(){
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      const fill = document.getElementById("rangeFill");
+      if(!rangeMin || !rangeMax || !fill) return;
+      const min = Number(rangeMin.value);
+      const max = Number(rangeMax.value);
+      const lo = Number(rangeMin.min);
+      const hi = Number(rangeMin.max);
+      const pctMin = ((min - lo) / (hi - lo)) * 100;
+      const pctMax = ((max - lo) / (hi - lo)) * 100;
+      fill.style.left = pctMin + "%";
+      fill.style.right = (100 - pctMax) + "%";
+      // zorg dat de juiste thumb bovenop ligt bij kruisen
+      if(min >= max - 1){
+        rangeMin.style.zIndex = "4";
+        rangeMax.style.zIndex = "3";
+      }else{
+        rangeMin.style.zIndex = "3";
+        rangeMax.style.zIndex = "4";
+      }
+    }
+
+    function syncUIFromSettings(){
+      const s = window.__tg08.settings || safeClone(defaults);
+
+      const slot0 = document.getElementById("slot0");
+      const slot1 = document.getElementById("slot1");
+      const slot2 = document.getElementById("slot2");
+      if(slot0) slot0.checked = !!s.allowedSlots[0];
+      if(slot1) slot1.checked = !!s.allowedSlots[1];
+      if(slot2) slot2.checked = !!s.allowedSlots[2];
+
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      if(rangeMin) rangeMin.value = String(clampInt(s.min, 0, 9));
+      if(rangeMax) rangeMax.value = String(clampInt(s.max, 0, 9));
+
+      const penguinRange = document.getElementById("penguinRange");
+      if(penguinRange) penguinRange.value = String(clampInt(s.penguinMs, 600, 8000));
+
+      updateRangeLabels();
+    }
+
+    function bindSettingsUI(){
+      const o = overlay();
+      if(!o) return;
+
+      o.addEventListener("click", (e) => {
+        if(e.target === o) window.__tg08.hideSettings();
+      });
+
+      const closeBtn = document.getElementById("closeBtn");
+      const doneBtn = document.getElementById("doneBtn");
+      const resetBtn = document.getElementById("resetBtn");
+
+      if(closeBtn) closeBtn.addEventListener("click", () => window.__tg08.hideSettings());
+      if(doneBtn) doneBtn.addEventListener("click", () => {
+        window.__tg08.hideSettings();
+        if(window.__tg08.requestNewRound) window.__tg08.requestNewRound();
+      });
+
+      if(resetBtn) resetBtn.addEventListener("click", () => {
+        window.__tg08.settings = safeClone(defaults);
+        window.__tg08.saveSettings();
+        syncUIFromSettings();
+        if(window.__tg08.requestNewRound) window.__tg08.requestNewRound();
+      });
+
+      const slotIds = ["slot0","slot1","slot2"];
+      slotIds.forEach((id, idx) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener("change", () => {
+          window.__tg08.settings.allowedSlots[idx] = !!el.checked;
+          window.__tg08.saveSettings();
+        });
+      });
+
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      const penguinRange = document.getElementById("penguinRange");
+
+      function normalizeDualRange(activeEl){
+        if(!rangeMin || !rangeMax) return;
+
+        let min = clampInt(rangeMin.value, 0, 9);
+        let max = clampInt(rangeMax.value, 0, 9);
+
+        if(min > max){
+          if(activeEl === rangeMin) max = min;
+          else min = max;
+        }
+
+        rangeMin.value = String(min);
+        rangeMax.value = String(max);
+
+        window.__tg08.settings.min = min;
+        window.__tg08.settings.max = max;
+        window.__tg08.saveSettings();
+        updateRangeLabels();
+      }
+
+      if(rangeMin) rangeMin.addEventListener("input", () => normalizeDualRange(rangeMin), { passive:true });
+      if(rangeMax) rangeMax.addEventListener("input", () => normalizeDualRange(rangeMax), { passive:true });
+
+      if(penguinRange){
+        penguinRange.addEventListener("input", () => {
+          const ms = clampInt(penguinRange.value, 600, 8000);
+          penguinRange.value = String(ms);
+          window.__tg08.settings.penguinMs = ms;
+          window.__tg08.saveSettings();
+          updateRangeLabels();
+        }, { passive:true });
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      bindSettingsUI();
+      syncUIFromSettings();
+      setLayout();
+    });
+
+    window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
+
+    const mql = window.matchMedia("(orientation: portrait)");
+    if(mql.addEventListener) mql.addEventListener("change", setLayout);
+    else if(mql.addListener) mql.addListener(setLayout);
+  })();
+</script>
+
+<script>
+/* ================================
+   MARBOTIC HERKENNINGSMODULE
+   (overgenomen uit tg08.html)
+   ================================ */
+const DIGIT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+    let calibration = null;
+    let classificationStats = null;
+    let expectedTouchPoints = 3;
+
+    function initCalibration(calibrationData) {
+      if (!calibrationData || typeof calibrationData !== "object") {
+        calibration = null;
+        classificationStats = null;
+        expectedTouchPoints = 3;
+        return;
+      }
+
+      if (typeof calibrationData.expectedTouchPoints === "number") {
+        expectedTouchPoints = calibrationData.expectedTouchPoints;
+      } else {
+        expectedTouchPoints = 3;
+      }
+
+      calibration = buildCalibrationFromData(calibrationData);
+      recomputeClassificationStats();
+    }
+
+    function buildCalibrationFromData(data) {
+      const obj = {};
+      DIGIT_ORDER.forEach(function (d) {
+        obj[String(d)] = { digit: d, samples: [] };
+      });
+
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = data[key];
+        if (!entry || !Array.isArray(entry.samples)) return;
+
+        entry.samples.forEach(function (s) {
+          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
+
+          const pts = s.points.map(function (p) {
+            return { x: Number(p.x), y: Number(p.y) };
+          });
+
+          const features = computeFeatures(pts);
+          obj[key].samples.push({ points: pts, features: features });
+        });
+      });
+
+      return obj;
+    }
+
+    function computeFeatures(points) {
+      if (!points || points.length !== 3) {
+        return {
+          sides: [0, 0, 0],
+          orientation: 0,
+          cosAngle: 0,
+          centroid: { x: 0, y: 0 },
+          yNorm: [0, 0, 0],
+          xPattern: [0, 0, 0],
+          aspect: 0,
+          vector: [0, 0, 0]
+        };
+      }
+
+      const p0 = points[0];
+      const p1 = points[1];
+      const p2 = points[2];
+
+      const centroidRaw = {
+        x: (p0.x + p1.x + p2.x) / 3,
+        y: (p0.y + p1.y + p2.y) / 3
       };
 
-      return { portrait: normalize("portrait"), landscape: normalize("landscape") };
-    }catch(e){
-      return structuredClone(defaults);
+      const isoPoints = [p0, p1, p2].map(function (p) {
+        const dx = p.x - centroidRaw.x;
+        const dy = p.y - centroidRaw.y;
+        return { x: dx, y: dy };
+      });
+
+      let maxDist = 0;
+      for (let i = 0; i < isoPoints.length; i++) {
+        const q = isoPoints[i];
+        const d = Math.sqrt(q.x * q.x + q.y * q.y);
+        if (d > maxDist) maxDist = d;
+      }
+      if (maxDist < 1e-6) maxDist = 1;
+
+      for (let i = 0; i < isoPoints.length; i++) {
+        isoPoints[i].x /= maxDist;
+        isoPoints[i].y /= maxDist;
+      }
+
+      function dist(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      const L01 = dist(isoPoints[0], isoPoints[1]);
+      const L12 = dist(isoPoints[1], isoPoints[2]);
+      const L20 = dist(isoPoints[2], isoPoints[0]);
+
+      const sides = [
+        { len: L01, i: 0, j: 1 },
+        { len: L12, i: 1, j: 2 },
+        { len: L20, i: 2, j: 0 }
+      ];
+      const maxSideLen = Math.max(L01, L12, L20) || 1;
+      const sidesNormSorted = sides
+        .slice()
+        .sort(function (a, b) { return a.len - b.len; })
+        .map(function (s) { return s.len / maxSideLen; });
+
+      const largest = sides
+        .slice()
+        .sort(function (a, b) { return a.len - b.len; })[2];
+
+      const A = isoPoints[largest.i];
+      const B = isoPoints[largest.j];
+      const CIndex = 3 - largest.i - largest.j;
+      const C = isoPoints[CIndex];
+
+      function orientationVal(a, b, c) {
+        const value =
+          (b.x - a.x) * (c.y - a.y) -
+          (b.y - a.y) * (c.x - a.x);
+        if (value > 0) return 1;
+        if (value < 0) return -1;
+        return 0;
+      }
+
+      const orientation = orientationVal(A, B, C);
+
+      const AC = dist(A, C);
+      const BC = dist(B, C);
+      const AB = largest.len;
+      const AC2 = AC * AC;
+      const BC2 = BC * BC;
+      const AB2 = AB * AB;
+      let cosAngle = 0;
+      const denom = 2 * AC * BC;
+      if (denom > 1e-6) {
+        cosAngle = (AC2 + BC2 - AB2) / denom;
+      }
+
+      let minX = Math.min(p0.x, p1.x, p2.x);
+      let maxX = Math.max(p0.x, p1.x, p2.x);
+      let minY = Math.min(p0.y, p1.y, p2.y);
+      let maxY = Math.max(p0.y, p1.y, p2.y);
+      let width = maxX - minX;
+      let height = maxY - minY;
+      if (width < 1e-6) width = 1;
+      if (height < 1e-6) height = 1;
+
+      const yNormVals = [p0, p1, p2]
+        .map(function (p) { return (p.y - minY) / height; })
+        .sort(function (a, b) { return a - b; });
+
+      const pointsWithIndex = [
+        { p: p0, idx: 0 },
+        { p: p1, idx: 1 },
+        { p: p2, idx: 2 }
+      ].sort(function (a, b) { return a.p.y - b.p.y; });
+
+      const xPattern = pointsWithIndex.map(function (item) {
+        return (item.p.x - minX) / width;
+      });
+
+      const aspect = height / (width + height);
+
+      const centroidBox = {
+        x: (centroidRaw.x - minX) / width,
+        y: (centroidRaw.y - minY) / height
+      };
+
+      const vector = buildFeatureVector({
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect
+      });
+
+      return {
+        sides: sidesNormSorted,
+        orientation: orientation,
+        cosAngle: cosAngle,
+        centroid: centroidBox,
+        yNorm: yNormVals,
+        xPattern: xPattern,
+        aspect: aspect,
+        vector: vector
+      };
     }
-  }
 
-  function saveTune(){
-    try{ localStorage.setItem(STORE_KEY, JSON.stringify(tune)); }catch(e){}
-  }
+    function buildFeatureVector(f) {
+      const wSides = 3.0;
+      const wCos = 4.0;
+      const wOrient = 2.0;
+      const wY = 3.0;
+      const wX = 2.0;
+      const wAspect = 2.0;
 
-  function applyTune(){
-    const r = document.documentElement.style;
+      const v = [];
+      v.push(f.sides[0] * wSides);
+      v.push(f.sides[1] * wSides);
+      v.push(f.sides[2] * wSides);
 
-    r.setProperty("--topBarHPortrait", tune.portrait.topBarH + "px");
-    r.setProperty("--topBarHLandscape", tune.landscape.topBarH + "px");
+      v.push(f.cosAngle * wCos);
+      v.push(f.orientation * wOrient);
 
-    r.setProperty("--digitsXPortrait", tune.portrait.dX + "px");
-    r.setProperty("--digitsYPortrait", tune.portrait.dY + "px");
-    r.setProperty("--digitsXLandscape", tune.landscape.dX + "px");
-    r.setProperty("--digitsYLandscape", tune.landscape.dY + "px");
+      v.push(f.yNorm[0] * wY);
+      v.push(f.yNorm[1] * wY);
+      v.push(f.yNorm[2] * wY);
 
-    r.setProperty("--penguinSizePortrait", tune.portrait.pS + "px");
-    r.setProperty("--penguinXPortrait", tune.portrait.pX + "px");
-    r.setProperty("--penguinYPortrait", tune.portrait.pY + "px");
+      v.push(f.xPattern[0] * wX);
+      v.push(f.xPattern[1] * wX);
+      v.push(f.xPattern[2] * wX);
 
-    r.setProperty("--penguinSizeLandscape", tune.landscape.pS + "px");
-    r.setProperty("--penguinXLandscape", tune.landscape.pX + "px");
-    r.setProperty("--penguinYLandscape", tune.landscape.pY + "px");
-  }
+      v.push(f.aspect * wAspect);
 
-  function currentMode(){
-    return isPortrait() ? "portrait" : "landscape";
-  }
-
-  function syncTunerMode(){
-    const mode = currentMode();
-    const panel = document.getElementById("tunerPanel");
-    if(!panel) return;
-
-    const title = document.getElementById("tunerTitle");
-    title.textContent = "Afstelling, " + (mode === "portrait" ? "portret" : "liggend");
-
-    const topbar = document.getElementById("topbar");
-    if(mode === "portrait"){
-      topbar.min = 90; topbar.max = 340;
-    }else{
-      topbar.min = 70; topbar.max = 260;
+      return v;
     }
 
-    const t = tune[mode];
-    setSlider("topbar", t.topBarH);
-    setSlider("dX", t.dX);
-    setSlider("dY", t.dY);
-    setSlider("pS", t.pS);
-    setSlider("pX", t.pX);
-    setSlider("pY", t.pY);
+    function vectorDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return Infinity;
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) {
+        const diff = a[i] - b[i];
+        sum += diff * diff;
+      }
+      return Math.sqrt(sum);
+    }
 
-    updateLabels();
+    function recomputeClassificationStats() {
+      if (!calibration) {
+        classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 };
+        return;
+      }
+
+      const allSamples = [];
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        if (!calibration[key]) return;
+        const samples = calibration[key].samples || [];
+        samples.forEach(function (s) {
+          allSamples.push({ digit: d, features: s.features });
+        });
+      });
+
+      if (allSamples.length < 2) {
+        classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 };
+        return;
+      }
+
+      const sameMinDistances = [];
+      const betweenMinDistances = [];
+
+      for (let i = 0; i < allSamples.length; i++) {
+        const a = allSamples[i];
+        const vecA = a.features.vector;
+        let minSame = Infinity;
+        let minOther = Infinity;
+
+        for (let j = 0; j < allSamples.length; j++) {
+          if (i === j) continue;
+          const b = allSamples[j];
+          const vecB = b.features.vector;
+          const dist = vectorDistance(vecA, vecB);
+
+          if (a.digit === b.digit) {
+            if (dist < minSame) minSame = dist;
+          } else {
+            if (dist < minOther) minOther = dist;
+          }
+        }
+
+        if (minSame < Infinity) sameMinDistances.push(minSame);
+        if (minOther < Infinity) betweenMinDistances.push(minOther);
+      }
+
+      if (sameMinDistances.length === 0 || betweenMinDistances.length === 0) {
+        classificationStats = { thresholdBase: 0.7, thresholdUnknown: 1.2 };
+        return;
+      }
+
+      const maxSame = Math.max.apply(null, sameMinDistances);
+      const minBetween = Math.min.apply(null, betweenMinDistances);
+
+      let thresholdBase;
+      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
+      else thresholdBase = maxSame * 1.3;
+
+      const thresholdUnknown = thresholdBase * 1.5;
+
+      classificationStats = {
+        thresholdBase: thresholdBase,
+        thresholdUnknown: thresholdUnknown,
+        maxSame: maxSame,
+        minBetween: minBetween
+      };
+    }
+
+    function classifyMeasurement(features) {
+      const vec = features.vector;
+      if (!vec || !calibration) {
+        return { digit: null, bestDist: null, certainty: "onbekend", isUnknown: true, topMatches: [] };
+      }
+
+      const bestPerDigit = {};
+      DIGIT_ORDER.forEach(function (d) { bestPerDigit[d] = Infinity; });
+
+      let bestDigit = null;
+      let bestDist = Infinity;
+
+      DIGIT_ORDER.forEach(function (d) {
+        const key = String(d);
+        const entry = calibration[key];
+        if (!entry) return;
+        const samples = entry.samples || [];
+        for (let i = 0; i < samples.length; i++) {
+          const sampleVec = samples[i].features.vector;
+          const dist = vectorDistance(vec, sampleVec);
+          if (dist < bestPerDigit[d]) bestPerDigit[d] = dist;
+          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
+        }
+      });
+
+      const perDigitArray = [];
+      DIGIT_ORDER.forEach(function (d) {
+        const val = bestPerDigit[d];
+        if (val < Infinity) perDigitArray.push({ digit: d, distance: val });
+      });
+      perDigitArray.sort(function (a, b) { return a.distance - b.distance; });
+      const topMatches = perDigitArray.slice(0, 3);
+
+      if (bestDigit === null || bestDist === Infinity) {
+        return { digit: null, bestDist: null, certainty: "onbekend", isUnknown: true, topMatches: topMatches };
+      }
+
+      let stats = classificationStats || { thresholdBase: 0.8, thresholdUnknown: 1.5 };
+      const base = stats.thresholdBase;
+      const unknownThresh = stats.thresholdUnknown;
+
+      let isUnknown = false;
+      let certainty = "zeker";
+
+      if (bestDist > unknownThresh) isUnknown = true;
+      else if (bestDist > base) certainty = "twijfelachtig";
+
+      if (!isUnknown && topMatches.length > 1) {
+        const second = topMatches[1].distance;
+        if (second > 0) {
+          const ratio = bestDist / second;
+          if (ratio > 0.9 && certainty === "zeker") certainty = "twijfelachtig";
+        }
+      }
+
+      return {
+        digit: isUnknown ? null : bestDigit,
+        bestDist: bestDist,
+        certainty: certainty,
+        isUnknown: isUnknown,
+        topMatches: topMatches
+      };
+    }
+
+    function recognizeDigit(points) {
+      if (!calibration || !classificationStats) return null;
+      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
+
+      const features = computeFeatures(points);
+      const classification = classifyMeasurement(features);
+
+      if (!classification || classification.isUnknown || classification.digit == null) return null;
+      return classification.digit;
+    }
+
+/* audio feedback */
+const DIGIT_IMAGE_PREFIX = "marbotic";
+    const DIGIT_IMAGE_SUFFIX = ".png";
+
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function playTone(freq, duration) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    }
+    function playSuccessSound() { playTone(880, 0.16); setTimeout(function () { playTone(1175, 0.18); }, 140); }
+    function playErrorSound() { playTone(220, 0.22); }
+
+/* ================================
+   SPEL: welk cijfer mist
+   ================================ */
+(function(){
+  const SLOT_COUNT = 3;
+
+  function getPenguinMs(){
+    const s = window.__tg08 && window.__tg08.settings;
+    const v = s && s.penguinMs;
+    let ms = Number(v);
+    if(!Number.isFinite(ms)) ms = 1200;
+    ms = Math.round(ms);
+    if(ms < 600) ms = 600;
+    if(ms > 8000) ms = 8000;
+    return ms;
   }
 
-  function setSlider(id, val){
-    const el = document.getElementById(id);
+  let sequence = [0, 1, 2];
+  let missingIndex = 1;
+  let missingNumber = 1;
+
+  let roundActive = true;
+  let isAnimating = false;
+  let pendingNewRound = false;
+  let mustReleaseBetweenRounds = false;
+
+  let currentPoints = [];
+  let hasResultForCurrentTouches = false;
+
+  let scanRetryTimer = null;
+  let scanRetryCutoff = null;
+
+  function qs(sel){ return document.querySelector(sel); }
+  function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
+
+  function clampInt(v, lo, hi){
+    v = Number(v);
+    if(!Number.isFinite(v)) v = lo;
+    v = Math.round(v);
+    return Math.max(lo, Math.min(hi, v));
+  }
+
+  function getConfig(){
+    const defaults = (window.__tg08 && window.__tg08.defaults) ? window.__tg08.defaults : { allowedSlots:[true,true,true], min:0, max:9 };
+    const s = (window.__tg08 && window.__tg08.settings) ? window.__tg08.settings : defaults;
+
+    let min = clampInt(s.min, 0, 9);
+    let max = clampInt(s.max, 0, 9);
+    if(max < min){ const t = min; min = max; max = t; }
+
+    // zorg dat er altijd 3 opeenvolgende cijfers mogelijk zijn
+    if(max - min < (SLOT_COUNT - 1)){
+      if(max === 9) min = Math.max(0, max - (SLOT_COUNT - 1));
+      else max = Math.min(9, min + (SLOT_COUNT - 1));
+    }
+
+    let allowedSlots = Array.isArray(s.allowedSlots) ? s.allowedSlots.slice(0,3).map(x => !!x) : defaults.allowedSlots.slice();
+    if(!allowedSlots.some(Boolean)) allowedSlots = [true,true,true];
+
+    return { min, max, allowedSlots };
+  }
+
+  function setScanState(state){
+    const area = document.getElementById("gameArea");
+    if(!area) return;
+    area.classList.remove("state-scanning","state-correct","state-wrong");
+    if(state === "scanning") area.classList.add("state-scanning");
+    if(state === "correct") area.classList.add("state-correct");
+    if(state === "wrong") area.classList.add("state-wrong");
+  }
+
+  function tilesForMode(mode){
+    return qsa("." + mode + ' .digitTile[data-slot]');
+  }
+
+  function tileByIndex(mode, idx){
+    const tiles = tilesForMode(mode);
+    return tiles.find(t => Number(t.dataset.slot) === idx) || null;
+  }
+
+  function setTile(tile, digit, isMissing){
+    if(!tile) return;
+    const img = tile.querySelector("img.digitImg");
+    const fb = tile.querySelector(".digitFallback");
+    const qm = tile.querySelector(".questionMark");
+
+    tile.classList.remove("pop");
+
+    if(isMissing){
+      tile.classList.add("question");
+      if(qm) qm.style.display = "block";
+      if(img) img.style.display = "none";
+      if(fb) fb.style.display = "none";
+      tile.setAttribute("aria-label","missend cijfer");
+      return;
+    }
+
+    tile.classList.remove("question");
+    if(qm) qm.style.display = "none";
+
+    if(fb){
+      fb.textContent = String(digit);
+      fb.style.display = "none";
+    }
+
+    if(img){
+      img.onerror = function(){
+        img.style.display = "none";
+        if(fb) fb.style.display = "block";
+      };
+      img.style.display = "block";
+      img.src = "./" + DIGIT_IMAGE_PREFIX + digit + DIGIT_IMAGE_SUFFIX;
+      img.alt = String(digit);
+    }
+    tile.setAttribute("aria-label","cijfer " + digit);
+  }
+
+  function updateDigits(){
+    ["portrait","landscape"].forEach(mode => {
+      for(let i = 0; i < SLOT_COUNT; i++){
+        const t = tileByIndex(mode, i);
+        setTile(t, sequence[i], i === missingIndex);
+      }
+      const row = qs("." + mode + " .digits") || qs("." + mode + " .digitsBubble");
+      if(row) row.classList.remove("shake");
+    });
+  }
+
+  const PENGUIN_FADE_MS = 500;
+
+  function setPenguinFadeVar(){
+    try{
+      document.documentElement.style.setProperty("--penguinFadeMs", (PENGUIN_FADE_MS / 1000) + "s");
+    }catch(e){}
+  }
+
+  function hidePenguinImmediate(){
+    document.querySelectorAll(".penguin").forEach(img => img.classList.remove("is-visible","is-hiding"));
+  }
+
+  function hidePenguinFade(){
+    const imgs = Array.from(document.querySelectorAll(".penguin"));
+    imgs.forEach(img => {
+      img.classList.remove("is-visible");
+      img.classList.add("is-hiding");
+    });
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        imgs.forEach(img => img.classList.remove("is-hiding"));
+        resolve();
+      }, PENGUIN_FADE_MS);
+    });
+  }
+
+  function showPenguinOnce(){
+    // herstart gif zonder opnieuw te downloaden, zodat het soepel loopt
+    document.querySelectorAll(".penguin").forEach(img => {
+      const base = img.dataset.baseSrc || img.getAttribute("src") || "./goed.gif";
+      img.dataset.baseSrc = base;
+
+      const clone = img.cloneNode(true);
+      clone.setAttribute("src", base);
+      clone.style.transition = "none";
+      clone.classList.remove("is-hiding");
+      clone.classList.add("is-visible");
+
+      // vervang, dan start de gif opnieuw vanaf frame 1
+      img.replaceWith(clone);
+      requestAnimationFrame(() => { clone.style.transition = ""; });
+});
+
+    return new Promise(resolve => setTimeout(resolve, getPenguinMs()));
+  }
+
+
+  function pickMissingIndex(allowedSlots){
+    const options = [];
+    for(let i = 0; i < SLOT_COUNT; i++){
+      if(allowedSlots[i]) options.push(i);
+    }
+    if(options.length === 0) return Math.floor(Math.random() * SLOT_COUNT);
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  function newRound(){
+    if(isAnimating){
+      pendingNewRound = true;
+      return;
+    }
+
+    pendingNewRound = false;
+    roundActive = true;
+    hasResultForCurrentTouches = false;
+
+    hidePenguinImmediate();
+
+    const cfg = getConfig();
+    const baseMin = cfg.min;
+    const baseMax = Math.max(cfg.min, cfg.max - (SLOT_COUNT - 1));
+
+    const base = baseMin + Math.floor(Math.random() * (baseMax - baseMin + 1));
+    sequence = [base, base + 1, base + 2];
+
+    missingIndex = pickMissingIndex(cfg.allowedSlots);
+    missingNumber = sequence[missingIndex];
+
+    setScanState(null);
+    updateDigits();
+  }
+
+  function revealCorrect(){
+    ["portrait","landscape"].forEach(mode => {
+      const t = tileByIndex(mode, missingIndex);
+      if(t){
+        setTile(t, missingNumber, false);
+        t.classList.add("pop");
+      }
+    });
+  }
+
+  function showWrongFeedback(){
+    ["portrait","landscape"].forEach(mode => {
+      const row = qs("." + mode + " .digits") || qs("." + mode + " .digitsBubble");
+      if(row){
+        row.classList.remove("shake");
+        void row.offsetWidth;
+        row.classList.add("shake");
+      }
+    });
+  }
+
+  function handleRecognitionResult(digit){
+    if(!roundActive || isAnimating) return;
+
+    if(digit === missingNumber){
+      roundActive = false;
+      isAnimating = true;
+      mustReleaseBetweenRounds = true;
+
+      setScanState("correct");
+      playSuccessSound();
+      revealCorrect();
+
+      showPenguinOnce()
+        .then(() => hidePenguinFade())
+        .then(() => {
+          isAnimating = false;
+          newRound();
+        });
+return;
+    }
+
+    setScanState("wrong");
+    playErrorSound();
+    showWrongFeedback();
+
+    setTimeout(() => {
+      if(currentPoints.length === 0) setScanState(null);
+      else setScanState("scanning");
+    }, 450);
+  }
+
+function stopScanRetry(){
+  if(scanRetryTimer){
+    clearInterval(scanRetryTimer);
+    scanRetryTimer = null;
+  }
+  if(scanRetryCutoff){
+    clearTimeout(scanRetryCutoff);
+    scanRetryCutoff = null;
+  }
+}
+
+function startScanRetry(){
+  if(scanRetryTimer) return;
+
+  // probeer een paar keer zolang de drie punten blijven staan
+  scanRetryTimer = setInterval(() => {
+    if(!roundActive || isAnimating) return;
+    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
+    if(mustReleaseBetweenRounds) return;
+
+    if(currentPoints.length !== expectedTouchPoints){
+      stopScanRetry();
+      return;
+    }
+    if(hasResultForCurrentTouches) {
+      stopScanRetry();
+      return;
+    }
+
+    const digit = recognizeDigit(currentPoints);
+    if(digit !== null && typeof digit === "number"){
+      hasResultForCurrentTouches = true;
+      handleRecognitionResult(digit);
+      stopScanRetry();
+    }
+  }, 80);
+
+  // safety cutoff
+  scanRetryCutoff = setTimeout(() => stopScanRetry(), 5000);
+}
+
+  function getPointsFromTouches(touchList){
+    const area = document.getElementById("gameArea");
+    if(!area) return [];
+    const rect = area.getBoundingClientRect();
+    const points = [];
+    for(let i = 0; i < touchList.length; i++){
+      const t = touchList[i];
+      const x = t.clientX;
+      const y = t.clientY;
+      if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom){
+        points.push({ x, y });
+      }
+    }
+    return points;
+  }
+
+  function handleTouchEvent(e){
+    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
+    if(isAnimating){ stopScanRetry(); return; }
+
+    ensureAudio();
+    const touches = e.touches || [];
+    currentPoints = getPointsFromTouches(touches);
+
+    if(currentPoints.length === 0){
+      stopScanRetry();
+      hasResultForCurrentTouches = false;
+      mustReleaseBetweenRounds = false;
+      setScanState(null);
+      return;
+    }
+
+    if(mustReleaseBetweenRounds){
+      stopScanRetry();
+      setScanState(null);
+      return;
+    }
+
+    if(currentPoints.length !== expectedTouchPoints){
+      stopScanRetry();
+      hasResultForCurrentTouches = false;
+      setScanState("scanning");
+      return;
+    }
+
+    setScanState("scanning");
+
+    startScanRetry();
+  }
+
+  function addTouchListeners(elem){
+    ["touchstart","touchmove","touchend","touchcancel"].forEach(type => {
+      elem.addEventListener(type, handleTouchEvent, { passive:true });
+    });
+  }
+
+  function bindLongPress(el){
     if(!el) return;
-    el.value = String(val);
+    let timer = null;
+    let pressed = false;
+
+    const start = () => {
+      pressed = true;
+      timer = setTimeout(() => {
+        if(!pressed) return;
+        if(window.__tg08 && window.__tg08.showSettings) window.__tg08.showSettings();
+      }, 800);
+    };
+    const cancel = () => {
+      pressed = false;
+      if(timer){ clearTimeout(timer); timer = null; }
+    };
+
+    el.addEventListener("touchstart", start, { passive:true });
+    el.addEventListener("touchend", cancel, { passive:true });
+    el.addEventListener("touchcancel", cancel, { passive:true });
+
+    el.addEventListener("mousedown", start);
+    el.addEventListener("mouseup", cancel);
+    el.addEventListener("mouseleave", cancel);
   }
 
-  function setVal(id, text){
-    const el = document.getElementById(id);
-    if(el) el.textContent = text;
-  }
-
-  function updateLabels(){
-    setVal("topbarVal", document.getElementById("topbar").value + " px");
-    setVal("dXVal", document.getElementById("dX").value + " px");
-    setVal("dYVal", document.getElementById("dY").value + " px");
-    setVal("pSVal", document.getElementById("pS").value + " px");
-    setVal("pXVal", document.getElementById("pX").value + " px");
-    setVal("pYVal", document.getElementById("pY").value + " px");
-  }
-
-  function bindTuner(){
-    const toggle = document.getElementById("tunerToggle");
-    const panel = document.getElementById("tunerPanel");
-    const closeBtn = document.getElementById("closeBtn");
-    const resetBtn = document.getElementById("resetBtn");
-
-    function setOpen(open){
-      panel.classList.toggle("hidden", !open);
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  window.addEventListener("tg08:settings", () => {
+    // opties zijn aangepast, start een nieuwe ronde zodra dat veilig kan
+    if(window.__tg08 && !window.__tg08.settingsOpen){
+      newRound();
+    }else{
+      pendingNewRound = true;
     }
-
-    toggle.addEventListener("click", () => {
-      const isOpen = !panel.classList.contains("hidden");
-      setOpen(!isOpen);
-    });
-
-    closeBtn.addEventListener("click", () => setOpen(false));
-
-    resetBtn.addEventListener("click", () => {
-      const mode = currentMode();
-      tune[mode] = structuredClone(defaults[mode]);
-      applyTune();
-      saveTune();
-      syncTunerMode();
-    });
-
-    const ids = ["topbar","dX","dY","pS","pX","pY"];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if(!el) return;
-
-      el.addEventListener("input", () => {
-        const mode = currentMode();
-        const v = parseInt(el.value, 10) || 0;
-
-        if(id === "topbar") tune[mode].topBarH = v;
-        if(id === "dX") tune[mode].dX = v;
-        if(id === "dY") tune[mode].dY = v;
-        if(id === "pS") tune[mode].pS = v;
-        if(id === "pX") tune[mode].pX = v;
-        if(id === "pY") tune[mode].pY = v;
-
-        applyTune();
-        saveTune();
-        updateLabels();
-      }, { passive:true });
-    });
-
-    setOpen(true);
-  }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    applyTune();
-    bindTuner();
-    setLayout();
   });
 
-  window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
+  document.addEventListener("DOMContentLoaded", () => {
+    const area = document.getElementById("gameArea");
+    if(area) addTouchListeners(area);
 
-  const mql = window.matchMedia("(orientation: portrait)");
-  if(mql.addEventListener) mql.addEventListener("change", setLayout);
-  else if(mql.addListener) mql.addListener(setLayout);
+    bindLongPress(document.getElementById("titlePillPortrait"));
+    bindLongPress(document.getElementById("titlePillLandscape"));
+
+    // warm up de gif zodat de eerste keer niet hapert
+    const preload = document.getElementById("penguinPreload");
+    if(preload && preload.decode) preload.decode().catch(() => {});
+    document.querySelectorAll(".penguin").forEach(img => {
+      if(img && img.decode) img.decode().catch(() => {});
+    });
+
+    setPenguinFadeVar();
+    hidePenguinImmediate();
+
+    window.__tg08 = window.__tg08 || {};
+    window.__tg08.requestNewRound = () => newRound();
+
+    newRound();
+
+    fetch("calibration.json")
+      .then(r => r.json())
+      .then(data => initCalibration(data))
+      .catch(() => { /* geen kalibratie gevonden */ });
+  });
+})();
+
 </script>
+
 </body>
 </html>
