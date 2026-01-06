@@ -2,10 +2,10 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Cijferreeksen</title>
+  <title>bellenblazen</title>
 
   <style>
     :root{
@@ -17,7 +17,17 @@
       --card-radius:28px;
       --scale: 1;
 
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+      /* Marbotic scanplek, gelijk aan tg07 */
+      --scanplek-left: 80.5%;
+      --scanplek-top: 87%;
+      --scanplek-scale: 0.36;
+
+
+      /* Startknop */
+      --start-left: 29%;
+      --start-top: 57%;
+      --start-scale: 1.03;
+--shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -46,6 +56,18 @@
         grid-template-columns: 1fr;
         grid-template-rows: 54fr 46fr;
       }
+    }
+
+    @media (orientation: portrait){
+      :root{
+        --start-left: 50%;
+        --start-top: 31.5%;
+        --start-scale: 0.95;
+      
+        --scanplek-left: 88%;
+        --scanplek-top: 80%;
+        --scanplek-scale: 0.27;
+}
     }
 
     .left{
@@ -83,7 +105,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       gap: 18px;
       flex: 0 0 auto;
       position: relative;
-      z-index: 2;
+      z-index: 1800;
     }
 
     .homeBtn{
@@ -96,6 +118,9 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       box-shadow: none;
       border-radius: 0;
       cursor:pointer;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
       display:grid;
       place-items:center;
       line-height: 0;
@@ -112,27 +137,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       display:block;
       pointer-events:none;
     }
-
-    .tuneBtn{
-      width:72px;
-      height:72px;
-      border-radius:18px;
-      background: #f8c3b0;
-      border: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      padding: 0;
-      flex: 0 0 auto;
-      font-size: 30px;
-      line-height: 1;
-      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
-    }
-    .tuneBtn:active{ transform: translateY(1px) scale(0.99); }
-
-    /* tandwiel uit beeld (instellingen via lang indrukken op de titelbalk) */
-    .tuneBtn{ display:none; }
 
     .titlePill{
       padding: 18px 44px;
@@ -242,59 +246,58 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     .scanOverlay{
       position:absolute;
       inset: 0;
-      display:none;
+      display:flex;
       align-items:center;
       justify-content:center;
       padding: 28px;
       pointer-events:none;
-      z-index: 5;
-      display:none;
+      z-index: 2;
     }
 
-    .scanUI{
-      width: min(520px, 92%);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 14px;
-      text-align:center;
-      transform: translateY(-8px);
+    #scanPlaceImg{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1));
+      width: min(720px, 86%);
+      height: auto;
+      object-fit: contain;
+      pointer-events:none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 240ms ease;
+      will-change: transform, opacity;
     }
 
-    .miniTile{
-      width: 66px;
-      height: 66px;
-      border-radius: 10px;
-      background: #78abff;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      color:#fff;
-      font-weight: 900;
-      font-size: 20px;
-      line-height: 1;
-      place-items:center;
+    #scanPlaceImg.nudge{
+      animation: scanNudge 360ms cubic-bezier(.22,.61,.35,1) 1;
+    }
+    @keyframes scanNudge{
+      0%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
+      45%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 0.92)); }
+      100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
+    }
+    /* startscherm: nog geen marbotic scan UI zichtbaar */
+    body.startActive #scanPlaceImg{ opacity: 0 !important; }
+    body.startActive .scanVeil{ opacity: 1 !important; }
+    body.startActive #scanDigitWrap{ opacity: 0 !important; }
+
+    .scanVeil{
+      position:absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 1;
+      transition: opacity 240ms ease;
+      pointer-events:none;
+      z-index: 4;
     }
 
-    .scanTitle{
-      font-size: clamp(22px, 2vw, 34px);
-      font-weight: 800;
-      color: #7b7876;
-      margin-top: 6px;
-    }
+    .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
 
-    .scanSub{
-      font-size: clamp(16px, 1.3vw, 20px);
-      color: rgba(123,120,118,0.75);
-      margin-top: -4px;
-    }
+    /* tutorial: tijdens de voorbeeldanimatie is de scanplek rustiger zichtbaar */
+    body.tutorialActive .scan-surface.scanAllowed #scanPlaceImg{ opacity: 0.4; }
 
-    .scanHint{
-      font-size: 13px;
-      color: rgba(0,0,0,0.55);
-      margin-top: 10px;
-    }
+    .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
 
     .scan-surface.wrong{ animation: wiggle 220ms ease; }
     @keyframes wiggle{
@@ -312,12 +315,14 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       pointer-events:none;
       opacity: 0;
       transition: opacity 160ms ease;
-      z-index: 3;
+      z-index: 5;
     }
     .scanDigitWrap.show{ opacity: 1; }
+    .scanDigitWrap.fadeOut{ opacity: 0; transition: opacity 900ms ease; }
     .scanDigitWrap img{
       width: min(62%, 360px);
       height: auto;
+      opacity: 0.5;
       filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
     }
 
@@ -386,55 +391,61 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
 
 
-
     .startOverlay{
-      position:fixed;
-      inset:0;
-      background: rgba(253,238,234,0.55);
-      backdrop-filter: blur(2px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 999;
-      padding: 24px;
-    }
+  position:fixed;
+  inset:0;
+  background: transparent;
+  z-index: 1500;
+  overflow:hidden;
+    touch-action: manipulation;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+}
 
-    .startCard{
-      width: min(560px, 92vw);
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px 20px;
-      text-align:center;
-    }
+.startBtn{
+  position:absolute;
+  left: var(--start-left, 50%);
+  top: var(--start-top, 60%);
+  transform: translate(-50%, -50%) scale(var(--start-scale, 0.83));
+  border:none;
+  background: transparent;
+  padding: 0;
+  cursor:pointer;
+  width: min(520px, 78vw);
+  border-radius: 22px;
+  overflow:hidden;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
 
-    .startCard h1{
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      color: #4d4a48;
-      text-transform: lowercase;
-    }
+.startBtn:active{
+  transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
+}
+.startBtn video{
+  width: 100%;
+  height: auto;
+  display:block;
 
-    .startCard p{
-      margin: 0 0 16px 0;
-      color: rgba(77,74,72,0.82);
-      font-size: 18px;
-      line-height: 1.35;
-    }
+  pointer-events:none;
+}
 
-    .startBtn{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 800;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 18px;
-      cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-    }
-    .startBtn:active{ transform: scale(0.99); }
+.startOverlay.leaving{
+  animation: overlayFade 520ms ease forwards;
+  pointer-events:none;
+}
+.startBtn.leaving{
+  animation: startPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+@keyframes overlayFade{
+  from{ opacity:1; }
+  to{ opacity:0; }
+}
+@keyframes startPop{
+  0%{ opacity:1; transform: translate(-50%, -50%) scale(var(--start-scale, 0.83)); }
+  45%{ opacity:1; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 1.06)) rotate(-1deg); }
+  100%{ opacity:0; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.45)) rotate(4deg); }
+}
 
     .tunePanel{
       position: fixed;
@@ -446,7 +457,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
       border: 2px solid rgba(245,180,152,0.75);
       padding: 14px 14px 12px 14px;
-      z-index: 1200;
+      z-index: 1700;
       color: #4d4a48;
     }
 
@@ -544,7 +555,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
         <img src="homeknop.png" alt="Home" />
       </button>
-<div class="titlePill" id="titlePill">cijferreeksen</div>
+<div class="titlePill" id="titlePill">bellenblazen</div>
     </div>
 
     <div class="content">
@@ -561,7 +572,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     </div>
   </section>
 
-  <section class="scan-surface" id="scan-area" aria-label="Scanvak">
+  <section class="scan-surface scanAllowed" id="scan-area" aria-label="Scanvak">
     <div class="scanDigitWrap" id="scanDigitWrap" aria-hidden="true">
       <img id="scanDigitImg" alt="" />
     </div>
@@ -575,19 +586,20 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     </div>
 
     <div class="scanOverlay">
-      <div class="scanUI">
-        <div class="miniTile" aria-hidden="true">
-          <div>1</div><div>2</div><div>3</div><div>4</div>
-        </div>
-
-        <div class="scanTitle" id="scan-title">Tel de dingen in de kaart.</div>
-        <div class="scanSub" id="scan-sub">Scan het juiste cijfer.</div>
-        <div class="scanHint" id="scan-hint">📱 Blokje stil laten liggen</div>
-      </div>
+      <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" draggable="false" aria-hidden="true" />
+      <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
+      
     </div>
   </section>
 
-  <div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
+  
+<div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
+  <button class="startBtn" id="startBtn" aria-label="Start" type="button">
+    <video id="startVid" src="startknop.mp4" muted autoplay loop playsinline preload="auto"></video>
+  </button>
+</div>
+
+<div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
     <div class="tuneHeader">
       <div class="tuneTitle">instellingen</div>
       <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
@@ -608,33 +620,46 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         <div class="tuneValue" id="countMaxValue">5</div>
       </div>
 
-      <div class="tuneButtons">
-        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
-        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
-        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="testHelpBtn" type="button">Test telhulp</button>
-        <button class="tuneBtnSmall secondary" id="testPlopBtn" type="button">Test plop</button>
-      </div>
-
-      <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
+            <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
+
+
+
   </div>
 
-  <script>
+  <script>    'use strict';
+
+    // voorkom iOS Safari zoom bij dubbel tik en pinch
+    (function blockZoom(){
+      try{
+        document.addEventListener('dblclick', function(e){ e.preventDefault(); }, { passive:false });
+      } catch(e){}
+      let lastTouchEnd = 0;
+      try{
+        document.addEventListener('touchend', function(e){
+          // alleen dubbel tik met één vinger blokkeren, niet multi touch voor het scannen
+          try{
+            if (e.changedTouches && e.changedTouches.length !== 1) { lastTouchEnd = Date.now(); return; }
+            if (e.touches && e.touches.length) { lastTouchEnd = Date.now(); return; }
+          } catch(err){}
+          const now = Date.now();
+          if (now - lastTouchEnd <= 300){
+            e.preventDefault();
+          }
+          lastTouchEnd = now;
+        }, { passive:false });
+      } catch(e){}
+      ['gesturestart','gesturechange','gestureend'].forEach(function(type){
+        try{
+          document.addEventListener(type, function(e){ e.preventDefault(); }, { passive:false });
+        } catch(e){}
+      });
+    })();
+
     const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
     const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
     const randFloat = (a,b) => a + Math.random() * (b - a);
     const nowMs = () => performance.now();
-
-    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
-
-    const GOOD_SOUND_SRC = 'goed.mp3';
-    const WRONG_SOUND_SRC = 'fout.mp3';
-    const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
-    const PLOP_SOUND_SRC = 'plop.mp3';
-
-    const BLOW_GIF_SRC = 'bellen_blazen02.gif';
-    const POP_GIF_SRC  = 'bel_barst.gif';
 
     const BUBBLE_SRC = 'bubble.png';
     const ITEM_SRC = {
@@ -648,17 +673,23 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const gameCard = document.getElementById('gameCard');
     const countCanvas = document.getElementById('countCanvas');
     const homeBtn = document.getElementById('homeBtn');
+
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
+
+    if (startOverlay){ document.body.classList.add('startActive'); }
+
     const titlePill = document.getElementById('titlePill');
 
     const scanArea = document.getElementById('scan-area');
-    const scanTitle = document.getElementById('scan-title');
-    const scanSub = document.getElementById('scan-sub');
-    const scanHint = document.getElementById('scan-hint');
 
     const scanDigitWrap = document.getElementById('scanDigitWrap');
     const scanDigitImg = document.getElementById('scanDigitImg');
 
-    const tutorialLayer = document.getElementById('tutorialLayer');
+    const scanPlaceImg = document.getElementById('scanPlaceImg');
+
+
+
     const tutorialHandWrap = document.getElementById('tutorialHandWrap');
     const tutorialHandImg = document.getElementById('tutorialHand');
 
@@ -668,7 +699,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const tutMarboticImg = document.getElementById('tutMarboticImg');
     const tutPlateDigit = document.getElementById('tutPlateDigit');
 
-    const tuneBtn = document.getElementById('tuneBtn');
     const tunePanel = document.getElementById('tunePanel');
     const tuneClose = document.getElementById('tuneClose');
 
@@ -676,13 +706,9 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const countMaxRange = document.getElementById('countMaxRange');
     const countMinValue = document.getElementById('countMinValue');
     const countMaxValue = document.getElementById('countMaxValue');
-    const countHint = document.getElementById('countHint');
 
-    const testGoodBtn = document.getElementById('testGoodBtn');
-    const testWrongBtn = document.getElementById('testWrongBtn');
-    const newRoundBtn = document.getElementById('newRoundBtn');
-    const testHelpBtn = document.getElementById('testHelpBtn');
-    const testPlopBtn = document.getElementById('testPlopBtn');
+
+    const countHint = document.getElementById('countHint');
 
     const successGif = document.getElementById('successGif');
 
@@ -707,10 +733,63 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function playSfx(a){
       if (!a) return;
       try{
+        a.pause();
         a.currentTime = 0;
         const p = a.play();
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
+    }
+
+    // speel SFX en wacht tot het geluid klaar is (met minimale wachttijd en een harde timeout)
+    function playSfxWait(a, minMs){
+      const minWait = Math.max(0, Number(minMs) || 0);
+
+      return new Promise((resolve) => {
+        const nowFn = (typeof performance !== 'undefined' && performance.now) ? () => performance.now() : () => Date.now();
+        const startAt = nowFn();
+
+        let finished = false;
+
+        const cleanup = () => {
+          try{ if (a){ a.onended = null; a.onerror = null; } } catch(e){}
+        };
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          resolve();
+        };
+
+        const finishWithMin = () => {
+          const elapsed = nowFn() - startAt;
+          const wait = Math.max(0, minWait - elapsed);
+          setTimeout(() => finish(), wait);
+        };
+
+        const HARD_MAX_MS = Math.max(2600, minWait + 2600);
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        if (!a){
+          clearTimeout(hard);
+          finishWithMin();
+          return;
+        }
+
+        try{
+          a.pause();
+          a.currentTime = 0;
+
+          a.onended = () => { clearTimeout(hard); finishWithMin(); };
+          a.onerror = () => { clearTimeout(hard); finishWithMin(); };
+
+          const p = a.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finishWithMin();
+        }
+      });
     }
 
     const voicePlayer = new Audio();
@@ -721,6 +800,10 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const promptAudio = new Audio(PROMPT_SOUND_SRC);
     promptAudio.preload = 'auto';
     promptAudio.volume = 1;
+
+    const afterTutorAudio = new Audio(AFTER_TUTOR_CUE_SRC);
+    afterTutorAudio.preload = 'auto';
+    afterTutorAudio.volume = 1;
 
     function stopPrompt(){
       try{ promptAudio.pause(); } catch(e){}
@@ -734,6 +817,35 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch(e){}
     }
+
+    function playAfterTutorCueSafe(){
+      return new Promise((resolve) => {
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ afterTutorAudio.onended = null; } catch(e){}
+          try{ afterTutorAudio.onerror = null; } catch(e){}
+          resolve();
+        };
+
+        const HARD_MAX_MS = 3200;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          afterTutorAudio.pause();
+          afterTutorAudio.currentTime = 0;
+          afterTutorAudio.onended = () => { clearTimeout(hard); finish(); };
+          afterTutorAudio.onerror = () => { clearTimeout(hard); finish(); };
+          const p = afterTutorAudio.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
 
     function stopVoice(){
       try{ voicePlayer.pause(); } catch(e){}
@@ -749,73 +861,180 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     let plopFallbackPool = [];
     let plopFallbackIndex = 0;
     let plopMode = 'none';
+    let webAudioInitPromise = null;
+
+    // Prefetch helpt tegen haperende plop bij de eerste tikken
+    let plopArrayBufferPromise = null;
+    try{
+      plopArrayBufferPromise = fetch(PLOP_SOUND_SRC, { cache: 'force-cache' })
+        .then(r => (r && r.ok) ? r.arrayBuffer() : null)
+        .catch(() => null);
+    } catch(e){
+      plopArrayBufferPromise = null;
+    }
+
+    // Houd WebAudio actief zodat iOS minder vaak pauzeert
+    let keepAliveOsc = null;
+    let keepAliveGain = null;
+    function startAudioKeepAlive(){
+      if (!audioCtx || keepAliveOsc) return;
+      try{
+        keepAliveGain = audioCtx.createGain();
+        keepAliveGain.gain.setValueAtTime(0.00001, audioCtx.currentTime);
+        keepAliveGain.connect(audioCtx.destination);
+
+        keepAliveOsc = audioCtx.createOscillator();
+        keepAliveOsc.frequency.value = 30;
+        keepAliveOsc.connect(keepAliveGain);
+        keepAliveOsc.start();
+      } catch(e){
+        keepAliveOsc = null;
+        keepAliveGain = null;
+      }
+    }
+
 
     function ensureFallbackPool(){
       if (plopFallbackPool.length) return;
       plopFallbackPool = Array.from({ length: 8 }, () => {
         const a = new Audio(PLOP_SOUND_SRC);
         a.preload = 'auto';
+        try{ a.load(); } catch(e){}
         return a;
       });
       plopMode = 'fallback';
     }
 
     async function initWebAudio(){
-      if (audioCtx || plopMode === 'fallback') return;
+      if (audioCtx && plopBuffer) return;
 
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx){
-        ensureFallbackPool();
-        return;
-      }
+      if (webAudioInitPromise) return webAudioInitPromise;
 
-      try{
-        audioCtx = new Ctx();
-      } catch(e){
-        ensureFallbackPool();
-        return;
-      }
+      webAudioInitPromise = (async () => {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx){
+          ensureFallbackPool();
+          plopMode = 'fallback';
+          return;
+        }
 
-      try{
-        const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
-        const arr = await resp.arrayBuffer();
-        plopBuffer = await new Promise((resolve, reject) => {
-          try{ audioCtx.decodeAudioData(arr, resolve, reject); }
-          catch(err){ reject(err); }
-        });
-        if (plopBuffer) plopMode = 'web';
-        else ensureFallbackPool();
-      } catch(e){
-        ensureFallbackPool();
-      }
+        try{
+          if (!audioCtx) audioCtx = new Ctx();
+        } catch(e){
+          ensureFallbackPool();
+          plopMode = 'fallback';
+          return;
+        }
+
+        try{
+          // Gebruik het liefst de prefetched bytes, anders fetch
+          let arr = null;
+          if (plopArrayBufferPromise) arr = await plopArrayBufferPromise;
+          if (!arr){
+            const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
+            arr = await resp.arrayBuffer();
+          }
+
+          plopBuffer = await new Promise((resolve, reject) => {
+            try{ audioCtx.decodeAudioData(arr, resolve, reject); }
+            catch(err){ reject(err); }
+          });
+
+          if (plopBuffer){
+            plopMode = 'web';
+            try{ if (audioCtx.state === 'running') startAudioKeepAlive(); } catch(e){}
+          } else {
+            ensureFallbackPool();
+            plopMode = 'fallback';
+          }
+        } catch(e){
+          ensureFallbackPool();
+          plopMode = 'fallback';
+        }
+      })();
+
+      return webAudioInitPromise;
     }
 
     async function unlockAudio(){
+      // WebAudio
       try{
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
       } catch(e){}
+      try{
+        if (audioCtx && audioCtx.state === 'running') startAudioKeepAlive();
+      } catch(e){}
 
-      if (plopFallbackPool.length){
+      const primeAudioElement = async (a) => {
+        if (!a) return;
         try{
-          const a = plopFallbackPool[0];
+          const oldVol = (typeof a.volume === 'number') ? a.volume : 1;
+          const oldMuted = !!a.muted;
+
           a.muted = true;
+          a.volume = 0;
+
+          a.pause();
+          a.currentTime = 0;
+
           const p = a.play();
           if (p && typeof p.catch === 'function') await p.catch(() => {});
           a.pause();
           a.currentTime = 0;
-          a.muted = false;
+
+          a.muted = oldMuted;
+          a.volume = oldVol;
         } catch(e){}
+      };
+
+      // Fallback plop pool (mute trick)
+      if (plopFallbackPool.length){
+        try{ await primeAudioElement(plopFallbackPool[0]); } catch(e){}
       }
+
+      // Prime belangrijke SFX zodat ze direct reageren
+      try{ await primeAudioElement(goodAudio); } catch(e){}
+      try{ await primeAudioElement(wrongAudio); } catch(e){}
+      try{ await primeAudioElement(promptAudio); } catch(e){}
+      try{ await primeAudioElement(afterTutorAudio); } catch(e){}
+    }
+
+    // audio init en unlock, veilig en zonder spam
+    let audioKickInFlight = null;
+    function kickAudio(){
+      if (audioKickInFlight) return;
+
+      const p = Promise.resolve()
+        .then(() => initWebAudio())
+        .then(() => unlockAudio())
+        .catch(() => {});
+
+      audioKickInFlight = p;
+      p.then(() => { audioKickInFlight = null; }, () => { audioKickInFlight = null; });
+    }
+
+
+    function fallbackPlop(rate=1){
+      try{ ensureFallbackPool(); } catch(e){}
+      if (!plopFallbackPool.length) return;
+
+      const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
+      plopFallbackIndex++;
+      try{
+        try{ a.pause(); } catch(e){}
+        a.currentTime = 0;
+        a.volume = 1;
+        try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e){}
     }
 
     function playPlop(rate=1){
+      // WebAudio is het snelst, en geeft de minste vertraging op iPad.
+      // Als de context toch even slaapt, speel dan meteen de fallback en herstel WebAudio op de achtergrond.
       if (plopMode === 'web' && audioCtx && plopBuffer){
-        try{
-          if (audioCtx.state !== 'running'){
-            try{ audioCtx.resume(); } catch(e){}
-          }
-          if (audioCtx.state !== 'running') throw new Error('ctx');
-
+        const startWeb = () => {
           const src = audioCtx.createBufferSource();
           const gain = audioCtx.createGain();
           gain.gain.setValueAtTime(0.95, audioCtx.currentTime);
@@ -825,23 +1044,32 @@ border-top:  2px solid rgba(245,180,152,0.50); }
           gain.connect(audioCtx.destination);
           try{ src.playbackRate.value = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
           src.start(audioCtx.currentTime);
+        };
+
+        try{
+          if (audioCtx.state === 'running'){
+            startWeb();
+            return;
+          }
+
+          // Geen wachttijd, geen late plop, meteen geluid
+          fallbackPlop(rate);
+
+          // WebAudio weer wakker maken voor de volgende tikken
+          try{
+            const p = audioCtx.resume();
+            if (p && typeof p.then === 'function'){
+              p.then(() => { try{ startAudioKeepAlive(); } catch(e){} }).catch(() => {});
+            }
+          } catch(e){}
           return;
         } catch(e){
-          ensureFallbackPool();
+          fallbackPlop(rate);
+          return;
         }
       }
 
-      if (plopFallbackPool.length){
-        const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
-        plopFallbackIndex++;
-        try{
-          a.currentTime = 0;
-          a.volume = 1;
-          try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
-          const p = a.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){}
-      }
+      fallbackPlop(rate);
     }
 
     // Telbereik instellingen
@@ -884,6 +1112,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       } else {
         countHint.textContent = `Elke ronde zijn het ${countRange.min} tot ${countRange.max} dingen.`;
       }
+
     }
 
     function applyCountChange(from){
@@ -910,15 +1139,9 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
-      initWebAudio().then(unlockAudio);
+      kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
-    if (tuneBtn){
-      tuneBtn.addEventListener('click', () => {
-        if (tunePanel.classList.contains('hidden')) openTunePanel();
-        else closeTunePanel();
-      });
-    }
 
     tuneClose.addEventListener('click', closeTunePanel);
 
@@ -948,20 +1171,37 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     // Scan digit hint
     let scanDigitTimer = null;
+    let scanDigitFadeTimer = null;
+
     function hideScanDigit(){
+      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
+
       scanDigitWrap.classList.remove('show');
+      scanDigitWrap.classList.remove('fadeOut');
       scanDigitImg.removeAttribute('src');
       scanDigitImg.alt = '';
     }
+
     function showScanAsset(src, alt){
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
+      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
+
+      scanDigitWrap.classList.remove('fadeOut');
       scanDigitImg.src = src;
       scanDigitImg.alt = alt || '';
       scanDigitWrap.classList.add('show');
     }
+
     function showScanDigit(digit){
       showScanAsset(`marbotic${digit}.png`, String(digit));
-      scanDigitTimer = setTimeout(() => hideScanDigit(), 5000);
+
+      // Eerst rustig zichtbaar, daarna wegfaden en opruimen
+      scanDigitFadeTimer = setTimeout(() => {
+        scanDigitFadeTimer = null;
+        scanDigitWrap.classList.add('fadeOut');
+        scanDigitTimer = setTimeout(() => hideScanDigit(), 950);
+      }, 2400);
     }
 
     // Canvas rendering
@@ -1458,6 +1698,61 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     let roundId = 0;
     let promptPlayedThisRound = false;
 
+    let scanNudgeTimer = null;
+    let lastMotionAt = Date.now();
+
+    function clearScanNudge(){
+      if (scanNudgeTimer){
+        clearTimeout(scanNudgeTimer);
+        scanNudgeTimer = null;
+      }
+    }
+
+    function scheduleScanNudge(){
+      clearScanNudge();
+      if (!scanPlaceImg) return;
+      if (document.body.classList.contains('startActive')) return;
+      const IDLE_NUDGE_MS = 15000;
+      const since = Date.now() - lastMotionAt;
+      const wait = Math.max(0, IDLE_NUDGE_MS - since);
+      scanNudgeTimer = setTimeout(() => {
+        if (!scanPlaceImg) return;
+        if (document.body.classList.contains('startActive')) return;
+        if ((Date.now() - lastMotionAt) < (IDLE_NUDGE_MS - 40)){
+          scheduleScanNudge();
+          return;
+        }
+
+        scanPlaceImg.classList.remove('nudge');
+        void scanPlaceImg.offsetHeight;
+        scanPlaceImg.classList.add('nudge');
+
+        const again = randInt(7000, 11000);
+        scanNudgeTimer = setTimeout(() => {
+          if ((Date.now() - lastMotionAt) >= IDLE_NUDGE_MS) scheduleScanNudge();
+        }, again);
+      }, wait);
+    }
+
+    function markMotion(){
+      lastMotionAt = Date.now();
+      scheduleScanNudge();
+    }
+
+    if (scanPlaceImg){
+      scanPlaceImg.addEventListener('animationend', (e) => {
+        try{ if (e && e.animationName === 'scanNudge') scanPlaceImg.classList.remove('nudge'); } catch(err){}
+      });
+    }
+
+    ['pointerdown','pointermove','touchstart','touchmove'].forEach((type) => {
+      try{
+        document.addEventListener(type, () => {
+          markMotion();
+        }, { passive:true });
+      } catch(e){}
+    });
+
     function resetIdlePrompt(){
       if (idlePromptTimer){
         clearTimeout(idlePromptTimer);
@@ -1472,31 +1767,43 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function scheduleIdlePrompt(){
       resetIdlePrompt();
       if (!started || locked) return;
-      if (mode !== 'normal') return;
-      if (!allItemsCounted()) return;
+      if (mode !== 'normal' && mode !== 'confirmDigit') return;
       if (promptPlayedThisRound) return;
 
       const myRound = roundId;
+      const IDLE_PROMPT_MS = 35000;
+
       idlePromptTimer = setTimeout(() => {
         if (myRound !== roundId) return;
         if (!started || locked) return;
-        if (mode !== 'normal') return;
-        if (!allItemsCounted()) return;
+        if (mode !== 'normal' && mode !== 'confirmDigit') return;
+        if (promptPlayedThisRound) return;
         promptPlayedThisRound = true;
+        stopVoice();
         playPrompt();
-      }, 2800);
+      }, IDLE_PROMPT_MS);
     }
-let wrongTries = 0;
+
+    // algemene idle monitor: elke aanraking reset, bij loslaten start de 35s timer opnieuw
+    ['pointerdown','touchstart'].forEach((type) => {
+      document.addEventListener(type, () => {
+        if (!started || locked) return;
+        resetIdlePrompt();
+      }, { passive:true });
+    });
+    ['pointerup','pointercancel','touchend','touchcancel'].forEach((type) => {
+      document.addEventListener(type, () => {
+        if (!started || locked) return;
+        scheduleIdlePrompt();
+      }, { passive:true });
+    });
+
+
+    let wrongTries = 0;
     let mode = 'normal';
     let helpToken = 0;
 
     function pickTarget(){ return randInt(countRange.min, countRange.max); }
-
-    function clearRoundUI(){
-      scanTitle.textContent = 'Tel de dingen in de kaart.';
-      scanSub.textContent = 'Scan het juiste cijfer.';
-      scanHint.textContent = '📱 Blokje stil laten liggen';
-    }
 
     function nextRound(){
       resetIdlePrompt();
@@ -1512,8 +1819,6 @@ let wrongTries = 0;
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
-      clearRoundUI();
-
       target = pickTarget();
 
       items = generateItems(target);
@@ -1521,6 +1826,9 @@ let wrongTries = 0;
       resolveOverlapsGentle();
 
       requestRender();
+
+      // start (of herstart) de idle reminder timer
+      scheduleIdlePrompt();
     }
 
     // hard safe helpers against iPad hangs
@@ -1580,6 +1888,46 @@ let wrongTries = 0;
       });
     }
 
+    function speakTutorialNumberSafe(n, token){
+      return new Promise((resolve) => {
+        let finished = false;
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          try{ voicePlayer.onended = null; } catch(e){}
+          try{ voicePlayer.onerror = null; } catch(e){}
+          try{ voicePlayer.onplaying = null; } catch(e){}
+          resolve();
+        };
+
+        if (token !== tutorialToken){
+          finish();
+          return;
+        }
+
+        const HARD_MAX_MS = 900;
+        const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{
+          voicePlayer.pause();
+          voicePlayer.currentTime = 0;
+          voicePlayer.src = voiceSrc(n);
+          voicePlayer.load();
+
+          voicePlayer.onended = () => { clearTimeout(hard); finish(); };
+          voicePlayer.onerror = () => { clearTimeout(hard); finish(); };
+
+          const p = voicePlayer.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch(e){
+          clearTimeout(hard);
+          finish();
+        }
+      });
+    }
+
+
     async function runHelpCounting(){
       const myToken = ++helpToken;
 
@@ -1592,22 +1940,36 @@ let wrongTries = 0;
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
-      // tel alles automatisch, zonder extra tekst
-      items.forEach(it => { it.counted = false; it.helpBubble = false; });
+      // tel samen, met bellen die één voor één opbouwen
+      items.forEach(it => { it.counted = false; it.helpBubble = false; it.tutLabel = 0; });
       requestRender();
 
       for (let i = 0; i < items.length; i++){
         if (myToken !== helpToken) return;
 
-        items[i].counted = true;
-        requestRender();
-        playPlop(randFloat(0.90, 1.20));
+        for (let j = 0; j <= i; j++){
+          items[j].helpBubble = true;
+          items[j].tutLabel = j + 1;
+        }
+        for (let j = i + 1; j < items.length; j++){
+          items[j].helpBubble = false;
+          items[j].tutLabel = 0;
+        }
 
-        await delaySafe(240, myToken);
+        requestRender();
+
+        await speakNumberSafe(i + 1, myToken);
+        if (myToken !== helpToken) return;
+
+        await delaySafe(220, myToken);
         if (myToken !== helpToken) return;
       }
 
       if (myToken !== helpToken) return;
+
+      // klaar, alles staat aan
+      items.forEach(it => { it.counted = true; it.helpBubble = false; it.tutLabel = 0; });
+      requestRender();
 
       showScanDigit(target);
       playPrompt();
@@ -1620,9 +1982,6 @@ let wrongTries = 0;
     async function onCorrectAnswer(){
       locked = true;
 
-      scanTitle.textContent = 'Goed gedaan.';
-      scanSub.textContent = '';
-      scanHint.textContent = '';
 
       playSfx(goodAudio);
 
@@ -1635,21 +1994,58 @@ let wrongTries = 0;
       setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
     }
 
-    function onWrongAnswer(){
+    async function onCorrectAnswerTutorial(){
+      locked = true;
+
+      ensureAllHaveBubbles();
+
+      // pinguin of bellen in beeld, dan het goede geluid, daarna veel plopjes
+      const seqMs = showSuccessSequenceTotalMs();
+      playSfx(goodAudio);
+
+      setTimeout(() => {
+        try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
+      }, 260);
+
+      // wacht tot het voorbeeld echt klaar is
+      await delaySafe(Math.max(1600, seqMs + 250));
+
+      // eerst de volgende opdracht zichtbaar maken, daarna pas: nu mag jij
+      try{ document.body.classList.remove('tutorialActive'); } catch(e){}
+      nextRound();
+      await delaySafe(240);
+      await playAfterTutorCueSafe();
+    }
+
+    async function onWrongAnswer(){
       wrongTries += 1;
 
-      playSfx(wrongAudio);
+      // stop andere audio zodat het foutgeluid direct start
+      stopVoice();
+      stopPrompt();
+
+      const willHelp = (wrongTries >= 3);
+
+      // bij telhulp: meteen blokkeren, maar pas starten ná foutfeedback
+      if (willHelp){
+        locked = true;
+      }
+
+      const waitP = playSfxWait(wrongAudio, 260);
+
       flashTelvlakWrong();
       wrongFeedback();
 
       popAllMarkedBubblesOnly();
 
-      if (wrongTries >= 3){
+      if (willHelp){
+        await waitP;
+        // extra klein momentje zodat het rood en de wiebel echt weg zijn
+        await delaySafe(40);
         runHelpCounting();
       } else {
         setTimeout(() => {
           if (!started || locked) return;
-          clearRoundUI();
           if (mode === 'confirmDigit') showScanDigit(target);
         }, 380);
       }
@@ -1670,21 +2066,26 @@ let wrongTries = 0;
     function onCanvasPointerDown(e){
       if (!started || locked) return;
 
-      initWebAudio().then(unlockAudio);
+      kickAudio();
       e.preventDefault();
+
+      // elke tik telt als activiteit: reset de idle timer meteen
+      resetIdlePrompt();
 
       const p = getCanvasPointFromEvent(e);
       const it = hitTest(p.x, p.y);
-      if (!it) return;
 
-      const wasCounted = it.counted;
+      if (!it){
+        scheduleIdlePrompt();
+        return;
+      }
+
+      // bij elk item dat je aantikt: plop
+      try{ playPlop(1); } catch(err){}
+
       it.counted = !it.counted;
       it.helpBubble = false;
       requestRender();
-
-      if (!wasCounted && it.counted){
-        playPlop(randFloat(0.95, 1.15));
-      }
 
       scheduleIdlePrompt();
     }
@@ -1897,13 +2298,19 @@ let wrongTries = 0;
       // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
       if (mode === 'tip') return;
 
-      initWebAudio().then(unlockAudio);
+      kickAudio();
 
       const touches = e.touches || [];
       const pts = getPointsFromTouches(touches);
 
+      // Zodra er iets op de scanplek ligt: hintplaatje weg, zodat je alleen de echte steen ziet
+      if (pts.length){
+        hideScanDigit();
+      }
+
       if (pts.length === 0){
         hasResultForCurrentTouches = false;
+        hideUnderDigit();
         // als alles geteld is en je wacht, geef een zachte reminder
         scheduleIdlePrompt();
         return;
@@ -1911,15 +2318,10 @@ let wrongTries = 0;
 
       if (pts.length !== expectedTouchPoints){
         hasResultForCurrentTouches = false;
-        scanTitle.textContent = 'Even stil houden.';
-        scanSub.textContent = 'We lezen de puntjes.';
-        scanHint.textContent = '';
+        hideUnderDigit();
         return;
       }
 
-      scanTitle.textContent = 'Even stil houden.';
-      scanSub.textContent = 'We lezen de puntjes.';
-      scanHint.textContent = '';
 
       if (!hasResultForCurrentTouches && !locked){
         const digit = recognizeDigit(pts);
@@ -1935,24 +2337,9 @@ let wrongTries = 0;
     });
 
     // Tests
-    function testGood(){ if (!started || locked) return; handleAnswer(target); }
-    function testWrong(){
-      if (!started || locked) return;
-      const wrong = target === 9 ? 1 : target + 1;
-      handleAnswer(wrong);
-    }
 
-    testGoodBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testGood(); });
-    testWrongBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); testWrong(); });
-    newRoundBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); if (started) nextRound(); });
-    testHelpBtn.addEventListener('click', () => {
-      initWebAudio().then(unlockAudio);
-      if (started && !locked){
-        wrongTries = 2;
-        onWrongAnswer();
-      }
-    });
-    testPlopBtn.addEventListener('click', () => { initWebAudio().then(unlockAudio); playPlop(); });
+    // Start
+
 
     // Start
     
@@ -2049,9 +2436,7 @@ function delayTutorial(ms, token){
       hideScanDigit();
       if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
 
-      scanTitle.textContent = 'Voorbeeld.';
-      scanSub.textContent = '';
-      scanHint.textContent = '';
+      try{ document.body.classList.add('tutorialActive'); } catch(e){}
 
       // Kies een veilige waarde binnen het ingestelde bereik
       const demoTarget = 4;
@@ -2087,19 +2472,21 @@ function delayTutorial(ms, token){
         if (token !== tutorialToken) return;
 
         tapHand();
+
         it.counted = true;
         it.tutLabel = i + 1;
         requestRender();
 
-        await delayTutorial(360, token);
+        // in het voorbeeld hoor je het tellen (audio/1.mp3 t/m audio/4.mp3)
+        await speakTutorialNumberSafe(i + 1, token);
+        if (token !== tutorialToken) return;
+
+        await delayTutorial(180, token);
       }
 
       hideHand();
 
       // Scan voorbeeld: leg het cijfer 4 op de scanplaat
-      scanTitle.textContent = '';
-      scanSub.textContent = '';
-      scanHint.textContent = '';
 
       const pickExisting = async (cands) => {
         for (const src of cands){
@@ -2126,11 +2513,11 @@ function delayTutorial(ms, token){
       await delayTutorial(30, token);
 
       const baseRect = tutMarboticImg.getBoundingClientRect();
-      const maxW = scanRect.width * 0.92;
-      const maxH = scanRect.height * 0.92;
+      const maxW = scanRect.width * 0.98;
+      const maxH = scanRect.height * 0.98;
       const maxScale = Math.min(maxW / Math.max(1, baseRect.width), maxH / Math.max(1, baseRect.height));
 
-      const desiredScale = 1.70;
+      const desiredScale = 2.10;
       const finalScale = Math.max(0.65, Math.min(desiredScale, maxScale));
 
       const scaledW = baseRect.width * finalScale;
@@ -2149,27 +2536,39 @@ function delayTutorial(ms, token){
       setMarboticState({ tx: 0, ty: 0, scale: finalScale });
       await delayTutorial(260, token);
 
-      // zet de 4 visueel midden in het witte vak
-      // (de 4 zit links in het plaatje, dus we schuiven het geheel naar rechts en iets omlaag)
-      const dxFrac = (170 - 102.0859) / 340;
-      const dyFrac = (200 - 159.2445) / 400;
-      const dx = dxFrac * scaledW;
-      const dy = dyFrac * scaledH;
+      // naar de witte scanplek: het witte vlak zit niet exact in het midden van de scanplek-afbeelding
+      let dx = 0, dy = 0;
+      try{
+        if (scanPlaceImg){
+          const placeRect = scanPlaceImg.getBoundingClientRect();
+          const cx = scanRect.left + (scanRect.width / 2);
+          const cy = scanRect.top  + (scanRect.height / 2);
 
+          const offFrac = (typeof TUTORIAL_SCAN_OFF_FRAC === 'object' && TUTORIAL_SCAN_OFF_FRAC)
+            ? TUTORIAL_SCAN_OFF_FRAC
+            : ((typeof SCAN_UNDER_OFF_FRAC === 'object' && SCAN_UNDER_OFF_FRAC) ? SCAN_UNDER_OFF_FRAC : { x: 0, y: 0 });
+
+          const fracX = Number(offFrac.x) || 0;
+          const fracY = Number(offFrac.y) || 0;
+
+          const px = (placeRect.left + (placeRect.width / 2)) + (placeRect.width * fracX);
+          const py = (placeRect.top  + (placeRect.height / 2)) + (placeRect.height * fracY);
+
+          dx = px - cx;
+          dy = py - cy;
+        }
+      } catch(e){}
       setMarboticState({ tx: dx, ty: dy, scale: finalScale });
       await delayTutorial(520, token);
 
       // indrukken met een korte pauze
       pressMarbotic(true);
-      setMarboticState({ tx: dx, ty: dy, scale: finalScale * 1.04 });
-      await delayTutorial(420, token);
-
-      // terug naar normale schaal terwijl hij nog drukt
-      setMarboticState({ tx: dx, ty: dy, scale: finalScale });
-      await delayTutorial(120, token);
+      await delayTutorial(240, token);
 
       // leg de 4 op exact dezelfde plek als in de hand
       placeTutorialDigitOnPlate(marboticBSrc, '4');
+      if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+      playPlop(randFloat(0.90, 1.20));
       await delayTutorial(520, token);
 
       // hand zonder cijfer, daarna uit beeld
@@ -2185,7 +2584,7 @@ function delayTutorial(ms, token){
 
       // Goed antwoord tonen, daarna start het echte spel
       setTimeout(() => hideTutorialDigitOnPlate(), 1800);
-      await onCorrectAnswer();
+      onCorrectAnswerTutorial();
     }
 
 function startGame(){
@@ -2205,8 +2604,115 @@ function startGame(){
       startTutorialDemo();
     }
 
-    homeBtn.addEventListener('click', () => {
-      try { window.location.href = 'index.html'; } catch (e) {}
+
+if (startOverlay && startBtn){
+  const START_HOLD_MS = 900;
+  const START_HOLD_MOVE_TOL = 14;
+  let startHoldTimer = null;
+  let startHoldTriggered = false;
+  let holdPointerId = null;
+  let holdX = 0;
+  let holdY = 0;
+
+  function cancelStartHold(){
+    if (startHoldTimer){ clearTimeout(startHoldTimer); startHoldTimer = null; }
+    holdPointerId = null;
+  }
+
+  startOverlay.addEventListener('pointerdown', (e) => {
+    if (started) return;
+    if (e && e.target && typeof e.target.closest === 'function' && e.target.closest('#startBtn')) return;
+    startHoldTriggered = false;
+    cancelStartHold();
+
+    holdPointerId = e.pointerId;
+    holdX = e.clientX;
+    holdY = e.clientY;
+
+    try{ startOverlay.setPointerCapture(e.pointerId); } catch(err) {}
+
+    startHoldTimer = setTimeout(() => {
+      startHoldTimer = null;
+      startHoldTriggered = true;
+      if (tunePanel && tunePanel.classList.contains('hidden')) openTunePanel();
+    }, START_HOLD_MS);
+
+    // voorkom iOS context menu bij lang indrukken
+    try{ e.preventDefault(); } catch(err) {}
+  }, { passive:false });
+
+  startOverlay.addEventListener('pointermove', (e) => {
+    if (holdPointerId === null || e.pointerId !== holdPointerId) return;
+    const dx = e.clientX - holdX;
+    const dy = e.clientY - holdY;
+    if ((dx*dx + dy*dy) > (START_HOLD_MOVE_TOL*START_HOLD_MOVE_TOL)){
+      cancelStartHold();
+    }
+  }, { passive:true });
+
+  ['pointerup','pointercancel'].forEach(ev => {
+    startOverlay.addEventListener(ev, (e) => {
+      cancelStartHold();
+      try{ startOverlay.releasePointerCapture(e.pointerId); } catch(err) {}
+    }, { passive:true });
+  });
+
+  let startInitiated = false;
+
+  const startActivate = (e) => {
+    if (started || startInitiated) return;
+    if (startHoldTriggered){
+      try{ if (e) e.preventDefault(); } catch(err) {}
+      return;
+    }
+    startInitiated = true;
+
+    try{ if (e){ e.preventDefault(); e.stopPropagation(); } } catch(err) {}
+
+    // audio vrijgeven in deze tik, alleen een plop op de knop
+    try{ ensureFallbackPool(); } catch(err){}
+
+    try{ goodAudio.load(); wrongAudio.load(); promptAudio.load(); afterTutorAudio.load(); } catch(err){}
+
+    // eerst meteen de plop vrijgeven en afspelen
+    Promise.resolve()
+      .then(() => unlockAudio())
+      .then(() => { try{ playPlop(1); } catch(err){} })
+      .catch(() => {});
+
+    Promise.resolve()
+      .then(() => initWebAudio())
+      .then(() => unlockAudio())
+      .catch(() => {});
+
+    if (startOverlay) startOverlay.classList.add('leaving');
+    startBtn.classList.add('leaving');
+
+    setTimeout(() => {
+      if (startOverlay) startOverlay.style.display = 'none';
+      try{ document.body.classList.remove('startActive'); } catch(err){}
+      try{ scheduleScanNudge(); } catch(err){}
+      startGame();
+    }, 520);
+  };
+
+  startBtn.addEventListener('click', startActivate);
+  try{ startBtn.addEventListener('pointerup', startActivate, { passive:false }); } catch(err){}
+  startBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') startActivate(e);
+  });
+}
+
+
+    const goHome = (e) => {
+      try{ if (e) e.preventDefault(); } catch(err) {}
+      try{ window.location.href = 'index.html'; } catch(err) {}
+    };
+
+    homeBtn.addEventListener('click', goHome);
+    try{ homeBtn.addEventListener('pointerup', goHome, { passive:false }); } catch(err){}
+    homeBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') goHome(e);
     });
 
     async function preloadImages(){
@@ -2231,24 +2737,22 @@ function startGame(){
       requestRender();
     }
 
-    window.addEventListener('resize', () => setTimeout(() => {
-      setAutoScale();
-      resizeCountCanvas();
-    }, 180));
+    function scheduleViewportUpdate(delay){
+      setTimeout(() => {
+        setAutoScale();
+        resizeCountCanvas();
+      }, delay);
+    }
 
-    window.addEventListener('orientationchange', () => setTimeout(() => {
-      setAutoScale();
-      resizeCountCanvas();
-    }, 280));
+    window.addEventListener('resize', () => scheduleViewportUpdate(180));
+    window.addEventListener('orientationchange', () => scheduleViewportUpdate(280));
 
     window.addEventListener('load', () => {
       setAutoScale();
-
+      
       countRange = loadCountRange();
       syncCountUI();
-
       resizeCountCanvas();
-      clearRoundUI();
       preloadImages();
       if (successGif){
         successGif.addEventListener('error', () => { usePinguinSuccess = false; }, { once:true });
@@ -2260,8 +2764,6 @@ function startGame(){
         .then(r => r.json())
         .then(data => initCalibration(data))
         .catch(() => { });
-
-      startGame();
     });
   </script>
 </body>
