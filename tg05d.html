@@ -41,7 +41,7 @@
       color: var(--text);
       -webkit-user-select: none;
       user-select: none;
-      touch-action: none;
+      touch-action: manipulation;
       overflow:hidden;
     }
 
@@ -661,6 +661,22 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const randFloat = (a,b) => a + Math.random() * (b - a);
     const nowMs = () => performance.now();
 
+    // configuratie en assets (moeten vóór gebruik gedeclareerd zijn, iOS Safari stopt anders met uitvoeren)
+    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+
+    const GOOD_SOUND_SRC = 'goed.mp3';
+    const WRONG_SOUND_SRC = 'fout.mp3';
+    const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
+    const PLOP_SOUND_SRC = 'plop.mp3';
+    const AFTER_TUTOR_CUE_SRC = 'numagjij.mp3';
+
+    const BLOW_GIF_SRC = 'bellen_blazen02.gif';
+    const POP_GIF_SRC  = 'bel_barst.gif';
+
+    // optioneel, alleen als jij later een pinguïn-gif toevoegt
+    let usePinguinSuccess = false;
+    let PINGUIN_GIF_SRC = 'pinguin.gif';
+
     const BUBBLE_SRC = 'bubble.png';
     const ITEM_SRC = {
       lady: 'lieveheersbeestje.png',
@@ -689,6 +705,11 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const scanPlaceImg = document.getElementById('scanPlaceImg');
 
 
+
+    // In deze schone versie is het 'cijfer onder de scanplek' verwijderd,
+    // maar een paar handlers verwachten nog steeds deze functies.
+    function showUnderDigit(){ /* no-op */ }
+    function hideUnderDigit(){ /* no-op */ }
 
     const tutorialHandWrap = document.getElementById('tutorialHandWrap');
     const tutorialHandImg = document.getElementById('tutorialHand');
@@ -1144,6 +1165,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
 
     tuneClose.addEventListener('click', closeTunePanel);
+    try{ tuneClose.addEventListener('touchend', (e)=>{ try{ e.preventDefault(); }catch(err){} closeTunePanel(); }, { passive:false }); } catch(err){}
 
     // Instellingen openen, lang indrukken op de titelbalk
     const TITLE_HOLD_MS = 1200;
@@ -1167,6 +1189,14 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       titlePill.addEventListener('pointerup', cancelTitleHold);
       titlePill.addEventListener('pointercancel', cancelTitleHold);
       titlePill.addEventListener('pointerleave', cancelTitleHold);
+
+      // iPad Safari fallback, sommige builds sturen geen pointer events op buttons
+      titlePill.addEventListener('touchstart', (e) => {
+        try{ e.preventDefault(); } catch(err) {}
+        startTitleHold();
+      }, { passive:false });
+      titlePill.addEventListener('touchend', cancelTitleHold, { passive:true });
+      titlePill.addEventListener('touchcancel', cancelTitleHold, { passive:true });
     }
 
     // Scan digit hint
@@ -1690,8 +1720,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     let tutorialDone = false;
     let tutorialToken = 0;
-    let usePinguinSuccess = false;
-    let PINGUIN_GIF_SRC = 'pinguin.gif';
 
     
     let idlePromptTimer = null;
@@ -2697,6 +2725,7 @@ if (startOverlay && startBtn){
   };
 
   startBtn.addEventListener('click', startActivate);
+  try{ startBtn.addEventListener('touchend', startActivate, { passive:false }); } catch(err){}
   try{ startBtn.addEventListener('pointerup', startActivate, { passive:false }); } catch(err){}
   startBtn.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') startActivate(e);
@@ -2710,6 +2739,7 @@ if (startOverlay && startBtn){
     };
 
     homeBtn.addEventListener('click', goHome);
+    try{ homeBtn.addEventListener('touchend', goHome, { passive:false }); } catch(err){}
     try{ homeBtn.addEventListener('pointerup', goHome, { passive:false }); } catch(err){}
     homeBtn.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') goHome(e);
