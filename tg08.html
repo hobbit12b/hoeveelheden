@@ -69,7 +69,11 @@ body{
   border: none;
   background: transparent;
   padding: 0;
+  z-index: 60;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
+
 .homeBtn img{ width:100%; height:100%; display:block; }
 
 .penguin{
@@ -756,6 +760,45 @@ body{
   function goHome(){
     try{ window.location.href = "index.html"; }catch(e){ console.log("Home", e); }
   }
+
+  // Homeknop moet altijd klikbaar zijn, ook op iPad (touchstart is leidend)
+  (function bindHomeButtons(){
+    let lastTap = 0;
+
+    function nav(e){
+      const now = Date.now();
+      if(now - lastTap < 250) return; // simpele dubbel-tik guard
+      lastTap = now;
+
+      try{
+        if(e){
+          if(e.cancelable) e.preventDefault();
+          if(e.stopPropagation) e.stopPropagation();
+        }
+      }catch(_){}
+
+      goHome();
+    }
+
+    function attach(){
+      document.querySelectorAll(".homeBtn").forEach(btn => {
+        // zorg dat er nooit een 'dead' knop ontstaat door een parent stacking context
+        btn.style.pointerEvents = "auto";
+        btn.style.touchAction = "manipulation";
+
+        btn.addEventListener("touchstart", nav, { passive:false });
+        btn.addEventListener("pointerdown", nav);
+        btn.addEventListener("mousedown", nav);
+        btn.addEventListener("click", nav);
+      });
+    }
+
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", attach);
+    }else{
+      attach();
+    }
+  })();
 
   function isPortrait(){
     return window.matchMedia("(orientation: portrait)").matches || window.innerHeight >= window.innerWidth;
@@ -1761,9 +1804,8 @@ function startScanRetry(){
   }
 
   function handleTouchEvent(e){
-    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
-    if(isAnimating){ stopScanRetry(); return; }
-
+    // belangrijke regel: releases altijd verwerken
+    // ook als er animaties lopen of het instellingenmenu open staat
     ensureAudio();
     const touches = e.touches || [];
     currentPoints = getPointsFromTouches(touches);
@@ -1775,6 +1817,9 @@ function startScanRetry(){
       setScanState(null);
       return;
     }
+
+    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
+    if(isAnimating){ stopScanRetry(); return; }
 
     if(mustReleaseBetweenRounds){
       stopScanRetry();
