@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#FDEEE9" />
@@ -37,6 +37,7 @@
   --penguinSizeLandscape: 159px;
   --penguinXLandscape: -156px;
   --penguinYLandscape: -43px;
+  --penguinFadeMs: 0.5s;
 }
 
 *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -44,7 +45,7 @@ html,body{ height:100%; width:100%; margin:0; padding:0; background: var(--bg); 
 body{
   font-family: system-ui, -apple-system, "Avenir Next", "Arial Rounded MT Bold", Arial, sans-serif;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .frame{
@@ -75,6 +76,18 @@ body{
   display:block;
   object-fit: contain;
   filter: drop-shadow(0 2px 0 rgba(255,255,255,0.65));
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--penguinFadeMs, 0.5s) ease;
+  pointer-events: none;
+}
+.penguin.is-visible{
+  opacity: 1;
+  visibility: visible;
+}
+.penguin.is-hiding{
+  opacity: 0;
+  visibility: visible;
 }
 
 /* Portret pinguin tuning via transform zodat de cijfers niet verspringen */
@@ -290,6 +303,28 @@ body{
   box-shadow: 0 8px 0 rgba(255,255,255,0.35);
   transform: translate(var(--digitsXLandscape), var(--digitsYLandscape));
 }
+
+/* feedback: bij goed antwoord kleurt het vlak achter de cijfers groen (zonder randen te veranderen) */
+.portrait .digits{ position: relative; }
+.portrait .digits::before{
+  content:"";
+  position:absolute;
+  left: -8px;
+  right: -8px;
+  top: -8px;
+  bottom: -8px;
+  border-radius: 22px;
+  background: transparent;
+  transition: background 0.18s ease;
+  z-index: 0;
+}
+.portrait .digits > .digitTile{ position: relative; z-index: 1; }
+
+.landscape .digitsBubble{ transition: background 0.18s ease; }
+
+.portrait .digits.digitsBgCorrect::before{ background: rgba(76,175,80,0.22); }
+.landscape .digitsBubble.digitsBgCorrect{ background: rgba(76,175,80,0.22); }
+
 .landscape .penguinWrap{
   position:absolute;
   right: clamp(6px, 1.2vmin, 12px);
@@ -314,65 +349,127 @@ body{
   .frame.portrait{ display:none; }
 }
 
-/* Tuner, klein bedienpaneel voor afstelling */
+/* Instellingen menu, open via lang indrukken op de titel */
 .tuner{
   position: fixed;
-  right: calc(env(safe-area-inset-right, 0px) + 10px);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  inset: 0;
   z-index: 999;
-  width: min(92vw, 380px);
+  display: none;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 10px)
+           calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
+  background: rgba(0,0,0,0.18);
   pointer-events: auto;
 }
-.tunerHead{
-  display:flex;
-  justify-content:flex-end;
-  gap: 10px;
-}
-.tunerToggle{
-  background: rgba(255,255,255,0.95);
-  border: 2px solid rgba(138,84,198,0.28);
-  border-radius: 18px;
-  padding: 10px 12px;
-  font-weight: 900;
-  font-size: 14px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
-}
+.tuner.is-visible{ display:flex; }
+
 .tunerPanel{
-  margin-top: 10px;
-  background: rgba(255,255,255,0.95);
+  width: min(92vw, 420px);
+  background: rgba(255,255,255,0.97);
   border: 2px solid rgba(138,84,198,0.28);
   border-radius: 22px;
-  padding: 12px 12px 14px;
-  box-shadow: 0 16px 36px rgba(0,0,0,0.14);
+  padding: 14px 14px 16px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.18);
   backdrop-filter: blur(6px);
 }
-.tunerPanel.hidden{ display:none; }
 
-.tunerTitle{
+.settingsTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.settingsTitle{
   font-weight: 950;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.2px;
   color: rgba(20,20,20,0.78);
+}
+.settingsClose{
+  background: #fff;
+  border: 2px solid rgba(234,115,49,0.35);
+  border-radius: 16px;
+  padding: 8px 10px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.settingsBlock{
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.settingsLabel{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(20,20,20,0.70);
   margin: 0 0 8px 0;
 }
-.tunerHint{
+.settingsHint{
   font-size: 12px;
   color: rgba(20,20,20,0.55);
-  margin: 0 0 10px 0;
+  margin-top: 8px;
 }
-.tunerRow{
+
+.slotGrid{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.slotBox{
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 3px solid rgba(204,129,87,0.55);
+  background: #fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  font-weight: 950;
+  font-size: 16px;
+  color: rgba(20,20,20,0.70);
+  cursor: pointer;
+}
+.slotBox input{
+  position:absolute;
+  inset:0;
+  opacity:0;
+}
+.slotBox span{
+  pointer-events:none;
+}
+.slotBox .check{
+  position:absolute;
+  right: 6px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(138,84,198,0.55);
+  background: rgba(255,255,255,0.9);
+}
+.slotBox input:checked + span + .check{
+  background: rgba(138,84,198,0.92);
+  border-color: rgba(138,84,198,0.92);
+}
+
+.rangeRow{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 10px;
   margin: 10px 0 6px;
 }
-.tunerRow label{
+.rangeRow label{
   font-weight: 850;
   font-size: 13px;
   color: rgba(20,20,20,0.70);
 }
-.tunerVal{
+.rangeVal{
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   color: rgba(20,20,20,0.55);
@@ -381,10 +478,74 @@ body{
   width: 100%;
   accent-color: var(--purple);
 }
+.dualRange{
+  position: relative;
+  height: 36px;
+  width: 100%;
+  margin-top: 6px;
+}
+.dualRail{
+  position:absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
+  background: rgba(138,84,198,0.16);
+  border-radius: 999px;
+}
+.dualFill{
+  position:absolute;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
+  background: rgba(138,84,198,0.75);
+  border-radius: 999px;
+  left: 0;
+  right: 0;
+}
+.dualRange input[type="range"]{
+  position:absolute;
+  left: 0; top: 0;
+  width: 100%;
+  height: 36px;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.dualRange input[type="range"]::-webkit-slider-runnable-track{
+  height: 8px;
+  background: transparent;
+}
+.dualRange input[type="range"]::-moz-range-track{
+  height: 8px;
+  background: transparent;
+}
+.dualRange input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid rgba(138,84,198,0.92);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  margin-top: -7px;
+}
+.dualRange input[type="range"]::-moz-range-thumb{
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid rgba(138,84,198,0.92);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
 .tunerActions{
   display:flex;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 .tunerBtn{
   flex:1;
@@ -397,9 +558,7 @@ body{
 }
 .tunerBtn.secondary{
   border-color: rgba(138,84,198,0.28);
-}
-  
-/* extra, spel feedback */
+}/* extra, spel feedback */
 .digitTile .digitFallback{ display:none; }
 .digitTile .questionMark{ display:none; }
 .digitTile.question .questionMark{ display:block; }
@@ -432,22 +591,10 @@ body{
   border-radius: inherit;
   pointer-events:auto;
 }
-#gameArea::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: inherit;
-  pointer-events:none;
-  opacity:0;
-  transition: opacity 0.18s ease;
-}
-#gameArea.state-scanning::after{ opacity:0.18; background: rgba(138,84,198,0.10); }
-#gameArea.state-correct::after{ opacity:0.26; background: rgba(76,175,80,0.18); }
-#gameArea.state-wrong::after{ opacity:0.26; background: rgba(229,57,53,0.18); }
 
 /* tuner alleen zichtbaar via lang indrukken */
 .tuner{ display:none; }
-.tuner.is-visible{ display:block; }
+.tuner.is-visible{ display:flex; }
 
 </style>
 </head>
@@ -538,45 +685,76 @@ body{
     </div>
   </div>
 
-  <!-- Afstel paneel -->
-  <div class="tuner" id="tuner" aria-label="Afstelling">
-    <div class="tunerHead">
-      <button class="tunerToggle" id="tunerToggle" type="button" aria-expanded="true">instellen</button>
-    </div>
+  <!-- Instellingen, open via lang indrukken op de titel -->
+  <div class="tuner" id="tuner" aria-label="Instellingen">
+    <div class="tunerPanel" id="tunerPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settingsTop">
+        <div class="settingsTitle" id="settingsTitle">instellingen</div>
+        <button class="settingsClose" id="closeBtn" type="button" aria-label="Sluiten">sluiten</button>
+      </div>
 
-    <div class="tunerPanel" id="tunerPanel">
-      <p class="tunerTitle" id="tunerTitle">Afstelling, portret</p>
-      <p class="tunerHint">Wijzig waarden, draai de iPad om om ook liggend af te stellen</p>
+      <div class="settingsBlock">
+        <p class="settingsLabel">waar mag het vraagteken staan</p>
+        <div class="slotGrid" role="group" aria-label="Vraagtekenposities">
+          <label class="slotBox" aria-label="positie 1">
+            <input type="checkbox" id="slot0" />
+            <span>1</span>
+            <span class="check" aria-hidden="true"></span>
+          </label>
+          <label class="slotBox" aria-label="positie 2">
+            <input type="checkbox" id="slot1" />
+            <span>2</span>
+            <span class="check" aria-hidden="true"></span>
+          </label>
+          <label class="slotBox" aria-label="positie 3">
+            <input type="checkbox" id="slot2" />
+            <span>3</span>
+            <span class="check" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="settingsHint">vink één of meer hokjes aan</div>
+      </div>
 
-      <div class="tunerRow"><label for="topbar">bovenbalk hoogte</label><div class="tunerVal" id="topbarVal">0 px</div></div>
-<input id="topbar" type="range" min="90" max="340" step="1" value="292" />
+      <div class="settingsBlock">
+        <p class="settingsLabel">minimum en maximum</p>
 
-<div class="tunerRow"><label for="dX">cijfers blok positie X</label><div class="tunerVal" id="dXVal">0 px</div></div>
-<input id="dX" type="range" min="-240" max="240" step="1" value="-20" />
+        <div class="rangeRow">
+          <label for="rangeMin">minimum</label>
+          <div class="rangeVal" id="minVal">0</div>
+        </div>
+        <input id="rangeMin" type="range" min="0" max="9" step="1" value="0" aria-label="minimum" />
 
-<div class="tunerRow"><label for="dY">cijfers blok positie Y</label><div class="tunerVal" id="dYVal">0 px</div></div>
-<input id="dY" type="range" min="-240" max="240" step="1" value="-20" />
+        <div class="rangeRow" style="margin-top: 10px;">
+          <label for="rangeMax">maximum</label>
+          <div class="rangeVal" id="maxVal">9</div>
+        </div>
+        <input id="rangeMax" type="range" min="0" max="9" step="1" value="9" aria-label="maximum" />
 
-<div class="tunerRow"><label for="pS">pinguin grootte</label><div class="tunerVal" id="pSVal">0 px</div></div>
-<input id="pS" type="range" min="40" max="260" step="1" value="165" />
+        <div class="settingsHint">sleep beide sliders: minimum mag niet groter zijn dan maximum</div>
+      </div>
 
-<div class="tunerRow"><label for="pX">pinguin positie X</label><div class="tunerVal" id="pXVal">0 px</div></div>
-<input id="pX" type="range" min="-180" max="180" step="1" value="7" />
+      <div class="settingsBlock">
+        <p class="settingsLabel">duur pinguin animatie</p>
 
-<div class="tunerRow"><label for="pY">pinguin positie Y</label><div class="tunerVal" id="pYVal">0 px</div></div>
-<input id="pY" type="range" min="-180" max="180" step="1" value="20" />
+        <div class="rangeRow">
+          <label for="penguinRange">seconden</label>
+          <div class="rangeVal" id="penguinVal">2.5</div>
+        </div>
+        <input id="penguinRange" type="range" min="600" max="8000" step="100" value="2500" />
+      </div>
 
-      <div class="tunerActions">
+<div class="tunerActions">
         <button class="tunerBtn secondary" id="resetBtn" type="button">reset</button>
-        <button class="tunerBtn" id="closeBtn" type="button">sluiten</button>
+        <button class="tunerBtn" id="doneBtn" type="button">klaar</button>
       </div>
     </div>
   </div>
 
+  <img id="penguinPreload" src="./goed.gif" alt="" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;" />
+
 <script>
   function goHome(){
-    const target = document.body.dataset.home || "index.html";
-    try{ window.location.href = target; }catch(e){ console.log("Home", e); }
+    try{ window.location.href = "index.html"; }catch(e){ console.log("Home", e); }
   }
 
   function isPortrait(){
@@ -588,7 +766,6 @@ body{
     const host = document.getElementById(portrait ? "gameHostPortrait" : "gameHostLandscape");
     const gameArea = document.getElementById("gameArea");
     if(host && gameArea && gameArea.parentElement !== host) host.appendChild(gameArea);
-    syncTunerMode();
   }
 
   function debounce(fn, wait){
@@ -599,193 +776,246 @@ body{
     };
   }
 
-    const structuredClone = window.structuredClone || ((obj) => JSON.parse(JSON.stringify(obj)));
+  
+// voorkom dubbel tik zoomen, zonder Marbotic multi touch te blokkeren
+(function preventZoom(){
+  let lastTouchEnd = 0;
 
-  const STORE_KEY = "tg08_tune_v4";
+  // dubbel tik
+  document.addEventListener("touchend", function(e){
+    const now = Date.now();
+    if(now - lastTouchEnd <= 300){
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive:false });
 
-  const defaults = {
-    portrait:  { topBarH: 292, dX: -20, dY: -20, pS: 165, pX: 7, pY: 20 },
-    landscape: { topBarH: 148, dX: 16, dY: -26, pS: 159, pX: -156, pY: -43 }
-  };
+  // extra zekerheid
+  document.addEventListener("dblclick", function(e){
+    e.preventDefault();
+  }, { passive:false });
 
-  let tune = loadTune();
+  // iOS pinch, dit blokkeert het zoomen, Marbotic blijft werken
+  ["gesturestart","gesturechange","gestureend"].forEach(evt => {
+    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+  });
+})();
 
-  function loadTune(){
-    try{
-      const raw = localStorage.getItem(STORE_KEY);
-      if(!raw) return structuredClone(defaults);
-      const parsed = JSON.parse(raw);
 
-      const normalize = (mode) => {
-        const src = parsed[mode] || {};
-        const out = { ...defaults[mode], ...src };
 
-        // migratie van oude breedte, hoogte naar grootte
-        if(out.pS == null){
-          if(src.pW != null) out.pS = src.pW;
-          else if(src.pH != null) out.pS = src.pH;
-          else out.pS = defaults[mode].pS;
+(function(){
+    const STORE_KEY = "tg08_settings_v2";
+    const defaults = { allowedSlots: [true, true, true], min: 0, max: 9, penguinMs: 2500 };
+
+    function safeClone(o){ return JSON.parse(JSON.stringify(o)); }
+    function clampInt(v, lo, hi){
+      v = Number(v);
+      if(!Number.isFinite(v)) v = lo;
+      v = Math.round(v);
+      return Math.max(lo, Math.min(hi, v));
+    }
+
+    function normalizeSettings(s){
+      const out = safeClone(defaults);
+      if(s && typeof s === "object"){
+        if(Array.isArray(s.allowedSlots) && s.allowedSlots.length === 3){
+          out.allowedSlots = s.allowedSlots.slice(0,3).map(x => !!x);
         }
-        return out;
-      };
-
-      return { portrait: normalize("portrait"), landscape: normalize("landscape") };
-    }catch(e){
-      return structuredClone(defaults);
-    }
-  }
-
-  function saveTune(){
-    try{ localStorage.setItem(STORE_KEY, JSON.stringify(tune)); }catch(e){}
-  }
-
-  function applyTune(){
-    const r = document.documentElement.style;
-
-    r.setProperty("--topBarHPortrait", tune.portrait.topBarH + "px");
-    r.setProperty("--topBarHLandscape", tune.landscape.topBarH + "px");
-
-    r.setProperty("--digitsXPortrait", tune.portrait.dX + "px");
-    r.setProperty("--digitsYPortrait", tune.portrait.dY + "px");
-    r.setProperty("--digitsXLandscape", tune.landscape.dX + "px");
-    r.setProperty("--digitsYLandscape", tune.landscape.dY + "px");
-
-    r.setProperty("--penguinSizePortrait", tune.portrait.pS + "px");
-    r.setProperty("--penguinXPortrait", tune.portrait.pX + "px");
-    r.setProperty("--penguinYPortrait", tune.portrait.pY + "px");
-
-    r.setProperty("--penguinSizeLandscape", tune.landscape.pS + "px");
-    r.setProperty("--penguinXLandscape", tune.landscape.pX + "px");
-    r.setProperty("--penguinYLandscape", tune.landscape.pY + "px");
-  }
-
-  function currentMode(){
-    return isPortrait() ? "portrait" : "landscape";
-  }
-
-  function syncTunerMode(){
-    const mode = currentMode();
-    const panel = document.getElementById("tunerPanel");
-    if(!panel) return;
-
-    const title = document.getElementById("tunerTitle");
-    title.textContent = "Afstelling, " + (mode === "portrait" ? "portret" : "liggend");
-
-    const topbar = document.getElementById("topbar");
-    if(mode === "portrait"){
-      topbar.min = 90; topbar.max = 340;
-    }else{
-      topbar.min = 70; topbar.max = 260;
+        out.min = clampInt(s.min, 0, 9);
+        out.max = clampInt(s.max, 0, 9);
+        out.penguinMs = clampInt(s.penguinMs, 600, 8000);
+      }
+      return out;
     }
 
-    const t = tune[mode];
-    setSlider("topbar", t.topBarH);
-    setSlider("dX", t.dX);
-    setSlider("dY", t.dY);
-    setSlider("pS", t.pS);
-    setSlider("pX", t.pX);
-    setSlider("pY", t.pY);
+    function loadSettings(){
+      try{
+        const raw = localStorage.getItem(STORE_KEY);
+        if(!raw) return safeClone(defaults);
+        return normalizeSettings(JSON.parse(raw));
+      }catch(e){
+        return safeClone(defaults);
+      }
+    }
 
-    updateLabels();
-  }
-
-  function setSlider(id, val){
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.value = String(val);
-  }
-
-  function setVal(id, text){
-    const el = document.getElementById(id);
-    if(el) el.textContent = text;
-  }
-
-  function updateLabels(){
-    setVal("topbarVal", document.getElementById("topbar").value + " px");
-    setVal("dXVal", document.getElementById("dX").value + " px");
-    setVal("dYVal", document.getElementById("dY").value + " px");
-    setVal("pSVal", document.getElementById("pS").value + " px");
-    setVal("pXVal", document.getElementById("pX").value + " px");
-    setVal("pYVal", document.getElementById("pY").value + " px");
-  }
-
-  function bindTuner(){
-    const toggle = document.getElementById("tunerToggle");
-    const panel = document.getElementById("tunerPanel");
-    const closeBtn = document.getElementById("closeBtn");
-    const resetBtn = document.getElementById("resetBtn");
-
-    function setOpen(open){
-      panel.classList.toggle("hidden", !open);
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    function saveSettings(s){
+      try{ localStorage.setItem(STORE_KEY, JSON.stringify(normalizeSettings(s))); }catch(e){}
     }
 
     window.__tg08 = window.__tg08 || {};
+    window.__tg08.defaults = defaults;
+    window.__tg08.settings = loadSettings();
+    window.__tg08.settingsOpen = false;
+
+    window.__tg08.saveSettings = function(){
+      saveSettings(window.__tg08.settings);
+      try{
+        window.dispatchEvent(new CustomEvent("tg08:settings", { detail: safeClone(window.__tg08.settings) }));
+      }catch(e){}
+    };
+
+    function overlay(){ return document.getElementById("tuner"); }
+
     window.__tg08.showSettings = function(){
-      const tunerEl = document.getElementById("tuner");
-      if(tunerEl) tunerEl.classList.add("is-visible");
-      setOpen(true);
-      syncTunerMode();
+      const o = overlay();
+      if(!o) return;
+      window.__tg08.settingsOpen = true;
+      syncUIFromSettings();
+      o.classList.add("is-visible");
     };
+
     window.__tg08.hideSettings = function(){
-      setOpen(false);
-      const tunerEl = document.getElementById("tuner");
-      if(tunerEl) tunerEl.classList.remove("is-visible");
+      const o = overlay();
+      if(!o) return;
+      window.__tg08.settingsOpen = false;
+      o.classList.remove("is-visible");
     };
 
-    toggle.addEventListener("click", () => {
-      const isOpen = !panel.classList.contains("hidden");
-      setOpen(!isOpen);
+    function updateRangeLabels(){
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      const minVal = document.getElementById("minVal");
+      const maxVal = document.getElementById("maxVal");
+      if(minVal && rangeMin) minVal.textContent = String(rangeMin.value);
+      if(maxVal && rangeMax) maxVal.textContent = String(rangeMax.value);
+
+      const penguinRange = document.getElementById("penguinRange");
+      const penguinVal = document.getElementById("penguinVal");
+      if(penguinRange && penguinVal){
+        penguinVal.textContent = (Number(penguinRange.value) / 1000).toFixed(1);
+      }
+      updateRangeFill();
+    }
+
+    function updateRangeFill(){
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      const fill = document.getElementById("rangeFill");
+      if(!rangeMin || !rangeMax || !fill) return;
+      const min = Number(rangeMin.value);
+      const max = Number(rangeMax.value);
+      const lo = Number(rangeMin.min);
+      const hi = Number(rangeMin.max);
+      const pctMin = ((min - lo) / (hi - lo)) * 100;
+      const pctMax = ((max - lo) / (hi - lo)) * 100;
+      fill.style.left = pctMin + "%";
+      fill.style.right = (100 - pctMax) + "%";
+      // zorg dat de juiste thumb bovenop ligt bij kruisen
+      if(min >= max - 1){
+        rangeMin.style.zIndex = "4";
+        rangeMax.style.zIndex = "3";
+      }else{
+        rangeMin.style.zIndex = "3";
+        rangeMax.style.zIndex = "4";
+      }
+    }
+
+    function syncUIFromSettings(){
+      const s = window.__tg08.settings || safeClone(defaults);
+
+      const slot0 = document.getElementById("slot0");
+      const slot1 = document.getElementById("slot1");
+      const slot2 = document.getElementById("slot2");
+      if(slot0) slot0.checked = !!s.allowedSlots[0];
+      if(slot1) slot1.checked = !!s.allowedSlots[1];
+      if(slot2) slot2.checked = !!s.allowedSlots[2];
+
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      if(rangeMin) rangeMin.value = String(clampInt(s.min, 0, 9));
+      if(rangeMax) rangeMax.value = String(clampInt(s.max, 0, 9));
+
+      const penguinRange = document.getElementById("penguinRange");
+      if(penguinRange) penguinRange.value = String(clampInt(s.penguinMs, 600, 8000));
+
+      updateRangeLabels();
+    }
+
+    function bindSettingsUI(){
+      const o = overlay();
+      if(!o) return;
+
+      o.addEventListener("click", (e) => {
+        if(e.target === o) window.__tg08.hideSettings();
+      });
+
+      const closeBtn = document.getElementById("closeBtn");
+      const doneBtn = document.getElementById("doneBtn");
+      const resetBtn = document.getElementById("resetBtn");
+
+      if(closeBtn) closeBtn.addEventListener("click", () => window.__tg08.hideSettings());
+      if(doneBtn) doneBtn.addEventListener("click", () => {
+        window.__tg08.hideSettings();
+        if(window.__tg08.requestNewRound) window.__tg08.requestNewRound();
+      });
+
+      if(resetBtn) resetBtn.addEventListener("click", () => {
+        window.__tg08.settings = safeClone(defaults);
+        window.__tg08.saveSettings();
+        syncUIFromSettings();
+        if(window.__tg08.requestNewRound) window.__tg08.requestNewRound();
+      });
+
+      const slotIds = ["slot0","slot1","slot2"];
+      slotIds.forEach((id, idx) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener("change", () => {
+          window.__tg08.settings.allowedSlots[idx] = !!el.checked;
+          window.__tg08.saveSettings();
+        });
+      });
+
+      const rangeMin = document.getElementById("rangeMin");
+      const rangeMax = document.getElementById("rangeMax");
+      const penguinRange = document.getElementById("penguinRange");
+
+      function normalizeDualRange(activeEl){
+        if(!rangeMin || !rangeMax) return;
+
+        let min = clampInt(rangeMin.value, 0, 9);
+        let max = clampInt(rangeMax.value, 0, 9);
+
+        if(min > max){
+          if(activeEl === rangeMin) max = min;
+          else min = max;
+        }
+
+        rangeMin.value = String(min);
+        rangeMax.value = String(max);
+
+        window.__tg08.settings.min = min;
+        window.__tg08.settings.max = max;
+        window.__tg08.saveSettings();
+        updateRangeLabels();
+      }
+
+      if(rangeMin) rangeMin.addEventListener("input", () => normalizeDualRange(rangeMin), { passive:true });
+      if(rangeMax) rangeMax.addEventListener("input", () => normalizeDualRange(rangeMax), { passive:true });
+
+      if(penguinRange){
+        penguinRange.addEventListener("input", () => {
+          const ms = clampInt(penguinRange.value, 600, 8000);
+          penguinRange.value = String(ms);
+          window.__tg08.settings.penguinMs = ms;
+          window.__tg08.saveSettings();
+          updateRangeLabels();
+        }, { passive:true });
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      bindSettingsUI();
+      syncUIFromSettings();
+      setLayout();
     });
 
-    closeBtn.addEventListener("click", () => window.__tg08 && window.__tg08.hideSettings ? window.__tg08.hideSettings() : setOpen(false));
+    window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
 
-    resetBtn.addEventListener("click", () => {
-      const mode = currentMode();
-      tune[mode] = structuredClone(defaults[mode]);
-      applyTune();
-      saveTune();
-      syncTunerMode();
-    });
-
-    const ids = ["topbar","dX","dY","pS","pX","pY"];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if(!el) return;
-
-      el.addEventListener("input", () => {
-        const mode = currentMode();
-        const v = parseInt(el.value, 10) || 0;
-
-        if(id === "topbar") tune[mode].topBarH = v;
-        if(id === "dX") tune[mode].dX = v;
-        if(id === "dY") tune[mode].dY = v;
-        if(id === "pS") tune[mode].pS = v;
-        if(id === "pX") tune[mode].pX = v;
-        if(id === "pY") tune[mode].pY = v;
-
-        applyTune();
-        saveTune();
-        updateLabels();
-      }, { passive:true });
-    });
-
-    setOpen(false);
-    const tunerEl = document.getElementById("tuner");
-    if(tunerEl) tunerEl.classList.remove("is-visible");
-  }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    applyTune();
-    bindTuner();
-    setLayout();
-  });
-
-  window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
-
-  const mql = window.matchMedia("(orientation: portrait)");
-  if(mql.addEventListener) mql.addEventListener("change", setLayout);
-  else if(mql.addListener) mql.addListener(setLayout);
+    const mql = window.matchMedia("(orientation: portrait)");
+    if(mql.addEventListener) mql.addEventListener("change", setLayout);
+    else if(mql.addListener) mql.addListener(setLayout);
+  })();
 </script>
 
 <script>
@@ -1208,28 +1438,77 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
    SPEL: welk cijfer mist
    ================================ */
 (function(){
-  const GAME_MIN = 0;
-  const GAME_MAX = 5;   // pas aan als je hogere cijfers wilt gebruiken
   const SLOT_COUNT = 3;
 
-  let sequence = [0,1,2];
+  function getPenguinMs(){
+    const s = window.__tg08 && window.__tg08.settings;
+    const v = s && s.penguinMs;
+    let ms = Number(v);
+    if(!Number.isFinite(ms)) ms = 1200;
+    ms = Math.round(ms);
+    if(ms < 600) ms = 600;
+    if(ms > 8000) ms = 8000;
+    return ms;
+  }
+
+  let sequence = [0, 1, 2];
   let missingIndex = 1;
   let missingNumber = 1;
+
   let roundActive = true;
+  let isAnimating = false;
+  let pendingNewRound = false;
+  let mustReleaseBetweenRounds = false;
 
   let currentPoints = [];
   let hasResultForCurrentTouches = false;
 
+  let scanRetryTimer = null;
+  let scanRetryCutoff = null;
+
   function qs(sel){ return document.querySelector(sel); }
   function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
 
+  function clampInt(v, lo, hi){
+    v = Number(v);
+    if(!Number.isFinite(v)) v = lo;
+    v = Math.round(v);
+    return Math.max(lo, Math.min(hi, v));
+  }
+
+  function getConfig(){
+    const defaults = (window.__tg08 && window.__tg08.defaults) ? window.__tg08.defaults : { allowedSlots:[true,true,true], min:0, max:9 };
+    const s = (window.__tg08 && window.__tg08.settings) ? window.__tg08.settings : defaults;
+
+    let min = clampInt(s.min, 0, 9);
+    let max = clampInt(s.max, 0, 9);
+    if(max < min){ const t = min; min = max; max = t; }
+
+    // zorg dat er altijd 3 opeenvolgende cijfers mogelijk zijn
+    if(max - min < (SLOT_COUNT - 1)){
+      if(max === 9) min = Math.max(0, max - (SLOT_COUNT - 1));
+      else max = Math.min(9, min + (SLOT_COUNT - 1));
+    }
+
+    let allowedSlots = Array.isArray(s.allowedSlots) ? s.allowedSlots.slice(0,3).map(x => !!x) : defaults.allowedSlots.slice();
+    if(!allowedSlots.some(Boolean)) allowedSlots = [true,true,true];
+
+    return { min, max, allowedSlots };
+  }
+
+  function setDigitsCorrect(isCorrect){
+    const on = !!isCorrect;
+    ["digitsPortrait","digitsLandscape"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle("digitsBgCorrect", on);
+    });
+  }
+
   function setScanState(state){
-    const area = document.getElementById("gameArea");
-    if(!area) return;
-    area.classList.remove("state-scanning","state-correct","state-wrong");
-    if(state === "scanning") area.classList.add("state-scanning");
-    if(state === "correct") area.classList.add("state-correct");
-    if(state === "wrong") area.classList.add("state-wrong");
+    // scanvlak en randen blijven neutraal,
+    // alleen het vlak achter de cijfers krijgt feedback bij goed antwoord
+    if(state === "correct") setDigitsCorrect(true);
+    else setDigitsCorrect(false);
   }
 
   function tilesForMode(mode){
@@ -1280,7 +1559,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
 
   function updateDigits(){
     ["portrait","landscape"].forEach(mode => {
-      for(let i=0;i<SLOT_COUNT;i++) {
+      for(let i = 0; i < SLOT_COUNT; i++){
         const t = tileByIndex(mode, i);
         setTile(t, sequence[i], i === missingIndex);
       }
@@ -1289,15 +1568,83 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     });
   }
 
+  const PENGUIN_FADE_MS = 500;
+
+  function setPenguinFadeVar(){
+    try{
+      document.documentElement.style.setProperty("--penguinFadeMs", (PENGUIN_FADE_MS / 1000) + "s");
+    }catch(e){}
+  }
+
+  function hidePenguinImmediate(){
+    document.querySelectorAll(".penguin").forEach(img => img.classList.remove("is-visible","is-hiding"));
+  }
+
+  function hidePenguinFade(){
+    const imgs = Array.from(document.querySelectorAll(".penguin"));
+    imgs.forEach(img => {
+      img.classList.remove("is-visible");
+      img.classList.add("is-hiding");
+    });
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        imgs.forEach(img => img.classList.remove("is-hiding"));
+        resolve();
+      }, PENGUIN_FADE_MS);
+    });
+  }
+
+  function showPenguinOnce(){
+    // herstart gif zonder opnieuw te downloaden, zodat het soepel loopt
+    document.querySelectorAll(".penguin").forEach(img => {
+      const base = img.dataset.baseSrc || img.getAttribute("src") || "./goed.gif";
+      img.dataset.baseSrc = base;
+
+      const clone = img.cloneNode(true);
+      clone.setAttribute("src", base);
+      clone.style.transition = "none";
+      clone.classList.remove("is-hiding");
+      clone.classList.add("is-visible");
+
+      // vervang, dan start de gif opnieuw vanaf frame 1
+      img.replaceWith(clone);
+      requestAnimationFrame(() => { clone.style.transition = ""; });
+});
+
+    return new Promise(resolve => setTimeout(resolve, getPenguinMs()));
+  }
+
+
+  function pickMissingIndex(allowedSlots){
+    const options = [];
+    for(let i = 0; i < SLOT_COUNT; i++){
+      if(allowedSlots[i]) options.push(i);
+    }
+    if(options.length === 0) return Math.floor(Math.random() * SLOT_COUNT);
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
   function newRound(){
+    if(isAnimating){
+      pendingNewRound = true;
+      return;
+    }
+
+    pendingNewRound = false;
     roundActive = true;
     hasResultForCurrentTouches = false;
 
-    const baseMax = Math.max(GAME_MIN, GAME_MAX - (SLOT_COUNT - 1));
-    const base = GAME_MIN + Math.floor(Math.random() * (baseMax - GAME_MIN + 1));
+    hidePenguinImmediate();
+
+    const cfg = getConfig();
+    const baseMin = cfg.min;
+    const baseMax = Math.max(cfg.min, cfg.max - (SLOT_COUNT - 1));
+
+    const base = baseMin + Math.floor(Math.random() * (baseMax - baseMin + 1));
     sequence = [base, base + 1, base + 2];
 
-    missingIndex = Math.floor(Math.random() * SLOT_COUNT);
+    missingIndex = pickMissingIndex(cfg.allowedSlots);
     missingNumber = sequence[missingIndex];
 
     setScanState(null);
@@ -1307,7 +1654,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
   function revealCorrect(){
     ["portrait","landscape"].forEach(mode => {
       const t = tileByIndex(mode, missingIndex);
-      if(t) {
+      if(t){
         setTile(t, missingNumber, false);
         t.classList.add("pop");
       }
@@ -1317,7 +1664,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
   function showWrongFeedback(){
     ["portrait","landscape"].forEach(mode => {
       const row = qs("." + mode + " .digits") || qs("." + mode + " .digitsBubble");
-      if(row) {
+      if(row){
         row.classList.remove("shake");
         void row.offsetWidth;
         row.classList.add("shake");
@@ -1326,15 +1673,24 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
   }
 
   function handleRecognitionResult(digit){
-    if(!roundActive) return;
+    if(!roundActive || isAnimating) return;
 
     if(digit === missingNumber){
       roundActive = false;
+      isAnimating = true;
+      mustReleaseBetweenRounds = true;
+
       setScanState("correct");
       playSuccessSound();
       revealCorrect();
-      setTimeout(() => newRound(), 900);
-      return;
+
+      showPenguinOnce()
+        .then(() => hidePenguinFade())
+        .then(() => {
+          isAnimating = false;
+          newRound();
+        });
+return;
     }
 
     setScanState("wrong");
@@ -1347,16 +1703,57 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     }, 450);
   }
 
+function stopScanRetry(){
+  if(scanRetryTimer){
+    clearInterval(scanRetryTimer);
+    scanRetryTimer = null;
+  }
+  if(scanRetryCutoff){
+    clearTimeout(scanRetryCutoff);
+    scanRetryCutoff = null;
+  }
+}
+
+function startScanRetry(){
+  if(scanRetryTimer) return;
+
+  // probeer een paar keer zolang de drie punten blijven staan
+  scanRetryTimer = setInterval(() => {
+    if(!roundActive || isAnimating) return;
+    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
+    if(mustReleaseBetweenRounds) return;
+
+    if(currentPoints.length !== expectedTouchPoints){
+      stopScanRetry();
+      return;
+    }
+    if(hasResultForCurrentTouches) {
+      stopScanRetry();
+      return;
+    }
+
+    const digit = recognizeDigit(currentPoints);
+    if(digit !== null && typeof digit === "number"){
+      hasResultForCurrentTouches = true;
+      handleRecognitionResult(digit);
+      stopScanRetry();
+    }
+  }, 80);
+
+  // safety cutoff
+  scanRetryCutoff = setTimeout(() => stopScanRetry(), 5000);
+}
+
   function getPointsFromTouches(touchList){
     const area = document.getElementById("gameArea");
     if(!area) return [];
     const rect = area.getBoundingClientRect();
     const points = [];
-    for(let i=0;i<touchList.length;i++) {
+    for(let i = 0; i < touchList.length; i++){
       const t = touchList[i];
       const x = t.clientX;
       const y = t.clientY;
-      if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+      if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom){
         points.push({ x, y });
       }
     }
@@ -1364,17 +1761,29 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
   }
 
   function handleTouchEvent(e){
+    if(window.__tg08 && window.__tg08.settingsOpen){ stopScanRetry(); return; }
+    if(isAnimating){ stopScanRetry(); return; }
+
     ensureAudio();
     const touches = e.touches || [];
     currentPoints = getPointsFromTouches(touches);
 
     if(currentPoints.length === 0){
+      stopScanRetry();
       hasResultForCurrentTouches = false;
+      mustReleaseBetweenRounds = false;
+      setScanState(null);
+      return;
+    }
+
+    if(mustReleaseBetweenRounds){
+      stopScanRetry();
       setScanState(null);
       return;
     }
 
     if(currentPoints.length !== expectedTouchPoints){
+      stopScanRetry();
       hasResultForCurrentTouches = false;
       setScanState("scanning");
       return;
@@ -1382,13 +1791,19 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
 
     setScanState("scanning");
 
+    // direct proberen, zodat een eerste "tik" ook meteen scant
     if(!hasResultForCurrentTouches && roundActive){
       const digit = recognizeDigit(currentPoints);
       if(digit !== null && typeof digit === "number"){
         hasResultForCurrentTouches = true;
         handleRecognitionResult(digit);
+        stopScanRetry();
+        return;
       }
     }
+
+    // als de punten net bewegen of de timing krap is, blijf kort proberen
+    startScanRetry();
   }
 
   function addTouchListeners(elem){
@@ -1411,7 +1826,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     };
     const cancel = () => {
       pressed = false;
-      if(timer) { clearTimeout(timer); timer = null; }
+      if(timer){ clearTimeout(timer); timer = null; }
     };
 
     el.addEventListener("touchstart", start, { passive:true });
@@ -1423,12 +1838,34 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
     el.addEventListener("mouseleave", cancel);
   }
 
+  window.addEventListener("tg08:settings", () => {
+    // opties zijn aangepast, start een nieuwe ronde zodra dat veilig kan
+    if(window.__tg08 && !window.__tg08.settingsOpen){
+      newRound();
+    }else{
+      pendingNewRound = true;
+    }
+  });
+
   document.addEventListener("DOMContentLoaded", () => {
     const area = document.getElementById("gameArea");
     if(area) addTouchListeners(area);
 
     bindLongPress(document.getElementById("titlePillPortrait"));
     bindLongPress(document.getElementById("titlePillLandscape"));
+
+    // warm up de gif zodat de eerste keer niet hapert
+    const preload = document.getElementById("penguinPreload");
+    if(preload && preload.decode) preload.decode().catch(() => {});
+    document.querySelectorAll(".penguin").forEach(img => {
+      if(img && img.decode) img.decode().catch(() => {});
+    });
+
+    setPenguinFadeVar();
+    hidePenguinImmediate();
+
+    window.__tg08 = window.__tg08 || {};
+    window.__tg08.requestNewRound = () => newRound();
 
     newRound();
 
@@ -1438,6 +1875,7 @@ const DIGIT_IMAGE_PREFIX = "marbotic";
       .catch(() => { /* geen kalibratie gevonden */ });
   });
 })();
+
 </script>
 
 </body>
