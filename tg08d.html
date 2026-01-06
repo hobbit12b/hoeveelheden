@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#FDEEE9" />
+  <title>spelkader tg08</title>
+  <style>
+:root{
+  --bg: #FDEEE9;
+  --purple: #8A54C6;
+  --purpleInner: #6230AD;
+  --orange: #EA7331;
+  --dash: #DA7645;
+  --tile: #FBE7DE;
+  --tileQ: #FADCD4;
+  --tileStroke: rgba(204,129,87,0.55);
+  --shadow: rgba(0,0,0,0.10);
+  --white: #FFFFFF;
+}
+
+*{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body{ height:100%; width:100%; margin:0; padding:0; background: var(--bg); overflow:hidden; }
+body{
+  font-family: system-ui, -apple-system, "Avenir Next", "Arial Rounded MT Bold", Arial, sans-serif;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.frame{
+  position: relative;
+  height: 100dvh;
+  width: 100dvw;
+  background: var(--bg);
+  border: 4px solid var(--purple);
+  box-shadow: inset 0 0 0 2px var(--purpleInner);
+  overflow: hidden;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 10px)
+           calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
+}
+
+.homeBtn{
+  position:absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: calc(env(safe-area-inset-left, 0px) + 10px);
+  width: clamp(44px, 7.5vmin, 62px);
+  aspect-ratio: 1 / 1;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.homeBtn img{ width:100%; height:100%; display:block; }
+
+.penguin{
+  width: clamp(56px, 11vmin, 88px);
+  height: auto;
+  display:block;
+  filter: drop-shadow(0 2px 0 rgba(255,255,255,0.65));
+}
+
+.digitTile{
+  width: var(--tileSize);
+  height: var(--tileSize);
+  border-radius: calc(var(--tileSize) * 0.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: var(--tile);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.6), 0 10px 20px rgba(0,0,0,0.06);
+  border: 2px solid rgba(204,129,87,0.15);
+}
+.digitTile img{ width: 80%; height: auto; }
+
+.digit4{
+  font-weight: 900;
+  font-size: calc(var(--tileSize) * 0.80);
+  line-height: 1;
+  color: #173D8C;
+  -webkit-text-stroke: calc(var(--tileSize) * 0.08) #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgba(0,0,0,0.06);
+}
+
+.digitTile.question{
+  background: var(--tileQ);
+  border: 3px dashed rgba(218,118,69,0.65);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.55), 0 10px 20px rgba(0,0,0,0.05);
+}
+.questionMark{
+  font-weight: 900;
+  font-size: calc(var(--tileSize) * 0.62);
+  color: rgba(184, 106, 80, 0.60);
+  -webkit-text-stroke: calc(var(--tileSize) * 0.03) rgba(255,255,255,0.75);
+}
+
+.separatorDash{
+  width: 100%;
+  height: 0;
+  border-top: 4px dashed var(--dash);
+  opacity: 0.95;
+}
+
+.playArea{
+  position: relative;
+  background: var(--white);
+  border: 4px dashed var(--dash);
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+/* Portrait layout */
+.portrait{
+  --tileSize: clamp(58px, 10.8vmin, 86px);
+}
+.portrait .titlePill{
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(78vw, 720px);
+  height: clamp(40px, 7.2vmin, 62px);
+  background: var(--orange);
+  border-radius: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight: 900;
+  font-size: clamp(18px, 3.4vmin, 30px);
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+}
+.portrait .headerArea{
+  position: relative;
+  height: clamp(132px, 22vmin, 190px);
+  padding-top: clamp(64px, 10vmin, 92px);
+  padding-left: clamp(64px, 10vmin, 86px);
+  padding-right: clamp(18px, 4vmin, 34px);
+}
+.portrait .row2{
+  display:flex;
+  align-items:flex-end;
+  gap: clamp(10px, 2.4vmin, 18px);
+}
+.portrait .digits{
+  display:flex;
+  align-items:center;
+  gap: clamp(10px, 2.2vmin, 18px);
+}
+.portrait .separatorDash{
+  margin-top: clamp(12px, 2.2vmin, 18px);
+}
+.portrait .mainFill{
+  position:absolute;
+  left: 0; right: 0;
+  top: clamp(132px, 22vmin, 190px);
+  bottom: 0;
+  background: var(--white);
+}
+
+/* Landscape layout */
+.landscape{
+  --tileSize: clamp(52px, 10vmin, 78px);
+}
+.landscape .layout{
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display:flex;
+}
+.landscape .sidebar{
+  width: clamp(66px, 10.5vmin, 96px);
+  padding-top: clamp(72px, 11.5vmin, 110px);
+  display:flex;
+  justify-content:center;
+}
+.landscape .sidePill{
+  width: clamp(38px, 6.0vmin, 54px);
+  height: calc(100% - clamp(96px, 14vmin, 140px));
+  background: var(--orange);
+  border-radius: 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 6px 0 rgba(255,255,255,0.35);
+}
+.landscape .sidePill span{
+  color:#fff;
+  font-weight: 900;
+  font-size: clamp(18px, 3.2vmin, 28px);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.3px;
+}
+
+.landscape .content{
+  flex: 1;
+  position: relative;
+  padding-top: clamp(12px, 2.5vmin, 18px);
+  padding-right: clamp(14px, 2.6vmin, 22px);
+  padding-left: clamp(8px, 1.5vmin, 12px);
+  padding-bottom: clamp(14px, 2.6vmin, 22px);
+}
+.landscape .topRow{
+  height: clamp(92px, 16.5vmin, 130px);
+  display:flex;
+  align-items:center;
+  justify-content: center;
+  position: relative;
+}
+.landscape .digitsBubble{
+  background: #fff;
+  border: 3px solid rgba(204,129,87,0.70);
+  border-radius: 20px;
+  padding: clamp(10px, 1.8vmin, 14px) clamp(14px, 2.4vmin, 18px);
+  display:flex;
+  gap: clamp(10px, 2.0vmin, 16px);
+  box-shadow: 0 8px 0 rgba(255,255,255,0.35);
+}
+.landscape .penguinWrap{
+  position:absolute;
+  right: clamp(6px, 1.2vmin, 12px);
+  top: clamp(6px, 1.2vmin, 10px);
+}
+.landscape .playArea{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: clamp(92px, 16.5vmin, 130px);
+  bottom: 0;
+  margin-left: clamp(6px, 1.2vmin, 10px);
+  border-radius: 34px 0 0 0;
+}
+
+
+
+/* Shared game mount */
+.gameArea{ position:absolute; inset:0; width:100%; height:100%; overflow:hidden; }
+#gameHostPortrait{ position:absolute; }
+#gameHostLandscape{ position:absolute; }
+
+/* Layout keuze op basis van oriëntatie */
+.frame{ display:block; }
+@media (orientation: portrait){
+  .frame.landscape{ display:none; }
+}
+@media (orientation: landscape){
+  .frame.portrait{ display:none; }
+}
+  </style>
+</head>
+<body>
+<div class="frame portrait" role="application" aria-label="Spelkader tg08 verticaal">
+    <button class="homeBtn" type="button" aria-label="Home" onclick="goHome()">
+      <img src="./homeknop.png" alt="" />
+    </button>
+
+    <div class="titlePill">welk cijfer mist?</div>
+
+    <header class="headerArea" aria-hidden="true">
+      <div class="row2">
+        <img class="penguin" src="./goed.gif" alt="" />
+        <div class="digits" aria-hidden="true">
+          <div class="digitTile" title="3">
+            <img src="./marbotic3.png" alt="3" />
+          </div>
+          <div class="digitTile" title="4">
+            <div class="digit4">4</div>
+          </div>
+          <div class="digitTile question" title="?">
+            <div class="questionMark">?</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="separatorDash"></div>
+    </header>
+
+    <main class="mainFill" id="gameHostPortrait" aria-label="Speelveld">
+      <div id="gameArea" class="gameArea" aria-label="Speelveld">
+        <!-- Plaats hier je game content -->
+      </div>
+      <!-- Plaats hier je game content -->
+    </main>
+  </div>
+<div class="frame landscape" role="application" aria-label="Spelkader tg08 horizontaal">
+    <button class="homeBtn" type="button" aria-label="Home" onclick="goHome()">
+      <img src="./homeknop.png" alt="" />
+    </button>
+
+    <div class="layout">
+      <aside class="sidebar" aria-hidden="true">
+        <div class="sidePill">
+          <span>welk cijfer mist?</span>
+        </div>
+      </aside>
+
+      <section class="content">
+        <div class="topRow" aria-hidden="true">
+          <div class="digitsBubble">
+            <div class="digitTile" title="3">
+              <img src="./marbotic3.png" alt="3" />
+            </div>
+            <div class="digitTile" title="4">
+              <div class="digit4">4</div>
+            </div>
+            <div class="digitTile question" title="?">
+              <div class="questionMark">?</div>
+            </div>
+          </div>
+
+          <div class="penguinWrap">
+            <img class="penguin" src="./goed.gif" alt="" />
+          </div>
+        </div>
+
+        <div class="playArea" id="gameHostLandscape" aria-label="Speelveld">
+          <!-- Plaats hier je game content -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+  function goHome(){
+    const target = document.body.dataset.home || "index.html";
+    try{ window.location.href = target; }catch(e){ console.log("Home", e); }
+  }
+
+  function isPortrait(){
+    return window.matchMedia("(orientation: portrait)").matches || window.innerHeight >= window.innerWidth;
+  }
+
+  function setLayout(){
+    const portrait = isPortrait();
+
+    const host = document.getElementById(portrait ? "gameHostPortrait" : "gameHostLandscape");
+    const gameArea = document.getElementById("gameArea");
+    if(host && gameArea && gameArea.parentElement !== host) host.appendChild(gameArea);
+  }
+
+  function debounce(fn, wait){
+    let t;
+    return function(){
+      clearTimeout(t);
+      t = setTimeout(fn, wait);
+    };
+  }
+
+  window.addEventListener("DOMContentLoaded", setLayout);
+  window.addEventListener("resize", debounce(setLayout, 60), { passive:true });
+
+  const mql = window.matchMedia("(orientation: portrait)");
+  if(mql.addEventListener) mql.addEventListener("change", setLayout);
+  else if(mql.addListener) mql.addListener(setLayout);
+</script>
+</body>
+</html>
