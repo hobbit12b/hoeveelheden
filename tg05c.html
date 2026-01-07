@@ -1403,6 +1403,27 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       }
     }
 
+
+    // telvolgorde: links naar rechts, bij gelijke x van boven naar beneden
+    function getItemsLeftToRight(list){
+      const arr = Array.isArray(list) ? list.filter(Boolean).slice() : [];
+      arr.sort((a,b) => {
+        const ax = (a && typeof a.x === 'number') ? a.x : (Number(a && a.x) || 0);
+        const bx = (b && typeof b.x === 'number') ? b.x : (Number(b && b.x) || 0);
+        if (ax !== bx) return ax - bx;
+
+        const ay = (a && typeof a.y === 'number') ? a.y : (Number(a && a.y) || 0);
+        const by = (b && typeof b.y === 'number') ? b.y : (Number(b && b.y) || 0);
+        if (ay !== by) return ay - by;
+
+        const an = (a && typeof a.ny === 'number') ? a.ny : (Number(a && a.ny) || 0);
+        const bn = (b && typeof b.ny === 'number') ? b.ny : (Number(b && b.ny) || 0);
+        return an - bn;
+      });
+      return arr;
+    }
+
+
     function relayoutKeepPositions(){
       if (!items || !items.length) return;
       projectNormalizedToPixels();
@@ -1972,16 +1993,20 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       items.forEach(it => { it.counted = false; it.helpBubble = false; it.tutLabel = 0; });
       requestRender();
 
-      for (let i = 0; i < items.length; i++){
+      const ordered = getItemsLeftToRight(items);
+
+      for (let i = 0; i < ordered.length; i++){
         if (myToken !== helpToken) return;
 
-        for (let j = 0; j <= i; j++){
-          items[j].helpBubble = true;
-          items[j].tutLabel = j + 1;
-        }
-        for (let j = i + 1; j < items.length; j++){
-          items[j].helpBubble = false;
-          items[j].tutLabel = 0;
+        for (let j = 0; j < ordered.length; j++){
+          const it = ordered[j];
+          if (j <= i){
+            it.helpBubble = true;
+            it.tutLabel = j + 1;
+          } else {
+            it.helpBubble = false;
+            it.tutLabel = 0;
+          }
         }
 
         requestRender();
@@ -2052,7 +2077,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       stopVoice();
       stopPrompt();
 
-      const willHelp = (wrongTries >= 3);
+      const willHelp = (wrongTries >= 2);
 
       // bij telhulp: meteen blokkeren, maar pas starten ná foutfeedback
       if (willHelp){
@@ -2488,10 +2513,11 @@ function delayTutorial(ms, token){
       showHand();
       await delayTutorial(80, token);
 // Tel alle items één voor één
-      for (let i = 0; i < items.length; i++){
+      const ordered = getItemsLeftToRight(items);
+      for (let i = 0; i < ordered.length; i++){
         if (token !== tutorialToken) return;
 
-        const it = items[i];
+        const it = ordered[i];
         const hx = it.x;
         const hy = it.y;
 
