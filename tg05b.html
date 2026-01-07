@@ -449,9 +449,13 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     .tunePanel{
       position: fixed;
-      right: 18px;
-      bottom: 18px;
-      width: min(520px, calc(100vw - 36px));
+      left: 18px;
+      top: calc(env(safe-area-inset-top, 0px) + 86px);
+      right: auto;
+      bottom: auto;
+      width: min(520px, calc(50vw - 36px));
+      max-height: calc(100vh - (env(safe-area-inset-top, 0px) + 110px));
+      overflow: auto;
       background: rgba(255,255,255,0.98);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -459,6 +463,15 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       padding: 14px 14px 12px 14px;
       z-index: 1700;
       color: #4d4a48;
+    }
+
+    @media (orientation: portrait){
+      .tunePanel{
+        left: 18px;
+        right: 18px;
+        width: min(700px, calc(100vw - 36px));
+        max-height: calc(50vh - (env(safe-area-inset-top, 0px) + 106px));
+      }
     }
 
     .tunePanel.hidden{ display:none; }
@@ -623,6 +636,36 @@ border-top:  2px solid rgba(245,180,152,0.50); }
             <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
 
+    <div style="margin-top:12px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">voorbeeld animatie (hand met 4)</div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">schaal</div>
+        <input type="range" id="marScaleRange" min="0.20" max="12.00" step="0.01" value="3.33" />
+        <div class="tuneValue" id="marScaleValue">3.33</div>
+      </div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">x</div>
+        <input type="range" id="marXRange" min="-1000" max="1000" step="1" value="0" />
+        <div class="tuneValue" id="marXValue">0px</div>
+      </div>
+
+      <div class="tuneRow">
+        <div class="tuneLabel">y</div>
+        <input type="range" id="marYRange" min="-1000" max="1000" step="1" value="0" />
+        <div class="tuneValue" id="marYValue">0px</div>
+      </div>
+
+      <div class="tuneButtons">
+        <button class="tuneBtnSmall secondary" id="marResetBtn" type="button">reset waarden</button>
+        <button class="tuneBtnSmall" id="marPreviewBtn" type="button">speel voorbeeld</button>
+      </div>
+
+      <div class="tuneHint" id="marHint">Sla per stand vast, draai je iPad en stel opnieuw in indien nodig.</div>
+    </div>
+
+
 
 
   </div>
@@ -729,7 +772,18 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const countMaxValue = document.getElementById('countMaxValue');
 
 
-    const countHint = document.getElementById('countHint');
+    
+
+    const marScaleRange = document.getElementById('marScaleRange');
+    const marXRange = document.getElementById('marXRange');
+    const marYRange = document.getElementById('marYRange');
+    const marScaleValue = document.getElementById('marScaleValue');
+    const marXValue = document.getElementById('marXValue');
+    const marYValue = document.getElementById('marYValue');
+    const marResetBtn = document.getElementById('marResetBtn');
+    const marPreviewBtn = document.getElementById('marPreviewBtn');
+    const marHint = document.getElementById('marHint');
+const countHint = document.getElementById('countHint');
 
     const successGif = document.getElementById('successGif');
 
@@ -1104,6 +1158,256 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       return Math.max(a, Math.min(b, v));
     }
 
+
+    // Voorbeeld animatie instellingen
+    const TUT_MARBOTIC_KEY = 'tutMarboticTuneV1';
+    const DEFAULT_TUT_MARBOTIC = {
+      land: { scale: 5.58, tx: 10, ty: -222 },
+      port: { scale: 3.33, tx: -87, ty: -125 }
+    };
+
+    function clampNum(n, a, b){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return a;
+      return Math.max(a, Math.min(b, v));
+    }
+    function round2(n){ return Math.round(Number(n) * 100) / 100; }
+    function isPortraitMode(){
+      return !!(window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
+    }
+
+    function loadTutMarboticTune(){
+      try{
+        const raw = localStorage.getItem(TUT_MARBOTIC_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(DEFAULT_TUT_MARBOTIC));
+        const obj = JSON.parse(raw);
+
+        const land = obj.land || obj.landscape || {};
+        const port = obj.port || obj.portrait || {};
+
+        return {
+          land: {
+            scale: round2(clampNum(land.scale ?? DEFAULT_TUT_MARBOTIC.land.scale, 0.2, 12)),
+            tx: Math.round(clampNum(land.tx ?? DEFAULT_TUT_MARBOTIC.land.tx, -1000, 1000)),
+            ty: Math.round(clampNum(land.ty ?? DEFAULT_TUT_MARBOTIC.land.ty, -1000, 1000))
+          },
+          port: {
+            scale: round2(clampNum(port.scale ?? DEFAULT_TUT_MARBOTIC.port.scale, 0.2, 12)),
+            tx: Math.round(clampNum(port.tx ?? DEFAULT_TUT_MARBOTIC.port.tx, -1000, 1000)),
+            ty: Math.round(clampNum(port.ty ?? DEFAULT_TUT_MARBOTIC.port.ty, -1000, 1000))
+          }
+        };
+      } catch(e){
+        return JSON.parse(JSON.stringify(DEFAULT_TUT_MARBOTIC));
+      }
+    }
+
+    let tutMarboticTune = loadTutMarboticTune();
+
+    function saveTutMarboticTune(){
+      try{ localStorage.setItem(TUT_MARBOTIC_KEY, JSON.stringify(tutMarboticTune)); } catch(e){}
+    }
+
+    function getCurrentTutMarboticTune(){
+      return isPortraitMode() ? tutMarboticTune.port : tutMarboticTune.land;
+    }
+
+    function setCurrentTutMarboticTune(next){
+      if (isPortraitMode()){
+        tutMarboticTune.port = next;
+      } else {
+        tutMarboticTune.land = next;
+      }
+      saveTutMarboticTune();
+    }
+
+    function syncMarboticUI(){
+      if (!marScaleRange || !marXRange || !marYRange) return;
+      const cur = getCurrentTutMarboticTune();
+
+      marScaleRange.value = String(cur.scale);
+      marXRange.value = String(cur.tx);
+      marYRange.value = String(cur.ty);
+
+      const scaleText = (Math.round(cur.scale * 100) / 100).toFixed(2).replace(/\.00$/, '');
+      marScaleValue.textContent = scaleText;
+      marXValue.textContent = `${Math.round(cur.tx)}px`;
+      marYValue.textContent = `${Math.round(cur.ty)}px`;
+
+      if (marHint){
+        marHint.textContent = isPortraitMode()
+          ? 'Deze waarden gelden voor verticale stand.'
+          : 'Deze waarden gelden voor horizontale stand.';
+      }
+    }
+
+    function applyMarboticChange(){
+      if (!marScaleRange || !marXRange || !marYRange) return;
+      const scale = round2(clampNum(marScaleRange.value, 0.2, 12));
+      const tx = Math.round(clampNum(marXRange.value, -1000, 1000));
+      const ty = Math.round(clampNum(marYRange.value, -1000, 1000));
+
+      setCurrentTutMarboticTune({ scale, tx, ty });
+      syncMarboticUI();
+    }
+
+    if (marScaleRange){
+      marScaleRange.addEventListener('input', applyMarboticChange);
+      marXRange.addEventListener('input', applyMarboticChange);
+      marYRange.addEventListener('input', applyMarboticChange);
+    }
+
+    function resetMarboticTune(){
+      if (isPortraitMode()){
+        tutMarboticTune.port = { ...DEFAULT_TUT_MARBOTIC.port };
+      } else {
+        tutMarboticTune.land = { ...DEFAULT_TUT_MARBOTIC.land };
+      }
+      saveTutMarboticTune();
+      syncMarboticUI();
+    }
+    if (marResetBtn){
+      marResetBtn.addEventListener('click', resetMarboticTune);
+    }
+
+    // Voorbeeld afspelen om te checken of de hand met 4 goed staat
+    let marPreviewToken = 0;
+    function delayMarPreview(ms, token){
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          if (token !== marPreviewToken) return resolve(false);
+          resolve(true);
+        }, ms);
+      });
+    }
+
+    async function previewMarboticExample(){
+      if (!started){
+        if (marHint) marHint.textContent = 'Start eerst het spel, daarna kun je het voorbeeld afspelen.';
+        return;
+      }
+
+      marPreviewToken += 1;
+      const token = marPreviewToken;
+
+      const wasLocked = locked;
+      locked = true;
+
+      kickAudio();
+
+      const hadTutClass = document.body.classList.contains('tutorialActive');
+      try{ document.body.classList.add('tutorialActive'); } catch(e){}
+
+      // scan hint weg tijdens preview
+      hideScanDigit();
+      try{ if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; } } catch(e){}
+
+      try{
+        // Zelfde plaatjes als in het echte tutorialstuk
+        const pickExisting = async (cands) => {
+          for (const src of cands){
+            const img = await loadImage(src);
+            if (img) return src;
+          }
+          return cands[0];
+        };
+
+        const marboticASrc = await pickExisting(['marboticvoorbeelda.png','marbotic_voorbeeld/marboticvoorbeelda.png']);
+        const marboticBSrc = await pickExisting(['marboticvoorbeeldb.png','marbotic_voorbeeld/marboticvoorbeeldb.png']);
+        const marboticCSrc = await pickExisting(['marboticvoorbeeldc.png','marbotic_voorbeeld/marboticvoorbeeldc.png']);
+
+        if (token !== marPreviewToken) return;
+
+        if (tutMarboticImg) tutMarboticImg.src = marboticASrc;
+        hideTutorialDigitOnPlate();
+        hideMarbotic();
+
+        await delayMarPreview(90, token);
+        if (token !== marPreviewToken) return;
+
+        const scanRect = scanArea.getBoundingClientRect();
+
+        // meet basismaat
+        setMarboticState({ tx: 9999, ty: 9999, scale: 1 });
+        await delayMarPreview(30, token);
+        if (token !== marPreviewToken) return;
+
+        const baseRect = tutMarboticImg.getBoundingClientRect();
+
+        const marboticFixed = getCurrentTutMarboticTune();
+        const finalScale = marboticFixed.scale;
+
+        const scaledW = baseRect.width * finalScale;
+        const scaledH = baseRect.height * finalScale;
+
+        const offTX = (scanRect.width / 2) + (scaledW / 2) + 220;
+        const offTY = (scanRect.height / 2) + (scaledH / 2) + 220;
+
+        setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
+        showMarbotic();
+        await delayMarPreview(120, token);
+        if (token !== marPreviewToken) return;
+
+        setMarboticState({ tx: 0, ty: 0, scale: finalScale });
+        await delayMarPreview(260, token);
+        if (token !== marPreviewToken) return;
+
+        setMarboticState({ tx: marboticFixed.tx, ty: marboticFixed.ty, scale: finalScale });
+        await delayMarPreview(520, token);
+        if (token !== marPreviewToken) return;
+
+        pressMarbotic(true);
+        await delayMarPreview(240, token);
+        if (token !== marPreviewToken) return;
+
+        placeTutorialDigitOnPlate(marboticBSrc, '4');
+        if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+        playPlop(randFloat(0.90, 1.20));
+        await delayMarPreview(520, token);
+        if (token !== marPreviewToken) return;
+
+        if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+        await delayMarPreview(90, token);
+        if (token !== marPreviewToken) return;
+
+        pressMarbotic(false);
+        await delayMarPreview(160, token);
+        if (token !== marPreviewToken) return;
+
+        setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
+        await delayMarPreview(560, token);
+        if (token !== marPreviewToken) return;
+
+        hideMarbotic();
+        setTimeout(() => hideTutorialDigitOnPlate(), 1200);
+
+      } catch(e){
+        // stil falen, het is alleen een preview
+      } finally {
+        if (!hadTutClass){
+          try{ document.body.classList.remove('tutorialActive'); } catch(e){}
+        }
+        locked = wasLocked;
+      }
+    }
+
+    if (marPreviewBtn){
+      marPreviewBtn.addEventListener('click', previewMarboticExample);
+    }
+
+
+
+    // kleine helper om UI te verversen na draaien
+    let marboticResizeT = null;
+    window.addEventListener('resize', () => {
+      if (marboticResizeT) clearTimeout(marboticResizeT);
+      marboticResizeT = setTimeout(() => {
+        marboticResizeT = null;
+        if (tunePanel && !tunePanel.classList.contains('hidden')) syncMarboticUI();
+      }, 120);
+    });
+
+
     function loadCountRange(){
       try{
         const raw = localStorage.getItem(COUNT_KEY);
@@ -1160,6 +1464,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
+      syncMarboticUI();
       kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
@@ -2571,10 +2876,7 @@ function delayTutorial(ms, token){
       const maxH = scanRect.height * 0.98;
       const maxScale = Math.min(maxW / Math.max(1, baseRect.width), maxH / Math.max(1, baseRect.height));
 
-      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
-      const marboticFixed = isPortrait
-        ? { scale: 3.33, tx: -87, ty: -125 }
-        : { scale: 5.58, tx: 10, ty: -222 };
+      const marboticFixed = getCurrentTutMarboticTune();
 
       const finalScale = marboticFixed.scale;
 
