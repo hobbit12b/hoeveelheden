@@ -18,18 +18,16 @@
       --scale: 1;
 
       /* Marbotic scanplek, gelijk aan tg07 */
-      --scanplek-left: 88%;
-      --scanplek-top: 80%;
-      --scanplek-scale: 0.27;
+      --scanplek-left: 80.5%;
+      --scanplek-top: 87%;
+      --scanplek-scale: 0.36;
 
 
       /* Startknop */
       --start-left: 29%;
       --start-top: 57%;
       --start-scale: 1.03;
-      --under-w: 320px;
-
-      --shadow: 0 16px 40px rgba(0,0,0,0.08);
+--shadow: 0 16px 40px rgba(0,0,0,0.08);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -43,7 +41,7 @@
       color: var(--text);
       -webkit-user-select: none;
       user-select: none;
-      touch-action: none;
+      touch-action: manipulation;
       overflow:hidden;
     }
 
@@ -65,7 +63,11 @@
         --start-left: 50%;
         --start-top: 31.5%;
         --start-scale: 0.95;
-      }
+      
+        --scanplek-left: 88%;
+        --scanplek-top: 80%;
+        --scanplek-scale: 0.27;
+}
     }
 
     .left{
@@ -103,7 +105,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       gap: 18px;
       flex: 0 0 auto;
       position: relative;
-      z-index: 2;
+      z-index: 1800;
     }
 
     .homeBtn{
@@ -275,29 +277,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       45%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 0.92)); }
       100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
     }
-
-
-    /* onderlegger: laat hetzelfde marbotic-cijfer zien onder de scanplek */
-    #scanUnderImg{
-      position:absolute;
-      left: var(--scanplek-left, 50%);
-      top: var(--scanplek-top, 50%);
-      transform: translate(-50%, -50%) translate(var(--scanunder-dx, 0px), var(--scanunder-dy, 0px));
-      width: var(--under-w, 320px);
-      height: auto;
-      object-fit: contain;
-      pointer-events:none;
-      z-index: 3;
-      opacity: 0;
-      transition: opacity 140ms ease;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.10));
-      will-change: opacity, transform;
-    }
-    #scanUnderImg.show{ opacity: 1; }
-
     /* startscherm: nog geen marbotic scan UI zichtbaar */
     body.startActive #scanPlaceImg{ opacity: 0 !important; }
-    body.startActive #scanUnderImg{ opacity: 0 !important; }
     body.startActive .scanVeil{ opacity: 1 !important; }
     body.startActive #scanDigitWrap{ opacity: 0 !important; }
 
@@ -445,6 +426,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
   width: 100%;
   height: auto;
   display:block;
+
+  pointer-events:none;
 }
 
 .startOverlay.leaving{
@@ -604,7 +587,6 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     <div class="scanOverlay">
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" draggable="false" aria-hidden="true" />
-      <img id="scanUnderImg" src="" alt="" draggable="false" aria-hidden="true" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
       
     </div>
@@ -638,44 +620,9 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         <div class="tuneValue" id="countMaxValue">5</div>
       </div>
 
-      <div class="tuneButtons">
-        <button class="tuneBtnSmall" id="testGoodBtn" type="button">Test goed</button>
-        <button class="tuneBtnSmall secondary" id="testWrongBtn" type="button">Test fout</button>
-        <button class="tuneBtnSmall secondary" id="newRoundBtn" type="button">Nieuwe ronde</button>
-        <button class="tuneBtnSmall secondary" id="testHelpBtn" type="button">Test telhulp</button>
-        <button class="tuneBtnSmall secondary" id="testPlopBtn" type="button">Test plop</button>
-      </div>
-
-      <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
+            <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
 
-<div style="margin-top:10px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-  <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">startknop</div>
-
-  <div class="tuneHint" style="margin-top:-4px;">Je stelt de positie en grootte in voor de huidige stand van het scherm.</div>
-
-  <div class="tuneRow">
-    <div class="tuneLabel">grootte</div>
-    <input type="range" id="startScaleRange" min="0.40" max="1.60" step="0.01" value="1.03" />
-    <div class="tuneValue" id="startScaleValue">1.03</div>
-  </div>
-
-  <div class="tuneRow">
-    <div class="tuneLabel">x</div>
-    <input type="range" id="startXRange" min="-20" max="120" step="0.5" value="29" />
-    <div class="tuneValue" id="startXValue">29</div>
-  </div>
-
-  <div class="tuneRow">
-    <div class="tuneLabel">y</div>
-    <input type="range" id="startYRange" min="-20" max="120" step="0.5" value="57" />
-    <div class="tuneValue" id="startYValue">57</div>
-  </div>
-
-  <div class="tuneButtons">
-    <button class="tuneBtnSmall secondary" id="startResetBtn" type="button">Reset</button>
-  </div>
-</div>
 
 
   </div>
@@ -714,142 +661,21 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const randFloat = (a,b) => a + Math.random() * (b - a);
     const nowMs = () => performance.now();
 
-    /* Scanplek layout (afbeelding in het scanvak), gelijk aan tg07 */
-    const SCAN_LAYOUT_KEY = 'scanPlaceLayoutV3';
-
-    const DEFAULT_SCAN_LAYOUT = {
-      landScale: 0.36,
-      landX: 80.5,
-      landY: 87,
-      portScale: 0.27,
-      portX: 88,
-      portY: 80
-    };
-
-    function loadScanLayout(){
-      try{
-        const raw = localStorage.getItem(SCAN_LAYOUT_KEY);
-        if (!raw) return { ...DEFAULT_SCAN_LAYOUT };
-        const obj = JSON.parse(raw);
-        return {
-          landScale: Number(obj.landScale ?? DEFAULT_SCAN_LAYOUT.landScale),
-          landX: Number(obj.landX ?? DEFAULT_SCAN_LAYOUT.landX),
-          landY: Number(obj.landY ?? DEFAULT_SCAN_LAYOUT.landY),
-          portScale: Number(obj.portScale ?? DEFAULT_SCAN_LAYOUT.portScale),
-          portX: Number(obj.portX ?? DEFAULT_SCAN_LAYOUT.portX),
-          portY: Number(obj.portY ?? DEFAULT_SCAN_LAYOUT.portY)
-        };
-      } catch(e){
-        return { ...DEFAULT_SCAN_LAYOUT };
-      }
-    }
-
-    let scanLayout = loadScanLayout();
-
-    function applyScanLayoutToCSS(){
-      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
-
-      const scale = isPortrait ? scanLayout.portScale : scanLayout.landScale;
-      const x = isPortrait ? scanLayout.portX : scanLayout.landX;
-      const y = isPortrait ? scanLayout.portY : scanLayout.landY;
-
-      document.documentElement.style.setProperty('--scanplek-scale', String(clamp(scale, 0.15, 2.2)));
-      document.documentElement.style.setProperty('--scanplek-left', String(clamp(x, -50, 150)) + '%');
-      document.documentElement.style.setProperty('--scanplek-top', String(clamp(y, -50, 150)) + '%');
-    
-
-      scheduleScanUnderOffset();
-    }
-
-// Onderlegger (het getoonde cijfer onder het echte houten cijfer) moet in het witte scanvlak vallen.
-// Het scanplek-beeld heeft het witte vlak niet exact in het midden, daarom corrigeren we met een vaste fractie.
-const SCAN_UNDER_OFF_FRAC = { x: -0.20, y: -0.22 };
-// Tutorial: iets minder correctie zodat het voorbeeld groter en centraler in het witte vlak valt
-const TUTORIAL_SCAN_OFF_FRAC = { x: -0.10, y: -0.12 };
-let underOffsetRaf = 0;
-
-function applyScanUnderOffset(){
-  if (!scanPlaceImg) return;
-  const r = scanPlaceImg.getBoundingClientRect();
-  if (!r || !r.width) return;
-
-  const dx = r.width * SCAN_UNDER_OFF_FRAC.x;
-  const dy = r.height * SCAN_UNDER_OFF_FRAC.y;
-
-  document.documentElement.style.setProperty('--scanunder-dx', `${dx}px`);
-  document.documentElement.style.setProperty('--scanunder-dy', `${dy}px`);
-}
-
-function scheduleScanUnderOffset(){
-  if (underOffsetRaf) cancelAnimationFrame(underOffsetRaf);
-  underOffsetRaf = requestAnimationFrame(() => {
-    underOffsetRaf = 0;
-    applyScanUnderOffset();
-  });
-}
-
-
-/* Startknop layout */
-const START_LAYOUT_KEY = 'startBtnLayoutV2';
-
-const DEFAULT_START_LAYOUT = {
-  landScale: 1.03,
-  landX: 29,
-  landY: 57,
-  portScale: 0.95,
-  portX: 50,
-  portY: 31.5
-};
-
-function loadStartLayout(){
-  try{
-    const raw = localStorage.getItem(START_LAYOUT_KEY);
-    if (!raw) return { ...DEFAULT_START_LAYOUT };
-    const obj = JSON.parse(raw);
-    return {
-      landScale: Number(obj.landScale ?? DEFAULT_START_LAYOUT.landScale),
-      landX: Number(obj.landX ?? DEFAULT_START_LAYOUT.landX),
-      landY: Number(obj.landY ?? DEFAULT_START_LAYOUT.landY),
-      portScale: Number(obj.portScale ?? DEFAULT_START_LAYOUT.portScale),
-      portX: Number(obj.portX ?? DEFAULT_START_LAYOUT.portX),
-      portY: Number(obj.portY ?? DEFAULT_START_LAYOUT.portY)
-    };
-  } catch(e){
-    return { ...DEFAULT_START_LAYOUT };
-  }
-}
-
-function saveStartLayout(obj){
-  try{ localStorage.setItem(START_LAYOUT_KEY, JSON.stringify(obj)); } catch(e){}
-}
-
-let startLayout = loadStartLayout();
-
-function applyStartLayoutToCSS(){
-  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
-
-  const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
-  const x = isPortrait ? startLayout.portX : startLayout.landX;
-  const y = isPortrait ? startLayout.portY : startLayout.landY;
-
-  document.documentElement.style.setProperty('--start-scale', String(clamp(scale, 0.25, 2.2)));
-  document.documentElement.style.setProperty('--start-left', String(clamp(x, -50, 150)) + '%');
-  document.documentElement.style.setProperty('--start-top', String(clamp(y, -50, 150)) + '%');
-}
-
-
+    // configuratie en assets (moeten vóór gebruik gedeclareerd zijn, iOS Safari stopt anders met uitvoeren)
     const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
 
     const GOOD_SOUND_SRC = 'goed.mp3';
     const WRONG_SOUND_SRC = 'fout.mp3';
     const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
     const PLOP_SOUND_SRC = 'plop.mp3';
-
     const AFTER_TUTOR_CUE_SRC = 'numagjij.mp3';
-
 
     const BLOW_GIF_SRC = 'bellen_blazen02.gif';
     const POP_GIF_SRC  = 'bel_barst.gif';
+
+    // optioneel, alleen als jij later een pinguïn-gif toevoegt
+    let usePinguinSuccess = false;
+    let PINGUIN_GIF_SRC = 'pinguin.gif';
 
     const BUBBLE_SRC = 'bubble.png';
     const ITEM_SRC = {
@@ -876,46 +702,14 @@ function applyStartLayoutToCSS(){
     const scanDigitWrap = document.getElementById('scanDigitWrap');
     const scanDigitImg = document.getElementById('scanDigitImg');
 
-    const scanUnderImg = document.getElementById('scanUnderImg');
     const scanPlaceImg = document.getElementById('scanPlaceImg');
 
-    let underDigit = null;
-    let underDigitSrc = {};
 
-    function applyUnderSize(){
-      if (!scanArea) return;
 
-      // grootte van het cijfer onder de scanplek: baseer op de scanplek zelf,
-      // zodat het cijfer echt in het witte vak past (ook in portrait op iPad)
-      const baseRect = scanPlaceImg ? scanPlaceImg.getBoundingClientRect() : null;
-      const baseW = (baseRect && baseRect.width) ? baseRect.width : scanArea.getBoundingClientRect().width;
-
-      const w = Math.max(110, Math.min(baseW * 0.60, 360));
-      document.documentElement.style.setProperty('--under-w', `${w}px`);
-
-      scheduleScanUnderOffset();
-    }
-
-    // zodra de scanplek afbeelding geladen is, opnieuw uitlijnen
-    if (scanPlaceImg){
-      scanPlaceImg.addEventListener('load', () => {
-        try{ applyUnderSize(); } catch(e){}
-      });
-    }
-
-    function showUnderDigit(d){
-      // Tijdens het scannen geen extra marbotic-beeld tonen.
-      // (Alleen de echte houten steen op de scanplek)
-      hideUnderDigit();
-    }
-
-    function hideUnderDigit(){
-      if (!scanUnderImg) return;
-      underDigit = null;
-      scanUnderImg.classList.remove('show');
-      scanUnderImg.removeAttribute('src');
-      scanUnderImg.alt = '';
-    }
+    // In deze schone versie is het 'cijfer onder de scanplek' verwijderd,
+    // maar een paar handlers verwachten nog steeds deze functies.
+    function showUnderDigit(){ /* no-op */ }
+    function hideUnderDigit(){ /* no-op */ }
 
     const tutorialHandWrap = document.getElementById('tutorialHandWrap');
     const tutorialHandImg = document.getElementById('tutorialHand');
@@ -934,23 +728,8 @@ function applyStartLayoutToCSS(){
     const countMinValue = document.getElementById('countMinValue');
     const countMaxValue = document.getElementById('countMaxValue');
 
-const startScaleRange = document.getElementById('startScaleRange');
-const startXRange = document.getElementById('startXRange');
-const startYRange = document.getElementById('startYRange');
-
-const startScaleValue = document.getElementById('startScaleValue');
-const startXValue = document.getElementById('startXValue');
-const startYValue = document.getElementById('startYValue');
-
-const startResetBtn = document.getElementById('startResetBtn');
 
     const countHint = document.getElementById('countHint');
-
-    const testGoodBtn = document.getElementById('testGoodBtn');
-    const testWrongBtn = document.getElementById('testWrongBtn');
-    const newRoundBtn = document.getElementById('newRoundBtn');
-    const testHelpBtn = document.getElementById('testHelpBtn');
-    const testPlopBtn = document.getElementById('testPlopBtn');
 
     const successGif = document.getElementById('successGif');
 
@@ -1357,68 +1136,6 @@ const startResetBtn = document.getElementById('startResetBtn');
 
     }
 
-    function syncStartUI(){
-  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
-
-  const scale = isPortrait ? startLayout.portScale : startLayout.landScale;
-  const x = isPortrait ? startLayout.portX : startLayout.landX;
-  const y = isPortrait ? startLayout.portY : startLayout.landY;
-
-  if (startScaleRange) startScaleRange.value = String(scale);
-  if (startXRange) startXRange.value = String(x);
-  if (startYRange) startYRange.value = String(y);
-
-  if (startScaleValue) startScaleValue.textContent = Number(scale).toFixed(2);
-  if (startXValue) startXValue.textContent = String(Math.round(x * 10) / 10);
-  if (startYValue) startYValue.textContent = String(Math.round(y * 10) / 10);
-}
-
-function setStartValueFromUI(){
-  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
-
-  const scale = startScaleRange ? Number(startScaleRange.value) : (isPortrait ? startLayout.portScale : startLayout.landScale);
-  const x = startXRange ? Number(startXRange.value) : (isPortrait ? startLayout.portX : startLayout.landX);
-  const y = startYRange ? Number(startYRange.value) : (isPortrait ? startLayout.portY : startLayout.landY);
-
-  if (isPortrait){
-    startLayout.portScale = scale;
-    startLayout.portX = x;
-    startLayout.portY = y;
-  } else {
-    startLayout.landScale = scale;
-    startLayout.landX = x;
-    startLayout.landY = y;
-  }
-
-  saveStartLayout(startLayout);
-  applyStartLayoutToCSS();
-  syncStartUI();
-}
-
-if (startScaleRange) startScaleRange.addEventListener('input', setStartValueFromUI);
-if (startXRange) startXRange.addEventListener('input', setStartValueFromUI);
-if (startYRange) startYRange.addEventListener('input', setStartValueFromUI);
-
-if (startResetBtn){
-  startResetBtn.addEventListener('click', () => {
-    const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
-
-    if (isPortrait){
-      startLayout.portScale = DEFAULT_START_LAYOUT.portScale;
-      startLayout.portX = DEFAULT_START_LAYOUT.portX;
-      startLayout.portY = DEFAULT_START_LAYOUT.portY;
-    } else {
-      startLayout.landScale = DEFAULT_START_LAYOUT.landScale;
-      startLayout.landX = DEFAULT_START_LAYOUT.landX;
-      startLayout.landY = DEFAULT_START_LAYOUT.landY;
-    }
-
-    saveStartLayout(startLayout);
-    applyStartLayoutToCSS();
-    syncStartUI();
-  });
-}
-
     function applyCountChange(from){
       let min = clampInt(countMinRange.value, 1, 9);
       let max = clampInt(countMaxRange.value, 1, 9);
@@ -1443,12 +1160,12 @@ if (startResetBtn){
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
-      syncStartUI();
       kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
 
     tuneClose.addEventListener('click', closeTunePanel);
+    try{ tuneClose.addEventListener('touchend', (e)=>{ try{ e.preventDefault(); }catch(err){} closeTunePanel(); }, { passive:false }); } catch(err){}
 
     // Instellingen openen, lang indrukken op de titelbalk
     const TITLE_HOLD_MS = 1200;
@@ -1472,6 +1189,14 @@ if (startResetBtn){
       titlePill.addEventListener('pointerup', cancelTitleHold);
       titlePill.addEventListener('pointercancel', cancelTitleHold);
       titlePill.addEventListener('pointerleave', cancelTitleHold);
+
+      // iPad Safari fallback, sommige builds sturen geen pointer events op buttons
+      titlePill.addEventListener('touchstart', (e) => {
+        try{ e.preventDefault(); } catch(err) {}
+        startTitleHold();
+      }, { passive:false });
+      titlePill.addEventListener('touchend', cancelTitleHold, { passive:true });
+      titlePill.addEventListener('touchcancel', cancelTitleHold, { passive:true });
     }
 
     // Scan digit hint
@@ -1677,6 +1402,27 @@ if (startResetBtn){
         } else break;
       }
     }
+
+
+    // telvolgorde: links naar rechts, bij gelijke x van boven naar beneden
+    function getItemsLeftToRight(list){
+      const arr = Array.isArray(list) ? list.filter(Boolean).slice() : [];
+      arr.sort((a,b) => {
+        const ax = (a && typeof a.x === 'number') ? a.x : (Number(a && a.x) || 0);
+        const bx = (b && typeof b.x === 'number') ? b.x : (Number(b && b.x) || 0);
+        if (ax !== bx) return ax - bx;
+
+        const ay = (a && typeof a.y === 'number') ? a.y : (Number(a && a.y) || 0);
+        const by = (b && typeof b.y === 'number') ? b.y : (Number(b && b.y) || 0);
+        if (ay !== by) return ay - by;
+
+        const an = (a && typeof a.ny === 'number') ? a.ny : (Number(a && a.ny) || 0);
+        const bn = (b && typeof b.ny === 'number') ? b.ny : (Number(b && b.ny) || 0);
+        return an - bn;
+      });
+      return arr;
+    }
+
 
     function relayoutKeepPositions(){
       if (!items || !items.length) return;
@@ -1995,8 +1741,6 @@ if (startResetBtn){
 
     let tutorialDone = false;
     let tutorialToken = 0;
-    let usePinguinSuccess = false;
-    let PINGUIN_GIF_SRC = 'pinguin.gif';
 
     
     let idlePromptTimer = null;
@@ -2249,16 +1993,20 @@ if (startResetBtn){
       items.forEach(it => { it.counted = false; it.helpBubble = false; it.tutLabel = 0; });
       requestRender();
 
-      for (let i = 0; i < items.length; i++){
+      const ordered = getItemsLeftToRight(items);
+
+      for (let i = 0; i < ordered.length; i++){
         if (myToken !== helpToken) return;
 
-        for (let j = 0; j <= i; j++){
-          items[j].helpBubble = true;
-          items[j].tutLabel = j + 1;
-        }
-        for (let j = i + 1; j < items.length; j++){
-          items[j].helpBubble = false;
-          items[j].tutLabel = 0;
+        for (let j = 0; j < ordered.length; j++){
+          const it = ordered[j];
+          if (j <= i){
+            it.helpBubble = true;
+            it.tutLabel = j + 1;
+          } else {
+            it.helpBubble = false;
+            it.tutLabel = 0;
+          }
         }
 
         requestRender();
@@ -2329,7 +2077,7 @@ if (startResetBtn){
       stopVoice();
       stopPrompt();
 
-      const willHelp = (wrongTries >= 3);
+      const willHelp = (wrongTries >= 2);
 
       // bij telhulp: meteen blokkeren, maar pas starten ná foutfeedback
       if (willHelp){
@@ -2642,24 +2390,9 @@ if (startResetBtn){
     });
 
     // Tests
-    function testGood(){ if (!started || locked) return; handleAnswer(target); }
-    function testWrong(){
-      if (!started || locked) return;
-      const wrong = target === 9 ? 1 : target + 1;
-      handleAnswer(wrong);
-    }
 
-    testGoodBtn.addEventListener('click', () => { kickAudio(); testGood(); });
-    testWrongBtn.addEventListener('click', () => { kickAudio(); testWrong(); });
-    newRoundBtn.addEventListener('click', () => { kickAudio(); if (started) nextRound(); });
-    testHelpBtn.addEventListener('click', () => {
-      kickAudio();
-      if (started && !locked){
-        wrongTries = 2;
-        onWrongAnswer();
-      }
-    });
-    testPlopBtn.addEventListener('click', () => { kickAudio(); playPlop(); });
+    // Start
+
 
     // Start
     
@@ -2780,10 +2513,11 @@ function delayTutorial(ms, token){
       showHand();
       await delayTutorial(80, token);
 // Tel alle items één voor één
-      for (let i = 0; i < items.length; i++){
+      const ordered = getItemsLeftToRight(items);
+      for (let i = 0; i < ordered.length; i++){
         if (token !== tutorialToken) return;
 
-        const it = items[i];
+        const it = ordered[i];
         const hx = it.x;
         const hy = it.y;
 
@@ -2977,25 +2711,29 @@ if (startOverlay && startBtn){
     }, { passive:true });
   });
 
-  startBtn.addEventListener('click', (e) => {
-    if (started) return;
+  let startInitiated = false;
+
+  const startActivate = (e) => {
+    if (started || startInitiated) return;
     if (startHoldTriggered){
-      try{ e.preventDefault(); } catch(err) {}
+      try{ if (e) e.preventDefault(); } catch(err) {}
       return;
     }
+    startInitiated = true;
+
+    try{ if (e){ e.preventDefault(); e.stopPropagation(); } } catch(err) {}
 
     // audio vrijgeven in deze tik, alleen een plop op de knop
-    try{ ensureFallbackPool(); } catch(e){}
+    try{ ensureFallbackPool(); } catch(err){}
 
-    try{ goodAudio.load(); wrongAudio.load(); promptAudio.load(); afterTutorAudio.load(); } catch(e){}
+    try{ goodAudio.load(); wrongAudio.load(); promptAudio.load(); afterTutorAudio.load(); } catch(err){}
 
     // eerst meteen de plop vrijgeven en afspelen
     Promise.resolve()
       .then(() => unlockAudio())
-      .then(() => { try{ playPlop(1); } catch(e){} })
+      .then(() => { try{ playPlop(1); } catch(err){} })
       .catch(() => {});
 
-    // ondertussen WebAudio opzetten voor later (als dat kan)
     Promise.resolve()
       .then(() => initWebAudio())
       .then(() => unlockAudio())
@@ -3006,16 +2744,31 @@ if (startOverlay && startBtn){
 
     setTimeout(() => {
       if (startOverlay) startOverlay.style.display = 'none';
-      try{ document.body.classList.remove('startActive'); } catch(e){}
-      try{ scheduleScanNudge(); } catch(e){}
+      try{ document.body.classList.remove('startActive'); } catch(err){}
+      try{ scheduleScanNudge(); } catch(err){}
       startGame();
     }, 520);
+  };
+
+  startBtn.addEventListener('click', startActivate);
+  try{ startBtn.addEventListener('touchend', startActivate, { passive:false }); } catch(err){}
+  try{ startBtn.addEventListener('pointerup', startActivate, { passive:false }); } catch(err){}
+  startBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') startActivate(e);
   });
 }
 
 
-    homeBtn.addEventListener('click', () => {
-      try { window.location.href = 'index.html'; } catch (e) {}
+    const goHome = (e) => {
+      try{ if (e) e.preventDefault(); } catch(err) {}
+      try{ window.location.href = 'index.html'; } catch(err) {}
+    };
+
+    homeBtn.addEventListener('click', goHome);
+    try{ homeBtn.addEventListener('touchend', goHome, { passive:false }); } catch(err){}
+    try{ homeBtn.addEventListener('pointerup', goHome, { passive:false }); } catch(err){}
+    homeBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') goHome(e);
     });
 
     async function preloadImages(){
@@ -3036,14 +2789,6 @@ if (startOverlay && startBtn){
       } else {
         usePinguinSuccess = false;
       }
-      // marbotic onderleggers (onder het echte cijfer op de iPad)
-      underDigitSrc = {};
-      for (let d = 0; d <= 9; d++){
-        const src = `marbotic${d}.png`;
-        const img = await loadImage(src);
-        if (img) underDigitSrc[d] = src;
-      }
-
 
       requestRender();
     }
@@ -3051,9 +2796,6 @@ if (startOverlay && startBtn){
     function scheduleViewportUpdate(delay){
       setTimeout(() => {
         setAutoScale();
-        applyScanLayoutToCSS();
-        applyStartLayoutToCSS();
-        applyUnderSize();
         resizeCountCanvas();
       }, delay);
     }
@@ -3063,15 +2805,9 @@ if (startOverlay && startBtn){
 
     window.addEventListener('load', () => {
       setAutoScale();
-      applyScanLayoutToCSS();
-
-      applyStartLayoutToCSS();
-      applyUnderSize();
+      
       countRange = loadCountRange();
       syncCountUI();
-
-
-      syncStartUI();
       resizeCountCanvas();
       preloadImages();
       if (successGif){
