@@ -344,7 +344,7 @@
   <div class="controls" id="controls" aria-label="Afstellen">
     <div class="ctrl">
       <label for="scaleRange"><span>schaal</span><span id="scaleVal">1.00</span></label>
-      <input id="scaleRange" type="range" min="0.25" max="8.00" step="0.01" value="1.00" />
+      <input id="scaleRange" type="range" min="0.25" max="25.00" step="0.01" value="1.00" />
     </div>
     <div class="ctrl">
       <label for="xRange"><span>x</span><span id="xVal">0px</span></label>
@@ -392,6 +392,9 @@ const pickAnchorBtn = document.getElementById("pickAnchorBtn");
 const resetAnchorBtn = document.getElementById("resetAnchorBtn");
 const anchorVal = document.getElementById("anchorVal");
 
+    const STORE_PREFIX = "tg05_tut_v4_";
+
+
 
     function getOriKey(){
       try{
@@ -401,8 +404,8 @@ const anchorVal = document.getElementById("anchorVal");
     }
 
     const oriDefaults = {
-      landscape: { scale: 1.00, x: -154, y: -153 },
-      portrait: { scale: 1.00, x: -87, y: -283 }
+      landscape: { scale: 5.58, x: 79, y: -222 },
+      portrait: { scale: 3.33, x: -87, y: -125 }
     };
 
     let oriKey = getOriKey();
@@ -415,7 +418,7 @@ const anchorVal = document.getElementById("anchorVal");
     }
 
     function loadVarsForOri(key){
-      const storeKey = "tutVars_" + key;
+      const storeKey = STORE_PREFIX + "vars_" + key;
       let v = null;
       try{
         const raw = localStorage.getItem(storeKey);
@@ -428,7 +431,7 @@ const anchorVal = document.getElementById("anchorVal");
 
     function saveVarsForOri(){
       const key = getOriKey();
-      const storeKey = "tutVars_" + key;
+      const storeKey = STORE_PREFIX + "vars_" + key;
       const v = {
         scale: parseFloat(scaleRange.value) || 1,
         x: parseFloat(xRange.value) || 0,
@@ -446,8 +449,8 @@ const anchorVal = document.getElementById("anchorVal");
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-let anchorFx = parseFloat(localStorage.getItem("tutAnchorFx"));
-let anchorFy = parseFloat(localStorage.getItem("tutAnchorFy"));
+let anchorFx = parseFloat(localStorage.getItem("tg05_tut_v4_anchorFx"));
+let anchorFy = parseFloat(localStorage.getItem("tg05_tut_v4_anchorFy"));
 if (Number.isNaN(anchorFx) || Number.isNaN(anchorFy)) {
   anchorFx = null;
   anchorFy = null;
@@ -530,8 +533,8 @@ if (pickAnchorBtn){
 
 if (resetAnchorBtn){
   resetAnchorBtn.addEventListener("click", () => {
-    localStorage.removeItem("tutAnchorFx");
-    localStorage.removeItem("tutAnchorFy");
+    localStorage.removeItem("tg05_tut_v4_anchorFx");
+    localStorage.removeItem("tg05_tut_v4_anchorFy");
     anchorFx = null;
     anchorFy = null;
     picking = false;
@@ -552,8 +555,8 @@ img.addEventListener("pointerdown", (e) => {
   anchorFx = clamp01((e.clientX - rect.left) / rect.width);
   anchorFy = clamp01((e.clientY - rect.top) / rect.height);
 
-  localStorage.setItem("tutAnchorFx", String(anchorFx));
-  localStorage.setItem("tutAnchorFy", String(anchorFy));
+  localStorage.setItem("tg05_tut_v4_anchorFx", String(anchorFx));
+  localStorage.setItem("tg05_tut_v4_anchorFy", String(anchorFy));
 
   picking = false;
   wrap.classList.remove("pick");
