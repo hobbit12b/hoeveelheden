@@ -180,6 +180,20 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     .gameCard.flashWrong{ background: #fde1e1; }
 
+    /* groen feedback op opdrachtenvak */
+    .gameCard::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      background: rgba(50, 220, 120, 0.22);
+      opacity: 0;
+      pointer-events:none;
+      z-index: 70;
+      transition: opacity 220ms ease;
+    }
+    .gameCard.goodFlash::after{ opacity: 1; }
+
+
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
@@ -2199,10 +2213,11 @@ function kickAudio(){
     }
 
     function goodFeedback(){
-      scanArea.classList.remove('goodFlash');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('goodFlash');
-      setTimeout(() => scanArea.classList.remove('goodFlash'), 260);
+      if (!gameCard) return;
+      gameCard.classList.remove('goodFlash');
+      void gameCard.offsetHeight;
+      gameCard.classList.add('goodFlash');
+      setTimeout(() => gameCard.classList.remove('goodFlash'), 260);
     }
 
     function showSuccessSequenceTotalMs(){
@@ -2532,23 +2547,29 @@ function kickAudio(){
     }
 
     async function onCorrectAnswer(){
-      locked = true;
+  locked = true;
 
-      // groen oplichten en geluid eerst hoorbaar maken (iOS kan anders andere audio eroverheen zetten)
-      try{ goodFeedback(); } catch(e){}
-      try{ stopVoice(); } catch(e){}
-      try{ stopPrompt(); } catch(e){}
+  // direct visuele feedback, audio niet blokkerend voor de animatie
+  try{ goodFeedback(); } catch(e){}
+  try{ stopVoice(); } catch(e){}
+  try{ stopPrompt(); } catch(e){}
 
-      await playSfxWait(goodAudio, 320);
+  ensureAllHaveBubbles();
+  const seqMs = showSuccessSequenceTotalMs();
+  floatAllBubblesOutWithinTwoSeconds();
 
-      await speakNumberSafe(target);
+  // alleen goed: geen cijfergeluid (voorkomt zoeken naar audio/[cijfer].mp3)
+  try{
+    // voorkom overlap: als fout nog bezig was, stop het meteen
+    try{ wrongAudio.pause(); wrongAudio.currentTime = 0; } catch(e){}
+    // houd iOS audio wakker voor directe respons
+    try{ unlockAudioSync(); } catch(e){}
+    playSfx(goodAudio);
+  } catch(e){}
 
-      ensureAllHaveBubbles();
-      const seqMs = showSuccessSequenceTotalMs();
-      floatAllBubblesOutWithinTwoSeconds();
+  setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
+}
 
-      setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
-    }
 
     async function onCorrectAnswerTutorial(){
       locked = true;
@@ -2590,7 +2611,9 @@ function kickAudio(){
       stopVoice();
       stopPrompt();
 
-      const willHelp = (wrongTries >= 2);
+      
+      try{ goodAudio.pause(); goodAudio.currentTime = 0; } catch(e){}
+const willHelp = (wrongTries >= 2);
 
       // bij telhulp: meteen blokkeren, maar pas starten ná foutfeedback
       if (willHelp){
