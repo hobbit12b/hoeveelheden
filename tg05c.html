@@ -871,7 +871,7 @@ const countHint = document.getElementById('countHint');
       try{
         a.pause();
         a.currentTime = 0;
-        try{ a.load(); } catch(e){}
+        try{ if (typeof a.readyState === 'number' && a.readyState === 0) a.load(); } catch(e){}
         const p = a.play();
         if (p && typeof p.catch === 'function'){
           p.catch(() => {
@@ -1071,7 +1071,7 @@ const countHint = document.getElementById('countHint');
       plopFallbackPool = Array.from({ length: 8 }, () => {
         const a = new Audio(PLOP_SOUND_SRC);
         a.preload = 'auto';
-        try{ a.load(); } catch(e){}
+        try{ if (typeof a.readyState === 'number' && a.readyState === 0) a.load(); } catch(e){}
         return a;
       });
       plopMode = 'fallback';
@@ -1183,6 +1183,9 @@ const countHint = document.getElementById('countHint');
       const prime = (a) => {
         if (!a) return;
         try{
+          // prime nooit een geluid dat al afspeelt, anders pauzeer je je eigen feedback
+          if (!a.paused) return;
+
           const oldVol = (typeof a.volume === 'number') ? a.volume : 1;
           const oldMuted = !!a.muted;
 
@@ -2905,7 +2908,7 @@ const willHelp = (wrongTries >= 2);
       // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
       if (mode === 'tip') return;
 
-      kickAudio();
+      if (e && e.type === 'touchstart') kickAudio();
 
       const touches = e.touches || [];
       const pts = getPointsFromTouches(touches);
