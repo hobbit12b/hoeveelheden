@@ -2138,12 +2138,12 @@ function kickAudio(){
       return null;
     }
 
-    function popBubble(it, dur, rate){
+    function popBubble(it, dur, rate, withSound=true){
       if (!it) return;
       it.bubblePopping = true;
       it.bubblePopStart = nowMs();
       it.bubblePopDur = dur ?? randInt(180, 320);
-      playPlop(rate ?? 1);
+      if (withSound) playPlop(rate ?? 1);
       requestRender();
     }
 
@@ -2164,7 +2164,7 @@ function kickAudio(){
       }
     }
 
-    function floatAllBubblesOutWithinTwoSeconds(){
+    function floatAllBubblesOutWithinTwoSeconds(withSound=true){
       const start = nowMs();
       const deadline = start + 2000;
       const card = gameCard.getBoundingClientRect();
@@ -2181,7 +2181,7 @@ function kickAudio(){
         const popRate = randFloat(0.85, 1.25);
         setTimeout(() => {
           try{
-            if (!it.vanished) popBubble(it, popDur, popRate);
+            if (!it.vanished) popBubble(it, popDur, popRate, withSound);
           } catch(e){}
         }, popDelay);
 
@@ -2220,7 +2220,7 @@ function kickAudio(){
       setTimeout(() => gameCard.classList.remove('goodFlash'), 260);
     }
 
-    function showSuccessSequenceTotalMs(){
+    function showSuccessSequenceTotalMs(withSound=true){
       if (!successGif) return 0;
 
       if (usePinguinSuccess){
@@ -2239,7 +2239,7 @@ function kickAudio(){
 
       setTimeout(() => {
         successGif.src = POP_GIF_SRC;
-        playPlop();
+        if (withSound) playPlop();
       }, BLOW_TIME);
 
       setTimeout(() => {
@@ -2555,13 +2555,22 @@ function kickAudio(){
   try{ stopPrompt(); } catch(e){}
 
   ensureAllHaveBubbles();
-  const seqMs = showSuccessSequenceTotalMs();
-  floatAllBubblesOutWithinTwoSeconds();
+  const seqMs = showSuccessSequenceTotalMs(false);
+  floatAllBubblesOutWithinTwoSeconds(false);
 
   // alleen goed: geen cijfergeluid (voorkomt zoeken naar audio/[cijfer].mp3)
   try{
     // voorkom overlap: als fout nog bezig was, stop het meteen
     try{ wrongAudio.pause(); wrongAudio.currentTime = 0; } catch(e){}
+
+    // stop eventuele plopjes die nog spelen (fallback pool)
+    try{
+      if (plopFallbackPool && plopFallbackPool.length){
+        for (const a of plopFallbackPool){
+          try{ a.pause(); a.currentTime = 0; } catch(e){}
+        }
+      }
+    } catch(e){}
     // houd iOS audio wakker voor directe respons
     try{ unlockAudioSync(); } catch(e){}
     playSfx(goodAudio);
@@ -2576,17 +2585,26 @@ function kickAudio(){
 
       ensureAllHaveBubbles();
 
-      const seqMs = showSuccessSequenceTotalMs();
+      const seqMs = showSuccessSequenceTotalMs(false);
 
       try{ goodFeedback(); } catch(e){}
       try{ stopVoice(); } catch(e){}
       try{ stopPrompt(); } catch(e){}
 
       // eerst goed-geluid hoorbaar, daarna kan de animatie rustig doorlopen
+      // stop eventuele plopjes die nog spelen (fallback pool)
+      try{
+        if (plopFallbackPool && plopFallbackPool.length){
+          for (const a of plopFallbackPool){
+            try{ a.pause(); a.currentTime = 0; } catch(e){}
+          }
+        }
+      } catch(e){}
+
       await playSfxWait(goodAudio, 320);
 
       setTimeout(() => {
-        try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
+        try{ floatAllBubblesOutWithinTwoSeconds(false); } catch(e) {}
       }, 260);
 
       // wacht tot het voorbeeld echt klaar is
