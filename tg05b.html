@@ -559,7 +559,50 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       color: rgba(77,74,72,0.68);
       line-height: 1.35;
     }
-  </style>
+  
+    /* item keuze knoppen */
+    .itemPickGrid{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .itemPickBtn{
+      appearance:none;
+      border: 2px solid rgba(77,74,72,0.16);
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      padding: 10px 10px 8px 10px;
+      cursor: pointer;
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      gap: 8px;
+      min-width: 120px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+      font-weight: 900;
+      color: rgba(77,74,72,0.86);
+      text-transform: lowercase;
+      user-select:none;
+    }
+
+    .itemPickBtn img{
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      pointer-events:none;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+    }
+
+    .itemPickBtn.on{
+      border-color: rgba(245,180,152,0.95);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+    }
+
+    .itemPickBtn:active{ transform: scale(0.99); }
+
+</style>
 </head>
 
 <body>
@@ -636,7 +679,31 @@ border-top:  2px solid rgba(245,180,152,0.50); }
             <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
 
+    
     <div style="margin-top:12px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">items</div>
+
+      <div class="itemPickGrid" id="itemPickGrid" aria-label="Kies items">
+        <button class="itemPickBtn" type="button" id="itemPickStar" data-kind="star" aria-pressed="true">
+          <img src="ster.png" alt="Ster" draggable="false" />
+          <div>ster</div>
+        </button>
+
+        <button class="itemPickBtn" type="button" id="itemPickLeaf" data-kind="leaf" aria-pressed="true">
+          <img src="blad.png" alt="Blad" draggable="false" />
+          <div>blad</div>
+        </button>
+
+        <button class="itemPickBtn" type="button" id="itemPickLady" data-kind="lady" aria-pressed="true">
+          <img src="lieveheersbeestje.png" alt="Lieveheersbeestje" draggable="false" />
+          <div>lieveheersbeestje</div>
+        </button>
+      </div>
+
+      <div class="tuneHint" id="itemPickHint">Tik aan of uit, het spel gebruikt alleen jouw selectie.</div>
+    </div>
+
+<div style="margin-top:12px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
       <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">voorbeeld animatie (hand met 4)</div>
 
       <div class="tuneRow">
@@ -770,6 +837,12 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const countMaxRange = document.getElementById('countMaxRange');
     const countMinValue = document.getElementById('countMinValue');
     const countMaxValue = document.getElementById('countMaxValue');
+    const itemPickStar = document.getElementById('itemPickStar');
+    const itemPickLeaf = document.getElementById('itemPickLeaf');
+    const itemPickLady = document.getElementById('itemPickLady');
+    const itemPickHint = document.getElementById('itemPickHint');
+
+
 
 
     
@@ -1159,11 +1232,44 @@ const countHint = document.getElementById('countHint');
     }
 
 
-    // Voorbeeld animatie instellingen
-    const TUT_MARBOTIC_KEY = 'tutMarboticTuneV1';
+    
+    // Item keuze instellingen (ster, blad, lieveheersbeestje)
+    const ITEM_CHOICE_KEY = 'itemChoiceV1';
+    const DEFAULT_ITEM_CHOICE = { star: true, leaf: true, lady: true };
+    let itemChoice = (function loadItemChoice(){
+      try{
+        const raw = localStorage.getItem(ITEM_CHOICE_KEY);
+        if (!raw) return { ...DEFAULT_ITEM_CHOICE };
+        const obj = JSON.parse(raw);
+        const next = {
+          star: !!(obj.star ?? DEFAULT_ITEM_CHOICE.star),
+          leaf: !!(obj.leaf ?? DEFAULT_ITEM_CHOICE.leaf),
+          lady: !!(obj.lady ?? DEFAULT_ITEM_CHOICE.lady)
+        };
+        // nooit alles uit
+        if (!next.star && !next.leaf && !next.lady) return { ...DEFAULT_ITEM_CHOICE };
+        return next;
+      } catch(e){
+        return { ...DEFAULT_ITEM_CHOICE };
+      }
+    })();
+
+    function saveItemChoice(){
+      try{ localStorage.setItem(ITEM_CHOICE_KEY, JSON.stringify(itemChoice)); } catch(e){}
+    }
+
+    function ensureAtLeastOneItem(){
+      if (itemChoice.star || itemChoice.leaf || itemChoice.lady) return;
+      itemChoice = { ...DEFAULT_ITEM_CHOICE };
+      saveItemChoice();
+    }
+
+
+// Voorbeeld animatie instellingen
+    const TUT_MARBOTIC_KEY = 'tutMarboticTuneV2';
     const DEFAULT_TUT_MARBOTIC = {
-      land: { scale: 5.58, tx: 10, ty: -222 },
-      port: { scale: 3.33, tx: -87, ty: -125 }
+      land: { scale: 2.98, tx: 196, ty: 49 },
+      port: { scale: 1.88, tx: 170, ty: 40 }
     };
 
     function clampNum(n, a, b){
@@ -1440,6 +1546,45 @@ const countHint = document.getElementById('countHint');
 
     }
 
+    function syncItemUI(){
+      const setBtn = (btn, on) => {
+        if (!btn) return;
+        btn.classList.toggle('on', !!on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      };
+      setBtn(itemPickStar, !!itemChoice.star);
+      setBtn(itemPickLeaf, !!itemChoice.leaf);
+      setBtn(itemPickLady, !!itemChoice.lady);
+
+      if (itemPickHint){
+        const chosen = ['star','leaf','lady'].filter(k => itemChoice[k]);
+        const label = chosen.length === 3 ? 'alles' : (chosen.length ? chosen.join(', ') : 'alles');
+        itemPickHint.textContent = `geselecteerd: ${label}`;
+      }
+    }
+
+    function toggleItemChoice(kind){
+      if (!kind) return;
+
+      itemChoice[kind] = !itemChoice[kind];
+      ensureAtLeastOneItem();
+      saveItemChoice();
+      syncItemUI();
+
+      // netjes toepassen bij de volgende ronde
+      try{
+        if (!document.body.classList.contains('tutorialActive') && started){
+          nextRound();
+        }
+      } catch(e){}
+    }
+
+    if (itemPickStar) itemPickStar.addEventListener('click', () => toggleItemChoice('star'));
+    if (itemPickLeaf) itemPickLeaf.addEventListener('click', () => toggleItemChoice('leaf'));
+    if (itemPickLady) itemPickLady.addEventListener('click', () => toggleItemChoice('lady'));
+
+
+
     function applyCountChange(from){
       let min = clampInt(countMinRange.value, 1, 9);
       let max = clampInt(countMaxRange.value, 1, 9);
@@ -1465,6 +1610,7 @@ const countHint = document.getElementById('countHint');
       tunePanel.classList.remove('hidden');
       syncCountUI();
       syncMarboticUI();
+      syncItemUI();
       kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
@@ -1574,7 +1720,9 @@ const countHint = document.getElementById('countHint');
 
     function pickKind(){
       const all = ['star','leaf','lady'];
-      return all[Math.floor(Math.random() * all.length)];
+      const pool = all.filter(k => itemChoice && itemChoice[k]);
+      const use = pool.length ? pool : all;
+      return use[Math.floor(Math.random() * use.length)];
     }
 
     function makeItem(nx, ny, kind, baseR, safe, appearBase){
