@@ -180,6 +180,20 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     .gameCard.flashWrong{ background: #fde1e1; }
 
+    /* groen feedback op opdrachtenvak */
+    .gameCard::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      background: rgba(50, 220, 120, 0.22);
+      opacity: 0;
+      pointer-events:none;
+      z-index: 70;
+      transition: opacity 220ms ease;
+    }
+    .gameCard.goodFlash::after{ opacity: 1; }
+
+
     @media (orientation: portrait){
       .gameCard{ height: min(420px, 34vh); }
     }
@@ -305,6 +319,12 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       28%{ transform: translateX(-6px); }
       58%{ transform: translateX(5px); }
       100%{ transform: translateX(0); }
+    }
+
+
+    .scan-surface.goodFlash .scanVeil{
+      opacity: 0.34;
+      background: rgba(50, 220, 120, 0.32);
     }
 
     .scanDigitWrap{
@@ -449,9 +469,13 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     .tunePanel{
       position: fixed;
-      right: 18px;
-      bottom: 18px;
-      width: min(520px, calc(100vw - 36px));
+      left: 18px;
+      top: calc(env(safe-area-inset-top, 0px) + 86px);
+      right: auto;
+      bottom: auto;
+      width: min(520px, calc(50vw - 36px));
+      max-height: calc(100vh - (env(safe-area-inset-top, 0px) + 110px));
+      overflow: auto;
       background: rgba(255,255,255,0.98);
       border-radius: 18px;
       box-shadow: 0 18px 50px rgba(0,0,0,0.16);
@@ -459,6 +483,15 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       padding: 14px 14px 12px 14px;
       z-index: 1700;
       color: #4d4a48;
+    }
+
+    @media (orientation: portrait){
+      .tunePanel{
+        left: 18px;
+        right: 18px;
+        width: min(700px, calc(100vw - 36px));
+        max-height: calc(50vh - (env(safe-area-inset-top, 0px) + 106px));
+      }
     }
 
     .tunePanel.hidden{ display:none; }
@@ -546,7 +579,50 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       color: rgba(77,74,72,0.68);
       line-height: 1.35;
     }
-  </style>
+  
+    /* item keuze knoppen */
+    .itemPickGrid{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .itemPickBtn{
+      appearance:none;
+      border: 2px solid rgba(77,74,72,0.16);
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      padding: 10px 10px 8px 10px;
+      cursor: pointer;
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      gap: 8px;
+      min-width: 120px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+      font-weight: 900;
+      color: rgba(77,74,72,0.86);
+      text-transform: lowercase;
+      user-select:none;
+    }
+
+    .itemPickBtn img{
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      pointer-events:none;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,0.10));
+    }
+
+    .itemPickBtn.on{
+      border-color: rgba(245,180,152,0.95);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+    }
+
+    .itemPickBtn:active{ transform: scale(0.99); }
+
+</style>
 </head>
 
 <body>
@@ -623,7 +699,29 @@ border-top:  2px solid rgba(245,180,152,0.50); }
             <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
 
+    
+    <div style="margin-top:12px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
+      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">items</div>
 
+      <div class="itemPickGrid" id="itemPickGrid" aria-label="Kies items">
+        <button class="itemPickBtn" type="button" id="itemPickStar" data-kind="star" aria-pressed="true">
+          <img src="ster.png" alt="Ster" draggable="false" />
+          <div>ster</div>
+        </button>
+
+        <button class="itemPickBtn" type="button" id="itemPickLeaf" data-kind="leaf" aria-pressed="true">
+          <img src="blad.png" alt="Blad" draggable="false" />
+          <div>blad</div>
+        </button>
+
+        <button class="itemPickBtn" type="button" id="itemPickLady" data-kind="lady" aria-pressed="true">
+          <img src="lieveheersbeestje.png" alt="Lieveheersbeestje" draggable="false" />
+          <div>lieveheersbeestje</div>
+        </button>
+      </div>
+
+      <div class="tuneHint" id="itemPickHint">Tik aan of uit, het spel gebruikt alleen jouw selectie.</div>
+    </div>
 
   </div>
 
@@ -727,9 +825,26 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     const countMaxRange = document.getElementById('countMaxRange');
     const countMinValue = document.getElementById('countMinValue');
     const countMaxValue = document.getElementById('countMaxValue');
+    const itemPickStar = document.getElementById('itemPickStar');
+    const itemPickLeaf = document.getElementById('itemPickLeaf');
+    const itemPickLady = document.getElementById('itemPickLady');
+    const itemPickHint = document.getElementById('itemPickHint');
 
 
-    const countHint = document.getElementById('countHint');
+
+
+    
+
+    const marScaleRange = document.getElementById('marScaleRange');
+    const marXRange = document.getElementById('marXRange');
+    const marYRange = document.getElementById('marYRange');
+    const marScaleValue = document.getElementById('marScaleValue');
+    const marXValue = document.getElementById('marXValue');
+    const marYValue = document.getElementById('marYValue');
+    const marResetBtn = document.getElementById('marResetBtn');
+    const marPreviewBtn = document.getElementById('marPreviewBtn');
+    const marHint = document.getElementById('marHint');
+const countHint = document.getElementById('countHint');
 
     const successGif = document.getElementById('successGif');
 
@@ -756,12 +871,23 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       try{
         a.pause();
         a.currentTime = 0;
+        try{ a.load(); } catch(e){}
         const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
+        if (p && typeof p.catch === 'function'){
+          p.catch(() => {
+            try{
+              const tmp = new Audio(a.src);
+              tmp.volume = (typeof a.volume === 'number') ? a.volume : 1;
+              const p2 = tmp.play();
+              if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+            } catch(e){}
+          });
+        }
       } catch(e){}
     }
 
-    // speel SFX en wacht tot het geluid klaar is (met minimale wachttijd en een harde timeout)
+
+    // speel SFXcht tot het geluid klaar is (met minimale wachttijd en een harde timeout)
     function playSfxWait(a, minMs){
       const minWait = Math.max(0, Number(minMs) || 0);
 
@@ -850,22 +976,47 @@ border-top:  2px solid rgba(245,180,152,0.50); }
           resolve();
         };
 
-        const HARD_MAX_MS = 3200;
+        const HARD_MAX_MS = 3800;
         const hard = setTimeout(() => finish(), HARD_MAX_MS);
+
+        try{ stopVoice(); } catch(e){}
+        try{ stopPrompt(); } catch(e){}
+        try{ unlockAudioSync(); } catch(e){}
 
         try{
           afterTutorAudio.pause();
           afterTutorAudio.currentTime = 0;
+
+          // force reload once if needed (iOS cache/failed state)
+          try{ afterTutorAudio.load(); } catch(e){}
+
           afterTutorAudio.onended = () => { clearTimeout(hard); finish(); };
           afterTutorAudio.onerror = () => { clearTimeout(hard); finish(); };
+
           const p = afterTutorAudio.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
+          if (p && typeof p.catch === 'function'){
+            p.catch(() => {
+              // fallback: nieuwe Audio instance
+              try{
+                const tmp = new Audio(AFTER_TUTOR_CUE_SRC);
+                tmp.volume = 1;
+                tmp.onended = () => { clearTimeout(hard); finish(); };
+                tmp.onerror = () => { clearTimeout(hard); finish(); };
+                const p2 = tmp.play();
+                if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+              } catch(e){
+                clearTimeout(hard);
+                finish();
+              }
+            });
+          }
         } catch(e){
           clearTimeout(hard);
           finish();
         }
       });
     }
+
 
 
     function stopVoice(){
@@ -1022,16 +1173,45 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     // audio init en unlock, veilig en zonder spam
     let audioKickInFlight = null;
-    function kickAudio(){
-      if (audioKickInFlight) return;
+    
+    // iOS: audio moet binnen dezelfde tik worden vrijgegeven, dus zonder await/Promise.
+    function unlockAudioSync(){
+      // WebAudio
+      try{ if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } catch(e){}
+      try{ if (audioCtx && audioCtx.state === 'running') startAudioKeepAlive(); } catch(e){}
 
-      const p = Promise.resolve()
-        .then(() => initWebAudio())
-        .then(() => unlockAudio())
-        .catch(() => {});
+      const prime = (a) => {
+        if (!a) return;
+        try{
+          const oldVol = (typeof a.volume === 'number') ? a.volume : 1;
+          const oldMuted = !!a.muted;
 
-      audioKickInFlight = p;
-      p.then(() => { audioKickInFlight = null; }, () => { audioKickInFlight = null; });
+          a.muted = true;
+          a.volume = 0;
+
+          a.pause();
+          a.currentTime = 0;
+
+          const p = a.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+          a.pause();
+          a.currentTime = 0;
+
+          a.muted = oldMuted;
+          a.volume = oldVol;
+        } catch(err){}
+      };
+
+      try{ prime(goodAudio); } catch(e){}
+      try{ prime(wrongAudio); } catch(e){}
+      try{ prime(promptAudio); } catch(e){}
+      try{ prime(afterTutorAudio); } catch(e){}
+      try{ prime(voicePlayer); } catch(e){}
+    }
+
+function kickAudio(){
+      try{ initWebAudio(); } catch(e){}
+      try{ unlockAudioSync(); } catch(e){}
     }
 
 
@@ -1104,6 +1284,289 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       return Math.max(a, Math.min(b, v));
     }
 
+
+    
+    // Item keuze instellingen (ster, blad, lieveheersbeestje)
+    const ITEM_CHOICE_KEY = 'itemChoiceV1';
+    const DEFAULT_ITEM_CHOICE = { star: true, leaf: true, lady: true };
+    let itemChoice = (function loadItemChoice(){
+      try{
+        const raw = localStorage.getItem(ITEM_CHOICE_KEY);
+        if (!raw) return { ...DEFAULT_ITEM_CHOICE };
+        const obj = JSON.parse(raw);
+        const next = {
+          star: !!(obj.star ?? DEFAULT_ITEM_CHOICE.star),
+          leaf: !!(obj.leaf ?? DEFAULT_ITEM_CHOICE.leaf),
+          lady: !!(obj.lady ?? DEFAULT_ITEM_CHOICE.lady)
+        };
+        // nooit alles uit
+        if (!next.star && !next.leaf && !next.lady) return { ...DEFAULT_ITEM_CHOICE };
+        return next;
+      } catch(e){
+        return { ...DEFAULT_ITEM_CHOICE };
+      }
+    })();
+
+    function saveItemChoice(){
+      try{ localStorage.setItem(ITEM_CHOICE_KEY, JSON.stringify(itemChoice)); } catch(e){}
+    }
+
+    function ensureAtLeastOneItem(){
+      if (itemChoice.star || itemChoice.leaf || itemChoice.lady) return;
+      itemChoice = { ...DEFAULT_ITEM_CHOICE };
+      saveItemChoice();
+    }
+
+
+// Voorbeeld animatie instellingen
+    const TUT_MARBOTIC_KEY = 'tutMarboticTuneV2';
+    const DEFAULT_TUT_MARBOTIC = {
+      land: { scale: 2.98, tx: 196, ty: 49 },
+      port: { scale: 1.88, tx: 170, ty: 40 }
+    };
+
+    function clampNum(n, a, b){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return a;
+      return Math.max(a, Math.min(b, v));
+    }
+    function round2(n){ return Math.round(Number(n) * 100) / 100; }
+    function isPortraitMode(){
+      return !!(window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
+    }
+
+    function loadTutMarboticTune(){
+      try{
+        const raw = localStorage.getItem(TUT_MARBOTIC_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(DEFAULT_TUT_MARBOTIC));
+        const obj = JSON.parse(raw);
+
+        const land = obj.land || obj.landscape || {};
+        const port = obj.port || obj.portrait || {};
+
+        return {
+          land: {
+            scale: round2(clampNum(land.scale ?? DEFAULT_TUT_MARBOTIC.land.scale, 0.2, 12)),
+            tx: Math.round(clampNum(land.tx ?? DEFAULT_TUT_MARBOTIC.land.tx, -1000, 1000)),
+            ty: Math.round(clampNum(land.ty ?? DEFAULT_TUT_MARBOTIC.land.ty, -1000, 1000))
+          },
+          port: {
+            scale: round2(clampNum(port.scale ?? DEFAULT_TUT_MARBOTIC.port.scale, 0.2, 12)),
+            tx: Math.round(clampNum(port.tx ?? DEFAULT_TUT_MARBOTIC.port.tx, -1000, 1000)),
+            ty: Math.round(clampNum(port.ty ?? DEFAULT_TUT_MARBOTIC.port.ty, -1000, 1000))
+          }
+        };
+      } catch(e){
+        return JSON.parse(JSON.stringify(DEFAULT_TUT_MARBOTIC));
+      }
+    }
+
+    let tutMarboticTune = loadTutMarboticTune();
+
+    function saveTutMarboticTune(){
+      try{ localStorage.setItem(TUT_MARBOTIC_KEY, JSON.stringify(tutMarboticTune)); } catch(e){}
+    }
+
+    function getCurrentTutMarboticTune(){
+      return isPortraitMode() ? tutMarboticTune.port : tutMarboticTune.land;
+    }
+
+    function setCurrentTutMarboticTune(next){
+      if (isPortraitMode()){
+        tutMarboticTune.port = next;
+      } else {
+        tutMarboticTune.land = next;
+      }
+      saveTutMarboticTune();
+    }
+
+    function syncMarboticUI(){
+      if (!marScaleRange || !marXRange || !marYRange) return;
+      const cur = getCurrentTutMarboticTune();
+
+      marScaleRange.value = String(cur.scale);
+      marXRange.value = String(cur.tx);
+      marYRange.value = String(cur.ty);
+
+      const scaleText = (Math.round(cur.scale * 100) / 100).toFixed(2).replace(/\.00$/, '');
+      marScaleValue.textContent = scaleText;
+      marXValue.textContent = `${Math.round(cur.tx)}px`;
+      marYValue.textContent = `${Math.round(cur.ty)}px`;
+
+      if (marHint){
+        marHint.textContent = isPortraitMode()
+          ? 'Deze waarden gelden voor verticale stand.'
+          : 'Deze waarden gelden voor horizontale stand.';
+      }
+    }
+
+    function applyMarboticChange(){
+      if (!marScaleRange || !marXRange || !marYRange) return;
+      const scale = round2(clampNum(marScaleRange.value, 0.2, 12));
+      const tx = Math.round(clampNum(marXRange.value, -1000, 1000));
+      const ty = Math.round(clampNum(marYRange.value, -1000, 1000));
+
+      setCurrentTutMarboticTune({ scale, tx, ty });
+      syncMarboticUI();
+    }
+
+    if (marScaleRange){
+      marScaleRange.addEventListener('input', applyMarboticChange);
+      marXRange.addEventListener('input', applyMarboticChange);
+      marYRange.addEventListener('input', applyMarboticChange);
+    }
+
+    function resetMarboticTune(){
+      if (isPortraitMode()){
+        tutMarboticTune.port = { ...DEFAULT_TUT_MARBOTIC.port };
+      } else {
+        tutMarboticTune.land = { ...DEFAULT_TUT_MARBOTIC.land };
+      }
+      saveTutMarboticTune();
+      syncMarboticUI();
+    }
+    if (marResetBtn){
+      marResetBtn.addEventListener('click', resetMarboticTune);
+    }
+
+    // Voorbeeld afspelen om te checken of de hand met 4 goed staat
+    let marPreviewToken = 0;
+    function delayMarPreview(ms, token){
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          if (token !== marPreviewToken) return resolve(false);
+          resolve(true);
+        }, ms);
+      });
+    }
+
+    async function previewMarboticExample(){
+      if (!started){
+        if (marHint) marHint.textContent = 'Start eerst het spel, daarna kun je het voorbeeld afspelen.';
+        return;
+      }
+
+      marPreviewToken += 1;
+      const token = marPreviewToken;
+
+      const wasLocked = locked;
+      locked = true;
+
+      kickAudio();
+
+      const hadTutClass = document.body.classList.contains('tutorialActive');
+      try{ document.body.classList.add('tutorialActive'); } catch(e){}
+
+      // scan hint weg tijdens preview
+      hideScanDigit();
+      try{ if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; } } catch(e){}
+
+      try{
+        // Zelfde plaatjes als in het echte tutorialstuk
+        const pickExisting = async (cands) => {
+          for (const src of cands){
+            const img = await loadImage(src);
+            if (img) return src;
+          }
+          return cands[0];
+        };
+
+        const marboticASrc = await pickExisting(['marboticvoorbeelda.png','marbotic_voorbeeld/marboticvoorbeelda.png']);
+        const marboticBSrc = await pickExisting(['marboticvoorbeeldb.png','marbotic_voorbeeld/marboticvoorbeeldb.png']);
+        const marboticCSrc = await pickExisting(['marboticvoorbeeldc.png','marbotic_voorbeeld/marboticvoorbeeldc.png']);
+
+        if (token !== marPreviewToken) return;
+
+        if (tutMarboticImg) tutMarboticImg.src = marboticASrc;
+        hideTutorialDigitOnPlate();
+        hideMarbotic();
+
+        await delayMarPreview(90, token);
+        if (token !== marPreviewToken) return;
+
+        const scanRect = scanArea.getBoundingClientRect();
+
+        // meet basismaat
+        setMarboticState({ tx: 9999, ty: 9999, scale: 1 });
+        await delayMarPreview(30, token);
+        if (token !== marPreviewToken) return;
+
+        const baseRect = tutMarboticImg.getBoundingClientRect();
+
+        const marboticFixed = getCurrentTutMarboticTune();
+        const finalScale = marboticFixed.scale;
+
+        const scaledW = baseRect.width * finalScale;
+        const scaledH = baseRect.height * finalScale;
+
+        const offTX = (scanRect.width / 2) + (scaledW / 2) + 220;
+        const offTY = (scanRect.height / 2) + (scaledH / 2) + 220;
+
+        setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
+        showMarbotic();
+        await delayMarPreview(120, token);
+        if (token !== marPreviewToken) return;
+
+        setMarboticState({ tx: 0, ty: 0, scale: finalScale });
+        await delayMarPreview(260, token);
+        if (token !== marPreviewToken) return;
+
+        setMarboticState({ tx: marboticFixed.tx, ty: marboticFixed.ty, scale: finalScale });
+        await delayMarPreview(520, token);
+        if (token !== marPreviewToken) return;
+
+        pressMarbotic(true);
+        await delayMarPreview(240, token);
+        if (token !== marPreviewToken) return;
+
+        placeTutorialDigitOnPlate(marboticBSrc, '4');
+        if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+        playPlop(randFloat(0.90, 1.20));
+        await delayMarPreview(520, token);
+        if (token !== marPreviewToken) return;
+
+        if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
+        await delayMarPreview(90, token);
+        if (token !== marPreviewToken) return;
+
+        pressMarbotic(false);
+        await delayMarPreview(160, token);
+        if (token !== marPreviewToken) return;
+
+        setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
+        await delayMarPreview(560, token);
+        if (token !== marPreviewToken) return;
+
+        hideMarbotic();
+        setTimeout(() => hideTutorialDigitOnPlate(), 1200);
+
+      } catch(e){
+        // stil falen, het is alleen een preview
+      } finally {
+        if (!hadTutClass){
+          try{ document.body.classList.remove('tutorialActive'); } catch(e){}
+        }
+        locked = wasLocked;
+      }
+    }
+
+    if (marPreviewBtn){
+      marPreviewBtn.addEventListener('click', previewMarboticExample);
+    }
+
+
+
+    // kleine helper om UI te verversen na draaien
+    let marboticResizeT = null;
+    window.addEventListener('resize', () => {
+      if (marboticResizeT) clearTimeout(marboticResizeT);
+      marboticResizeT = setTimeout(() => {
+        marboticResizeT = null;
+        if (tunePanel && !tunePanel.classList.contains('hidden')) syncMarboticUI();
+      }, 120);
+    });
+
+
     function loadCountRange(){
       try{
         const raw = localStorage.getItem(COUNT_KEY);
@@ -1136,6 +1599,45 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     }
 
+    function syncItemUI(){
+      const setBtn = (btn, on) => {
+        if (!btn) return;
+        btn.classList.toggle('on', !!on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      };
+      setBtn(itemPickStar, !!itemChoice.star);
+      setBtn(itemPickLeaf, !!itemChoice.leaf);
+      setBtn(itemPickLady, !!itemChoice.lady);
+
+      if (itemPickHint){
+        const chosen = ['star','leaf','lady'].filter(k => itemChoice[k]);
+        const label = chosen.length === 3 ? 'alles' : (chosen.length ? chosen.join(', ') : 'alles');
+        itemPickHint.textContent = `geselecteerd: ${label}`;
+      }
+    }
+
+    function toggleItemChoice(kind){
+      if (!kind) return;
+
+      itemChoice[kind] = !itemChoice[kind];
+      ensureAtLeastOneItem();
+      saveItemChoice();
+      syncItemUI();
+
+      // netjes toepassen bij de volgende ronde
+      try{
+        if (!document.body.classList.contains('tutorialActive') && started){
+          nextRound();
+        }
+      } catch(e){}
+    }
+
+    if (itemPickStar) itemPickStar.addEventListener('click', () => toggleItemChoice('star'));
+    if (itemPickLeaf) itemPickLeaf.addEventListener('click', () => toggleItemChoice('leaf'));
+    if (itemPickLady) itemPickLady.addEventListener('click', () => toggleItemChoice('lady'));
+
+
+
     function applyCountChange(from){
       let min = clampInt(countMinRange.value, 1, 9);
       let max = clampInt(countMaxRange.value, 1, 9);
@@ -1160,6 +1662,8 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     function openTunePanel(){
       tunePanel.classList.remove('hidden');
       syncCountUI();
+      syncMarboticUI();
+      syncItemUI();
       kickAudio();
     }
     function closeTunePanel(){ tunePanel.classList.add('hidden'); }
@@ -1269,7 +1773,9 @@ border-top:  2px solid rgba(245,180,152,0.50); }
 
     function pickKind(){
       const all = ['star','leaf','lady'];
-      return all[Math.floor(Math.random() * all.length)];
+      const pool = all.filter(k => itemChoice && itemChoice[k]);
+      const use = pool.length ? pool : all;
+      return use[Math.floor(Math.random() * use.length)];
     }
 
     function makeItem(nx, ny, kind, baseR, safe, appearBase){
@@ -1402,6 +1908,27 @@ border-top:  2px solid rgba(245,180,152,0.50); }
         } else break;
       }
     }
+
+
+    // telvolgorde: links naar rechts, bij gelijke x van boven naar beneden
+    function getItemsLeftToRight(list){
+      const arr = Array.isArray(list) ? list.filter(Boolean).slice() : [];
+      arr.sort((a,b) => {
+        const ax = (a && typeof a.x === 'number') ? a.x : (Number(a && a.x) || 0);
+        const bx = (b && typeof b.x === 'number') ? b.x : (Number(b && b.x) || 0);
+        if (ax !== bx) return ax - bx;
+
+        const ay = (a && typeof a.y === 'number') ? a.y : (Number(a && a.y) || 0);
+        const by = (b && typeof b.y === 'number') ? b.y : (Number(b && b.y) || 0);
+        if (ay !== by) return ay - by;
+
+        const an = (a && typeof a.ny === 'number') ? a.ny : (Number(a && a.ny) || 0);
+        const bn = (b && typeof b.ny === 'number') ? b.ny : (Number(b && b.ny) || 0);
+        return an - bn;
+      });
+      return arr;
+    }
+
 
     function relayoutKeepPositions(){
       if (!items || !items.length) return;
@@ -1683,6 +2210,14 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       void scanArea.offsetHeight;
       scanArea.classList.add('wrong');
       setTimeout(() => scanArea.classList.remove('wrong'), 240);
+    }
+
+    function goodFeedback(){
+      if (!gameCard) return;
+      gameCard.classList.remove('goodFlash');
+      void gameCard.offsetHeight;
+      gameCard.classList.add('goodFlash');
+      setTimeout(() => gameCard.classList.remove('goodFlash'), 260);
     }
 
     function showSuccessSequenceTotalMs(){
@@ -1972,16 +2507,20 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       items.forEach(it => { it.counted = false; it.helpBubble = false; it.tutLabel = 0; });
       requestRender();
 
-      for (let i = 0; i < items.length; i++){
+      const ordered = getItemsLeftToRight(items);
+
+      for (let i = 0; i < ordered.length; i++){
         if (myToken !== helpToken) return;
 
-        for (let j = 0; j <= i; j++){
-          items[j].helpBubble = true;
-          items[j].tutLabel = j + 1;
-        }
-        for (let j = i + 1; j < items.length; j++){
-          items[j].helpBubble = false;
-          items[j].tutLabel = 0;
+        for (let j = 0; j < ordered.length; j++){
+          const it = ordered[j];
+          if (j <= i){
+            it.helpBubble = true;
+            it.tutLabel = j + 1;
+          } else {
+            it.helpBubble = false;
+            it.tutLabel = 0;
+          }
         }
 
         requestRender();
@@ -2008,28 +2547,43 @@ border-top:  2px solid rgba(245,180,152,0.50); }
     }
 
     async function onCorrectAnswer(){
-      locked = true;
+  locked = true;
 
+  const myRound = roundId;
 
-      playSfx(goodAudio);
+  // direct visuele feedback, audio niet blokkerend voor de animatie
+  try{ goodFeedback(); } catch(e){}
+  try{ stopVoice(); } catch(e){}
+  try{ stopPrompt(); } catch(e){}
 
-      await speakNumberSafe(target);
+  ensureAllHaveBubbles();
+  const seqMs = showSuccessSequenceTotalMs();
+  floatAllBubblesOutWithinTwoSeconds();
 
-      ensureAllHaveBubbles();
-      const seqMs = showSuccessSequenceTotalMs();
-      floatAllBubblesOutWithinTwoSeconds();
+  // speel eerst goed, spreek daarna het getal (zonder de visuals te vertragen)
+  try{
+    playSfxWait(goodAudio, 0).then(() => {
+      if (myRound !== roundId) return;
+      return speakNumberSafe(target);
+    }).catch(() => {});
+  } catch(e){}
 
-      setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
-    }
+  setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
+}
 
     async function onCorrectAnswerTutorial(){
       locked = true;
 
       ensureAllHaveBubbles();
 
-      // pinguin of bellen in beeld, dan het goede geluid, daarna veel plopjes
       const seqMs = showSuccessSequenceTotalMs();
-      playSfx(goodAudio);
+
+      try{ goodFeedback(); } catch(e){}
+      try{ stopVoice(); } catch(e){}
+      try{ stopPrompt(); } catch(e){}
+
+      // eerst goed-geluid hoorbaar, daarna kan de animatie rustig doorlopen
+      await playSfxWait(goodAudio, 320);
 
       setTimeout(() => {
         try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
@@ -2038,10 +2592,15 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       // wacht tot het voorbeeld echt klaar is
       await delaySafe(Math.max(1600, seqMs + 250));
 
-      // eerst de volgende opdracht zichtbaar maken, daarna pas: nu mag jij
+      // eerst de volgende opdracht zichtbaar maken, daarna: nu mag jij
       try{ document.body.classList.remove('tutorialActive'); } catch(e){}
       nextRound();
-      await delaySafe(240);
+
+      await delaySafe(140);
+
+      try{ stopVoice(); } catch(e){}
+      try{ stopPrompt(); } catch(e){}
+
       await playAfterTutorCueSafe();
     }
 
@@ -2052,7 +2611,7 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       stopVoice();
       stopPrompt();
 
-      const willHelp = (wrongTries >= 3);
+      const willHelp = (wrongTries >= 2);
 
       // bij telhulp: meteen blokkeren, maar pas starten ná foutfeedback
       if (willHelp){
@@ -2488,10 +3047,11 @@ function delayTutorial(ms, token){
       showHand();
       await delayTutorial(80, token);
 // Tel alle items één voor één
-      for (let i = 0; i < items.length; i++){
+      const ordered = getItemsLeftToRight(items);
+      for (let i = 0; i < ordered.length; i++){
         if (token !== tutorialToken) return;
 
-        const it = items[i];
+        const it = ordered[i];
         const hx = it.x;
         const hy = it.y;
 
@@ -2545,8 +3105,9 @@ function delayTutorial(ms, token){
       const maxH = scanRect.height * 0.98;
       const maxScale = Math.min(maxW / Math.max(1, baseRect.width), maxH / Math.max(1, baseRect.height));
 
-      const desiredScale = 2.10;
-      const finalScale = Math.max(0.65, Math.min(desiredScale, maxScale));
+      const marboticFixed = getCurrentTutMarboticTune();
+
+      const finalScale = marboticFixed.scale;
 
       const scaledW = baseRect.width * finalScale;
       const scaledH = baseRect.height * finalScale;
@@ -2564,29 +3125,9 @@ function delayTutorial(ms, token){
       setMarboticState({ tx: 0, ty: 0, scale: finalScale });
       await delayTutorial(260, token);
 
-      // naar de witte scanplek: het witte vlak zit niet exact in het midden van de scanplek-afbeelding
-      let dx = 0, dy = 0;
-      try{
-        if (scanPlaceImg){
-          const placeRect = scanPlaceImg.getBoundingClientRect();
-          const cx = scanRect.left + (scanRect.width / 2);
-          const cy = scanRect.top  + (scanRect.height / 2);
+      // naar de witte scanplek, vaste waarden
+      setMarboticState({ tx: marboticFixed.tx, ty: marboticFixed.ty, scale: finalScale });
 
-          const offFrac = (typeof TUTORIAL_SCAN_OFF_FRAC === 'object' && TUTORIAL_SCAN_OFF_FRAC)
-            ? TUTORIAL_SCAN_OFF_FRAC
-            : ((typeof SCAN_UNDER_OFF_FRAC === 'object' && SCAN_UNDER_OFF_FRAC) ? SCAN_UNDER_OFF_FRAC : { x: 0, y: 0 });
-
-          const fracX = Number(offFrac.x) || 0;
-          const fracY = Number(offFrac.y) || 0;
-
-          const px = (placeRect.left + (placeRect.width / 2)) + (placeRect.width * fracX);
-          const py = (placeRect.top  + (placeRect.height / 2)) + (placeRect.height * fracY);
-
-          dx = px - cx;
-          dy = py - cy;
-        }
-      } catch(e){}
-      setMarboticState({ tx: dx, ty: dy, scale: finalScale });
       await delayTutorial(520, token);
 
       // indrukken met een korte pauze
@@ -2702,16 +3243,10 @@ if (startOverlay && startBtn){
 
     try{ goodAudio.load(); wrongAudio.load(); promptAudio.load(); afterTutorAudio.load(); } catch(err){}
 
-    // eerst meteen de plop vrijgeven en afspelen
-    Promise.resolve()
-      .then(() => unlockAudio())
-      .then(() => { try{ playPlop(1); } catch(err){} })
-      .catch(() => {});
-
-    Promise.resolve()
-      .then(() => initWebAudio())
-      .then(() => unlockAudio())
-      .catch(() => {});
+    // eerst in deze tik audio vrijgeven en de plop afspelen (iOS vereist dit synchroon)
+    try{ initWebAudio(); } catch(err){}
+    try{ unlockAudioSync(); } catch(err){}
+    try{ playPlop(1); } catch(err){}
 
     if (startOverlay) startOverlay.classList.add('leaving');
     startBtn.classList.add('leaving');
