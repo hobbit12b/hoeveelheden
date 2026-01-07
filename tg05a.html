@@ -2,36 +2,34 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>bellenblazen</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>tg05 layout en scan animatie test</title>
   <style>
     :root{
       --bg-left:#fdeeea;
       --brand:#e58c74;
       --text:#6f6b68;
 
-      --dash-w:4px;
-      --card-radius:28px;
-      --scale: 1;
+      /* Divider ratios, exact zoals tg05 */
+      --cols-left: 58fr;
+      --cols-right: 42fr;
+      --rows-top: 54fr;
+      --rows-bottom: 46fr;
 
-      /* Marbotic scanplek, gelijk aan tg07 */
+      /* Marbotic scanplek */
       --scanplek-left: 80.5%;
       --scanplek-top: 87%;
       --scanplek-scale: 0.36;
 
-
-      /* Startknop */
-      --start-left: 29%;
-      --start-top: 57%;
-      --start-scale: 1.03;
---shadow: 0 16px 40px rgba(0,0,0,0.08);
+      /* Instelbare tutorial waarden */
+      --tut-scale: 1;
+      --tut-x: 0; /* px */
+      --tut-y: 0; /* px */
+      --tut-anchor-dx: 0; /* px, offset van beeld middelpunt naar anker */
+      --tut-anchor-dy: 0; /* px, offset van beeld middelpunt naar anker */
     }
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-
+    *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body{
       height:100%;
       margin:0;
@@ -39,35 +37,23 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:#ffffff;
       color: var(--text);
-      -webkit-user-select: none;
-      user-select: none;
+      -webkit-user-select:none;
+      user-select:none;
       touch-action: manipulation;
       overflow:hidden;
     }
 
     body{
       display:grid;
-      grid-template-columns: 58fr 42fr;
-      height: 100%;
+      grid-template-columns: var(--cols-left) var(--cols-right);
+      height:100%;
     }
 
     @media (orientation: portrait){
       body{
         grid-template-columns: 1fr;
-        grid-template-rows: 54fr 46fr;
+        grid-template-rows: var(--rows-top) var(--rows-bottom);
       }
-    }
-
-    @media (orientation: portrait){
-      :root{
-        --start-left: 50%;
-        --start-top: 31.5%;
-        --start-scale: 0.95;
-      
-        --scanplek-left: 88%;
-        --scanplek-top: 80%;
-        --scanplek-scale: 0.27;
-}
     }
 
     .left{
@@ -75,177 +61,58 @@
       padding: 28px 26px 22px 26px;
       display:flex;
       flex-direction:column;
-      gap: 22px;
-      position: relative;
+      gap: 16px;
+      position:relative;
       overflow:hidden;
-      min-height: 0;
+      min-height:0;
+    }
+
+    .left h1{
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.2px;
+      color: #4f4a47;
+    }
+    .left p{
+      margin: 0;
+      line-height: 1.35;
+      max-width: 42ch;
+      color: #6b6663;
+      font-size: 14px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.55);
+      border: 2px solid rgba(245,180,152,0.55);
+      width: fit-content;
+      font-size: 13px;
+      color: #5f5b58;
     }
 
     .scan-surface{
-background:#ffffff;
-      position: relative;
+      background:#ffffff;
+      position:relative;
       overflow:hidden;
-      min-height: 0;
+      min-height:0;
       transition: background 120ms ease;
     }
 
     @media (orientation: landscape){
-      .scan-surface{
-border-left:  2px solid rgba(245,180,152,0.50); }
+      .scan-surface{ border-left: 2px solid rgba(245,180,152,0.50); }
     }
     @media (orientation: portrait){
-      .scan-surface{
-border-top:  2px solid rgba(245,180,152,0.50); }
-      .left{ padding: 22px; gap: 16px; }
+      .scan-surface{ border-top: 2px solid rgba(245,180,152,0.50); }
+      .left{ padding: 22px; }
     }
 
-    .topbar{
-      display:flex;
-      align-items:center;
-      gap: 18px;
-      flex: 0 0 auto;
-      position: relative;
-      z-index: 1800;
-    }
-
-    .homeBtn{
-      appearance:none;
-      -webkit-appearance:none;
-      border:none;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      box-shadow: none;
-      border-radius: 0;
-      cursor:pointer;
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-  user-select: none;
-      display:grid;
-      place-items:center;
-      line-height: 0;
-      flex: 0 0 auto;
-      width:72px;
-      height:72px;
-      transition: transform 140ms cubic-bezier(.22,.61,.35,1);
-    }
-    .homeBtn:active{ transform: scale(0.99); }
-    .homeBtn img{
-      height: 100%;
-      width: 100%;
-      object-fit: contain;
-      display:block;
-      pointer-events:none;
-    }
-
-    .titlePill{
-      padding: 18px 44px;
-      border-radius: 22px;
-      background: var(--brand);
-      color: #ffffff;
-      font-weight: 800;
-      font-size: clamp(22px, 2.1vw, 34px);
-      letter-spacing: 0.3px;
-      box-shadow: var(--shadow);
-      line-height: 1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 64px;
-      width: min(660px, 100%);
-      text-transform: lowercase;
-      cursor: pointer;
-    }
-
-    .content{
-      flex:1 1 auto;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 10px 6px;
-      min-height: 0;
-    }
-
-    .gameCard{
-      width: min(980px, 100%);
-      height: min(520px, 58vh);
-      background: #ffffff;
-      border: 2px solid rgba(245,180,152,0.60);
-      border-radius: var(--card-radius);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-      position:relative;
-      overflow: hidden;
-      transition: background 160ms ease;
-    }
-
-    .gameCard.flashWrong{ background: #fde1e1; }
-
-    @media (orientation: portrait){
-      .gameCard{ height: min(420px, 34vh); }
-    }
-
-    #countCanvas{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      z-index: 10;
-      pointer-events: auto;
-      touch-action: none;
-    }
-
-    .successGif{
-      position:absolute;
-      left:50%;
-      bottom: 10%;
-      transform: translateX(-50%);
-      width: clamp(160px, calc(260px * var(--scale)), 340px);
-      height: auto;
-      opacity: 0;
-      pointer-events:none;
-      z-index: 80;
-      transition: opacity 160ms ease;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
-    }
-    .successGif.show{ opacity: 1; }
-
-
-    .tutorialLayer{
-      position:absolute;
-      inset:0;
-      z-index: 95;
-      pointer-events:none;
-    }
-    .tutorialHandWrap{
-      position:absolute;
-      left:0;
-      top:0;
-      opacity: 0;
-      transform: translate(2400px, 2400px);
-      transition: transform 420ms cubic-bezier(.22,.61,.35,1), opacity 160ms ease;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
-      will-change: transform, opacity;
-    }
-    .tutorialHandWrap.show{ opacity: 1; }
-    .tutorialHand{
-      width: clamp(90px, calc(130px * var(--scale)), 170px);
-      height: auto;
-      transform: translate(-34%, -24%);
-      display:block;
-      pointer-events:none;
-      user-select:none;
-      -webkit-user-drag:none;
-    }
-    .tutorialHand.tap{ animation: handTap 320ms cubic-bezier(.22,.61,.35,1) 1; }
-    @keyframes handTap{
-      0%{ transform: translate(-34%, -24%) scale(1); }
-      40%{ transform: translate(-34%, -24%) scale(0.90); }
-      100%{ transform: translate(-34%, -24%) scale(1); }
-    }
-
+    /* Scan overlay en scanplek */
     .scanOverlay{
       position:absolute;
-      inset: 0;
+      inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -260,2567 +127,481 @@ border-top:  2px solid rgba(245,180,152,0.50); }
       top: var(--scanplek-top, 50%);
       transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1));
       width: min(720px, 86%);
-      height: auto;
+      height:auto;
       object-fit: contain;
       pointer-events:none;
       z-index: 1;
-      opacity: 0;
-      transition: opacity 240ms ease;
-      will-change: transform, opacity;
-    }
-
-    #scanPlaceImg.nudge{
-      animation: scanNudge 360ms cubic-bezier(.22,.61,.35,1) 1;
-    }
-    @keyframes scanNudge{
-      0%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
-      45%{ transform: translate(-50%, -50%) scale(calc(var(--scanplek-scale, 1) * 0.92)); }
-      100%{ transform: translate(-50%, -50%) scale(var(--scanplek-scale, 1)); }
-    }
-    /* startscherm: nog geen marbotic scan UI zichtbaar */
-    body.startActive #scanPlaceImg{ opacity: 0 !important; }
-    body.startActive .scanVeil{ opacity: 1 !important; }
-    body.startActive #scanDigitWrap{ opacity: 0 !important; }
-
-    .scanVeil{
-      position:absolute;
-      inset: 0;
-      background: #ffffff;
       opacity: 1;
       transition: opacity 240ms ease;
-      pointer-events:none;
-      z-index: 4;
     }
 
-    .scan-surface.scanAllowed #scanPlaceImg{ opacity: 1; }
-
-    /* tutorial: tijdens de voorbeeldanimatie is de scanplek rustiger zichtbaar */
-    body.tutorialActive .scan-surface.scanAllowed #scanPlaceImg{ opacity: 0.4; }
-
-    .scan-surface.scanAllowed .scanVeil{ opacity: 0; }
-
-    .scan-surface.wrong{ animation: wiggle 220ms ease; }
-    @keyframes wiggle{
-      0%{ transform: translateX(0); }
-      28%{ transform: translateX(-6px); }
-      58%{ transform: translateX(5px); }
-      100%{ transform: translateX(0); }
-    }
-
-    .scanDigitWrap{
+    /* Optioneel veil */
+    .scanVeil{
       position:absolute;
       inset:0;
-      display:grid;
-      place-items:center;
-      pointer-events:none;
+      background: rgba(255,255,255,0.0);
       opacity: 0;
-      transition: opacity 160ms ease;
-      z-index: 5;
-    }
-    .scanDigitWrap.show{ opacity: 1; }
-    .scanDigitWrap.fadeOut{ opacity: 0; transition: opacity 900ms ease; }
-    .scanDigitWrap img{
-      width: min(62%, 360px);
-      height: auto;
-      opacity: 0.5;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
     }
 
-
-    @media (orientation: portrait){
-      .scanDigitWrap img{
-        width: min(49.6%, 288px);
-      }
-    }
-
-
-    /* tutorial: marbotic voorbeeld (cijfer op scanplaat drukken) */
-    .tutPlateDigit{
-      position:absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      transition: opacity 160ms ease;
-      pointer-events:none;
-      z-index: 20;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.14));
-      will-change: opacity;
-    }
-    .tutPlateDigit.show{ opacity: 1; }
-
+    /* Tutorial Marbotic animatie, dit is het stuk dat jij wilt schalen en positioneren */
     .tutMarboticWrap{
       position:absolute;
-      left:50%;
-      top:50%;
-      --tx: 480px;
-      --ty: 360px;
-      transform: translate(-50%, -50%) translate(var(--tx), var(--ty));
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      transform:
+        translate(-50%, -50%)
+        translate(calc(var(--tut-x) * 1px), calc(var(--tut-y) * 1px));
       opacity: 0;
       transition: transform 560ms cubic-bezier(.22,.61,.35,1), opacity 180ms ease, filter 220ms ease;
       filter: drop-shadow(0 16px 30px rgba(0,0,0,0.18));
       pointer-events:none;
       z-index: 25;
-      will-change: transform, opacity, filter;
+      will-change: transform, opacity;
     }
     .tutMarboticWrap.show{ opacity: 1; }
-    .tutMarboticWrap.pressed{
-      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.10));
-    }
+    .tutMarboticWrap.pressed{ filter: drop-shadow(0 6px 12px rgba(0,0,0,0.10)); }
 
-    .tutMarboticInner{
-      --ms: 1.0;
-      transform: scale(var(--ms));
+    .tutMarboticWrap.pick{ pointer-events:auto; }
+    .tutMarboticWrap.pick .tutMarboticImg{ pointer-events:auto; }
+
+    .tutMarboticScaler{
+      transform: scale(var(--tut-scale));
       transform-origin: 50% 50%;
       transition: transform 560ms cubic-bezier(.22,.61,.35,1);
       will-change: transform;
     }
 
+    .tutMarboticShift{
+      transform: translate(calc(var(--tut-anchor-dx) * -1px), calc(var(--tut-anchor-dy) * -1px));
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
     .tutMarboticImg{
       width: min(72%, 340px);
-      height: auto;
+      height:auto;
       display:block;
       user-select:none;
       -webkit-user-drag:none;
       pointer-events:none;
     }
-
     @media (orientation: landscape){
-      .tutMarboticImg{
-        width: min(68%, 300px);
-      }
+      .tutMarboticImg{ width: min(68%, 300px); }
     }
 
-
-    .startOverlay{
-  position:fixed;
-  inset:0;
-  background: transparent;
-  z-index: 1500;
-  overflow:hidden;
-    touch-action: manipulation;
-  -webkit-touch-callout: none;
-  pointer-events: auto;
-}
-
-.startBtn{
-  position:absolute;
-  left: var(--start-left, 50%);
-  top: var(--start-top, 60%);
-  transform: translate(-50%, -50%) scale(var(--start-scale, 0.83));
-  border:none;
-  background: transparent;
-  padding: 0;
-  cursor:pointer;
-  width: min(520px, 78vw);
-  border-radius: 22px;
-  overflow:hidden;
-  box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-}
-
-.startBtn:active{
-  transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.99));
-}
-.startBtn video{
-  width: 100%;
-  height: auto;
-  display:block;
-
-  pointer-events:none;
-}
-
-.startOverlay.leaving{
-  animation: overlayFade 520ms ease forwards;
-  pointer-events:none;
-}
-.startBtn.leaving{
-  animation: startPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
-}
-@keyframes overlayFade{
-  from{ opacity:1; }
-  to{ opacity:0; }
-}
-@keyframes startPop{
-  0%{ opacity:1; transform: translate(-50%, -50%) scale(var(--start-scale, 0.83)); }
-  45%{ opacity:1; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 1.06)) rotate(-1deg); }
-  100%{ opacity:0; transform: translate(-50%, -50%) scale(calc(var(--start-scale, 0.83) * 0.45)) rotate(4deg); }
-}
-
-    .tunePanel{
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      width: min(520px, calc(100vw - 36px));
-      background: rgba(255,255,255,0.98);
+    /* Controls overlay, links in landscape, boven in portrait */
+    .controls{
+      position:fixed;
+      z-index: 3000;
+      background: rgba(255,255,255,0.92);
+      border: 2px solid rgba(245,180,152,0.55);
       border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-      border: 2px solid rgba(245,180,152,0.75);
-      padding: 14px 14px 12px 14px;
-      z-index: 1700;
-      color: #4d4a48;
-    }
-
-    .tunePanel.hidden{ display:none; }
-
-    .tuneHeader{
+      box-shadow: 0 16px 40px rgba(0,0,0,0.10);
+      padding: 12px;
+      gap: 10px;
       display:flex;
-      align-items:center;
+      align-items:flex-end;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      max-width: calc(100vw - 24px);
+    }
+    .ctrl{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      min-width: 170px;
+    }
+    .ctrl label{
+      font-size: 12px;
+      color:#5f5b58;
+      display:flex;
       justify-content:space-between;
       gap: 10px;
-      margin-bottom: 10px;
     }
-
-    .tuneTitle{
-      font-weight: 900;
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      text-transform: lowercase;
+    .ctrl input[type="range"]{
+      width: 100%;
     }
-
-    .tuneClose{
-      appearance:none;
-      border:none;
-      background:#f8c3b0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 900;
-      cursor:pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
-    }
-    .tuneClose:active{ transform: scale(0.99); }
-
-    .tuneRow{
-      display:grid;
-      grid-template-columns: 140px 1fr 84px;
+    .btnRow{
+      display:flex;
       gap: 10px;
       align-items:center;
-      margin: 8px 0;
+      flex-wrap: wrap;
     }
-
-    .tuneLabel{
-      font-weight: 800;
-      font-size: 13px;
-      color: rgba(77,74,72,0.86);
-      text-transform: lowercase;
+    .checkLine{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-size: 12px;
+      color:#5f5b58;
+      user-select:none;
     }
+    .checkLine input{ width: 18px; height: 18px; }
 
-    .tuneValue{
-      font-variant-numeric: tabular-nums;
-      font-weight: 900;
-      font-size: 13px;
-      text-align:right;
-      color: rgba(77,74,72,0.86);
-    }
-
-    .tuneRow input[type="range"]{ width: 100%; }
-
-    .tuneButtons{
+    .miniRow{
       display:flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: 10px;
     }
 
-    .tuneBtnSmall{
-      appearance:none;
-      border:none;
-      background: var(--brand);
-      color:#fff;
-      font-weight: 900;
+    .hint{
+      position: fixed;
+      z-index: 4000;
+      left: 50%;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.94);
+      border: 2px solid rgba(245,180,152,0.55);
+      border-radius: 18px;
       padding: 10px 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.10);
+      font-weight: 700;
+      color:#7a5145;
+    }
+    button{
+      appearance:none;
+      border: 0;
       border-radius: 14px;
+      padding: 10px 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      background: #e58c74;
+      color: #ffffff;
       cursor:pointer;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-      font-size: 14px;
     }
-    .tuneBtnSmall.secondary{
-      background:#f8c3b0;
-      color:#4d4a48;
+    button.secondary{
+      background: rgba(229,140,116,0.18);
+      color:#7a5145;
+      border: 2px solid rgba(229,140,116,0.45);
+      font-weight: 700;
     }
-    .tuneBtnSmall:active{ transform: scale(0.99); }
 
-    .tuneHint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: rgba(77,74,72,0.68);
-      line-height: 1.35;
+    @media (orientation: landscape){
+      .controls{
+        top: calc(12px + env(safe-area-inset-top));
+        left: calc(12px + env(safe-area-inset-left));
+        transform: none;
+        flex-direction: column;
+        align-items: stretch;
+        width: min(260px, calc(58vw - 24px));
+      }
+      .ctrl{ min-width: 0; }
+      .btnRow{ justify-content: space-between; }
+    }
+    @media (orientation: portrait){
+      .controls{
+        top: calc(12px + env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+        align-items: flex-end;
+        width: calc(100vw - 24px);
+      }
+    }
+
+    /* kleine crosshair op de scanplek, helpt bij afstellen, geen layout invloed */
+    .targetDot{
+      position:absolute;
+      left: var(--scanplek-left, 50%);
+      top: var(--scanplek-top, 50%);
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      background: rgba(229,140,116,0.25);
+      border: 2px solid rgba(229,140,116,0.55);
+      z-index: 3;
+      pointer-events:none;
     }
   </style>
 </head>
 
 <body>
-  <section class="left" aria-label="Spel">
-    <div class="topbar">
-      <button class="homeBtn" id="homeBtn" aria-label="Naar het menu" type="button">
-        <img src="homeknop.png" alt="Home" />
-      </button>
-<div class="titlePill" id="titlePill">bellenblazen</div>
-    </div>
-
-    <div class="content">
-      <div class="gameCard" id="gameCard" aria-label="Telkaart">
-        <canvas id="countCanvas" aria-label="Telveld"></canvas>
-
-        <div class="tutorialLayer" id="tutorialLayer" aria-hidden="true">
-          <div class="tutorialHandWrap" id="tutorialHandWrap" aria-hidden="true">
-            <img class="tutorialHand" id="tutorialHand" src="hand.png" alt="" draggable="false" />
-          </div>
-        </div>
-        <img class="successGif" id="successGif" src="bellen_blazen02.gif" alt="" aria-hidden="true" />
-      </div>
-    </div>
+  <section class="left" aria-label="Layout">
+    <h1>layout test</h1>
+    <p>Hier staat alleen de layout en de voorbeeldanimatie met de hand en de 4. Met de sliders kun je schaal en positie afstellen zonder dat het spel ertussen zit.</p>
+    <div class="badge">Landscape, sliders links, Portrait, sliders boven</div>
   </section>
 
   <section class="scan-surface scanAllowed" id="scan-area" aria-label="Scanvak">
-    <div class="scanDigitWrap" id="scanDigitWrap" aria-hidden="true">
-      <img id="scanDigitImg" alt="" />
-    </div>
-
-    <img class="tutPlateDigit" id="tutPlateDigit" alt="" draggable="false" aria-hidden="true" />
+    <div class="targetDot" aria-hidden="true"></div>
 
     <div class="tutMarboticWrap" id="tutMarboticWrap" aria-hidden="true">
-      <div class="tutMarboticInner" id="tutMarboticInner" aria-hidden="true">
-        <img class="tutMarboticImg" id="tutMarboticImg" src="marboticvoorbeelda.png" alt="" draggable="false" />
+      <div class="tutMarboticScaler" id="tutMarboticScaler" aria-hidden="true">
+        <div class="tutMarboticShift" id="tutMarboticShift" aria-hidden="true">
+          <img class="tutMarboticImg" id="tutMarboticImg" src="marboticvoorbeelda.png" alt="" draggable="false" />
+        </div>
       </div>
     </div>
 
     <div class="scanOverlay">
       <img id="scanPlaceImg" src="marbotic_scanplek.png" alt="" draggable="false" aria-hidden="true" />
       <div class="scanVeil" id="scanVeil" aria-hidden="true"></div>
-      
     </div>
   </section>
 
-  
-<div class="startOverlay" id="startOverlay" role="dialog" aria-modal="true" aria-label="Start">
-  <button class="startBtn" id="startBtn" aria-label="Start" type="button">
-    <video id="startVid" src="startknop.mp4" muted autoplay loop playsinline preload="auto"></video>
-  </button>
-</div>
+  <div class="hint" id="hint" hidden>tik op het midden van de 4</div>
 
-<div class="tunePanel hidden" id="tunePanel" role="dialog" aria-modal="false" aria-label="Instellingen">
-    <div class="tuneHeader">
-      <div class="tuneTitle">instellingen</div>
-      <button class="tuneClose" id="tuneClose" aria-label="Sluiten" type="button">Sluit</button>
+  <div class="controls" id="controls" aria-label="Afstellen">
+    <div class="ctrl">
+      <label for="scaleRange"><span>schaal</span><span id="scaleVal">1.00</span></label>
+      <input id="scaleRange" type="range" min="0.50" max="2.00" step="0.01" value="1.00" />
+    </div>
+    <div class="ctrl">
+      <label for="xRange"><span>x</span><span id="xVal">0px</span></label>
+      <input id="xRange" type="range" min="-700" max="700" step="1" value="0" />
+    </div>
+    <div class="ctrl">
+      <label for="yRange"><span>y</span><span id="yVal">0px</span></label>
+      <input id="yRange" type="range" min="-700" max="700" step="1" value="0" />
     </div>
 
-    <div style="margin-top:6px; padding-top:10px; border-top:2px solid rgba(245,180,152,0.45);">
-      <div class="tuneTitle" style="font-size:16px; margin-bottom:8px;">telbereik</div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">minimum</div>
-        <input type="range" id="countMinRange" min="1" max="9" step="1" value="1" />
-        <div class="tuneValue" id="countMinValue">1</div>
+    <div class="ctrl">
+      <label><span>anker</span><span id="anchorVal">geen</span></label>
+      <label class="checkLine"><input id="anchorMode" type="checkbox" /> x en y op midden van 4</label>
+      <div class="miniRow">
+        <button id="pickAnchorBtn" class="secondary" type="button">kies midden</button>
+        <button id="resetAnchorBtn" class="secondary" type="button">reset anker</button>
       </div>
-
-      <div class="tuneRow">
-        <div class="tuneLabel">maximum</div>
-        <input type="range" id="countMaxRange" min="1" max="9" step="1" value="5" />
-        <div class="tuneValue" id="countMaxValue">5</div>
-      </div>
-
-            <div class="tuneHint" id="countHint">Elke ronde kiest het spel een aantal binnen jouw bereik.</div>
     </div>
 
-
-
+    <div class="btnRow">
+      <button id="playBtn" type="button">speel voorbeeld</button>
+      <button id="resetBtn" class="secondary" type="button">reset</button>
+    </div>
   </div>
 
-  <script>    'use strict';
+  <script>
+    const wrap = document.getElementById("tutMarboticWrap");
+    const scaler = document.getElementById("tutMarboticScaler");
+    const shift = document.getElementById("tutMarboticShift");
+    const img = document.getElementById("tutMarboticImg");
 
-    // voorkom iOS Safari zoom bij dubbel tik en pinch
-    (function blockZoom(){
-      try{
-        document.addEventListener('dblclick', function(e){ e.preventDefault(); }, { passive:false });
-      } catch(e){}
-      let lastTouchEnd = 0;
-      try{
-        document.addEventListener('touchend', function(e){
-          // alleen dubbel tik met één vinger blokkeren, niet multi touch voor het scannen
-          try{
-            if (e.changedTouches && e.changedTouches.length !== 1) { lastTouchEnd = Date.now(); return; }
-            if (e.touches && e.touches.length) { lastTouchEnd = Date.now(); return; }
-          } catch(err){}
-          const now = Date.now();
-          if (now - lastTouchEnd <= 300){
-            e.preventDefault();
-          }
-          lastTouchEnd = now;
-        }, { passive:false });
-      } catch(e){}
-      ['gesturestart','gesturechange','gestureend'].forEach(function(type){
-        try{
-          document.addEventListener(type, function(e){ e.preventDefault(); }, { passive:false });
-        } catch(e){}
-      });
-    })();
+    const scaleRange = document.getElementById("scaleRange");
+    const xRange = document.getElementById("xRange");
+    const yRange = document.getElementById("yRange");
 
-    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-    const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
-    const randFloat = (a,b) => a + Math.random() * (b - a);
-    const nowMs = () => performance.now();
+    const scaleVal = document.getElementById("scaleVal");
+    const xVal = document.getElementById("xVal");
+    const yVal = document.getElementById("yVal");
 
-    // configuratie en assets (moeten vóór gebruik gedeclareerd zijn, iOS Safari stopt anders met uitvoeren)
-    const DIGIT_ORDER = [0,1,2,3,4,5,6,7,8,9];
+    const playBtn = document.getElementById("playBtn");
+    const resetBtn = document.getElementById("resetBtn");
+const hint = document.getElementById("hint");
+const anchorMode = document.getElementById("anchorMode");
+const pickAnchorBtn = document.getElementById("pickAnchorBtn");
+const resetAnchorBtn = document.getElementById("resetAnchorBtn");
+const anchorVal = document.getElementById("anchorVal");
 
-    const GOOD_SOUND_SRC = 'goed.mp3';
-    const WRONG_SOUND_SRC = 'fout.mp3';
-    const PROMPT_SOUND_SRC = 'leghetjuistecijfer.mp3';
-    const PLOP_SOUND_SRC = 'plop.mp3';
-    const AFTER_TUTOR_CUE_SRC = 'numagjij.mp3';
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-    const BLOW_GIF_SRC = 'bellen_blazen02.gif';
-    const POP_GIF_SRC  = 'bel_barst.gif';
+let anchorFx = parseFloat(localStorage.getItem("tutAnchorFx"));
+let anchorFy = parseFloat(localStorage.getItem("tutAnchorFy"));
+if (Number.isNaN(anchorFx) || Number.isNaN(anchorFy)) {
+  anchorFx = null;
+  anchorFy = null;
+}
 
-    // optioneel, alleen als jij later een pinguïn-gif toevoegt
-    let usePinguinSuccess = false;
-    let PINGUIN_GIF_SRC = 'pinguin.gif';
+let picking = false;
 
-    const BUBBLE_SRC = 'bubble.png';
-    const ITEM_SRC = {
-      lady: 'lieveheersbeestje.png',
-      star: 'ster.png',
-      leaf: 'blad.png'
-    };
 
-    const voiceSrc = (n) => `audio/${n}.mp3`;
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-    const gameCard = document.getElementById('gameCard');
-    const countCanvas = document.getElementById('countCanvas');
-    const homeBtn = document.getElementById('homeBtn');
+    function applyVars(){
+      const s = parseFloat(scaleRange.value);
+      const x = parseFloat(xRange.value);
+      const y = parseFloat(yRange.value);
 
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
+      document.documentElement.style.setProperty("--tut-scale", s);
+      document.documentElement.style.setProperty("--tut-x", x);
+      document.documentElement.style.setProperty("--tut-y", y);
 
-    if (startOverlay){ document.body.classList.add('startActive'); }
+      scaleVal.textContent = s.toFixed(2);
+      xVal.textContent = Math.round(x) + "px";
+      yVal.textContent = Math.round(y) + "px";
 
-    const titlePill = document.getElementById('titlePill');
-
-    const scanArea = document.getElementById('scan-area');
-
-    const scanDigitWrap = document.getElementById('scanDigitWrap');
-    const scanDigitImg = document.getElementById('scanDigitImg');
-
-    const scanPlaceImg = document.getElementById('scanPlaceImg');
-
-
-
-    // In deze schone versie is het 'cijfer onder de scanplek' verwijderd,
-    // maar een paar handlers verwachten nog steeds deze functies.
-    function showUnderDigit(){ /* no-op */ }
-    function hideUnderDigit(){ /* no-op */ }
-
-    const tutorialHandWrap = document.getElementById('tutorialHandWrap');
-    const tutorialHandImg = document.getElementById('tutorialHand');
-
-
-    const tutMarboticWrap = document.getElementById('tutMarboticWrap');
-    const tutMarboticInner = document.getElementById('tutMarboticInner');
-    const tutMarboticImg = document.getElementById('tutMarboticImg');
-    const tutPlateDigit = document.getElementById('tutPlateDigit');
-
-    const tunePanel = document.getElementById('tunePanel');
-    const tuneClose = document.getElementById('tuneClose');
-
-    const countMinRange = document.getElementById('countMinRange');
-    const countMaxRange = document.getElementById('countMaxRange');
-    const countMinValue = document.getElementById('countMinValue');
-    const countMaxValue = document.getElementById('countMaxValue');
-
-
-    const countHint = document.getElementById('countHint');
-
-    const successGif = document.getElementById('successGif');
-
-    function setAutoScale(){
-      if (!gameCard) return;
-      const r = gameCard.getBoundingClientRect();
-      const baseW = 980, baseH = 520, pad = 18;
-
-      const sW = Math.max(0.1, (r.width  - pad) / baseW);
-      const sH = Math.max(0.1, (r.height - pad) / baseH);
-
-      let s = Math.min(sW, sH);
-      s = Math.max(0.55, Math.min(1.05, s));
-      document.documentElement.style.setProperty('--scale', String(s));
-    }
-
-    const goodAudio = new Audio(GOOD_SOUND_SRC);
-    const wrongAudio = new Audio(WRONG_SOUND_SRC);
-    goodAudio.preload = 'auto';
-    wrongAudio.preload = 'auto';
-
-    function playSfx(a){
-      if (!a) return;
-      try{
-        a.pause();
-        a.currentTime = 0;
-        const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    // speel SFX en wacht tot het geluid klaar is (met minimale wachttijd en een harde timeout)
-    function playSfxWait(a, minMs){
-      const minWait = Math.max(0, Number(minMs) || 0);
-
-      return new Promise((resolve) => {
-        const nowFn = (typeof performance !== 'undefined' && performance.now) ? () => performance.now() : () => Date.now();
-        const startAt = nowFn();
-
-        let finished = false;
-
-        const cleanup = () => {
-          try{ if (a){ a.onended = null; a.onerror = null; } } catch(e){}
-        };
-
-        const finish = () => {
-          if (finished) return;
-          finished = true;
-          cleanup();
-          resolve();
-        };
-
-        const finishWithMin = () => {
-          const elapsed = nowFn() - startAt;
-          const wait = Math.max(0, minWait - elapsed);
-          setTimeout(() => finish(), wait);
-        };
-
-        const HARD_MAX_MS = Math.max(2600, minWait + 2600);
-        const hard = setTimeout(() => finish(), HARD_MAX_MS);
-
-        if (!a){
-          clearTimeout(hard);
-          finishWithMin();
-          return;
-        }
-
-        try{
-          a.pause();
-          a.currentTime = 0;
-
-          a.onended = () => { clearTimeout(hard); finishWithMin(); };
-          a.onerror = () => { clearTimeout(hard); finishWithMin(); };
-
-          const p = a.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){
-          clearTimeout(hard);
-          finishWithMin();
-        }
-      });
-    }
-
-    const voicePlayer = new Audio();
-    voicePlayer.preload = 'auto';
-    voicePlayer.volume = 1;
-
-
-    const promptAudio = new Audio(PROMPT_SOUND_SRC);
-    promptAudio.preload = 'auto';
-    promptAudio.volume = 1;
-
-    const afterTutorAudio = new Audio(AFTER_TUTOR_CUE_SRC);
-    afterTutorAudio.preload = 'auto';
-    afterTutorAudio.volume = 1;
-
-    function stopPrompt(){
-      try{ promptAudio.pause(); } catch(e){}
-      try{ promptAudio.currentTime = 0; } catch(e){}
-    }
-
-    function playPrompt(){
-      try{
-        promptAudio.currentTime = 0;
-        const p = promptAudio.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    function playAfterTutorCueSafe(){
-      return new Promise((resolve) => {
-        let finished = false;
-        const finish = () => {
-          if (finished) return;
-          finished = true;
-          try{ afterTutorAudio.onended = null; } catch(e){}
-          try{ afterTutorAudio.onerror = null; } catch(e){}
-          resolve();
-        };
-
-        const HARD_MAX_MS = 3200;
-        const hard = setTimeout(() => finish(), HARD_MAX_MS);
-
-        try{
-          afterTutorAudio.pause();
-          afterTutorAudio.currentTime = 0;
-          afterTutorAudio.onended = () => { clearTimeout(hard); finish(); };
-          afterTutorAudio.onerror = () => { clearTimeout(hard); finish(); };
-          const p = afterTutorAudio.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){
-          clearTimeout(hard);
-          finish();
-        }
-      });
-    }
-
-
-    function stopVoice(){
-      try{ voicePlayer.pause(); } catch(e){}
-      try{ voicePlayer.currentTime = 0; } catch(e){}
-      try{ voicePlayer.onended = null; } catch(e){}
-      try{ voicePlayer.onerror = null; } catch(e){}
-      try{ voicePlayer.onplaying = null; } catch(e){}
-    }
-
-    // Plop WebAudio plus fallback
-    let audioCtx = null;
-    let plopBuffer = null;
-    let plopFallbackPool = [];
-    let plopFallbackIndex = 0;
-    let plopMode = 'none';
-    let webAudioInitPromise = null;
-
-    // Prefetch helpt tegen haperende plop bij de eerste tikken
-    let plopArrayBufferPromise = null;
-    try{
-      plopArrayBufferPromise = fetch(PLOP_SOUND_SRC, { cache: 'force-cache' })
-        .then(r => (r && r.ok) ? r.arrayBuffer() : null)
-        .catch(() => null);
-    } catch(e){
-      plopArrayBufferPromise = null;
-    }
-
-    // Houd WebAudio actief zodat iOS minder vaak pauzeert
-    let keepAliveOsc = null;
-    let keepAliveGain = null;
-    function startAudioKeepAlive(){
-      if (!audioCtx || keepAliveOsc) return;
-      try{
-        keepAliveGain = audioCtx.createGain();
-        keepAliveGain.gain.setValueAtTime(0.00001, audioCtx.currentTime);
-        keepAliveGain.connect(audioCtx.destination);
-
-        keepAliveOsc = audioCtx.createOscillator();
-        keepAliveOsc.frequency.value = 30;
-        keepAliveOsc.connect(keepAliveGain);
-        keepAliveOsc.start();
-      } catch(e){
-        keepAliveOsc = null;
-        keepAliveGain = null;
-      }
-    }
-
-
-    function ensureFallbackPool(){
-      if (plopFallbackPool.length) return;
-      plopFallbackPool = Array.from({ length: 8 }, () => {
-        const a = new Audio(PLOP_SOUND_SRC);
-        a.preload = 'auto';
-        try{ a.load(); } catch(e){}
-        return a;
-      });
-      plopMode = 'fallback';
-    }
-
-    async function initWebAudio(){
-      if (audioCtx && plopBuffer) return;
-
-      if (webAudioInitPromise) return webAudioInitPromise;
-
-      webAudioInitPromise = (async () => {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (!Ctx){
-          ensureFallbackPool();
-          plopMode = 'fallback';
-          return;
-        }
-
-        try{
-          if (!audioCtx) audioCtx = new Ctx();
-        } catch(e){
-          ensureFallbackPool();
-          plopMode = 'fallback';
-          return;
-        }
-
-        try{
-          // Gebruik het liefst de prefetched bytes, anders fetch
-          let arr = null;
-          if (plopArrayBufferPromise) arr = await plopArrayBufferPromise;
-          if (!arr){
-            const resp = await fetch(PLOP_SOUND_SRC, { cache: 'no-store' });
-            arr = await resp.arrayBuffer();
-          }
-
-          plopBuffer = await new Promise((resolve, reject) => {
-            try{ audioCtx.decodeAudioData(arr, resolve, reject); }
-            catch(err){ reject(err); }
-          });
-
-          if (plopBuffer){
-            plopMode = 'web';
-            try{ if (audioCtx.state === 'running') startAudioKeepAlive(); } catch(e){}
-          } else {
-            ensureFallbackPool();
-            plopMode = 'fallback';
-          }
-        } catch(e){
-          ensureFallbackPool();
-          plopMode = 'fallback';
-        }
-      })();
-
-      return webAudioInitPromise;
-    }
-
-    async function unlockAudio(){
-      // WebAudio
-      try{
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-      } catch(e){}
-      try{
-        if (audioCtx && audioCtx.state === 'running') startAudioKeepAlive();
-      } catch(e){}
-
-      const primeAudioElement = async (a) => {
-        if (!a) return;
-        try{
-          const oldVol = (typeof a.volume === 'number') ? a.volume : 1;
-          const oldMuted = !!a.muted;
-
-          a.muted = true;
-          a.volume = 0;
-
-          a.pause();
-          a.currentTime = 0;
-
-          const p = a.play();
-          if (p && typeof p.catch === 'function') await p.catch(() => {});
-          a.pause();
-          a.currentTime = 0;
-
-          a.muted = oldMuted;
-          a.volume = oldVol;
-        } catch(e){}
-      };
-
-      // Fallback plop pool (mute trick)
-      if (plopFallbackPool.length){
-        try{ await primeAudioElement(plopFallbackPool[0]); } catch(e){}
-      }
-
-      // Prime belangrijke SFX zodat ze direct reageren
-      try{ await primeAudioElement(goodAudio); } catch(e){}
-      try{ await primeAudioElement(wrongAudio); } catch(e){}
-      try{ await primeAudioElement(promptAudio); } catch(e){}
-      try{ await primeAudioElement(afterTutorAudio); } catch(e){}
-    }
-
-    // audio init en unlock, veilig en zonder spam
-    let audioKickInFlight = null;
-    function kickAudio(){
-      if (audioKickInFlight) return;
-
-      const p = Promise.resolve()
-        .then(() => initWebAudio())
-        .then(() => unlockAudio())
-        .catch(() => {});
-
-      audioKickInFlight = p;
-      p.then(() => { audioKickInFlight = null; }, () => { audioKickInFlight = null; });
-    }
-
-
-    function fallbackPlop(rate=1){
-      try{ ensureFallbackPool(); } catch(e){}
-      if (!plopFallbackPool.length) return;
-
-      const a = plopFallbackPool[plopFallbackIndex % plopFallbackPool.length];
-      plopFallbackIndex++;
-      try{
-        try{ a.pause(); } catch(e){}
-        a.currentTime = 0;
-        a.volume = 1;
-        try{ a.playbackRate = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
-        const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch(e){}
-    }
-
-    function playPlop(rate=1){
-      // WebAudio is het snelst, en geeft de minste vertraging op iPad.
-      // Als de context toch even slaapt, speel dan meteen de fallback en herstel WebAudio op de achtergrond.
-      if (plopMode === 'web' && audioCtx && plopBuffer){
-        const startWeb = () => {
-          const src = audioCtx.createBufferSource();
-          const gain = audioCtx.createGain();
-          gain.gain.setValueAtTime(0.95, audioCtx.currentTime);
-
-          src.buffer = plopBuffer;
-          src.connect(gain);
-          gain.connect(audioCtx.destination);
-          try{ src.playbackRate.value = Math.max(0.7, Math.min(1.4, rate||1)); } catch(e){}
-          src.start(audioCtx.currentTime);
-        };
-
-        try{
-          if (audioCtx.state === 'running'){
-            startWeb();
-            return;
-          }
-
-          // Geen wachttijd, geen late plop, meteen geluid
-          fallbackPlop(rate);
-
-          // WebAudio weer wakker maken voor de volgende tikken
-          try{
-            const p = audioCtx.resume();
-            if (p && typeof p.then === 'function'){
-              p.then(() => { try{ startAudioKeepAlive(); } catch(e){} }).catch(() => {});
-            }
-          } catch(e){}
-          return;
-        } catch(e){
-          fallbackPlop(rate);
-          return;
-        }
-      }
-
-      fallbackPlop(rate);
-    }
-
-    // Telbereik instellingen
-    const COUNT_KEY = 'countRangeV3';
-    const DEFAULT_COUNT_RANGE = { min: 1, max: 5 };
-    let countRange = { ...DEFAULT_COUNT_RANGE };
-
-    function clampInt(n, a, b){
-      const v = Math.round(Number(n));
-      if (!Number.isFinite(v)) return a;
-      return Math.max(a, Math.min(b, v));
-    }
-
-    function loadCountRange(){
-      try{
-        const raw = localStorage.getItem(COUNT_KEY);
-        if (!raw) return { ...DEFAULT_COUNT_RANGE };
-        const obj = JSON.parse(raw);
-        let min = clampInt(obj.min ?? DEFAULT_COUNT_RANGE.min, 1, 9);
-        let max = clampInt(obj.max ?? DEFAULT_COUNT_RANGE.max, 1, 9);
-        if (max < min) max = min;
-        return { min, max };
-      } catch(e){
-        return { ...DEFAULT_COUNT_RANGE };
-      }
-    }
-
-    function saveCountRange(r){
-      try { localStorage.setItem(COUNT_KEY, JSON.stringify(r)); } catch(e) {}
-    }
-
-    function syncCountUI(){
-      countMinRange.value = String(countRange.min);
-      countMaxRange.value = String(countRange.max);
-      countMinValue.textContent = String(countRange.min);
-      countMaxValue.textContent = String(countRange.max);
-
-      if (countRange.min === countRange.max){
-        countHint.textContent = `Elke ronde zijn het precies ${countRange.min} dingen.`;
-      } else {
-        countHint.textContent = `Elke ronde zijn het ${countRange.min} tot ${countRange.max} dingen.`;
-      }
-
-    }
-
-    function applyCountChange(from){
-      let min = clampInt(countMinRange.value, 1, 9);
-      let max = clampInt(countMaxRange.value, 1, 9);
-
-      if (from === 'min' && max < min){
-        max = min;
-        countMaxRange.value = String(max);
-      }
-      if (from === 'max' && max < min){
-        min = max;
-        countMinRange.value = String(min);
-      }
-
-      countRange = { min, max };
-      saveCountRange(countRange);
-      syncCountUI();
-    }
-
-    countMinRange.addEventListener('input', () => applyCountChange('min'));
-    countMaxRange.addEventListener('input', () => applyCountChange('max'));
-
-    function openTunePanel(){
-      tunePanel.classList.remove('hidden');
-      syncCountUI();
-      kickAudio();
-    }
-    function closeTunePanel(){ tunePanel.classList.add('hidden'); }
-
-    tuneClose.addEventListener('click', closeTunePanel);
-    try{ tuneClose.addEventListener('touchend', (e)=>{ try{ e.preventDefault(); }catch(err){} closeTunePanel(); }, { passive:false }); } catch(err){}
-
-    // Instellingen openen, lang indrukken op de titelbalk
-    const TITLE_HOLD_MS = 1200;
-    let titleHoldTimer = null;
-    function cancelTitleHold(){
-      if (titleHoldTimer){ clearTimeout(titleHoldTimer); titleHoldTimer = null; }
-    }
-    function startTitleHold(){
-      cancelTitleHold();
-      titleHoldTimer = setTimeout(() => {
-        titleHoldTimer = null;
-        if (tunePanel.classList.contains('hidden')) openTunePanel();
-      }, TITLE_HOLD_MS);
-    }
-
-    if (titlePill){
-      titlePill.addEventListener('pointerdown', (e) => {
-        try{ e.preventDefault(); } catch(err) {}
-        startTitleHold();
-      }, { passive:false });
-      titlePill.addEventListener('pointerup', cancelTitleHold);
-      titlePill.addEventListener('pointercancel', cancelTitleHold);
-      titlePill.addEventListener('pointerleave', cancelTitleHold);
-
-      // iPad Safari fallback, sommige builds sturen geen pointer events op buttons
-      titlePill.addEventListener('touchstart', (e) => {
-        try{ e.preventDefault(); } catch(err) {}
-        startTitleHold();
-      }, { passive:false });
-      titlePill.addEventListener('touchend', cancelTitleHold, { passive:true });
-      titlePill.addEventListener('touchcancel', cancelTitleHold, { passive:true });
-    }
-
-    // Scan digit hint
-    let scanDigitTimer = null;
-    let scanDigitFadeTimer = null;
-
-    function hideScanDigit(){
-      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
-
-      scanDigitWrap.classList.remove('show');
-      scanDigitWrap.classList.remove('fadeOut');
-      scanDigitImg.removeAttribute('src');
-      scanDigitImg.alt = '';
-    }
-
-    function showScanAsset(src, alt){
-      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-      if (scanDigitFadeTimer){ clearTimeout(scanDigitFadeTimer); scanDigitFadeTimer = null; }
-
-      scanDigitWrap.classList.remove('fadeOut');
-      scanDigitImg.src = src;
-      scanDigitImg.alt = alt || '';
-      scanDigitWrap.classList.add('show');
-    }
-
-    function showScanDigit(digit){
-      showScanAsset(`marbotic${digit}.png`, String(digit));
-
-      // Eerst rustig zichtbaar, daarna wegfaden en opruimen
-      scanDigitFadeTimer = setTimeout(() => {
-        scanDigitFadeTimer = null;
-        scanDigitWrap.classList.add('fadeOut');
-        scanDigitTimer = setTimeout(() => hideScanDigit(), 950);
-      }, 2400);
-    }
-
-    // Canvas rendering
-    let ctx = null;
-    let items = [];
-    let target = 1;
-
-    const bubbleImg = new Image();
-    bubbleImg.src = BUBBLE_SRC;
-
-    const itemImgs = { star:null, leaf:null, lady:null };
-
-    function loadImage(src){
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = src;
-      });
-    }
-
-    function getSafeRectWH(w, h){
-      const pad = Math.max(44, Math.min(76, w * 0.065));
-      return { x: pad, y: pad, w: Math.max(60, w - pad * 2), h: Math.max(60, h - pad * 2) };
-    }
-
-    function computeBaseRadius(w){
-      return Math.max(38, Math.min(58, w * 0.075));
-    }
-
-    function kindScale(kind){
-      if (kind === 'star') return 0.78;
-      return 1.00;
-    }
-
-    function pickKind(){
-      const all = ['star','leaf','lady'];
-      return all[Math.floor(Math.random() * all.length)];
-    }
-
-    function makeItem(nx, ny, kind, baseR, safe, appearBase){
-      const x = safe.x + nx * safe.w;
-      const y = safe.y + ny * safe.h;
-
-      const delay = randInt(0, 220);
-      const appearDur = randInt(260, 360);
-
-      return {
-        nx, ny, x, y,
-        kind,
-        r: baseR * kindScale(kind),
-        rot: randFloat(-2.35, 2.35),
-
-        counted: false,
-        helpBubble: false,
-
-        bubblePopping: false,
-        bubblePopStart: 0,
-        bubblePopDur: 220,
-
-        floating: false,
-        floatStart: 0,
-        floatDur: 1500,
-        driftX: 0,
-        driftPhase: Math.random() * Math.PI * 2,
-
-        vanished: false,
-
-        appearStart: appearBase + delay,
-        appearDur,
-        appearDone: false
-      };
-    }
-
-    function generateItems(n){
-      const r = gameCard.getBoundingClientRect();
-      const safe = getSafeRectWH(r.width, r.height);
-      const baseR = computeBaseRadius(r.width);
-      const minDist = baseR * 2.25;
-
-      const out = [];
-      let tries = 0;
-      const maxTries = 3000;
-      const appearBase = nowMs();
-
-      while(out.length < n && tries < maxTries){
-        tries++;
-
-        const nx = Math.random();
-        const ny = Math.random();
-        const x = safe.x + nx * safe.w;
-        const y = safe.y + ny * safe.h;
-
-        let ok = true;
-        for (const it of out){
-          const d = Math.hypot(it.x - x, it.y - y);
-          if (d < minDist) { ok = false; break; }
-        }
-        if (!ok) continue;
-
-        out.push(makeItem(nx, ny, pickKind(), baseR, safe, appearBase));
-      }
-      return out;
-    }
-
-    function projectNormalizedToPixels(){
-      const r = gameCard.getBoundingClientRect();
-      const safe = getSafeRectWH(r.width, r.height);
-      const baseR = computeBaseRadius(r.width);
-
-      for (const it of items){
-        it.x = safe.x + it.nx * safe.w;
-        it.y = safe.y + it.ny * safe.h;
-
-        it.r = baseR * kindScale(it.kind);
-
-        const margin = it.r * 1.25;
-        it.x = clamp(it.x, safe.x + margin, safe.x + safe.w - margin);
-        it.y = clamp(it.y, safe.y + margin, safe.y + safe.h - margin);
-
-        it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
-        it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
-      }
-    }
-
-    function resolveOverlapsGentle(){
-      const r = gameCard.getBoundingClientRect();
-      const safe = getSafeRectWH(r.width, r.height);
-
-      const maxIter = 22;
-      for (let iter = 0; iter < maxIter; iter++){
-        let moved = false;
-
-        for (let i = 0; i < items.length; i++){
-          for (let j = i + 1; j < items.length; j++){
-            const a = items[i];
-            const b = items[j];
-
-            const minD = (a.r + b.r) * 1.18;
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            const d = Math.hypot(dx, dy) || 0.0001;
-
-            if (d < minD){
-              const push = (minD - d) * 0.52;
-              const ux = dx / d;
-              const uy = dy / d;
-
-              a.x -= ux * push;
-              a.y -= uy * push;
-              b.x += ux * push;
-              b.y += uy * push;
-
-              moved = true;
-            }
-          }
-        }
-
-        if (moved){
-          for (const it of items){
-            const margin = it.r * 1.25;
-            it.x = clamp(it.x, safe.x + margin, safe.x + safe.w - margin);
-            it.y = clamp(it.y, safe.y + margin, safe.y + safe.h - margin);
-
-            it.nx = clamp((it.x - safe.x) / safe.w, 0, 1);
-            it.ny = clamp((it.y - safe.y) / safe.h, 0, 1);
-          }
-        } else break;
-      }
-    }
-
-
-    // telvolgorde: links naar rechts, bij gelijke x van boven naar beneden
-    function getItemsLeftToRight(list){
-      const arr = Array.isArray(list) ? list.filter(Boolean).slice() : [];
-      arr.sort((a,b) => {
-        const ax = (a && typeof a.x === 'number') ? a.x : (Number(a && a.x) || 0);
-        const bx = (b && typeof b.x === 'number') ? b.x : (Number(b && b.x) || 0);
-        if (ax !== bx) return ax - bx;
-
-        const ay = (a && typeof a.y === 'number') ? a.y : (Number(a && a.y) || 0);
-        const by = (b && typeof b.y === 'number') ? b.y : (Number(b && b.y) || 0);
-        if (ay !== by) return ay - by;
-
-        const an = (a && typeof a.ny === 'number') ? a.ny : (Number(a && a.ny) || 0);
-        const bn = (b && typeof b.ny === 'number') ? b.ny : (Number(b && b.ny) || 0);
-        return an - bn;
-      });
-      return arr;
-    }
-
-
-    function relayoutKeepPositions(){
-      if (!items || !items.length) return;
-      projectNormalizedToPixels();
-      resolveOverlapsGentle();
-      requestRender();
-    }
-
-    function resizeCountCanvas(){
-      if (!countCanvas || !gameCard) return;
-
-      const r = gameCard.getBoundingClientRect();
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-      countCanvas.width = Math.round(r.width * dpr);
-      countCanvas.height = Math.round(r.height * dpr);
-      countCanvas.style.width = r.width + 'px';
-      countCanvas.style.height = r.height + 'px';
-
-      ctx = countCanvas.getContext('2d');
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-
-      if (started && items && items.length) relayoutKeepPositions();
-      else render();
-    }
-
-    function easeOut(t){ t = clamp(t,0,1); return 1 - Math.pow(1 - t, 3); }
-    function easeInOut(t){
-      t = clamp(t,0,1);
-      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
-    }
-    function easeOutBack(t){
-      t = clamp(t,0,1);
-      const c1 = 1.70158;
-      const c3 = c1 + 1;
-      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-    }
-
-    function drawSprite(c, img, cx, cy, r, rot, alpha, scale){
-      if (!img || !img.complete) return;
-      const base = r * 2.25;
-      const size = base * (scale || 1);
-
-      c.save();
-      c.globalAlpha = alpha;
-
-      c.translate(cx, cy);
-      c.rotate(rot || 0);
-
-      c.shadowColor = 'rgba(0,0,0,0.30)';
-      c.shadowBlur = Math.max(14, r * 0.46);
-      c.shadowOffsetX = Math.max(2, r * 0.10);
-      c.shadowOffsetY = Math.max(6, r * 0.22);
-
-      c.imageSmoothingEnabled = true;
-      c.drawImage(img, -size/2, -size/2, size, size);
-      c.restore();
-    }
-
-    function drawBubble(c, cx, cy, r, alpha, scale){
-      if (!bubbleImg || !bubbleImg.complete) return;
-      const mult = 2.25;
-      const size = r * mult * (scale || 1);
-
-      c.save();
-      c.globalAlpha = 0.92 * alpha;
-      c.drawImage(bubbleImg, cx - size/2, cy - size/2, size, size);
-      c.restore();
-    }
-
-
-    function drawCountLabel(c, cx, cy, r, n, alpha){
-      const badgeR = Math.max(14, r * 0.38);
-      let bx = cx + r * 0.62;
-      let by = cy - r * 0.62;
-
-      const w = c.canvas.width;
-      const h = c.canvas.height;
-      bx = clamp(bx, badgeR + 4, w - badgeR - 4);
-      by = clamp(by, badgeR + 4, h - badgeR - 4);
-
-      c.save();
-      c.globalAlpha = Math.max(0, Math.min(1, (alpha ?? 1)));
-      c.beginPath();
-      c.arc(bx, by, badgeR, 0, Math.PI * 2);
-      c.fillStyle = 'rgba(255,255,255,0.95)';
-      c.fill();
-      c.lineWidth = Math.max(2, badgeR * 0.18);
-      c.strokeStyle = 'rgba(229,140,116,0.70)';
-      c.stroke();
-
-      c.fillStyle = 'rgba(77,74,72,0.92)';
-      c.font = `900 ${Math.round(badgeR * 1.05)}px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.fillText(String(n), bx, by + 1);
-
-      c.restore();
-    }
-
-    let renderRAF = null;
-    function requestRender(){
-      if (renderRAF) return;
-      renderRAF = requestAnimationFrame(() => {
-        renderRAF = null;
-        render();
-      });
-    }
-
-    function render(){
-      if (!ctx || !gameCard) return;
-      const card = gameCard.getBoundingClientRect();
-      ctx.clearRect(0,0,card.width,card.height);
-
-      const tNow = nowMs();
-      items = items.filter(it => !it.vanished);
-
-      for (const it of items){
-        const img = itemImgs[it.kind];
-
-        let x = it.x;
-        let y = it.y;
-        let itemAlpha = 1;
-        let itemScale = 1;
-
-        if (!it.appearDone){
-          const t = (tNow - it.appearStart) / Math.max(1, it.appearDur);
-          if (t <= 0){
-            itemAlpha = 0;
-            itemScale = 0.88;
-            requestRender();
-          } else if (t < 1){
-            const e = easeOut(t);
-            itemAlpha = e;
-            itemScale = 0.88 + easeOutBack(t) * 0.16;
-            requestRender();
-          } else it.appearDone = true;
-        }
-
-        if (it.floating){
-          const t = (tNow - it.floatStart) / Math.max(1, it.floatDur);
-          const e = easeInOut(t);
-
-          const lift = (card.height + it.r * 3.2) * e;
-          y = it.y - lift;
-
-          const sway = Math.sin((tNow / 220) + it.driftPhase) * it.driftX;
-          x = it.x + sway;
-
-          if (t > 0.72) itemAlpha *= clamp(1 - (t - 0.72) / 0.28, 0, 1);
-
-          if (t >= 1){
-            it.vanished = true;
-            requestRender();
-            continue;
-          } else requestRender();
-        }
-
-        drawSprite(ctx, img, x, y, it.r, it.rot, itemAlpha, itemScale);
-
-        const bubbleVisible = it.counted || it.helpBubble || it.bubblePopping || it.floating;
-        if (bubbleVisible){
-          let bAlpha = 1;
-          let bScale = 1;
-
-          if (it.bubblePopping){
-            const t = (tNow - it.bubblePopStart) / Math.max(1, it.bubblePopDur);
-            const e = easeOut(t);
-            bAlpha = 1 - e;
-            bScale = 1 + e * 0.28;
-
-            if (t >= 1){
-              it.bubblePopping = false;
-              it.counted = false;
-              it.helpBubble = false;
-              bAlpha = 0;
-            } else requestRender();
-          }
-
-          if (it.counted || it.helpBubble || it.floating || bAlpha > 0.01){
-            drawBubble(ctx, x, y, it.r, bAlpha * itemAlpha, bScale * itemScale);
-            if (it.tutLabel){
-              drawCountLabel(ctx, x, y, it.r, it.tutLabel, bAlpha * itemAlpha);
-            }
-          }
-        }
-      }
-    }
-
-    function getCanvasPointFromEvent(e){
-      const rect = countCanvas.getBoundingClientRect();
-      const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-      const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-
-    function hitTest(px, py){
-      for (let i = items.length - 1; i >= 0; i--){
-        const it = items[i];
-        if (it.vanished) continue;
-
-        const d = Math.hypot(it.x - px, it.y - py);
-        const minTap = 44;
-        const extra = Math.max(minTap, it.r * 1.55);
-        if (d <= extra) return it;
-      }
-      return null;
-    }
-
-    function popBubble(it, dur, rate){
-      if (!it) return;
-      it.bubblePopping = true;
-      it.bubblePopStart = nowMs();
-      it.bubblePopDur = dur ?? randInt(180, 320);
-      playPlop(rate ?? 1);
-      requestRender();
-    }
-
-    function popAllMarkedBubblesOnly(){
-      const marked = items.filter(it => it.counted && !it.floating && !it.vanished);
-      if (!marked.length) return;
-      for (const it of marked){
-        const delay = randInt(0, 180);
-        const dur = randInt(180, 320);
-        setTimeout(() => popBubble(it, dur, randFloat(0.85, 1.25)), delay);
-      }
-    }
-
-    function ensureAllHaveBubbles(){
-      for (const it of items){
-        it.counted = true;
-        it.helpBubble = false;
-      }
-    }
-
-    function floatAllBubblesOutWithinTwoSeconds(){
-      const start = nowMs();
-      const deadline = start + 2000;
-      const card = gameCard.getBoundingClientRect();
-
-      for (const it of items){
-        if (it.vanished) continue;
-
-        it.counted = true;
-        it.helpBubble = false;
-
-        // natuurlijke plop timing en toonhoogte
-        const popDelay = randInt(0, 520);
-        const popDur = randInt(180, 320);
-        const popRate = randFloat(0.85, 1.25);
-        setTimeout(() => {
-          try{
-            if (!it.vanished) popBubble(it, popDur, popRate);
-          } catch(e){}
-        }, popDelay);
-
-        it.floating = true;
-        it.floatStart = start + popDelay + randInt(80, 220);
-
-        const maxDur = Math.max(650, Math.min(1900, deadline - it.floatStart));
-        it.floatDur = randInt(Math.floor(maxDur * 0.75), Math.floor(maxDur));
-
-        const driftMax = Math.max(10, Math.min(46, card.width * 0.060));
-        it.driftX = randFloat(driftMax * 0.35, driftMax);
-
-        requestRender();
-      }
-    }
-
-    function flashTelvlakWrong(){
-      gameCard.classList.remove('flashWrong');
-      void gameCard.offsetHeight;
-      gameCard.classList.add('flashWrong');
-      setTimeout(() => gameCard.classList.remove('flashWrong'), 240);
-    }
-
-    function wrongFeedback(){
-      scanArea.classList.remove('wrong');
-      void scanArea.offsetHeight;
-      scanArea.classList.add('wrong');
-      setTimeout(() => scanArea.classList.remove('wrong'), 240);
-    }
-
-    function showSuccessSequenceTotalMs(){
-      if (!successGif) return 0;
-
-      if (usePinguinSuccess){
-        const PINGUIN_TIME = 2000;
-        successGif.src = PINGUIN_GIF_SRC;
-        successGif.classList.add('show');
-        setTimeout(() => { successGif.classList.remove('show'); }, PINGUIN_TIME);
-        return PINGUIN_TIME;
-      }
-
-      const BLOW_TIME = 2600;
-      const POP_TIME  = 900;
-
-      successGif.src = BLOW_GIF_SRC;
-      successGif.classList.add('show');
-
-      setTimeout(() => {
-        successGif.src = POP_GIF_SRC;
-        playPlop();
-      }, BLOW_TIME);
-
-      setTimeout(() => {
-        successGif.classList.remove('show');
-      }, BLOW_TIME + POP_TIME);
-
-      return BLOW_TIME + POP_TIME;
-    }
-
-    // Game flow
-    let started = false;
-    let locked = false;
-
-    let tutorialDone = false;
-    let tutorialToken = 0;
-
-    
-    let idlePromptTimer = null;
-    let roundId = 0;
-    let promptPlayedThisRound = false;
-
-    let scanNudgeTimer = null;
-    let lastMotionAt = Date.now();
-
-    function clearScanNudge(){
-      if (scanNudgeTimer){
-        clearTimeout(scanNudgeTimer);
-        scanNudgeTimer = null;
-      }
-    }
-
-    function scheduleScanNudge(){
-      clearScanNudge();
-      if (!scanPlaceImg) return;
-      if (document.body.classList.contains('startActive')) return;
-      const IDLE_NUDGE_MS = 15000;
-      const since = Date.now() - lastMotionAt;
-      const wait = Math.max(0, IDLE_NUDGE_MS - since);
-      scanNudgeTimer = setTimeout(() => {
-        if (!scanPlaceImg) return;
-        if (document.body.classList.contains('startActive')) return;
-        if ((Date.now() - lastMotionAt) < (IDLE_NUDGE_MS - 40)){
-          scheduleScanNudge();
-          return;
-        }
-
-        scanPlaceImg.classList.remove('nudge');
-        void scanPlaceImg.offsetHeight;
-        scanPlaceImg.classList.add('nudge');
-
-        const again = randInt(7000, 11000);
-        scanNudgeTimer = setTimeout(() => {
-          if ((Date.now() - lastMotionAt) >= IDLE_NUDGE_MS) scheduleScanNudge();
-        }, again);
-      }, wait);
-    }
-
-    function markMotion(){
-      lastMotionAt = Date.now();
-      scheduleScanNudge();
-    }
-
-    if (scanPlaceImg){
-      scanPlaceImg.addEventListener('animationend', (e) => {
-        try{ if (e && e.animationName === 'scanNudge') scanPlaceImg.classList.remove('nudge'); } catch(err){}
-      });
-    }
-
-    ['pointerdown','pointermove','touchstart','touchmove'].forEach((type) => {
-      try{
-        document.addEventListener(type, () => {
-          markMotion();
-        }, { passive:true });
-      } catch(e){}
-    });
-
-    function resetIdlePrompt(){
-      if (idlePromptTimer){
-        clearTimeout(idlePromptTimer);
-        idlePromptTimer = null;
-      }
-    }
-
-    function allItemsCounted(){
-      return Array.isArray(items) && items.length > 0 && items.every(it => it.counted);
-    }
-
-    function scheduleIdlePrompt(){
-      resetIdlePrompt();
-      if (!started || locked) return;
-      if (mode !== 'normal' && mode !== 'confirmDigit') return;
-      if (promptPlayedThisRound) return;
-
-      const myRound = roundId;
-      const IDLE_PROMPT_MS = 35000;
-
-      idlePromptTimer = setTimeout(() => {
-        if (myRound !== roundId) return;
-        if (!started || locked) return;
-        if (mode !== 'normal' && mode !== 'confirmDigit') return;
-        if (promptPlayedThisRound) return;
-        promptPlayedThisRound = true;
-        stopVoice();
-        playPrompt();
-      }, IDLE_PROMPT_MS);
-    }
-
-    // algemene idle monitor: elke aanraking reset, bij loslaten start de 35s timer opnieuw
-    ['pointerdown','touchstart'].forEach((type) => {
-      document.addEventListener(type, () => {
-        if (!started || locked) return;
-        resetIdlePrompt();
-      }, { passive:true });
-    });
-    ['pointerup','pointercancel','touchend','touchcancel'].forEach((type) => {
-      document.addEventListener(type, () => {
-        if (!started || locked) return;
-        scheduleIdlePrompt();
-      }, { passive:true });
-    });
-
-
-    let wrongTries = 0;
-    let mode = 'normal';
-    let helpToken = 0;
-
-    function pickTarget(){ return randInt(countRange.min, countRange.max); }
-
-    function nextRound(){
-      resetIdlePrompt();
-      promptPlayedThisRound = false;
-      roundId += 1;
-      hideTutorialDigitOnPlate();
-      locked = false;
-      wrongTries = 0;
-      mode = 'normal';
-
-      stopVoice();
-      stopPrompt();
-      hideScanDigit();
-      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-
-      target = pickTarget();
-
-      items = generateItems(target);
-      projectNormalizedToPixels();
-      resolveOverlapsGentle();
-
-      requestRender();
-
-      // start (of herstart) de idle reminder timer
-      scheduleIdlePrompt();
-    }
-
-    // hard safe helpers against iPad hangs
-    function delaySafe(ms, token){
-      return new Promise((resolve) => {
-        const t = setTimeout(() => resolve(), ms);
-        if (token !== undefined){
-          const check = () => {
-            if (token !== helpToken){
-              clearTimeout(t);
-              resolve();
-              return;
-            }
-            requestAnimationFrame(check);
-          };
-          requestAnimationFrame(check);
-        }
-      });
-    }
-
-    function speakNumberSafe(n, token){
-      return new Promise((resolve) => {
-        let finished = false;
-
-        const finish = () => {
-          if (finished) return;
-          finished = true;
-          try{ voicePlayer.onended = null; } catch(e){}
-          try{ voicePlayer.onerror = null; } catch(e){}
-          try{ voicePlayer.onplaying = null; } catch(e){}
-          resolve();
-        };
-
-        if (token !== undefined && token !== helpToken){
-          finish();
-          return;
-        }
-
-        const HARD_MAX_MS = 900;
-        const hard = setTimeout(() => finish(), HARD_MAX_MS);
-
-        try{
-          voicePlayer.pause();
-          voicePlayer.currentTime = 0;
-          voicePlayer.src = voiceSrc(n);
-          voicePlayer.load();
-
-          voicePlayer.onended = () => { clearTimeout(hard); finish(); };
-          voicePlayer.onerror = () => { clearTimeout(hard); finish(); };
-
-          const p = voicePlayer.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){
-          clearTimeout(hard);
-          finish();
-        }
-      });
-    }
-
-    function speakTutorialNumberSafe(n, token){
-      return new Promise((resolve) => {
-        let finished = false;
-
-        const finish = () => {
-          if (finished) return;
-          finished = true;
-          try{ voicePlayer.onended = null; } catch(e){}
-          try{ voicePlayer.onerror = null; } catch(e){}
-          try{ voicePlayer.onplaying = null; } catch(e){}
-          resolve();
-        };
-
-        if (token !== tutorialToken){
-          finish();
-          return;
-        }
-
-        const HARD_MAX_MS = 900;
-        const hard = setTimeout(() => finish(), HARD_MAX_MS);
-
-        try{
-          voicePlayer.pause();
-          voicePlayer.currentTime = 0;
-          voicePlayer.src = voiceSrc(n);
-          voicePlayer.load();
-
-          voicePlayer.onended = () => { clearTimeout(hard); finish(); };
-          voicePlayer.onerror = () => { clearTimeout(hard); finish(); };
-
-          const p = voicePlayer.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch(e){
-          clearTimeout(hard);
-          finish();
-        }
-      });
-    }
-
-
-    async function runHelpCounting(){
-      const myToken = ++helpToken;
-
-      locked = true;
-      mode = 'tip';
-
-      resetIdlePrompt();
-      stopVoice();
-      stopPrompt();
-      hideScanDigit();
-      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-
-      // tel samen, met bellen die één voor één opbouwen
-      items.forEach(it => { it.counted = false; it.helpBubble = false; it.tutLabel = 0; });
-      requestRender();
-
-      const ordered = getItemsLeftToRight(items);
-
-      for (let i = 0; i < ordered.length; i++){
-        if (myToken !== helpToken) return;
-
-        for (let j = 0; j < ordered.length; j++){
-          const it = ordered[j];
-          if (j <= i){
-            it.helpBubble = true;
-            it.tutLabel = j + 1;
-          } else {
-            it.helpBubble = false;
-            it.tutLabel = 0;
-          }
-        }
-
-        requestRender();
-
-        await speakNumberSafe(i + 1, myToken);
-        if (myToken !== helpToken) return;
-
-        await delaySafe(220, myToken);
-        if (myToken !== helpToken) return;
-      }
-
-      if (myToken !== helpToken) return;
-
-      // klaar, alles staat aan
-      items.forEach(it => { it.counted = true; it.helpBubble = false; it.tutLabel = 0; });
-      requestRender();
-
-      showScanDigit(target);
-      playPrompt();
-      promptPlayedThisRound = true;
-
-      mode = 'confirmDigit';
-      locked = false;
-    }
-
-    async function onCorrectAnswer(){
-      locked = true;
-
-
-      playSfx(goodAudio);
-
-      await speakNumberSafe(target);
-
-      ensureAllHaveBubbles();
-      const seqMs = showSuccessSequenceTotalMs();
-      floatAllBubblesOutWithinTwoSeconds();
-
-      setTimeout(() => nextRound(), Math.max(1600, seqMs + 250));
-    }
-
-    async function onCorrectAnswerTutorial(){
-      locked = true;
-
-      ensureAllHaveBubbles();
-
-      // pinguin of bellen in beeld, dan het goede geluid, daarna veel plopjes
-      const seqMs = showSuccessSequenceTotalMs();
-      playSfx(goodAudio);
-
-      setTimeout(() => {
-        try{ floatAllBubblesOutWithinTwoSeconds(); } catch(e) {}
-      }, 260);
-
-      // wacht tot het voorbeeld echt klaar is
-      await delaySafe(Math.max(1600, seqMs + 250));
-
-      // eerst de volgende opdracht zichtbaar maken, daarna pas: nu mag jij
-      try{ document.body.classList.remove('tutorialActive'); } catch(e){}
-      nextRound();
-      await delaySafe(240);
-      await playAfterTutorCueSafe();
-    }
-
-    async function onWrongAnswer(){
-      wrongTries += 1;
-
-      // stop andere audio zodat het foutgeluid direct start
-      stopVoice();
-      stopPrompt();
-
-      const willHelp = (wrongTries >= 2);
-
-      // bij telhulp: meteen blokkeren, maar pas starten ná foutfeedback
-      if (willHelp){
-        locked = true;
-      }
-
-      const waitP = playSfxWait(wrongAudio, 260);
-
-      flashTelvlakWrong();
-      wrongFeedback();
-
-      popAllMarkedBubblesOnly();
-
-      if (willHelp){
-        await waitP;
-        // extra klein momentje zodat het rood en de wiebel echt weg zijn
-        await delaySafe(40);
-        runHelpCounting();
-      } else {
-        setTimeout(() => {
-          if (!started || locked) return;
-          if (mode === 'confirmDigit') showScanDigit(target);
-        }, 380);
-      }
-    }
-
-    function handleAnswer(recognizedDigit){
-      if (recognizedDigit == null) return;
-      if (!started || locked) return;
-      resetIdlePrompt();
-
-      if (recognizedDigit === target){
-        onCorrectAnswer();
-      } else {
-        onWrongAnswer();
-      }
-    }
-
-    function onCanvasPointerDown(e){
-      if (!started || locked) return;
-
-      kickAudio();
-      e.preventDefault();
-
-      // elke tik telt als activiteit: reset de idle timer meteen
-      resetIdlePrompt();
-
-      const p = getCanvasPointFromEvent(e);
-      const it = hitTest(p.x, p.y);
-
-      if (!it){
-        scheduleIdlePrompt();
-        return;
-      }
-
-      // bij elk item dat je aantikt: plop
-      try{ playPlop(1); } catch(err){}
-
-      it.counted = !it.counted;
-      it.helpBubble = false;
-      requestRender();
-
-      scheduleIdlePrompt();
-    }
-    countCanvas.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
-
-    // Marbotic herkenning
-    let calibration = null;
-    let classificationStats = null;
-    let expectedTouchPoints = 3;
-
-    function initCalibration(calibrationData) {
-      if (!calibrationData || typeof calibrationData !== "object") {
-        calibration = null;
-        classificationStats = null;
-        expectedTouchPoints = 3;
-        return;
-      }
-
-      expectedTouchPoints = (typeof calibrationData.expectedTouchPoints === "number")
-        ? calibrationData.expectedTouchPoints
-        : 3;
-
-      calibration = buildCalibrationFromData(calibrationData);
-      recomputeClassificationStats();
-    }
-
-    function buildCalibrationFromData(data) {
-      const obj = {};
-      DIGIT_ORDER.forEach(d => obj[String(d)] = { digit: d, samples: [] });
-
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = data[String(d)];
-        if (!entry || !Array.isArray(entry.samples)) return;
-
-        entry.samples.forEach(function (s) {
-          if (!s || !Array.isArray(s.points) || s.points.length !== 3) return;
-          const pts = s.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
-          const features = computeFeatures(pts);
-          obj[String(d)].samples.push({ points: pts, features });
-        });
-      });
-
-      return obj;
-    }
-
-    function computeFeatures(points) {
-      if (!points || points.length !== 3) return { vector: [0,0,0] };
-
-      const p0 = points[0], p1 = points[1], p2 = points[2];
-      const centroidRaw = { x: (p0.x+p1.x+p2.x)/3, y: (p0.y+p1.y+p2.y)/3 };
-
-      const isoPoints = [p0,p1,p2].map(p => ({ x: p.x-centroidRaw.x, y: p.y-centroidRaw.y }));
-
-      let maxDist = 0;
-      for (const q of isoPoints) maxDist = Math.max(maxDist, Math.hypot(q.x,q.y));
-      if (maxDist < 1e-6) maxDist = 1;
-
-      for (const q of isoPoints){ q.x /= maxDist; q.y /= maxDist; }
-
-      const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
-
-      const L01 = dist(isoPoints[0], isoPoints[1]);
-      const L12 = dist(isoPoints[1], isoPoints[2]);
-      const L20 = dist(isoPoints[2], isoPoints[0]);
-
-      const sides = [
-        { len: L01, i: 0, j: 1 },
-        { len: L12, i: 1, j: 2 },
-        { len: L20, i: 2, j: 0 }
-      ];
-      const maxSideLen = Math.max(L01, L12, L20) || 1;
-      const sidesNormSorted = sides.slice().sort((a,b)=>a.len-b.len).map(s => s.len/maxSideLen);
-
-      const largest = sides.slice().sort((a,b)=>a.len-b.len)[2];
-      const A = isoPoints[largest.i];
-      const B = isoPoints[largest.j];
-      const CIndex = 3 - largest.i - largest.j;
-      const C = isoPoints[CIndex];
-
-      const orientationVal = (a,b,c) => {
-        const v = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
-        return v > 0 ? 1 : v < 0 ? -1 : 0;
-      };
-      const orientation = orientationVal(A,B,C);
-
-      const AC = dist(A,C), BC = dist(B,C), AB = largest.len;
-      const denom = 2 * AC * BC;
-      let cosAngle = 0;
-      if (denom > 1e-6) cosAngle = (AC*AC + BC*BC - AB*AB) / denom;
-
-      let minX = Math.min(p0.x,p1.x,p2.x), maxX = Math.max(p0.x,p1.x,p2.x);
-      let minY = Math.min(p0.y,p1.y,p2.y), maxY = Math.max(p0.y,p1.y,p2.y);
-      let width = maxX-minX, height = maxY-minY;
-      if (width < 1e-6) width = 1;
-      if (height < 1e-6) height = 1;
-
-      const yNorm = [p0,p1,p2].map(p => (p.y-minY)/height).sort((a,b)=>a-b);
-      const pointsWithIndex = [{p:p0},{p:p1},{p:p2}].sort((a,b)=>a.p.y-b.p.y);
-      const xPattern = pointsWithIndex.map(item => (item.p.x-minX)/width);
-      const aspect = height / (width + height);
-
-      const vector = buildFeatureVector({ sides:sidesNormSorted, orientation, cosAngle, yNorm, xPattern, aspect });
-      return { vector };
-    }
-
-    function buildFeatureVector(f) {
-      const wSides = 3.0, wCos = 4.0, wOrient = 2.0, wY = 3.0, wX = 2.0, wAspect = 2.0;
-      return [
-        f.sides[0]*wSides, f.sides[1]*wSides, f.sides[2]*wSides,
-        f.cosAngle*wCos, f.orientation*wOrient,
-        f.yNorm[0]*wY, f.yNorm[1]*wY, f.yNorm[2]*wY,
-        f.xPattern[0]*wX, f.xPattern[1]*wX, f.xPattern[2]*wX,
-        f.aspect*wAspect
-      ];
-    }
-
-    function vectorDistance(a, b) {
-      if (!a || !b || a.length !== b.length) return Infinity;
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; sum += d*d; }
-      return Math.sqrt(sum);
-    }
-
-    function recomputeClassificationStats() {
-      if (!calibration) { classificationStats = { thresholdBase: 0.8, thresholdUnknown: 1.5 }; return; }
-
-      const allSamples = [];
-      DIGIT_ORDER.forEach(d => {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        (entry.samples || []).forEach(s => allSamples.push({ digit:d, vector:s.features.vector }));
-      });
-
-      if (allSamples.length < 2) { classificationStats = { thresholdBase: 0.6, thresholdUnknown: 1.0 }; return; }
-
-      const sameMin = [];
-      const betweenMin = [];
-
-      for (let i = 0; i < allSamples.length; i++) {
-        const a = allSamples[i];
-        let minSame = Infinity, minOther = Infinity;
-        for (let j = 0; j < allSamples.length; j++) {
-          if (i === j) continue;
-          const b = allSamples[j];
-          const dist = vectorDistance(a.vector, b.vector);
-          if (a.digit === b.digit) minSame = Math.min(minSame, dist);
-          else minOther = Math.min(minOther, dist);
-        }
-        if (minSame < Infinity) sameMin.push(minSame);
-        if (minOther < Infinity) betweenMin.push(minOther);
-      }
-
-      const maxSame = Math.max.apply(null, sameMin);
-      const minBetween = Math.min.apply(null, betweenMin);
-
-      let thresholdBase;
-      if (minBetween > maxSame) thresholdBase = (maxSame + minBetween) / 2;
-      else thresholdBase = maxSame * 1.3;
-
-      classificationStats = { thresholdBase, thresholdUnknown: thresholdBase * 1.5 };
-    }
-
-    function recognizeDigit(points) {
-      if (!calibration || !classificationStats) return null;
-      if (!Array.isArray(points) || points.length !== expectedTouchPoints) return null;
-
-      const vec = computeFeatures(points).vector;
-      if (!vec) return null;
-
-      let bestDigit = null;
-      let bestDist = Infinity;
-
-      DIGIT_ORDER.forEach(function (d) {
-        const entry = calibration[String(d)];
-        if (!entry) return;
-        const samples = entry.samples || [];
-        for (let i = 0; i < samples.length; i++) {
-          const dist = vectorDistance(vec, samples[i].features.vector);
-          if (dist < bestDist) { bestDist = dist; bestDigit = d; }
-        }
-      });
-
-      if (bestDigit === null) return null;
-      if (bestDist > classificationStats.thresholdUnknown) return null;
-      if (bestDist > classificationStats.thresholdBase) return null;
-      return bestDigit;
-    }
-
-    let hasResultForCurrentTouches = false;
-
-    function getPointsFromTouches(touchList) {
-      const rect = scanArea.getBoundingClientRect();
-      const points = [];
-      for (let i = 0; i < touchList.length; i++) {
-        const t = touchList[i];
-        const x = t.clientX;
-        const y = t.clientY;
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-          points.push({ x, y });
-        }
-      }
-      return points;
-    }
-
-    function handleTouchEvent(e){
-      if (!calibration || !classificationStats) return;
-
-      resetIdlePrompt();
-
-      // cruciaal: tijdens telhulp geen scan UI spam, voorkomt haperen en vastlopen
-      if (mode === 'tip') return;
-
-      kickAudio();
-
-      const touches = e.touches || [];
-      const pts = getPointsFromTouches(touches);
-
-      // Zodra er iets op de scanplek ligt: hintplaatje weg, zodat je alleen de echte steen ziet
-      if (pts.length){
-        hideScanDigit();
-      }
-
-      if (pts.length === 0){
-        hasResultForCurrentTouches = false;
-        hideUnderDigit();
-        // als alles geteld is en je wacht, geef een zachte reminder
-        scheduleIdlePrompt();
-        return;
-      }
-
-      if (pts.length !== expectedTouchPoints){
-        hasResultForCurrentTouches = false;
-        hideUnderDigit();
-        return;
-      }
-
-
-      if (!hasResultForCurrentTouches && !locked){
-        const digit = recognizeDigit(pts);
-        if (digit !== null && typeof digit === "number"){
-          hasResultForCurrentTouches = true;
-          handleAnswer(digit);
-        }
-      }
-    }
-
-    ['touchstart','touchmove','touchend','touchcancel'].forEach(type => {
-      scanArea.addEventListener(type, handleTouchEvent, { passive: true });
-    });
-
-    // Tests
-
-    // Start
-
-
-    // Start
-    
-
-    function showHand(){
-      if (!tutorialHandWrap) return;
-      tutorialHandWrap.classList.add('show');
-    }
-    function hideHand(){
-      if (!tutorialHandWrap) return;
-      tutorialHandWrap.classList.remove('show');
-    }
-    function moveHandTo(x, y){
-      if (!tutorialHandWrap) return;
-      tutorialHandWrap.style.transform = `translate(${x}px, ${y}px)`;
-    }
-    function tapHand(){
-      if (!tutorialHandImg) return;
-      tutorialHandImg.classList.remove('tap');
-      void tutorialHandImg.offsetWidth;
-      tutorialHandImg.classList.add('tap');
-    }
-
-
-    function showMarbotic(){
-      if (!tutMarboticWrap) return;
-      tutMarboticWrap.classList.add('show');
-    }
-    function hideMarbotic(){
-      if (!tutMarboticWrap) return;
-      tutMarboticWrap.classList.remove('show');
-      tutMarboticWrap.classList.remove('pressed');
-    }
-    function setMarboticState({ tx=0, ty=0, scale=1 } = {}){
-      if (tutMarboticWrap){
-        tutMarboticWrap.style.setProperty('--tx', `${tx}px`);
-        tutMarboticWrap.style.setProperty('--ty', `${ty}px`);
-      }
-      if (tutMarboticInner){
-        tutMarboticInner.style.setProperty('--ms', `${scale}`);
-      }
-    }
-    function pressMarbotic(on){
-      if (!tutMarboticWrap) return;
-      tutMarboticWrap.classList.toggle('pressed', !!on);
-    }
-
-    
-    function hideTutorialDigitOnPlate(){
-      if (!tutPlateDigit) return;
-      tutPlateDigit.classList.remove('show');
-      tutPlateDigit.removeAttribute('src');
-      tutPlateDigit.alt = '';
-    }
-
-    function placeTutorialDigitOnPlate(src, alt){
-      if (!tutPlateDigit || !src) return;
-      const scanRect = scanArea.getBoundingClientRect();
-      const aRect = tutMarboticImg.getBoundingClientRect();
-
-      tutPlateDigit.src = src;
-      tutPlateDigit.alt = alt || '';
-      tutPlateDigit.style.left = `${aRect.left - scanRect.left}px`;
-      tutPlateDigit.style.top = `${aRect.top - scanRect.top}px`;
-      tutPlateDigit.style.width = `${aRect.width}px`;
-      tutPlateDigit.style.height = `${aRect.height}px`;
-
-      tutPlateDigit.classList.add('show');
-    }
-function delayTutorial(ms, token){
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          if (token !== tutorialToken) return resolve(false);
-          resolve(true);
-        }, ms);
-      });
-    }
-
-    async function startTutorialDemo(){
-      if (tutorialDone){
-        nextRound();
-        return;
-      }
-      tutorialDone = true;
-      tutorialToken += 1;
-      const token = tutorialToken;
-
-      locked = true;
-      mode = 'tutorial';
-      wrongTries = 0;
-
-      stopVoice();
-      stopPrompt();
-      hideScanDigit();
-      if (scanDigitTimer){ clearTimeout(scanDigitTimer); scanDigitTimer = null; }
-
-      try{ document.body.classList.add('tutorialActive'); } catch(e){}
-
-      // Kies een veilige waarde binnen het ingestelde bereik
-      const demoTarget = 4;
-      target = demoTarget;
-
-      items = generateItems(target);
-      projectNormalizedToPixels();
-      resolveOverlapsGentle();
-      for (const it of items){
-        it.counted = false;
-        it.helpBubble = false;
-        it.tutLabel = 0;
-      }
-      requestRender();
-
-      const cardRect = gameCard.getBoundingClientRect();
-      // Hand blijft onzichtbaar tot hij echt gaat tellen
-      moveHandTo(cardRect.width + 720, cardRect.height + 720);
-      hideHand();
-      await delayTutorial(220, token);
-      showHand();
-      await delayTutorial(80, token);
-// Tel alle items één voor één
-      const ordered = getItemsLeftToRight(items);
-      for (let i = 0; i < ordered.length; i++){
-        if (token !== tutorialToken) return;
-
-        const it = ordered[i];
-        const hx = it.x;
-        const hy = it.y;
-
-        moveHandTo(hx, hy);
-        await delayTutorial(520, token);
-        if (token !== tutorialToken) return;
-
-        tapHand();
-
-        it.counted = true;
-        it.tutLabel = i + 1;
-        requestRender();
-
-        // in het voorbeeld hoor je het tellen (audio/1.mp3 t/m audio/4.mp3)
-        await speakTutorialNumberSafe(i + 1, token);
-        if (token !== tutorialToken) return;
-
-        await delayTutorial(180, token);
-      }
-
-      hideHand();
-
-      // Scan voorbeeld: leg het cijfer 4 op de scanplaat
-
-      const pickExisting = async (cands) => {
-        for (const src of cands){
-          const img = await loadImage(src);
-          if (img) return src;
-        }
-        return cands[0];
-      };
-
-      const marboticASrc = await pickExisting(['marboticvoorbeelda.png','marbotic_voorbeeld/marboticvoorbeelda.png']);
-      const marboticBSrc = await pickExisting(['marboticvoorbeeldb.png','marbotic_voorbeeld/marboticvoorbeeldb.png']);
-      const marboticCSrc = await pickExisting(['marboticvoorbeeldc.png','marbotic_voorbeeld/marboticvoorbeeldc.png']);
-
-      if (tutMarboticImg) tutMarboticImg.src = marboticASrc;
-      hideTutorialDigitOnPlate();
-      hideMarbotic();
-
-      await delayTutorial(90, token);
-
-      const scanRect = scanArea.getBoundingClientRect();
-
-      // meet de basismaat (schaal 1) om de juiste schaal te berekenen
-      setMarboticState({ tx: 9999, ty: 9999, scale: 1 });
-      await delayTutorial(30, token);
-
-      const baseRect = tutMarboticImg.getBoundingClientRect();
-      const maxW = scanRect.width * 0.98;
-      const maxH = scanRect.height * 0.98;
-      const maxScale = Math.min(maxW / Math.max(1, baseRect.width), maxH / Math.max(1, baseRect.height));
-
-      const desiredScale = 2.10;
-      const finalScale = Math.max(0.65, Math.min(desiredScale, maxScale));
-
-      const scaledW = baseRect.width * finalScale;
-      const scaledH = baseRect.height * finalScale;
-
-      // volledig buiten beeld starten (rechts onder)
-      const offTX = (scanRect.width / 2) + (scaledW / 2) + 220;
-      const offTY = (scanRect.height / 2) + (scaledH / 2) + 220;
-
-      // eerst buiten beeld neerzetten, dan pas tonen
-      setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
-      showMarbotic();
-      await delayTutorial(120, token);
-
-      // naar het midden van het scanvak
-      setMarboticState({ tx: 0, ty: 0, scale: finalScale });
-      await delayTutorial(260, token);
-
-      // naar de witte scanplek: het witte vlak zit niet exact in het midden van de scanplek-afbeelding
-      let dx = 0, dy = 0;
-      try{
-        if (scanPlaceImg){
-          const placeRect = scanPlaceImg.getBoundingClientRect();
-          const cx = scanRect.left + (scanRect.width / 2);
-          const cy = scanRect.top  + (scanRect.height / 2);
-
-          const offFrac = (typeof TUTORIAL_SCAN_OFF_FRAC === 'object' && TUTORIAL_SCAN_OFF_FRAC)
-            ? TUTORIAL_SCAN_OFF_FRAC
-            : ((typeof SCAN_UNDER_OFF_FRAC === 'object' && SCAN_UNDER_OFF_FRAC) ? SCAN_UNDER_OFF_FRAC : { x: 0, y: 0 });
-
-          const fracX = Number(offFrac.x) || 0;
-          const fracY = Number(offFrac.y) || 0;
-
-          const px = (placeRect.left + (placeRect.width / 2)) + (placeRect.width * fracX);
-          const py = (placeRect.top  + (placeRect.height / 2)) + (placeRect.height * fracY);
-
-          dx = px - cx;
-          dy = py - cy;
-        }
-      } catch(e){}
-      setMarboticState({ tx: dx, ty: dy, scale: finalScale });
-      await delayTutorial(520, token);
-
-      // indrukken met een korte pauze
-      pressMarbotic(true);
-      await delayTutorial(240, token);
-
-      // leg de 4 op exact dezelfde plek als in de hand
-      placeTutorialDigitOnPlate(marboticBSrc, '4');
-      if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
-      playPlop(randFloat(0.90, 1.20));
-      await delayTutorial(520, token);
-
-      // hand zonder cijfer, daarna uit beeld
-      if (tutMarboticImg) tutMarboticImg.src = marboticCSrc;
-      await delayTutorial(90, token);
-
-      pressMarbotic(false);
-      await delayTutorial(160, token);
-
-      setMarboticState({ tx: offTX, ty: offTY, scale: finalScale });
-      await delayTutorial(560, token);
-      hideMarbotic();
-
-      // Goed antwoord tonen, daarna start het echte spel
-      setTimeout(() => hideTutorialDigitOnPlate(), 1800);
-      onCorrectAnswerTutorial();
+      updateAnchorVars();
     }
 
-function startGame(){
-      if (started) return;
-      started = true;
 
-      Promise.resolve()
-        .then(() => initWebAudio())
-        .then(() => unlockAudio())
-        .catch(() => {});
+function updateAnchorVars(){
+  if (!anchorMode) return;
 
-      try{
-        goodAudio.load();
-        wrongAudio.load();
-      } catch(e){}
+  const enabled = !!anchorMode.checked;
+  const s = Math.max(0.01, parseFloat(scaleRange.value));
+  const rect = img.getBoundingClientRect();
+  const canMeasure = rect.width > 10 && rect.height > 10;
 
-      startTutorialDemo();
-    }
+  if (enabled && anchorFx != null && anchorFy != null && canMeasure){
+    const baseW = rect.width / s;
+    const baseH = rect.height / s;
+    const dx = (anchorFx - 0.5) * baseW;
+    const dy = (anchorFy - 0.5) * baseH;
 
+    document.documentElement.style.setProperty("--tut-anchor-dx", dx);
+    document.documentElement.style.setProperty("--tut-anchor-dy", dy);
 
-if (startOverlay && startBtn){
-  const START_HOLD_MS = 900;
-  const START_HOLD_MOVE_TOL = 14;
-  let startHoldTimer = null;
-  let startHoldTriggered = false;
-  let holdPointerId = null;
-  let holdX = 0;
-  let holdY = 0;
+    if (anchorVal) anchorVal.textContent = Math.round(anchorFx * 100) + "%," + Math.round(anchorFy * 100) + "%";
+  } else {
+    document.documentElement.style.setProperty("--tut-anchor-dx", 0);
+    document.documentElement.style.setProperty("--tut-anchor-dy", 0);
 
-  function cancelStartHold(){
-    if (startHoldTimer){ clearTimeout(startHoldTimer); startHoldTimer = null; }
-    holdPointerId = null;
+    if (anchorVal) anchorVal.textContent = (anchorFx != null && anchorFy != null) ? "opgeslagen" : "geen";
   }
+}
 
-  startOverlay.addEventListener('pointerdown', (e) => {
-    if (started) return;
-    if (e && e.target && typeof e.target.closest === 'function' && e.target.closest('#startBtn')) return;
-    startHoldTriggered = false;
-    cancelStartHold();
+    scaleRange.addEventListener("input", applyVars, { passive:true });
+    xRange.addEventListener("input", applyVars, { passive:true });
+    yRange.addEventListener("input", applyVars, { passive:true });
+applyVars();
 
-    holdPointerId = e.pointerId;
-    holdX = e.clientX;
-    holdY = e.clientY;
-
-    try{ startOverlay.setPointerCapture(e.pointerId); } catch(err) {}
-
-    startHoldTimer = setTimeout(() => {
-      startHoldTimer = null;
-      startHoldTriggered = true;
-      if (tunePanel && tunePanel.classList.contains('hidden')) openTunePanel();
-    }, START_HOLD_MS);
-
-    // voorkom iOS context menu bij lang indrukken
-    try{ e.preventDefault(); } catch(err) {}
-  }, { passive:false });
-
-  startOverlay.addEventListener('pointermove', (e) => {
-    if (holdPointerId === null || e.pointerId !== holdPointerId) return;
-    const dx = e.clientX - holdX;
-    const dy = e.clientY - holdY;
-    if ((dx*dx + dy*dy) > (START_HOLD_MOVE_TOL*START_HOLD_MOVE_TOL)){
-      cancelStartHold();
-    }
+if (anchorMode){
+  anchorMode.addEventListener("change", () => {
+    updateAnchorVars();
   }, { passive:true });
+}
 
-  ['pointerup','pointercancel'].forEach(ev => {
-    startOverlay.addEventListener(ev, (e) => {
-      cancelStartHold();
-      try{ startOverlay.releasePointerCapture(e.pointerId); } catch(err) {}
-    }, { passive:true });
-  });
+if (pickAnchorBtn){
+  pickAnchorBtn.addEventListener("click", async () => {
+    picking = true;
+    if (hint) hint.hidden = false;
+    if (anchorMode) anchorMode.checked = true;
 
-  let startInitiated = false;
+    img.src = marC;
+    showWrap();
+    wrap.classList.add("pick");
 
-  const startActivate = (e) => {
-    if (started || startInitiated) return;
-    if (startHoldTriggered){
-      try{ if (e) e.preventDefault(); } catch(err) {}
-      return;
-    }
-    startInitiated = true;
-
-    try{ if (e){ e.preventDefault(); e.stopPropagation(); } } catch(err) {}
-
-    // audio vrijgeven in deze tik, alleen een plop op de knop
-    try{ ensureFallbackPool(); } catch(err){}
-
-    try{ goodAudio.load(); wrongAudio.load(); promptAudio.load(); afterTutorAudio.load(); } catch(err){}
-
-    // eerst meteen de plop vrijgeven en afspelen
-    Promise.resolve()
-      .then(() => unlockAudio())
-      .then(() => { try{ playPlop(1); } catch(err){} })
-      .catch(() => {});
-
-    Promise.resolve()
-      .then(() => initWebAudio())
-      .then(() => unlockAudio())
-      .catch(() => {});
-
-    if (startOverlay) startOverlay.classList.add('leaving');
-    startBtn.classList.add('leaving');
-
-    setTimeout(() => {
-      if (startOverlay) startOverlay.style.display = 'none';
-      try{ document.body.classList.remove('startActive'); } catch(err){}
-      try{ scheduleScanNudge(); } catch(err){}
-      startGame();
-    }, 520);
-  };
-
-  startBtn.addEventListener('click', startActivate);
-  try{ startBtn.addEventListener('touchend', startActivate, { passive:false }); } catch(err){}
-  try{ startBtn.addEventListener('pointerup', startActivate, { passive:false }); } catch(err){}
-  startBtn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') startActivate(e);
+    // wacht een tik zodat de browser het beeld kan tekenen
+    await sleep(40);
+    updateAnchorVars();
   });
 }
 
+if (resetAnchorBtn){
+  resetAnchorBtn.addEventListener("click", () => {
+    localStorage.removeItem("tutAnchorFx");
+    localStorage.removeItem("tutAnchorFy");
+    anchorFx = null;
+    anchorFy = null;
+    picking = false;
+    wrap.classList.remove("pick");
+    if (hint) hint.hidden = true;
+    if (anchorMode) anchorMode.checked = false;
+    updateAnchorVars();
+  });
+}
 
-    const goHome = (e) => {
-      try{ if (e) e.preventDefault(); } catch(err) {}
-      try{ window.location.href = 'index.html'; } catch(err) {}
-    };
+img.addEventListener("pointerdown", (e) => {
+  if (!picking) return;
+  e.preventDefault();
 
-    homeBtn.addEventListener('click', goHome);
-    try{ homeBtn.addEventListener('touchend', goHome, { passive:false }); } catch(err){}
-    try{ homeBtn.addEventListener('pointerup', goHome, { passive:false }); } catch(err){}
-    homeBtn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') goHome(e);
-    });
+  const rect = img.getBoundingClientRect();
+  if (rect.width < 10 || rect.height < 10) return;
 
-    async function preloadImages(){
-      itemImgs.star = await loadImage(ITEM_SRC.star);
-      itemImgs.leaf = await loadImage(ITEM_SRC.leaf);
-      itemImgs.lady = await loadImage(ITEM_SRC.lady);
+  anchorFx = clamp01((e.clientX - rect.left) / rect.width);
+  anchorFy = clamp01((e.clientY - rect.top) / rect.height);
 
-      // pinguin animatie is optioneel, bij ontbreken valt hij terug op bellen animatie
-      const candidates = ['pinguin.gif', 'pinguinanimatie.gif', 'pinguin_animatie.gif', 'pinguin-animatie.gif'];
-      let found = null;
-      for (const src of candidates){
-        const img = await loadImage(src);
-        if (img){ found = src; break; }
-      }
-      if (found){
-        usePinguinSuccess = true;
-        PINGUIN_GIF_SRC = found;
-      } else {
-        usePinguinSuccess = false;
-      }
+  localStorage.setItem("tutAnchorFx", String(anchorFx));
+  localStorage.setItem("tutAnchorFy", String(anchorFy));
 
-      requestRender();
+  picking = false;
+  wrap.classList.remove("pick");
+  if (hint) hint.hidden = true;
+
+  updateAnchorVars();
+  applyVars();
+});
+
+async function loadImage(src){
+      return new Promise((resolve) => {
+        const test = new Image();
+        const done = (ok) => resolve(ok ? src : null);
+        test.onload = () => done(true);
+        test.onerror = () => done(false);
+        test.src = src;
+        setTimeout(() => done(false), 600);
+      });
     }
 
-    function scheduleViewportUpdate(delay){
-      setTimeout(() => {
-        setAutoScale();
-        resizeCountCanvas();
-      }, delay);
+    async function pickExisting(cands){
+      for (const src of cands){
+        const ok = await loadImage(src);
+        if (ok) return src;
+      }
+      return cands[0];
     }
 
-    window.addEventListener('resize', () => scheduleViewportUpdate(180));
-    window.addEventListener('orientationchange', () => scheduleViewportUpdate(280));
+    let marA = "marboticvoorbeelda.png";
+    let marB = "marboticvoorbeeldb.png";
+    let marC = "marboticvoorbeeldc.png";
 
-    window.addEventListener('load', () => {
-      setAutoScale();
-      
-      countRange = loadCountRange();
-      syncCountUI();
-      resizeCountCanvas();
-      preloadImages();
-      if (successGif){
-        successGif.addEventListener('error', () => { usePinguinSuccess = false; }, { once:true });
-      }
+    (async () => {
+      marA = await pickExisting(["marboticvoorbeelda.png","marbotic_voorbeeld/marboticvoorbeelda.png"]);
+      marB = await pickExisting(["marboticvoorbeeldb.png","marbotic_voorbeeld/marboticvoorbeeldb.png"]);
+      marC = await pickExisting(["marboticvoorbeeldc.png","marbotic_voorbeeld/marboticvoorbeeldc.png"]);
+      img.src = marA;
+    })();
 
-      hideScanDigit();
+    function showWrap(){
+      wrap.classList.add("show");
+      wrap.setAttribute("aria-hidden", "false");
+    }
+    function hideWrap(){
+      wrap.classList.remove("show","pressed");
+      wrap.setAttribute("aria-hidden", "true");
+    }
 
-      fetch('calibration.json', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => initCalibration(data))
-        .catch(() => { });
+    function setTargetVars(){
+      applyVars();
+    }
+
+    async function playExample(){
+      playBtn.disabled = true;
+
+      // Start positie, net buiten beeld, eindigt op jouw slider waarde
+      const targetX = parseFloat(xRange.value);
+      const targetY = parseFloat(yRange.value);
+      const targetS = parseFloat(scaleRange.value);
+
+      img.src = marA;
+      showWrap();
+
+      // zet start
+      document.documentElement.style.setProperty("--tut-scale", targetS);
+      document.documentElement.style.setProperty("--tut-x", targetX - 420);
+      document.documentElement.style.setProperty("--tut-y", targetY - 260);
+
+      // force reflow zodat de transition pakt
+      wrap.getBoundingClientRect();
+
+      // move naar target
+      document.documentElement.style.setProperty("--tut-x", targetX);
+      document.documentElement.style.setProperty("--tut-y", targetY);
+
+      await sleep(650);
+      img.src = marB;
+
+      await sleep(650);
+      img.src = marC;
+      wrap.classList.add("pressed");
+
+      await sleep(650);
+      hideWrap();
+
+      // terug naar slider state
+      setTargetVars();
+      playBtn.disabled = false;
+    }
+
+    playBtn.addEventListener("click", playExample);
+    resetBtn.addEventListener("click", () => {
+      scaleRange.value = "1.00";
+      xRange.value = "0";
+      yRange.value = "0";
+      applyVars();
     });
+
+    // Als je draait, wil je dat de waarden blijven gelden
+    window.addEventListener("resize", () => applyVars(), { passive:true });
   </script>
 </body>
 </html>
