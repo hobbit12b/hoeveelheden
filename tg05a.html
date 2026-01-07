@@ -344,7 +344,7 @@
   <div class="controls" id="controls" aria-label="Afstellen">
     <div class="ctrl">
       <label for="scaleRange"><span>schaal</span><span id="scaleVal">1.00</span></label>
-      <input id="scaleRange" type="range" min="0.50" max="2.00" step="0.01" value="1.00" />
+      <input id="scaleRange" type="range" min="0.25" max="8.00" step="0.01" value="1.00" />
     </div>
     <div class="ctrl">
       <label for="xRange"><span>x</span><span id="xVal">0px</span></label>
@@ -391,6 +391,58 @@ const anchorMode = document.getElementById("anchorMode");
 const pickAnchorBtn = document.getElementById("pickAnchorBtn");
 const resetAnchorBtn = document.getElementById("resetAnchorBtn");
 const anchorVal = document.getElementById("anchorVal");
+
+
+    function getOriKey(){
+      try{
+        if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches) return "landscape";
+      }catch(e){}
+      return (window.innerWidth > window.innerHeight) ? "landscape" : "portrait";
+    }
+
+    const oriDefaults = {
+      landscape: { scale: 1.00, x: -154, y: -153 },
+      portrait: { scale: 1.00, x: -87, y: -283 }
+    };
+
+    let oriKey = getOriKey();
+
+    function setSliders(v){
+      if (!v) return;
+      if (typeof v.scale === "number") scaleRange.value = v.scale.toFixed(2);
+      if (typeof v.x === "number") xRange.value = String(Math.round(v.x));
+      if (typeof v.y === "number") yRange.value = String(Math.round(v.y));
+    }
+
+    function loadVarsForOri(key){
+      const storeKey = "tutVars_" + key;
+      let v = null;
+      try{
+        const raw = localStorage.getItem(storeKey);
+        if (raw) v = JSON.parse(raw);
+      }catch(e){}
+      if (!v) v = oriDefaults[key] || oriDefaults.portrait;
+      setSliders(v);
+      applyVars();
+    }
+
+    function saveVarsForOri(){
+      const key = getOriKey();
+      const storeKey = "tutVars_" + key;
+      const v = {
+        scale: parseFloat(scaleRange.value) || 1,
+        x: parseFloat(xRange.value) || 0,
+        y: parseFloat(yRange.value) || 0
+      };
+      try{ localStorage.setItem(storeKey, JSON.stringify(v)); }catch(e){}
+    }
+
+    function setDefaultsForCurrentOri(){
+      const key = getOriKey();
+      setSliders(oriDefaults[key] || oriDefaults.portrait);
+      applyVars();
+      saveVarsForOri();
+    }
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -449,10 +501,10 @@ function updateAnchorVars(){
   }
 }
 
-    scaleRange.addEventListener("input", applyVars, { passive:true });
-    xRange.addEventListener("input", applyVars, { passive:true });
-    yRange.addEventListener("input", applyVars, { passive:true });
-applyVars();
+    scaleRange.addEventListener("input", () => { applyVars(); saveVarsForOri(); }, { passive:true });
+    xRange.addEventListener("input", () => { applyVars(); saveVarsForOri(); }, { passive:true });
+    yRange.addEventListener("input", () => { applyVars(); saveVarsForOri(); }, { passive:true });
+    loadVarsForOri(oriKey);
 
 if (anchorMode){
   anchorMode.addEventListener("change", () => {
@@ -594,14 +646,19 @@ async function loadImage(src){
 
     playBtn.addEventListener("click", playExample);
     resetBtn.addEventListener("click", () => {
-      scaleRange.value = "1.00";
-      xRange.value = "0";
-      yRange.value = "0";
-      applyVars();
+      setDefaultsForCurrentOri();
     });
 
     // Als je draait, wil je dat de waarden blijven gelden
-    window.addEventListener("resize", () => applyVars(), { passive:true });
+    window.addEventListener("resize", () => {
+      const k = getOriKey();
+      if (k !== oriKey){
+        oriKey = k;
+        loadVarsForOri(oriKey);
+        return;
+      }
+      applyVars();
+    }, { passive:true });
   </script>
 </body>
 </html>
